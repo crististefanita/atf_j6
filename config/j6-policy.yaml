@@ -1,0 +1,16 @@
+schemaVersion: 1
+project: atf-j6-holdem-lab
+domain: no-limit-texas-holdem
+runtime: jvm-21
+mobile: excluded-from-phase-1
+online:
+  supportedMode: explicitly-authorized-bot-platform-only
+  defaultAdapter: open-poker-websocket-v2
+  realMoneyAutomation: prohibited
+secrets:
+  source: environment-or-os-credential-store
+  sourceControl: forbidden
+evaluation:
+  publicDecisionInput: actor-observation-only
+  hiddenOpponentCardsInPolicy: forbidden
+  required: [seed, policyVersion, replay, independent-legality-check]

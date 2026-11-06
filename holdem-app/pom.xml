@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>ro.atf.j6</groupId>
+        <artifactId>atf-j6-holdem-lab</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>holdem-app</artifactId>
+    <dependencies>
+        <dependency>
+            <groupId>ro.atf.j6</groupId>
+            <artifactId>holdem-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.atf.j6</groupId>
+            <artifactId>holdem-ai</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.atf.j6</groupId>
+            <artifactId>holdem-online</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+</project>

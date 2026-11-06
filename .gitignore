@@ -1,0 +1,8 @@
+target/
+build-check/
+.check/
+.env
+*.log
+*.replay.json
+secrets/
+

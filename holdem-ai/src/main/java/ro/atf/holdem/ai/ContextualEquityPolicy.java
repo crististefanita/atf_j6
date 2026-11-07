@@ -55,7 +55,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                     extraOpponentValueBetMargin, earlyPositionCallMargin, latePositionCallDiscount,
                     earlyPositionValueBetMargin, latePositionValueBetDiscount, opponentAggressionValueBetMargin,
                     tournamentValueBetMargin, uncertaintyZHundredths, 3, 6, 8, 5, 75,
-                    10, 10, 3, 12, 4);
+                    10, 10, 3, 16, 4);
         }
 
         public ContextWeights(int extraOpponentCallMargin, int opponentAggressionCallMargin,
@@ -71,12 +71,12 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                     earlyPositionValueBetMargin, latePositionValueBetDiscount, opponentAggressionValueBetMargin,
                     tournamentValueBetMargin, uncertaintyZHundredths, largeBetCallMargin,
                     opponentAllInCallMargin, tournamentEliminationRiskMargin, tournamentShortStackCallDiscount,
-                    tournamentCommitmentThresholdPercent, 10, 10, 3, 12, 4);
+                    tournamentCommitmentThresholdPercent, 10, 10, 3, 16, 4);
         }
 
         public static ContextWeights defaults() {
             return new ContextWeights(3, 3, 2, 5, 2, 2, 3, 3, 2, 2, 164, 3, 6, 8, 5, 75,
-                    10, 10, 3, 12, 4);
+                    10, 10, 3, 16, 4);
         }
     }
 

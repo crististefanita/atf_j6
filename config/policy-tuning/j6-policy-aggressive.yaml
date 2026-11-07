@@ -35,5 +35,5 @@ equityDecision:
     shortStackShovePriorProbabilityPercent: 10
     shortStackShovePriorOpportunities: 10
     shortStackShoveWarmupOpportunities: 3
-    shortStackShoveSensitivity: 12
+    shortStackShoveSensitivity: 16
     shortStackShoveMaxMarginAdjustment: 4

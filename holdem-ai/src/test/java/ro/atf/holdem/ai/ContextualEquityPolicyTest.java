@@ -125,7 +125,7 @@ class ContextualEquityPolicyTest {
         var noEvidence = shoveHistoryObservation(200, 0, 0);
         var frequentShove = shoveHistoryObservation(200, 5, 5);
         var noShove = shoveHistoryObservation(200, 20, 0);
-        var eightOpportunitiesWithoutShove = shoveHistoryObservation(80, 8, 0);
+        var sevenOpportunitiesWithoutShove = shoveHistoryObservation(80, 7, 0);
         int neutral = policy.requiredEquityPercent(noEvidence);
 
         assertEquals(neutral, policy.requiredEquityPercent(shoveHistoryObservation(200, 0, 0)),
@@ -135,7 +135,7 @@ class ContextualEquityPolicyTest {
         assertTrue(policy.requiredEquityPercent(noShove) > neutral,
                 "Repeated shove opportunities without a shove modestly tighten the response");
         int shortStackNeutral = policy.requiredEquityPercent(shoveHistoryObservation(80, 0, 0));
-        assertEquals(1, policy.requiredEquityPercent(eightOpportunitiesWithoutShove) - shortStackNeutral,
+        assertEquals(1, policy.requiredEquityPercent(sevenOpportunitiesWithoutShove) - shortStackNeutral,
                 "A meaningful but bounded history must survive integer-margin rounding");
         assertTrue(neutral - policy.requiredEquityPercent(frequentShove) <= 4,
                 "History may only adjust the configured call margin within its cap");

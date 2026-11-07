@@ -13,7 +13,7 @@ J6 trebuie să permită dezvoltarea și evaluarea unui AI de No-Limit Texas Hold
 
 ## P0 — obligatoriu
 
-- rulare locală fără Android;
+- rulare locală JVM independentă de SDK-ul Android;
 - pachet standard de 52 de cărți, 2–6 locuri;
 - NLHE cash-style și tournament-style ca profile distincte;
 - stări immutable sau protejate la mutație accidentală;
@@ -41,6 +41,14 @@ J6 trebuie să permită dezvoltarea și evaluarea unui AI de No-Limit Texas Hold
 - mod `dry-run` care nu trimite acțiuni;
 - jurnal de decizie cu hash de observație, nu cu secretul;
 - flag explicit pentru `join_lobby` și `auto_rebuy`.
+
+## Interfață locală Android
+
+Primul increment reutilizează meniul, selectorul de limbă, editorul numelui, geometria mesei, chenarele și mâna centrată din J4/J5. J6 furnizează potul, jetoanele, contribuțiile, dealerul, actorul și cele cinci poziții pentru cărțile comunitare. Limba implicită este engleza. Româna se poate selecta din meniu.
+
+Mâna locală heads-up sau la 4–6 locuri folosește o observație fixată pe jucătorul uman și comenzi validate de motor. Adversarii de antrenament dau check sau call, iar decontarea arată distribuția jetoanelor. Cărțile adversarilor rămân ascunse și la rezultat. [Contractul interfeței](../../holdem-android/README.md) · [Criteriile mâinii interactive](../feedback/J6-UI-01-INTERACTIVE-TABLE.md)
+
+Turneul local pornește la 4–6 locuri. La fiecare plată, stivele decid cine continuă și ce locuri sunt eliminate. Locul uman rămâne fix când se schimbă dealerul sau masa ajunge heads-up. Jucătorul vede decontarea ultimei mâini și poate deschide rezultatul parcursului său, fie victorie, fie eliminare. [Criteriile turneului](../feedback/J6-UI-03-TOURNAMENT-SANITY.md)
 
 ## P2 — îmbunătățire AI
 

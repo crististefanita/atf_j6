@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "release": {
+    "versionName": "0.1.0",
+    "versionCode": 3,
+    "applicationId": "ro.atf.holdem.android",
+    "minSdk": 26,
+    "targetSdk": 36,
+    "apkName": "HoldemLab-0.1.0.apk",
+    "apkBytes": null,
+    "sha256": null,
+    "certificateSha256": null,
+    "debuggable": null
+  },
+  "publication": {
+    "state": "DRAFT",
+    "sourceCommit": null,
+    "evidenceCommit": null,
+    "tag": null,
+    "releaseId": null,
+    "publishedAt": null
+  },
+  "qualification": {
+    "status": "NOT_QUALIFIED",
+    "tests": 0,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "details": {
+      "maven": "pending clean pinned-source qualification",
+      "androidJvm": "pending clean pinned-source qualification",
+      "releaseInstallSmoke": "pending",
+      "nativeTournamentSanity": "pending current source qualification"
+    }
+  },
+  "integrity": {
+    "files": []
+  }
+}

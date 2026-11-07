@@ -1,0 +1,15 @@
+schemaVersion: 1
+levelSeconds: 36
+startingStack: 280
+seatCounts: [4, 5, 6]
+levels:
+  - {smallBlind: 10, bigBlind: 20, minimumOpen: 25}
+  - {smallBlind: 15, bigBlind: 30, minimumOpen: 40}
+  - {smallBlind: 25, bigBlind: 50, minimumOpen: 65}
+  - {smallBlind: 40, bigBlind: 80, minimumOpen: 100}
+  - {smallBlind: 60, bigBlind: 120, minimumOpen: 150}
+  - {smallBlind: 100, bigBlind: 200, minimumOpen: 250}
+  - {smallBlind: 150, bigBlind: 300, minimumOpen: 375}
+  - {smallBlind: 250, bigBlind: 500, minimumOpen: 625}
+  - {smallBlind: 400, bigBlind: 800, minimumOpen: 1000}
+  - {smallBlind: 800, bigBlind: 1600, minimumOpen: 2000}

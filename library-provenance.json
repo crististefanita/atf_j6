@@ -47,6 +47,23 @@
             "REPORT-SINGLE-ACTIVE-VIEW: the wider cross-view accessibility criterion remains separate; the Fails native-host collision is fixed",
             "Consumer sanity qualifies shared-session Extent/fallback contracts; physical Android/Kafka/ASR execution is not inferred"
           ]
+        },
+        "currentAcceptance": {
+          "browserLifecycleRegression": {
+            "owner": "atf_j0",
+            "sameBinary": true,
+            "status": "VERIFIED_SCOPED",
+            "nativeAcceptance": "Owned Windows Chromium and driver exit verified on source and physical JAR",
+            "canonicalAcceptance": "OPEN: REPORT-BROWSER-LIFECYCLE-154",
+            "currentVerification": "C:/Users/Cristi/AppData/Local/Temp/ATF_BROWSER_NATIVE_ACTIVE_DO_NOT_CLEAN_d9ef240b/report-browser-native-155-acceptance.json",
+            "junitDiscovery": {
+              "status": "VERIFIED",
+              "sourceControls": 21,
+              "jarControls": 21
+            },
+            "consumerSanity": "C:/Users/Cristi/AppData/Local/Temp/ATF_BROWSER_NATIVE_ACTIVE_DO_NOT_CLEAN_d9ef240b/live-smoke-j6.log",
+            "documentationSha256": "2c04eca0b4af45c666e9b17d1d16b084311c55be81f73ace773fd0c74ca4819a"
+          }
         }
       }
     }

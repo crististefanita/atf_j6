@@ -58,7 +58,7 @@ public static void publish(AssertionAuditRun run, String actual) {
 - Kit colectează comparația JUnit evaluată o dată; Reporting publică. Callerul păstrează verdictul, cauza și timing-ul prin phase(..., timing).
 - PNG-ul păstrează întregul viewport/display; captura și zoom-ul aparțin adaptorului. Capturile identice din același pas păstrează o singură dovadă și primul caption.
 - După close, ReportArtifactInspector.inspect(path, profile) califică inventarul și resursele embedded; diagnosticul localizează dependențele externe. Căile text rămân valide. Inspectorul este static; randarea și interacțiunile se verifică separat în browser.
-- Browserul aparține callerului: termene distincte pentru setup/cleanup, context înaintea browserului și cauza inițială păstrată împreună cu erorile de cleanup.
+- Browserul aparține callerului: separați diagnosticul de discovery JUnit de execuție, închideți contextul înaintea browserului și păstrați cauza inițială la cleanup.
 
 Durata HTTP provine din `ReportResponse.duration()`; `detail(...)` păstrează textul callerului, fără să îl transforme într-o măsurătoare de transport.
 

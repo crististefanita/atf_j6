@@ -7,7 +7,7 @@ public final class HandRank {
 
     /** Higher scores win. Suits never break ties. */
     public static int bestOf(List<Card> cards) {
-        if (cards.size() < 5 || cards.size() > 7 || Set.copyOf(cards).size() != cards.size())
+        if (cards.size() < 5 || cards.size() > 7 || new HashSet<>(cards).size() != cards.size())
             throw new IllegalArgumentException("Expected five to seven distinct cards");
         int best = 0;
         int limit = 1 << cards.size();
@@ -49,13 +49,13 @@ public final class HandRank {
             if ((mask & run) == run) { straight = high; break; }
         }
         if (flush && straight > 0) return pack(8, List.of(straight));
-        if (four > 0) return pack(7, List.of(four, singles.getFirst()));
-        if (triple > 0 && !pairs.isEmpty()) return pack(6, List.of(triple, pairs.getFirst()));
+        if (four > 0) return pack(7, List.of(four, singles.get(0)));
+        if (triple > 0 && !pairs.isEmpty()) return pack(6, List.of(triple, pairs.get(0)));
         if (flush) return pack(5, singles);
         if (straight > 0) return pack(4, List.of(straight));
-        if (triple > 0) { singles.addFirst(triple); return pack(3, singles); }
-        if (pairs.size() == 2) return pack(2, List.of(pairs.get(0), pairs.get(1), singles.getFirst()));
-        if (pairs.size() == 1) { singles.addFirst(pairs.getFirst()); return pack(1, singles); }
+        if (triple > 0) { singles.add(0, triple); return pack(3, singles); }
+        if (pairs.size() == 2) return pack(2, List.of(pairs.get(0), pairs.get(1), singles.get(0)));
+        if (pairs.size() == 1) { singles.add(0, pairs.get(0)); return pack(1, singles); }
         return pack(0, singles);
     }
 

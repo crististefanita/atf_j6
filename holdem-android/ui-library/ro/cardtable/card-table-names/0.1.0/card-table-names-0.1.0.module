@@ -1,0 +1,80 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "ro.cardtable",
+    "module": "card-table-names",
+    "version": "0.1.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "card-table-names-0.1.0.jar",
+          "url": "card-table-names-0.1.0.jar",
+          "size": 2814,
+          "sha512": "407f5d10a2ca110fb3d09b758bec1a399c0477ee7f7f1ec91416d14823595542927a802784372032eef50a2a31a3eebea3df04455d68f0dd57e6ff81c566a6bc",
+          "sha256": "1706c80fcc5c8cfdd95e03e78eb4902044e6aaa66ac4f572d34120582091d137",
+          "sha1": "cecd56f3484f2460816534e3527a92d45be3142b",
+          "md5": "00c030171b3a7a2da20148fe86a86f71"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "card-table-names-0.1.0.jar",
+          "url": "card-table-names-0.1.0.jar",
+          "size": 2814,
+          "sha512": "407f5d10a2ca110fb3d09b758bec1a399c0477ee7f7f1ec91416d14823595542927a802784372032eef50a2a31a3eebea3df04455d68f0dd57e6ff81c566a6bc",
+          "sha256": "1706c80fcc5c8cfdd95e03e78eb4902044e6aaa66ac4f572d34120582091d137",
+          "sha1": "cecd56f3484f2460816534e3527a92d45be3142b",
+          "md5": "00c030171b3a7a2da20148fe86a86f71"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "card-table-names-0.1.0-sources.jar",
+          "url": "card-table-names-0.1.0-sources.jar",
+          "size": 1570,
+          "sha512": "e96a04b55500d23d762d5a4a043ac9cc0a014d0626dac583a77e14440711d81fba6d2d561989b736e4a98b96b10df25ec870c7df6937f47bf36919326434bf02",
+          "sha256": "92a5fb18ad5e183f89a09392b177803b0b42227f83cf5a278012760291d3c030",
+          "sha1": "1525e3ec58beb6a81213bf484a92a0534f738528",
+          "md5": "3d73d985268e4ef9ab9636da58b89f9b"
+        }
+      ]
+    }
+  ]
+}

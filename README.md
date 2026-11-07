@@ -2,7 +2,9 @@
 
 ATF J6 este laboratorul JVM pentru un sistem local de No-Limit Texas Hold'em: motor de reguli, AI, arena de simulare, aplicație de consolă și adaptor online pentru platforme care acceptă explicit boți.
 
-Prima versiune nu este un bot pentru site-uri comerciale cu bani reali. Este un nucleu verificabil care poate fi antrenat și evaluat local, apoi conectat explicit la o arenă autorizată precum Open Poker. Nu există Android în prima fază.
+Nucleul se antrenează și se evaluează local. Adaptorul online vizează numai arene care autorizează explicit boții, precum Open Poker. Android oferă o mână de antrenament sau un turneu offline cu eliminări, pe componentele comune Whist și Rentz. [Interfața Android](holdem-android/README.md)
+
+Catalogul Android este în [`release/`](release/README.md). Ediția `0.1.0` rămâne `DRAFT` până la calificarea sursei și construirea APK-ului semnat pentru distribuție.
 
 ## Obiectivul primei faze
 
@@ -14,17 +16,18 @@ stare Hold'em -> observație publică -> politică AI -> acțiune legală
       |------------- motor + replay ----------------|
 ```
 
-Vertical slice-ul actual demonstrează contractul dintre aplicație și AI. Motorul complet de reguli, evaluatorul de mâini și simularea multi-jucător sunt cerințe de implementare următoare și sunt descrise în documentație; nu sunt declarate finalizate doar pentru că proiectul se compilează.
+Motorul local implementează distribuirea, acțiunile legale, evaluarea mâinii, decontarea poturilor, turneele de 4–6 locuri și mesele cash cu blind-uri fixe. AI-ul are baseline-uri și un candidat Monte Carlo care estimează cota potului din cărțile vizibile și cărți ascunse eșantionate. Contextul ajustează pragurile, însă range-urile adversarilor nu sunt încă modelate. Testele de componentă și auditorii independenți verifică regulile și sesiunile fără UI; rezultatele offline nu califică singure o strategie de nivel profesionist.
 
 ## Module
 
 | Modul | Rol |
 |---|---|
 | `holdem-core` | Cărți, străzi, acțiuni legale și observația actorului; fără Android, rețea sau AI. |
-| `holdem-ai` | Porturi de politică și baseline deterministic; ulterior equity, range-uri și MCCFR. |
-| `holdem-arena` | Contractul pentru jocuri locale, seed-uri, replay și evaluare. |
+| `holdem-ai` | Baseline-uri și estimator Monte Carlo reproductibil, cu pot odds și ponderi de context din YAML. |
+| `holdem-arena` | Turnee cu blind-uri progresive, mese cash cu blind-uri fixe, seed-uri și jurnale verificabile. |
 | `holdem-online` | Transport/adaptor pentru protocoale autorizate; prima țintă este Open Poker WebSocket V2. |
 | `holdem-app` | Aplicație de consolă pentru smoke-run local și comenzi viitoare de simulare. |
+| [`holdem-android`](holdem-android/README.md) | Meniu, profil, mână de antrenament și turneu la 4–6 locuri până la victorie sau eliminare. Gradle compilează sursele aceluiași motor. |
 
 ## Biblioteci comune
 
@@ -37,10 +40,13 @@ J6 consumă Core, Reporting, Console, Mock și Test Kit ca JAR/POM direct în [l
 - [Cerințe generale](docs/requirements/README.md)
 - [Cerințe de produs](docs/requirements/PRODUCT_REQUIREMENTS.md)
 - [Cerințe de domeniu Hold'em](docs/requirements/DOMAIN_REQUIREMENTS.md)
+- [Reguli și simulare de turneu](docs/requirements/TOURNAMENT_RULES.md)
 - [Cerințe AI și evaluare](docs/requirements/AI_REQUIREMENTS.md)
 - [Cerințe online și siguranță](docs/requirements/ONLINE_REQUIREMENTS.md)
 - [Arhitectură](docs/architecture/ARCHITECTURE.md)
 - [Strategie de testare](docs/testing/TEST_STRATEGY.md)
+- [Procesul de release Android](docs/release/ATF_Release.md)
+- [Feedback](docs/feedback/README.md)
 
 ## Construire locală
 
@@ -113,6 +119,6 @@ Conectarea, `join_lobby` și trimiterea acțiunilor vor fi comenzi separate, cu 
 
 ## Starea proiectului
 
-Implementat în această bază: structură multi-modul, modele de bază, port de politică, baseline local și documentație de cerințe.
+Implementat în această bază: structură multi-modul, motor local No-Limit Hold'em, evaluator de 7 cărți, poturi secundare, creșteri all-in și redeschidere cumulativă, turnee reproducibile de 4–6 locuri, baseline-uri AI, explorare de bluff configurabilă și verificări independente pe jurnale.
 
-Neimplementat încă: evaluator complet 7-card, toate tranzițiile Hold'em, poturi secundare, simulare multi-seat, range engine, MCCFR, persistent replay și client online complet.
+În lucru: calibrarea equity-ului la range-urile adversarilor, căutarea prin rollout, MCCFR/self-play, replay persistent între sesiuni și client online complet. Equity-ul curent pornește de la cărți adverse aleatoare și ponderi explicite de context; politica de bluff rămâne un amestec determinist de laborator, nu un model exploatativ calibrat.

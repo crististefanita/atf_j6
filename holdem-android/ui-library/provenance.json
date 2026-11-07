@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "coordinate": "ro.cardtable:card-table-ui:0.1.6",
+  "namesCoordinate": "ro.cardtable:card-table-names:0.1.0",
+  "producer": "atf_j4",
+  "qualification": "C:/work/whist_back/ui-extraction/restart-collection-j4/handoff.json",
+  "files": [
+    {
+      "sha256": "ab1c5d1f9754a9b4b19d02bb2619c8074450864bccffe535de85def4b43737e9",
+      "path": "ro/cardtable/card-table-ui/0.1.6/card-table-ui-0.1.6.aar"
+    },
+    {
+      "sha256": "862dc42fb2b8f439b0a1d2304992b9d719b250d68eb817d0d59fcf33e23c82a5",
+      "path": "ro/cardtable/card-table-ui/0.1.6/card-table-ui-0.1.6.pom"
+    },
+    {
+      "sha256": "41676de349e02392041557fbc1baaf964501235e432d5aa719574f01075eb83b",
+      "path": "ro/cardtable/card-table-ui/0.1.6/card-table-ui-0.1.6.module"
+    },
+    {
+      "sha256": "ca1be8ef831bd31a0c461f6684ea4d4937eaf68f131c33b058071411cfe6f857",
+      "path": "ro/cardtable/card-table-ui/0.1.6/card-table-ui-0.1.6-sources.jar"
+    },
+    {
+      "path": "ro/cardtable/card-table-names/0.1.0/card-table-names-0.1.0.jar",
+      "sha256": "1706c80fcc5c8cfdd95e03e78eb4902044e6aaa66ac4f572d34120582091d137"
+    },
+    {
+      "path": "ro/cardtable/card-table-names/0.1.0/card-table-names-0.1.0.pom",
+      "sha256": "af9467211a33abf3b0aa1035b5f2b9d920580a32fe197f27b186e537a5a08eeb"
+    },
+    {
+      "path": "ro/cardtable/card-table-names/0.1.0/card-table-names-0.1.0.module",
+      "sha256": "09b9987de3b49b8a3aee5f180326dc056a8e11f815be314a3eccb16278229ffb"
+    },
+    {
+      "path": "ro/cardtable/card-table-names/0.1.0/card-table-names-0.1.0-sources.jar",
+      "sha256": "92a5fb18ad5e183f89a09392b177803b0b42227f83cf5a278012760291d3c030"
+    }
+  ]
+}

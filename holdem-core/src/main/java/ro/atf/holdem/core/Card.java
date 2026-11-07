@@ -34,4 +34,23 @@ public record Card(Rank rank, Suit suit) {
         };
         return rankLabel + suitLabel;
     }
+
+    public static Card fromLabel(String label) {
+        Objects.requireNonNull(label, "label");
+        if (label.length() != 2) throw new IllegalArgumentException("Card label must have two characters");
+        Rank rank = switch (Character.toUpperCase(label.charAt(0))) {
+            case '2' -> Rank.TWO; case '3' -> Rank.THREE; case '4' -> Rank.FOUR;
+            case '5' -> Rank.FIVE; case '6' -> Rank.SIX; case '7' -> Rank.SEVEN;
+            case '8' -> Rank.EIGHT; case '9' -> Rank.NINE; case 'T' -> Rank.TEN;
+            case 'J' -> Rank.JACK; case 'Q' -> Rank.QUEEN; case 'K' -> Rank.KING;
+            case 'A' -> Rank.ACE;
+            default -> throw new IllegalArgumentException("Unknown card rank: " + label.charAt(0));
+        };
+        Suit suit = switch (Character.toLowerCase(label.charAt(1))) {
+            case 'c' -> Suit.CLUBS; case 'd' -> Suit.DIAMONDS;
+            case 'h' -> Suit.HEARTS; case 's' -> Suit.SPADES;
+            default -> throw new IllegalArgumentException("Unknown card suit: " + label.charAt(1));
+        };
+        return new Card(rank, suit);
+    }
 }

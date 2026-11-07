@@ -1,0 +1,5 @@
+plugins { id 'java-library' }
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+tasks.withType(JavaCompile).configureEach { options.release = 17 }
+sourceSets.main.java.srcDir(rootProject.file('../holdem-core/src/main/java'))

@@ -1,0 +1,33 @@
+schemaVersion: 1
+bluff:
+  frequencyPercent: 18
+  latePositionWindow: 2
+looseAggressive:
+  openFrequencyPercent: 65
+  raiseFrequencyPercent: 35
+  maxCallPotPercent: 50
+  betPotPercent: 0
+  latePositionAdjustmentPercent: 10
+equityDecision:
+  samples: 256
+  cashCallMarginPercent: 2
+  tournamentCallMarginPercent: 8
+  raiseEdgePercent: 18
+  valueBetThresholdPercent: 60
+  contextWeights:
+    extraOpponentCallMargin: 3
+    opponentAggressionCallMargin: 3
+    raiseMarginPerExtraOpponent: 2
+    extraOpponentValueBetMargin: 5
+    earlyPositionCallMargin: 2
+    latePositionCallDiscount: 2
+    earlyPositionValueBetMargin: 3
+    latePositionValueBetDiscount: 3
+    opponentAggressionValueBetMargin: 2
+    tournamentValueBetMargin: 2
+    uncertaintyZHundredths: 164
+    largeBetCallMargin: 3
+    opponentAllInCallMargin: 6
+    tournamentEliminationRiskMargin: 8
+    tournamentShortStackCallDiscount: 5
+    tournamentCommitmentThresholdPercent: 75

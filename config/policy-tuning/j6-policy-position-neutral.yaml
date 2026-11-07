@@ -1,0 +1,48 @@
+schemaVersion: 1
+project: atf-j6-holdem-lab
+domain: no-limit-texas-holdem
+runtime: jvm-21
+mobile: excluded-from-phase-1
+online:
+  supportedMode: explicitly-authorized-bot-platform-only
+  defaultAdapter: open-poker-websocket-v2
+  realMoneyAutomation: prohibited
+secrets:
+  source: environment-or-os-credential-store
+  sourceControl: forbidden
+evaluation:
+  publicDecisionInput: actor-observation-only
+  hiddenOpponentCardsInPolicy: forbidden
+  required: [seed, policyVersion, replay, independent-legality-check]
+bluff:
+  frequencyPercent: 18
+  latePositionWindow: 2
+looseAggressive:
+  openFrequencyPercent: 45
+  raiseFrequencyPercent: 20
+  maxCallPotPercent: 35
+  betPotPercent: 0
+  latePositionAdjustmentPercent: 0
+equityDecision:
+  samples: 256
+  cashCallMarginPercent: 2
+  tournamentCallMarginPercent: 8
+  raiseEdgePercent: 18
+  valueBetThresholdPercent: 60
+  contextWeights:
+    extraOpponentCallMargin: 3
+    opponentAggressionCallMargin: 3
+    raiseMarginPerExtraOpponent: 2
+    extraOpponentValueBetMargin: 5
+    earlyPositionCallMargin: 2
+    latePositionCallDiscount: 2
+    earlyPositionValueBetMargin: 3
+    latePositionValueBetDiscount: 3
+    opponentAggressionValueBetMargin: 2
+    tournamentValueBetMargin: 2
+    uncertaintyZHundredths: 164
+    largeBetCallMargin: 3
+    opponentAllInCallMargin: 6
+    tournamentEliminationRiskMargin: 8
+    tournamentShortStackCallDiscount: 5
+    tournamentCommitmentThresholdPercent: 75

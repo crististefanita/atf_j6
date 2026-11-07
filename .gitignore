@@ -5,4 +5,7 @@ build-check/
 *.log
 *.replay.json
 secrets/
+/infrastructure/signing/
+/release/**/*.apk
+/release/**/*.apk.sha256
 

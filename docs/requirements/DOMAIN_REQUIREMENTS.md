@@ -64,3 +64,5 @@ Politica primește doar informația pe care un jucător real o poate vedea:
 - acțiunile legale.
 
 Mâinile private ale adversarilor, deck-ul complet și seed-ul dealerului sunt interzise în API-ul deciziei.
+
+[Profilul de turneu și verificarea offline](TOURNAMENT_RULES.md) descriu nivelurile, eliminările și convenția sumelor folosite de motor.

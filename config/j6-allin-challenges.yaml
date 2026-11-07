@@ -1,0 +1,35 @@
+schemaVersion: 1
+challenges:
+  - id: cumulative-short-all-ins-tied-odd-side-pots
+    button: 0
+    stacks: [25, 30, 80, 80, 15, 20]
+    blinds: {small: 5, big: 10, minimumOpen: 10}
+    # First 12 cards are dealt clockwise in two rounds. Positions 12, 16 and 18 burn;
+    # 13-15, 17 and 19 form Kc Qd Jh 9s 8h; positions 12, 16 and 18 burn.
+    deckPrefix: [9c, 9h, 2c, 3c, 4c, 5c, 4d, 5d, 2d, 3d, 4h, 5h, 6c, Kc, Qd, Jh, 6d, 9s, 7c, 8h]
+    reopenBeforeAction: 6
+    reopenActor: 3
+    minimumRaise: 30
+    actions:
+      - {seat: 3, type: CALL, amount: 10}
+      - {seat: 4, type: ALL_IN, amount: 15}
+      - {seat: 5, type: ALL_IN, amount: 20}
+      - {seat: 0, type: ALL_IN, amount: 25}
+      - {seat: 1, type: ALL_IN, amount: 25}
+      - {seat: 2, type: CALL, amount: 20}
+      - {seat: 3, type: RAISE, amount: 30}
+      - {seat: 2, type: CALL, amount: 10}
+      - {seat: 2, type: CHECK, amount: 0}
+      - {seat: 3, type: CHECK, amount: 0}
+      - {seat: 2, type: CHECK, amount: 0}
+      - {seat: 3, type: CHECK, amount: 0}
+      - {seat: 2, type: CHECK, amount: 0}
+      - {seat: 3, type: CHECK, amount: 0}
+    expectedStacks: [0, 76, 134, 40, 0, 0]
+    expectedSettlement:
+      - "POT cap=15 amount=90 eligible=[1, 2, 3, 4, 5, 0] winners=[1, 2]"
+      - "POT cap=20 amount=25 eligible=[1, 2, 3, 5, 0] winners=[1, 2]"
+      - "POT cap=25 amount=20 eligible=[1, 2, 3, 0] winners=[1, 2]"
+      - "POT cap=30 amount=15 eligible=[1, 2, 3] winners=[1, 2]"
+      - "POT cap=40 amount=20 eligible=[2, 3] winners=[2]"
+      - "SHOWDOWN [0, 76, 94, 0, 0, 0]"

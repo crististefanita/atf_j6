@@ -1,5 +1,6 @@
 # Note de versiune 0.1.0
 
-- Ediția inițială Android J6: meniul și masa folosesc UI-ul comun J4/J5.
-- Include mâna locală și turneul offline cu eliminări, joc heads-up și ecran final de victorie sau eliminare.
-- Versiunea este `0.1.0`; numele APK-ului planificat este `HoldemLab-0.1.0.apk`.
+- Prima ediție Android J6 pentru No-Limit Texas Hold’em offline.
+- Antrenament și turneu local cu eliminări pentru 4–6 locuri.
+- Meniu, masă și cărți reutilizează UI-ul comun J4/J5; motorul și regulile rămân specifice Hold’em.
+- APK semnat Release, fără build Debug în pachetul de distribuție.

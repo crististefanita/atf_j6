@@ -2,7 +2,7 @@
 
 ## Candidat curent
 
-- [0.1.0 — APK local și calificare](0.1.0/README.md)
-- Stare: `DRAFT` — metadate și proces inspectabile; APK-ul de distribuție nu este încă calificat.
+- [0.1.0 — APK calificat local](0.1.0/README.md)
+- Stare: `PREPARED` — sursa, APK-ul semnat, testele, rapoartele și hash-urile au trecut. Asset-ul GitHub și descărcarea anonimă completă sunt pașii rămași.
 
-Păstrăm în fiecare versiune APK-ul, checksum-ul, notele concise și rapoartele Extent relevante după calificare. `PREPARED` cere sursă fixată, gate-urile proiectului, semnare Release și integritate; `PUBLISHED` cere asset GitHub și verificarea descărcării complete. Un link public apare numai în ultima stare.
+Fiecare versiune păstrează APK-ul, checksum-ul, notele, calificarea și rapoartele Extent relevante. Linkul public apare numai după verificarea descărcării complete, fără autentificare.

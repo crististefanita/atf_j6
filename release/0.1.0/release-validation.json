@@ -7,33 +7,93 @@
     "minSdk": 26,
     "targetSdk": 36,
     "apkName": "HoldemLab-0.1.0.apk",
-    "apkBytes": null,
-    "sha256": null,
-    "certificateSha256": null,
-    "debuggable": null
+    "apkBytes": 722172,
+    "sha256": "646a6d5814534986923eff68a0d4172a38462166e4e64ff45ae9cacfed55a03f",
+    "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
+    "debuggable": false
   },
   "publication": {
-    "state": "DRAFT",
-    "sourceCommit": null,
+    "state": "PREPARED",
+    "sourceCommit": "c4778a45751a5f579820c039e93d5997deb5800a",
     "evidenceCommit": null,
-    "tag": null,
+    "tag": "v0.1.0",
     "releaseId": null,
     "publishedAt": null
   },
   "qualification": {
-    "status": "NOT_QUALIFIED",
-    "tests": 0,
+    "status": "PASS",
+    "tests": 88,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
     "details": {
-      "maven": "pending clean pinned-source qualification",
-      "androidJvm": "pending clean pinned-source qualification",
-      "releaseInstallSmoke": "pending",
-      "nativeTournamentSanity": "pending current source qualification"
+      "maven": "13 suites / 76 tests",
+      "androidJvm": "2 suites / 12 tests",
+      "lint": "PASS, zero warnings",
+      "releaseInstallSmoke": "PASS, API 28, 7 assertions / 2 screenshots",
+      "nativeTournamentSanity": "PASS, API 28, 41 assertions / 5 screenshots",
+      "preparedPackageGovernance": "PASS, 13 suites / 76 tests, zero failures, errors, or skips",
+      "sourceRunRoot": "C:\\work\\holdem_back\\release-runs\\j6-0.1.0-final-20261107-c4778a4",
+      "preparedPackageReportDirectory": "C:\\work\\holdem_back\\release-runs\\j6-prepared-package-final-20261108\\reports\\maven"
     }
   },
   "integrity": {
-    "files": []
+    "files": [
+      {
+        "path": "HoldemLab-0.1.0.apk",
+        "bytes": 722172,
+        "sha256": "646a6d5814534986923eff68a0d4172a38462166e4e64ff45ae9cacfed55a03f"
+      },
+      {
+        "path": "HoldemLab-0.1.0.apk.sha256",
+        "bytes": 86,
+        "sha256": "473a453195c3214794a75961f5d879de3cd2f32e51b82b924e441ed6ef14c59c"
+      },
+      {
+        "path": "README.md",
+        "bytes": 1052,
+        "sha256": "3c1e64990a94569f43a45dab78acfc9f914bad8772a13f80d53303924a4bb206"
+      },
+      {
+        "path": "release-notes.md",
+        "bytes": 341,
+        "sha256": "3b9623356baa42b8d9951760d5c584f4abf4b95cfe7e4d0b22360492763f5ec9"
+      },
+      {
+        "path": "qualification.json",
+        "bytes": 3533,
+        "sha256": "33ddfca29b0ef6603e3f093931eb28f80445f8596a72a7b9c2d5fa8b81437fc8"
+      },
+      {
+        "path": "reports/README.md",
+        "bytes": 1630,
+        "sha256": "4ec18ae2598785260f12030c680ae9bc72abdb85167cc28ae64477dc8372670d"
+      },
+      {
+        "path": "reports/android-release-smoke-extent.html",
+        "bytes": 2591181,
+        "sha256": "e28dc5f4a6d1d37b4fbfccfe42eb98a1f25d6fa172d449a40b3bdd36ca693197"
+      },
+      {
+        "path": "reports/android-tournament-extent.html",
+        "bytes": 3073845,
+        "sha256": "8b0db3b7c7afb1204c57ce6b1bf2b1c25892314de4a8e43da36d6810cd013536"
+      },
+      {
+        "path": "reports/j6-library-component.html",
+        "bytes": 2411344,
+        "sha256": "b820b300ed2517524772cc4c923bdc4bffa37d7325a997b51e97e3f6ba0b2923"
+      },
+      {
+        "path": "reports/J6ReleaseDownloadRouteGovernance.html",
+        "bytes": 2411849,
+        "sha256": "b529584e541fab9c376c9da8bfdefaaf0486552c4ddcda58b55c6c3c724d5018"
+      },
+      {
+        "path": "reports/J6ReleaseGovernance.html",
+        "bytes": 2413378,
+        "sha256": "c3ce648f7f0911f8d54053946f967f2fa3d83e8b79aaf5b63ec1ffbca35d2a39"
+      }
+    ]
   }
 }

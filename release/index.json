@@ -2,7 +2,9 @@
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
   "currentVersion": "0.1.0",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
-  "versions": ["0.1.0"]
+  "versions": [
+    "0.1.0"
+  ]
 }

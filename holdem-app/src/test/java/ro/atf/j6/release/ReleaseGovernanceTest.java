@@ -155,7 +155,8 @@ class ReleaseGovernanceTest {
         } else {
             byte[] bytes = Files.readAllBytes(apk);
             String digest = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
-            add(checks, "Prepared APK has bytes", "positive size", bytes.length > 0 ? Integer.toString(bytes.length) : "empty");
+            checks.add(new AtfAssertion("Prepared APK has bytes", "positive size", Integer.toString(bytes.length),
+                    bytes.length > 0));
             add(checks, "Manifest APK size matches", Integer.toString(bytes.length), Long.toString(identity.path("apkBytes").asLong(-1)));
             add(checks, "Manifest APK SHA-256 matches", digest, identity.path("sha256").asText());
             add(checks, "Release APK is not debuggable", "false", identity.path("debuggable").asText());

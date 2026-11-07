@@ -2,7 +2,8 @@ param(
     [string]$OutputRoot,
     [long]$FirstSeed = 93000,
     [int]$SeedsPerSeatCount = 4,
-    [string[]]$ProfileNames = @('standard', 'stress')
+    [string[]]$ProfileNames = @('standard', 'stress'),
+    [switch]$Append
 )
 
 $ErrorActionPreference = 'Stop'
@@ -15,25 +16,30 @@ $ProjectPrefix = $ProjectRoot.TrimEnd('\') + '\'
 if ($OutputRoot.StartsWith($ProjectPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw "Evaluation output must stay outside the source tree: $OutputRoot"
 }
-if (Test-Path -LiteralPath $OutputRoot) { throw "Refusing to overwrite existing evidence directory: $OutputRoot" }
 if ($SeedsPerSeatCount -lt 1) { throw 'SeedsPerSeatCount must be positive' }
 if ($FirstSeed -gt [long]::MaxValue - [long]($SeedsPerSeatCount - 1)) { throw 'Seed range exceeds Int64' }
 $Profiles = @(
     @{ Name = 'standard'; Path = 'config/j6-tournaments.yaml' },
     @{ Name = 'stress'; Path = 'config/j6-tournaments-stress.yaml' }
 )
+$ProfileNames = @($ProfileNames | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 $unknown = @($ProfileNames | Where-Object { $_ -notin $Profiles.Name })
 if ($unknown.Count -gt 0) { throw "Unknown profile name(s): $($unknown -join ', ')" }
 $Profiles = @($Profiles | Where-Object { $_.Name -in $ProfileNames })
 if ($Profiles.Count -eq 0) { throw 'Select at least one profile' }
-New-Item -ItemType Directory -Path $OutputRoot | Out-Null
+if (Test-Path -LiteralPath $OutputRoot) {
+    if (-not $Append) { throw "Refusing to overwrite existing evidence directory: $OutputRoot" }
+} else {
+    if ($Append) { throw "Append requires an existing evidence directory: $OutputRoot" }
+    New-Item -ItemType Directory -Path $OutputRoot | Out-Null
+}
 
 $ClassPath = 'holdem-core\target\classes;holdem-ai\target\classes;holdem-arena\target\classes;C:\work\holdem_back\maven-cache\org\yaml\snakeyaml\2.2\snakeyaml-2.2.jar'
 $Lineup = 'config/j6-strategy-lineups.yaml'
 $Index = [System.Collections.Generic.List[string]]::new()
 $Index.Add('# Turnee offline cu rotație strategie–loc–buton')
 $Index.Add('')
-$Index.Add(('Seeds: {0}-{1}; profiles: {2}; tables: 4-6 seats.' -f $FirstSeed, ($FirstSeed + $SeedsPerSeatCount - 1), ($Profiles.Name -join ', ')))
+$Index.Add(('Seeds: {0}-{1}; selected profiles: {2}; tables: 4-6 seats.' -f $FirstSeed, ($FirstSeed + $SeedsPerSeatCount - 1), ($Profiles.Name -join ', ')))
 $Index.Add('For each profile, seat count, seed, and button offset, run every strategy-role rotation. Within one seed and button group, all role rotations share the same deal-seed prefix; only policy-to-seat assignment changes.')
 $Index.Add('Button rotations are repeated measurements of a seed, not independent statistical samples. Outcomes remain exploratory until validated on more independent seeds and with calibrated EV.')
 $Index.Add('')
@@ -50,16 +56,27 @@ try {
                     New-Item -ItemType Directory -Force -Path $Directory | Out-Null
                     $Name = "seed$FirstSeed-count$SeedsPerSeatCount-p$PolicyOffset-b$ButtonOffset.trace"
                     $Trace = Join-Path $Directory $Name
+                    if (Test-Path -LiteralPath $Trace) { throw "Refusing to overwrite tournament trace: $Trace" }
                     & java -cp $ClassPath ro.atf.holdem.arena.TournamentStrategyArena $Profile.Path $Lineup $Trace `
                         $SeedsPerSeatCount $FirstSeed $PolicyOffset $Seats $ButtonOffset
                     if ($LASTEXITCODE -ne 0) { throw "Strategy tournament failed: $($Profile.Name), $Seats seats, policy $PolicyOffset, button $ButtonOffset" }
                     $Audit = & node scripts/audit-tournament.cjs $Trace --require-layers
                     if ($LASTEXITCODE -ne 0) { throw "Independent tournament audit failed: $Trace" }
                     $Audit | Set-Content -Encoding utf8 ($Trace + '.audit.json')
-                    $Index.Add("| $($Profile.Name) | $Seats | $SeedsPerSeatCount × $Seats² | ``$($Profile.Name)/s$Seats/$Name`` |")
                 }
             }
         }
+    }
+    $TraceFiles = Get-ChildItem -LiteralPath $OutputRoot -Recurse -Filter '*.trace' | Where-Object { $_.Name -notlike '*.audit.json' }
+    $EvidenceProfiles = @(Get-ChildItem -LiteralPath $OutputRoot -Directory | Select-Object -ExpandProperty Name)
+    $Index[2] = ('Seeds: {0}-{1}; included profiles: {2}; tables: 4-6 seats.' -f $FirstSeed,
+        ($FirstSeed + $SeedsPerSeatCount - 1), ($EvidenceProfiles -join ', '))
+    foreach ($TraceFile in $TraceFiles) {
+        $Relative = $TraceFile.FullName.Substring($OutputRoot.TrimEnd('\').Length + 1)
+        $Parts = $Relative -split '[\\/]'
+        if ($Parts.Count -ne 3) { throw "Unexpected evidence trace path: $Relative" }
+        $Seats = [int]($Parts[1] -replace '^s', '')
+        $Index.Add("| $($Parts[0]) | $Seats | $SeedsPerSeatCount x $($Seats * $Seats) | ``$Relative`` |")
     }
     $Index | Set-Content -Encoding utf8 (Join-Path $OutputRoot 'README.md')
     $SummaryText = & node scripts/summarize-strategy-rotation-tournaments.cjs $OutputRoot
@@ -110,9 +127,9 @@ try {
         createdUtc = [DateTime]::UtcNow.ToString('o')
         sourceHead = $Head
         sourceDirty = [bool](& git status --porcelain)
-        java = (& java -version 2>&1 | Select-Object -First 1).ToString()
+        java = (cmd /c "java -version 2>&1" | Select-Object -First 1).ToString().Trim()
         methodology = 'offline deterministic seat-policy and button-position rotation; every trace independently audited before aggregation'
-        profiles = $Profiles.Name
+        profiles = $EvidenceProfiles
         firstSeed = $FirstSeed
         seedsPerSeatCount = $SeedsPerSeatCount
         validation = [pscustomobject]@{

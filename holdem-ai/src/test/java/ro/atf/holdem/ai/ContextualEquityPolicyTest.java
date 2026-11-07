@@ -162,6 +162,19 @@ class ContextualEquityPolicyTest {
                 .contains("shoveHistoryMargin=-4"), "Aggressive adjustment respects the negative cap");
     }
 
+    @Test void shoveHistoryUsesPhysicalSeatEvidenceAndAveragesMeasuredCurrentRaisers() {
+        var policy = policy(ContextualEquityPolicy.GameMode.TOURNAMENT);
+        var bothRaisersMeasured = multiOpponentShoveObservation(List.of(
+                new PublicOpponentTendency(1, 3, 3), new PublicOpponentTendency(3, 3, 0)));
+        var oneRaiserMeasured = multiOpponentShoveObservation(List.of(
+                new PublicOpponentTendency(1, 3, 3)));
+
+        assertTrue(policy.decide(bothRaisersMeasured).explanation().contains("shoveHistoryMargin=-1"),
+                "Opposing public tendencies are mapped by physical seat and averaged across measured raisers");
+        assertTrue(policy.decide(oneRaiserMeasured).explanation().contains("shoveHistoryMargin=-3"),
+                "A current raiser without history is excluded instead of treated as a zero-shove sample");
+    }
+
     @Test void historicalShoveUsesTheRemainingStackAtTheRaiseAndHonorsBothProfileBounds() {
         var policy = policy(ContextualEquityPolicy.GameMode.TOURNAMENT);
         var exactlyTwoBigBlinds = shoveHistoryObservation(40, 20, 0);
@@ -243,6 +256,14 @@ class ContextualEquityPolicyTest {
                 base.positionFromButton(), base.visibleStacks(), base.legalActions(), base.publicActionHistory(),
                 base.physicalHeroSeat(), base.bigBlind(), base.visibleContributions(),
                 List.of(new PublicOpponentTendency(1, opportunities, raises)));
+    }
+
+    private static HoldemObservation multiOpponentShoveObservation(List<PublicOpponentTendency> tendencies) {
+        return new HoldemObservation(1, 2, 3, 2, Street.PREFLOP, List.of(card("Ac"), card("Ad")), List.of(),
+                230, 90, 500, 0, List.of(0, 0, 500),
+                List.of(LegalAction.noAmount(ActionType.FOLD), new LegalAction(ActionType.CALL, 90, 90, 90)),
+                List.of("SEATS [1, 3, 4]", "SB 3 10", "BB 4 20", "PREFLOP 1 ALL_IN 100",
+                        "PREFLOP 3 ALL_IN 100"), 4, 20, List.of(100, 110, 20), tendencies);
     }
 
     private static List<String> prependSeats(List<String> history) {

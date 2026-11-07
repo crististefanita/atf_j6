@@ -73,7 +73,14 @@ try {
                     New-Item -ItemType Directory -Force -Path $Directory | Out-Null
                     $Name = "seed$FirstSeed-count$SeedsPerSeatCount-p$PolicyOffset-b$ButtonOffset.trace"
                     $Trace = Join-Path $Directory $Name
-                    if (Test-Path -LiteralPath $Trace) { throw "Refusing to overwrite tournament trace: $Trace" }
+                    if (Test-Path -LiteralPath $Trace) {
+                        if (-not $Append) { throw "Refusing to overwrite tournament trace: $Trace" }
+                        $ExistingAudit = & node scripts/audit-tournament.cjs $Trace --require-layers --require-public-shove-history
+                        if ($LASTEXITCODE -ne 0) { throw "Existing trace cannot be safely resumed: $Trace" }
+                        $ExistingAudit | Set-Content -Encoding utf8 ($Trace + '.audit.json')
+                        Write-Host "Reused and re-audited complete trace: $Trace"
+                        continue
+                    }
                     & java -cp $ClassPath ro.atf.holdem.arena.TournamentStrategyArena $Profile.Path $Lineup $Trace `
                         $SeedsPerSeatCount $FirstSeed $PolicyOffset $Seats $ButtonOffset
                     if ($LASTEXITCODE -ne 0) { throw "Strategy tournament failed: $($Profile.Name), $Seats seats, policy $PolicyOffset, button $ButtonOffset" }
@@ -89,14 +96,33 @@ try {
     $EvidenceSeats = @(Get-ChildItem -LiteralPath $OutputRoot -Directory | ForEach-Object {
         Get-ChildItem -LiteralPath $_.FullName -Directory | Select-Object -ExpandProperty Name
     } | ForEach-Object { [int]($_ -replace '^s', '') } | Sort-Object -Unique)
-    $Index[2] = ('Seeds: {0}-{1}; included profiles: {2}; tables: {3} seats.' -f $FirstSeed,
-        ($FirstSeed + $SeedsPerSeatCount - 1), ($EvidenceProfiles -join ', '), ($EvidenceSeats -join ', '))
+    $SeedBatches = foreach ($TraceFile in $TraceFiles) {
+        if ($TraceFile.Name -notmatch '^seed(-?\d+)-count(\d+)-p\d+-b\d+\.trace$') {
+            throw "Unexpected tournament trace name: $($TraceFile.Name)"
+        }
+        [pscustomobject]@{ firstSeed = [long]$Matches[1]; count = [int]$Matches[2] }
+    }
+    $UniqueSeedBatches = @($SeedBatches | ForEach-Object { '{0}-{1}' -f $_.firstSeed, ($_.firstSeed + $_.count - 1) } | Sort-Object -Unique)
+    $AllSeedIds = [System.Collections.Generic.HashSet[long]]::new()
+    foreach ($Batch in $SeedBatches) {
+        for ($Offset = 0; $Offset -lt $Batch.count; $Offset++) {
+            $null = $AllSeedIds.Add([long]($Batch.firstSeed + $Offset))
+        }
+    }
+    $SortedSeedIds = @($AllSeedIds | Sort-Object)
+    $Index[2] = ('Seeds: {0}-{1} ({2} independent clusters across {3} seed ranges); included profiles: {4}; tables: {5} seats.' -f
+        $SortedSeedIds[0], $SortedSeedIds[-1], $AllSeedIds.Count, ($UniqueSeedBatches -join ', '),
+        ($EvidenceProfiles -join ', '), ($EvidenceSeats -join ', '))
     foreach ($TraceFile in $TraceFiles) {
         $Relative = $TraceFile.FullName.Substring($OutputRoot.TrimEnd('\').Length + 1)
         $Parts = $Relative -split '[\\/]'
         if ($Parts.Count -ne 3) { throw "Unexpected evidence trace path: $Relative" }
+        if ($TraceFile.Name -notmatch '^seed-?\d+-count(\d+)-p\d+-b\d+\.trace$') {
+            throw "Unexpected tournament trace name: $($TraceFile.Name)"
+        }
+        $TraceSeedCount = [int]$Matches[1]
         $Seats = [int]($Parts[1] -replace '^s', '')
-        $Index.Add("| $($Parts[0]) | $Seats | $SeedsPerSeatCount x $($Seats * $Seats) | ``$Relative`` |")
+        $Index.Add("| $($Parts[0]) | $Seats | $TraceSeedCount x $($Seats * $Seats) | ``$Relative`` |")
     }
     $Index | Set-Content -Encoding utf8 (Join-Path $OutputRoot 'README.md')
     $SummaryText = & node scripts/summarize-strategy-rotation-tournaments.cjs $OutputRoot
@@ -168,6 +194,8 @@ try {
         seatCounts = $EvidenceSeats
         firstSeed = $FirstSeed
         seedsPerSeatCount = $SeedsPerSeatCount
+        includedSeedRanges = $UniqueSeedBatches
+        independentSeedClusters = $AllSeedIds.Count
         validation = [pscustomobject]@{
             reportSource = 'Surefire XML produced by the separately recorded Maven qualification run'
             testModules = @('holdem-core', 'holdem-ai', 'holdem-arena')

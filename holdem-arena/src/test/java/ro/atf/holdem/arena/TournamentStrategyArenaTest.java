@@ -62,6 +62,35 @@ class TournamentStrategyArenaTest {
         assertEquals(6, lineup.forSeats(6).size());
     }
 
+    @Test void historyAblationRotatesTwoOtherwiseIdenticalEquityPolicies() throws Exception {
+        var lineup = TournamentStrategyLineups.load(config("j6-strategy-lineups-shove-ablation.yaml"));
+        for (int seats : List.of(4, 5, 6)) {
+            assertTrue(lineup.forSeats(seats).contains("equity-history-control"));
+            assertTrue(lineup.forSeats(seats).contains("equity-history-aware"));
+        }
+        var control = TournamentPolicyConfig.load(config("policy-tuning/j6-policy-equity-history-control.yaml"))
+                .equityContextWeights();
+        var aware = TournamentPolicyConfig.load(config("policy-tuning/j6-policy-equity-stack-aware.yaml"))
+                .equityContextWeights();
+        assertEquals(control, withShoveSensitivity(aware, 0),
+                "The ablation must differ only in public shove-history sensitivity");
+        assertEquals(0, control.shortStackShoveSensitivity());
+        assertEquals(16, aware.shortStackShoveSensitivity());
+
+        var defaults = TournamentPolicyConfig.load(config("j6-policy-equity.yaml"));
+        var variants = new HashMap<String, TournamentPolicyConfig>();
+        lineup.equityPolicyFiles().forEach((role, file) -> {
+            try { variants.put(role, TournamentPolicyConfig.load(projectPath(file))); }
+            catch (java.io.IOException failure) { throw new java.io.UncheckedIOException(failure); }
+        });
+        var trace = new StringWriter();
+        TournamentStrategyArena.play(TournamentProfiles.load(config("j6-tournaments-stress.yaml")).get(4),
+                41, 2, 1, lineup.forSeats(4), defaults, variants, lineup.shortStackShoveMaxBigBlinds(),
+                new PrintWriter(trace));
+        assertTrue(trace.toString().contains("id=equity-history-control "));
+        assertTrue(trace.toString().contains("id=equity-history-aware "));
+    }
+
     @Test void traceNamesTheRotatedSeatRosterAndLogsOnlyPublicDecisionContext() throws Exception {
         Path profile = config("j6-tournaments.yaml");
         var rules = TournamentProfiles.load(profile).get(4);
@@ -92,5 +121,25 @@ class TournamentStrategyArenaTest {
     private static Path config(String relative) {
         Path local = Path.of("config").resolve(relative);
         return Files.exists(local) ? local : Path.of("..").resolve(local);
+    }
+
+    private static Path projectPath(Path relative) {
+        return Files.exists(relative) ? relative : Path.of("..").resolve(relative);
+    }
+
+    private static ro.atf.holdem.ai.ContextualEquityPolicy.ContextWeights withShoveSensitivity(
+            ro.atf.holdem.ai.ContextualEquityPolicy.ContextWeights weights, int sensitivity) {
+        return new ro.atf.holdem.ai.ContextualEquityPolicy.ContextWeights(
+                weights.extraOpponentCallMargin(), weights.opponentAggressionCallMargin(),
+                weights.raiseMarginPerExtraOpponent(), weights.extraOpponentValueBetMargin(),
+                weights.earlyPositionCallMargin(), weights.latePositionCallDiscount(),
+                weights.earlyPositionValueBetMargin(), weights.latePositionValueBetDiscount(),
+                weights.opponentAggressionValueBetMargin(), weights.tournamentValueBetMargin(),
+                weights.uncertaintyZHundredths(), weights.largeBetCallMargin(),
+                weights.opponentAllInCallMargin(), weights.tournamentEliminationRiskMargin(),
+                weights.tournamentShortStackCallDiscount(), weights.tournamentCommitmentThresholdPercent(),
+                weights.shortStackShovePriorProbabilityPercent(), weights.shortStackShovePriorOpportunities(),
+                weights.shortStackShoveWarmupOpportunities(), sensitivity,
+                weights.shortStackShoveMaxMarginAdjustment());
     }
 }

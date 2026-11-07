@@ -11,8 +11,11 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 /** Strict, versioned strategy rosters for seat-rotation tournament experiments. */
 public record TournamentStrategyLineups(Path policyDefaults, Map<String, Path> equityPolicyFiles,
                                         Map<Integer, List<String>> lineups, int shortStackShoveMaxBigBlinds) {
+    private static final Set<String> EQUITY_ROLES = Set.of("equity-baseline", "equity-stack-aware",
+            "equity-history-control", "equity-history-aware");
     private static final Set<String> ALLOWED = Set.of("tag", "calling", "pressure", "loose", "bluff",
-            "short-stack-shove", "equity-baseline", "equity-stack-aware");
+            "short-stack-shove", "equity-baseline", "equity-stack-aware", "equity-history-control",
+            "equity-history-aware");
 
     public TournamentStrategyLineups {
         Objects.requireNonNull(policyDefaults, "policyDefaults");
@@ -47,9 +50,6 @@ public record TournamentStrategyLineups(Path policyDefaults, Map<String, Path> e
                     throw new IllegalArgumentException("Invalid equity policy file mapping");
                 files.put(name, Path.of(file));
             }
-            if (!files.keySet().equals(Set.of("equity-baseline", "equity-stack-aware")))
-                throw new IllegalArgumentException("Both equity variants must have explicit YAML files");
-
             var lineups = new TreeMap<Integer, List<String>>();
             for (var entry : rawLineups.entrySet()) {
                 if (!(entry.getKey() instanceof Integer seats) || seats < 4 || seats > 6
@@ -67,6 +67,10 @@ public record TournamentStrategyLineups(Path policyDefaults, Map<String, Path> e
             }
             if (!lineups.keySet().equals(Set.of(4, 5, 6)))
                 throw new IllegalArgumentException("Lineups must cover 4, 5, and 6 seats");
+            Set<String> requiredEquityRoles = lineups.values().stream().flatMap(Collection::stream)
+                    .filter(EQUITY_ROLES::contains).collect(java.util.stream.Collectors.toSet());
+            if (!files.keySet().equals(requiredEquityRoles))
+                throw new IllegalArgumentException("Every equity role in the lineup must have exactly one YAML file");
             return new TournamentStrategyLineups(Path.of(defaults), files, lineups, shoveThreshold);
         } catch (org.yaml.snakeyaml.error.YAMLException failure) {
             throw new IllegalArgumentException("Invalid strategy lineup YAML", failure);

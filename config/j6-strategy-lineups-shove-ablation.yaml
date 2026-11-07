@@ -1,0 +1,10 @@
+schemaVersion: 1
+shortStackShoveMaxBigBlinds: 8
+policyDefaults: config/j6-policy-equity.yaml
+equityPolicyFiles:
+  equity-history-control: config/policy-tuning/j6-policy-equity-history-control.yaml
+  equity-history-aware: config/policy-tuning/j6-policy-equity-stack-aware.yaml
+lineups:
+  4: [tag, short-stack-shove, equity-history-control, equity-history-aware]
+  5: [tag, calling, short-stack-shove, equity-history-control, equity-history-aware]
+  6: [tag, calling, pressure, short-stack-shove, equity-history-control, equity-history-aware]

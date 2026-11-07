@@ -270,31 +270,38 @@ function summarize(root) {
     const seedCount = new Set([...group.variants.values()].map(game => game.seed)).size;
     assert.equal(seedCount, 1);
   }
-  const pairedEquity = [];
   const observedProfiles = [...new Set([...groups.values()].map(group => group.profile))].sort();
-  for (const profile of observedProfiles) {
-    const observedSeats = [...new Set([...groups.values()].filter(group => group.profile === profile)
-      .map(group => group.seats))].sort((a, b) => a - b);
-    for (const seats of observedSeats) {
-      const seedIds = [...new Set([...seedMetrics.keys()].map(key => key.split('|'))
-        .filter(parts => parts[0] === profile && +parts[1] === seats).map(parts => +parts[2]))].sort((a, b) => a - b);
-      const perSeed = seedIds.map(seed => {
-        const baseline = seedMetrics.get(`${profile}|${seats}|${seed}|equity-baseline`);
-        const aware = seedMetrics.get(`${profile}|${seats}|${seed}|equity-stack-aware`);
-        assert.ok(baseline && aware, `${profile}/${seats}/${seed}: incomplete paired equity variants`);
-        return { seed,
-          winRateDeltaStackAwareMinusBaseline: aware.wins / aware.games - baseline.wins / baseline.games,
-          trajectoryShareDeltaStackAwareMinusBaseline: average(aware.trajectoryShares) - average(baseline.trajectoryShares),
-          baselineGames: baseline.games, stackAwareGames: aware.games };
-      });
-      pairedEquity.push({ profile, seats, independentSeedClusters: perSeed.length,
-        meanWinRateDelta: average(perSeed.map(value => value.winRateDeltaStackAwareMinusBaseline)),
-        winRateDeltaStandardError: standardError(perSeed.map(value => value.winRateDeltaStackAwareMinusBaseline)),
-        meanTrajectoryShareDelta: average(perSeed.map(value => value.trajectoryShareDeltaStackAwareMinusBaseline)),
-        trajectoryShareDeltaStandardError: standardError(perSeed.map(value => value.trajectoryShareDeltaStackAwareMinusBaseline)),
-        perSeed });
+  function pairedVariantComparison(controlRole, candidateRole) {
+    const paired = [];
+    for (const profile of observedProfiles) {
+      const observedSeats = [...new Set([...groups.values()].filter(group => group.profile === profile)
+        .map(group => group.seats))].sort((a, b) => a - b);
+      for (const seats of observedSeats) {
+        const seedIds = [...new Set([...seedMetrics.keys()].map(key => key.split('|'))
+          .filter(parts => parts[0] === profile && +parts[1] === seats).map(parts => +parts[2]))].sort((a, b) => a - b);
+        const perSeed = seedIds.flatMap(seed => {
+          const control = seedMetrics.get(`${profile}|${seats}|${seed}|${controlRole}`);
+          const candidate = seedMetrics.get(`${profile}|${seats}|${seed}|${candidateRole}`);
+          if (!control && !candidate) return [];
+          assert.ok(control && candidate, `${profile}/${seats}/${seed}: incomplete paired ${controlRole}/${candidateRole} variants`);
+          return [{ seed,
+            winRateDeltaCandidateMinusControl: candidate.wins / candidate.games - control.wins / control.games,
+            trajectoryShareDeltaCandidateMinusControl: average(candidate.trajectoryShares) - average(control.trajectoryShares),
+            controlGames: control.games, candidateGames: candidate.games }];
+        });
+        if (!perSeed.length) continue;
+        paired.push({ profile, seats, controlRole, candidateRole, independentSeedClusters: perSeed.length,
+          meanWinRateDelta: average(perSeed.map(value => value.winRateDeltaCandidateMinusControl)),
+          winRateDeltaStandardError: standardError(perSeed.map(value => value.winRateDeltaCandidateMinusControl)),
+          meanTrajectoryShareDelta: average(perSeed.map(value => value.trajectoryShareDeltaCandidateMinusControl)),
+          trajectoryShareDeltaStandardError: standardError(perSeed.map(value => value.trajectoryShareDeltaCandidateMinusControl)),
+          perSeed });
+      }
     }
+    return paired;
   }
+  const pairedEquity = pairedVariantComparison('equity-baseline', 'equity-stack-aware');
+  const pairedShoveHistory = pairedVariantComparison('equity-history-control', 'equity-history-aware');
   return { schemaVersion: 1, evaluation: 'offline tournament strategy and button rotation',
     methodology: { pairedBy: 'profile, seat count, tournament seed, button offset; strategy offset changes only seat-to-policy assignment',
       independentUnit: 'tournament seed cluster; button and strategy rotations are repeated measures, not independent games',
@@ -310,7 +317,8 @@ function summarize(root) {
       shoveHistoryPositiveAdjustments: historyPositiveAdjustments,
       shoveHistoryNegativeAdjustments: historyNegativeAdjustments,
       largePriceResponseDecisions: largePriceResponses,
-      coveredCommitmentDecisions: coveredCommitmentCalls, shortStackDecisions: shortStackDecisions }, rows, pairedEquity };
+      coveredCommitmentDecisions: coveredCommitmentCalls, shortStackDecisions: shortStackDecisions }, rows,
+    pairedEquity, pairedShoveHistory };
 }
 
 function markdown(summary) {
@@ -332,6 +340,15 @@ function markdown(summary) {
     '|---|---:|---:|---:|---:|---:|---:|');
   for (const row of summary.pairedEquity) {
     lines.push(`| ${row.profile} | ${row.seats} | ${row.independentSeedClusters} | ${(row.meanWinRateDelta * 100).toFixed(1)} pp | ${row.winRateDeltaStandardError === null ? 'n/a' : (row.winRateDeltaStandardError * 100).toFixed(1) + ' pp'} | ${(row.meanTrajectoryShareDelta * 100).toFixed(2)} pp | ${row.trajectoryShareDeltaStandardError === null ? 'n/a' : (row.trajectoryShareDeltaStandardError * 100).toFixed(2) + ' pp'} |`);
+  }
+  if (summary.pairedShoveHistory.length) {
+    lines.push('', '## Comparație pereche: istoric public activ vs. control', '',
+      'Cele două roluri diferă numai prin sensibilitatea marjei la frecvența publică de shove; seed-ul, poziția și distribuția de roluri sunt pereche. Această ablație măsoară contribuția izolată a semnalului, nu dovedește strategie optimă.', '',
+      '| Profil | Locuri | Seed-uri independente | Δ rată victorii | SE | Δ pondere medie a stivei | SE |',
+      '|---|---:|---:|---:|---:|---:|---:|');
+    for (const row of summary.pairedShoveHistory) {
+      lines.push(`| ${row.profile} | ${row.seats} | ${row.independentSeedClusters} | ${(row.meanWinRateDelta * 100).toFixed(1)} pp | ${row.winRateDeltaStandardError === null ? 'n/a' : (row.winRateDeltaStandardError * 100).toFixed(1) + ' pp'} | ${(row.meanTrajectoryShareDelta * 100).toFixed(2)} pp | ${row.trajectoryShareDeltaStandardError === null ? 'n/a' : (row.trajectoryShareDeltaStandardError * 100).toFixed(2) + ' pp'} |`);
+    }
   }
   lines.push('', '## Interpretare și limite', '',
     '- Rândurile ordonează descriptiv rezultatele de stack-share; nu sunt o scară de calitate și nu justifică singure schimbarea nivelului Hard.',

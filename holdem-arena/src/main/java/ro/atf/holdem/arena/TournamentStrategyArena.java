@@ -60,7 +60,8 @@ public final class TournamentStrategyArena {
             case "bluff" -> new DeterministicBluffPolicy(defaults.bluffFrequencyPercent(),
                     defaults.latePositionWindow());
             case "short-stack-shove" -> new ShortStackShovePolicy(shoveThreshold);
-            case "equity-baseline", "equity-stack-aware" -> equity(variants.get(strategy));
+            case "equity-baseline", "equity-stack-aware", "equity-history-control", "equity-history-aware" ->
+                    equity(variants.get(strategy));
             default -> throw new IllegalArgumentException("Unknown strategy ID " + strategy);
         };
     }

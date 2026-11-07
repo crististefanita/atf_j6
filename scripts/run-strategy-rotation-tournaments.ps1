@@ -111,6 +111,7 @@ try {
         $LineupFile, 'config/j6-tournaments.yaml', 'config/j6-tournaments-stress.yaml',
         'config/j6-policy-equity.yaml', 'config/policy-tuning/j6-policy-equity-baseline.yaml',
         'config/policy-tuning/j6-policy-equity-stack-aware.yaml',
+        'config/policy-tuning/j6-policy-equity-history-control.yaml',
         'holdem-arena/src/main/java/ro/atf/holdem/arena/TournamentPolicyConfig.java',
         'holdem-core/src/main/java/ro/atf/holdem/core/HoldemObservation.java',
         'holdem-core/src/main/java/ro/atf/holdem/core/PublicOpponentTendency.java',

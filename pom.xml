@@ -21,9 +21,79 @@
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <atf.core.version>1.0.0-c4</atf.core.version>
+        <atf.reporting.version>1.0.0-j22</atf.reporting.version>
+        <atf.console.version>1.0.0-c2</atf.console.version>
+        <atf.mock.version>1.0.0-m2</atf.mock.version>
+        <atf.testkit.version>1.0.0-k1</atf.testkit.version>
+        <junit.version>5.11.0</junit.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency><groupId>atf.api</groupId><artifactId>atf-core</artifactId><version>${atf.core.version}</version></dependency>
+            <dependency><groupId>atf.api</groupId><artifactId>atf-reporting</artifactId><version>${atf.reporting.version}</version></dependency>
+            <dependency><groupId>atf.api</groupId><artifactId>atf-console</artifactId><version>${atf.console.version}</version></dependency>
+            <dependency><groupId>atf.api</groupId><artifactId>atf-mock</artifactId><version>${atf.mock.version}</version></dependency>
+            <dependency><groupId>atf.api</groupId><artifactId>atf-test-kit</artifactId><version>${atf.testkit.version}</version></dependency>
+            <dependency><groupId>org.junit</groupId><artifactId>junit-bom</artifactId><version>${junit.version}</version><type>pom</type><scope>import</scope></dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId><artifactId>maven-install-plugin</artifactId><version>3.2.0</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>bootstrap-core-library</id>
+                        <phase>validate</phase><goals><goal>install-file</goal></goals>
+                        <configuration>
+                            <file>${maven.multiModuleProjectDirectory}/lib/atf-core-${atf.core.version}.jar</file>
+                            <pomFile>${maven.multiModuleProjectDirectory}/lib/atf-core-${atf.core.version}.pom</pomFile>
+                            <generatePom>false</generatePom>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>bootstrap-reporting-library</id>
+                        <phase>validate</phase><goals><goal>install-file</goal></goals>
+                        <configuration>
+                            <file>${maven.multiModuleProjectDirectory}/lib/atf-reporting-${atf.reporting.version}.jar</file>
+                            <pomFile>${maven.multiModuleProjectDirectory}/lib/atf-reporting-${atf.reporting.version}.pom</pomFile>
+                            <generatePom>false</generatePom>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>bootstrap-console-library</id>
+                        <phase>validate</phase><goals><goal>install-file</goal></goals>
+                        <configuration>
+                            <file>${maven.multiModuleProjectDirectory}/lib/atf-console-${atf.console.version}.jar</file>
+                            <pomFile>${maven.multiModuleProjectDirectory}/lib/atf-console-${atf.console.version}.pom</pomFile>
+                            <generatePom>false</generatePom>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>bootstrap-mock-library</id>
+                        <phase>validate</phase><goals><goal>install-file</goal></goals>
+                        <configuration>
+                            <file>${maven.multiModuleProjectDirectory}/lib/atf-mock-${atf.mock.version}.jar</file>
+                            <pomFile>${maven.multiModuleProjectDirectory}/lib/atf-mock-${atf.mock.version}.pom</pomFile>
+                            <generatePom>false</generatePom>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>bootstrap-test-kit-library</id>
+                        <phase>validate</phase><goals><goal>install-file</goal></goals>
+                        <configuration>
+                            <file>${maven.multiModuleProjectDirectory}/lib/atf-test-kit-${atf.testkit.version}.jar</file>
+                            <pomFile>${maven.multiModuleProjectDirectory}/lib/atf-test-kit-${atf.testkit.version}.pom</pomFile>
+                            <generatePom>false</generatePom>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
         <pluginManagement>
             <plugins>
                 <plugin>

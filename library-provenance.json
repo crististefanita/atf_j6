@@ -1,0 +1,150 @@
+{
+  "consumer": "atf_j6",
+  "libraries": [
+    {
+      "coordinate": "atf.api:atf-core:1.0.0-c4",
+      "producerDirectory": "C:/work/1/atf_j0",
+      "producerHead": "5e89e77064a1c57e340c101847f89998395f8197",
+      "producerHasUncommittedChanges": true,
+      "buildStage": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_J0_FEEDBACK_ACTIVE_DO_NOT_CLEAN_74e41433\\core-release-a",
+      "javaRelease": 21,
+      "sourceIncluded": false,
+      "binarySha256": "7C72A3F08C27F1A5CC1B2D61E2378801E130DD4D54D7EEC99481348E1B1752B4",
+      "publishedPomSha256": "2CD642E7DEBA1B7787E1CCEF6CAB60245D56F3450F8FEA75E83134132A82536F",
+      "producerInputsSha256": "54D16AE4EE06FAEFB50D015A8170D3C5F617028FD06B66B74A55701D65F85863",
+      "producerVerification": {
+        "tests": 299,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "evidence": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_J0_FEEDBACK_ACTIVE_DO_NOT_CLEAN_74e41433\\core-release-a",
+        "scope": "Original producer publication; separate from J6 adoption"
+      }
+    },
+    {
+      "name": "Reporting",
+      "release": {
+        "coordinate": "atf.api:atf-reporting:1.0.0-j22",
+        "producerDirectory": "C:/work/1/atf_j0",
+        "producerHead": "5e89e77064a1c57e340c101847f89998395f8197",
+        "producerHasUncommittedChanges": true,
+        "buildStage": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_REPORT149_ACTIVE_DO_NOT_CLEAN_a0d9bd86\\publisher-final-a",
+        "javaRelease": 21,
+        "sourceIncluded": false,
+        "binarySha256": "DE747A0382027210D3443B98BE8594FC97661B07A7A34E6B61A220984D6BF41B",
+        "publishedPomSha256": "08BF0167B0F896E59D93711ED4B19C66C234B9EB20B2BC5C7265AC9AFE57F08C",
+        "producerInputsSha256": "CFFC125AAB51F4E69799B9E31796FB073DCFFA50E79DA469F51DE44723865066",
+        "publicationInputsSha256": "D0BE50AA4A88DAF3197633F4E3C915CFD198DE73B38C03C86ABEB137B40FD598",
+        "producerVerification": {
+          "tests": 120,
+          "failures": 0,
+          "errors": 0,
+          "skips": 0,
+          "evidence": "C:/Users/Cristi/AppData/Local/Temp/ATF_REPORT149_ACTIVE_DO_NOT_CLEAN_a0d9bd86/publisher-final-a/ATF_Reporting_Verification.md",
+          "scope": "Original producer publication; separate from J6 adoption",
+          "knownLimits": [
+            "REPORT-TEST-SETUP-153: generic browser setup ownership remains separate; unfinished runs are not passes",
+            "REPORT-SINGLE-ACTIVE-VIEW: the wider cross-view accessibility criterion remains separate; the Fails native-host collision is fixed",
+            "Consumer sanity qualifies shared-session Extent/fallback contracts; physical Android/Kafka/ASR execution is not inferred"
+          ]
+        }
+      }
+    }
+  ],
+  "platformLibraries": {
+    "console": {
+      "coordinate": "atf.api:atf-console:1.0.0-c2",
+      "producerDirectory": "C:/work/1/atf_j0",
+      "producerGitHead": "5e89e77064a1c57e340c101847f89998395f8197",
+      "producerHasUncommittedChanges": true,
+      "buildStage": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_J0_FEEDBACK_ACTIVE_DO_NOT_CLEAN_74e41433\\console-publisher-a",
+      "sourceIncluded": false,
+      "binarySha256": "5A1CC9F3125A2E43134A2048476793E0B733B61E37A7F00B171A42990CC2A6AA",
+      "publishedPomSha256": "0543ABBD00FB384C25236C6FEAFEC728FAE36D036A8917B2177DDC186914388D",
+      "producerInputsSha256": "1A40D2B7319280FD03DD78ABD7C02063C4F9E47D1F36BD31B58C298E406232F4",
+      "producerVerification": {
+        "tests": 38,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "evidence": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_J0_FEEDBACK_ACTIVE_DO_NOT_CLEAN_74e41433\\console-publisher-a\\ATF_Library_Verification.md",
+        "scope": "Original producer publication; separate from J6 adoption"
+      }
+    },
+    "mock": {
+      "coordinate": "atf.api:atf-mock:1.0.0-m2",
+      "producerDirectory": "C:/work/1/atf_j0",
+      "producerGitHead": "5e89e77064a1c57e340c101847f89998395f8197",
+      "producerHasUncommittedChanges": true,
+      "buildStage": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_J0_FEEDBACK_ACTIVE_DO_NOT_CLEAN_74e41433\\mock-publisher-a",
+      "sourceIncluded": false,
+      "binarySha256": "0AE87D84905E3D3177E60A3C3AC2DB6D0775852EB88162476F554BA247456704",
+      "publishedPomSha256": "E75E514F5B4DBCD689644E1B7BC38CA46B6B06E26139327FFD0B62AC295D7567",
+      "producerInputsSha256": "AF39A522F997A22900FFD6D9107520D33167CCFC4805553DE79546519FF31743",
+      "producerVerification": {
+        "tests": 94,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "evidence": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_J0_FEEDBACK_ACTIVE_DO_NOT_CLEAN_74e41433\\mock-publisher-a\\ATF_Library_Verification.md",
+        "scope": "Original producer publication; separate from J6 adoption"
+      }
+    },
+    "test-kit": {
+      "coordinate": "atf.api:atf-test-kit:1.0.0-k1",
+      "producerDirectory": "C:/work/1/atf_j0",
+      "producerHead": "5c2c022c696679ca06f67666306eaf89d0cced50",
+      "producerHasUncommittedChanges": true,
+      "buildStage": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_TESTKIT_LIBRARY_ACTIVE_DO_NOT_CLEAN_c43b2d91\\publisher-k1-final-a",
+      "javaRelease": 21,
+      "sourceIncluded": false,
+      "binarySha256": "c2d0416ec449fff356e8ba900ec2b4cde1cf1386ba1a1373d8b68782f3cc34cd",
+      "publishedPomSha256": "c1779239d4dc3ed6f0ea0d65ec1432f5e281a3dd596ba66daaa02911e420e5e4",
+      "producerInputsSha256": "f54d9d20c175e58144d311956115f8e40b182b1377e52d5bf982379a8d1f8e9f",
+      "producerVerification": {
+        "tests": 158,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "evidence": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_TESTKIT_LIBRARY_ACTIVE_DO_NOT_CLEAN_c43b2d91\\publisher-k1-final-a\\ATF_Test_Kit_Verification.md",
+        "scope": "Original producer publication; separate from J6 adoption",
+        "knownLimits": [
+          "KIT-UNICODE-PREVIEW-127",
+          "KIT-ACCEPTANCE-DIAGNOSTICS-123",
+          "KIT-CONCURRENCY-152",
+          "full-evidence retention before preview remains separate"
+        ]
+      }
+    }
+  },
+  "maintenanceReference": {
+    "sourceOwner": "atf_j0",
+    "producerDirectory": "C:/work/1/atf_j0",
+    "reportingModule": "atf-reporting",
+    "testModule": "atf-reporting-tests",
+    "feedbackOwner": "atf_j0",
+    "feedbackRegistry": "atf_j0/docs/feedback/README.md"
+  },
+  "platformLibraryOwnership": {
+    "sourceOwner": "atf_j0",
+    "feedbackOwner": "atf_j0",
+    "feedbackRegistry": "atf_j0/docs/feedback/README.md",
+    "implementationAndNativeTests": [
+      "atf-core",
+      "atf-reporting",
+      "atf-console",
+      "atf-mock",
+      "atf-test-kit"
+    ],
+    "consumerSourceModules": 5,
+    "contract": "lib/README.md",
+    "nativeTestRetention": "Published producer catalogs retain their original execution scope; J6 acceptance is recorded separately in consumerAdoption"
+  },
+  "consumerAdoption": {
+    "status": "VERIFIED",
+    "scope": "J6 offline binary adoption; five existing Hold’em modules, five flat library pairs",
+    "evidence": "C:/Users/Cristi/AppData/Local/Temp/ATF_BROWSER_LIFECYCLE_ACTIVE_DO_NOT_CLEAN_d32b7955/j6-adoption.json",
+    "mavenTests": 1,
+    "auditableComparisons": 18
+  }
+}

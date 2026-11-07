@@ -26,6 +26,12 @@ Vertical slice-ul actual demonstrează contractul dintre aplicație și AI. Moto
 | `holdem-online` | Transport/adaptor pentru protocoale autorizate; prima țintă este Open Poker WebSocket V2. |
 | `holdem-app` | Aplicație de consolă pentru smoke-run local și comenzi viitoare de simulare. |
 
+## Biblioteci comune
+
+J6 consumă Core, Reporting, Console, Mock și Test Kit ca JAR/POM direct în [lib](lib/README.md). POM-ul rădăcină instalează perechile la `validate`; IntelliJ folosește același JDK 21 și repository Maven. Dependențele sunt declarate pentru testele din `holdem-app`, fără a lega motorul Hold’em de Reporting.
+
+[PlatformLibraryAdoptionTest](holdem-app/src/test/java/ro/atf/j6/libraries/PlatformLibraryAdoptionTest.java) verifică originea și hash-ul fiecărui binar, JSON, transportul mock și aserțiunile din HTML-ul Extent. Output-ul rămâne în TMP prin `atf.test.reportDirectory`. Proveniența bibliotecilor este în `library-provenance.json`; mentenanța și feedback-ul comun au owner în J0, iar regulile de joc rămân în J6.
+
 ## Cerințe și documentație
 
 - [Cerințe generale](docs/requirements/README.md)
@@ -54,10 +60,10 @@ mvn -version
 
 ### Compilare
 
-Din `C:\work\auto\atf_j6`:
+Dintr-o copie proprie a proiectului în TMP, cu repository Maven tot în TMP:
 
 ```powershell
-mvn -B test
+mvn -B -ntp "-Dmaven.repo.local=$env:TEMP\atf-j6-m2" test
 ```
 
 Pentru prima verificare fără a executa scenariul online:

@@ -72,7 +72,7 @@ class TournamentStrategyArenaTest {
                 .equityContextWeights();
         var aware = TournamentPolicyConfig.load(config("policy-tuning/j6-policy-equity-stack-aware.yaml"))
                 .equityContextWeights();
-        assertEquals(control, withShoveSensitivity(aware, 0),
+        assertEquals(control, aware.withShortStackShoveSensitivity(0),
                 "The ablation must differ only in public shove-history sensitivity");
         assertEquals(0, control.shortStackShoveSensitivity());
         assertEquals(16, aware.shortStackShoveSensitivity());
@@ -127,19 +127,4 @@ class TournamentStrategyArenaTest {
         return Files.exists(relative) ? relative : Path.of("..").resolve(relative);
     }
 
-    private static ro.atf.holdem.ai.ContextualEquityPolicy.ContextWeights withShoveSensitivity(
-            ro.atf.holdem.ai.ContextualEquityPolicy.ContextWeights weights, int sensitivity) {
-        return new ro.atf.holdem.ai.ContextualEquityPolicy.ContextWeights(
-                weights.extraOpponentCallMargin(), weights.opponentAggressionCallMargin(),
-                weights.raiseMarginPerExtraOpponent(), weights.extraOpponentValueBetMargin(),
-                weights.earlyPositionCallMargin(), weights.latePositionCallDiscount(),
-                weights.earlyPositionValueBetMargin(), weights.latePositionValueBetDiscount(),
-                weights.opponentAggressionValueBetMargin(), weights.tournamentValueBetMargin(),
-                weights.uncertaintyZHundredths(), weights.largeBetCallMargin(),
-                weights.opponentAllInCallMargin(), weights.tournamentEliminationRiskMargin(),
-                weights.tournamentShortStackCallDiscount(), weights.tournamentCommitmentThresholdPercent(),
-                weights.shortStackShovePriorProbabilityPercent(), weights.shortStackShovePriorOpportunities(),
-                weights.shortStackShoveWarmupOpportunities(), sensitivity,
-                weights.shortStackShoveMaxMarginAdjustment());
-    }
 }

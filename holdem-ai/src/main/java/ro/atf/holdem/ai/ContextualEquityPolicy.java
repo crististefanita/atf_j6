@@ -78,6 +78,17 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
             return new ContextWeights(3, 3, 2, 5, 2, 2, 3, 3, 2, 2, 164, 3, 6, 8, 5, 75,
                     10, 10, 3, 16, 4);
         }
+
+        public ContextWeights withShortStackShoveSensitivity(int sensitivity) {
+            return new ContextWeights(extraOpponentCallMargin, opponentAggressionCallMargin,
+                    raiseMarginPerExtraOpponent, extraOpponentValueBetMargin, earlyPositionCallMargin,
+                    latePositionCallDiscount, earlyPositionValueBetMargin, latePositionValueBetDiscount,
+                    opponentAggressionValueBetMargin, tournamentValueBetMargin, uncertaintyZHundredths,
+                    largeBetCallMargin, opponentAllInCallMargin, tournamentEliminationRiskMargin,
+                    tournamentShortStackCallDiscount, tournamentCommitmentThresholdPercent,
+                    shortStackShovePriorProbabilityPercent, shortStackShovePriorOpportunities,
+                    shortStackShoveWarmupOpportunities, sensitivity, shortStackShoveMaxMarginAdjustment);
+        }
     }
 
     public static final String VERSION = "EQUITY-MC-0.3";

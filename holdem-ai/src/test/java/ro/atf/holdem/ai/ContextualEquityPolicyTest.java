@@ -145,6 +145,23 @@ class ContextualEquityPolicyTest {
                 "Tournament-local shove history must not change cash decisions");
     }
 
+    @Test void shoveHistoryEvidenceRampsUpAndClampsBothAdjustmentDirections() {
+        var weights = ContextualEquityPolicy.ContextWeights.defaults()
+                .withShortStackShoveSensitivity(100);
+        var policy = policy(ContextualEquityPolicy.GameMode.TOURNAMENT, weights);
+
+        assertTrue(policy.decide(shoveHistoryObservation(200, 1, 0)).explanation()
+                .contains("shoveHistoryMargin=+0"), "Sparse evidence stays below a whole margin point");
+        assertTrue(policy.decide(shoveHistoryObservation(200, 2, 0)).explanation()
+                .contains("shoveHistoryMargin=+1"), "Evidence gains weight up to the warmup threshold");
+        assertTrue(policy.decide(shoveHistoryObservation(200, 3, 0)).explanation()
+                .contains("shoveHistoryMargin=+2"), "The full warmup threshold uses full evidence weight");
+        assertTrue(policy.decide(shoveHistoryObservation(200, 6, 0)).explanation()
+                .contains("shoveHistoryMargin=+4"), "Conservative adjustment respects the positive cap");
+        assertTrue(policy.decide(shoveHistoryObservation(200, 200, 200)).explanation()
+                .contains("shoveHistoryMargin=-4"), "Aggressive adjustment respects the negative cap");
+    }
+
     @Test void historicalShoveUsesTheRemainingStackAtTheRaiseAndHonorsBothProfileBounds() {
         var policy = policy(ContextualEquityPolicy.GameMode.TOURNAMENT);
         var exactlyTwoBigBlinds = shoveHistoryObservation(40, 20, 0);
@@ -176,6 +193,11 @@ class ContextualEquityPolicyTest {
 
     private static ContextualEquityPolicy policy(ContextualEquityPolicy.GameMode mode) {
         return new ContextualEquityPolicy(2048, 2, 8, 18, 60, mode);
+    }
+
+    private static ContextualEquityPolicy policy(ContextualEquityPolicy.GameMode mode,
+                                                 ContextualEquityPolicy.ContextWeights weights) {
+        return new ContextualEquityPolicy(2048, 2, 8, 18, 60, mode, weights);
     }
 
     private static HoldemObservation observation(List<Card> hole, List<Card> board, int opponents,

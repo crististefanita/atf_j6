@@ -118,7 +118,8 @@ class HoldemRulesTest {
                 HoldemHand.shuffledDeck(17));
         var observation = hand.observeActor();
         assertEquals(10, observation.bigBlind());
-        assertEquals(List.of(5, 10, 0), observation.visibleContributions());
+        assertEquals(List.of(0, 5, 10), observation.visibleContributions(),
+                "Public stack and contribution arrays use the same compact active-seat order");
         assertEquals(observation.pot(), observation.visibleContributions().stream().mapToInt(Integer::intValue).sum());
         assertEquals(observation.visibleStacks().get(observation.heroSeat()), observation.heroStack());
     }

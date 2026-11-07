@@ -39,15 +39,13 @@ Folosiți JDK 21 și Android SDK cu platforma 36, dintr-o copie externă care co
 
 APK-ul de dezvoltare se generează în `app/build/outputs/apk/debug/`. Componentele Android JVM acoperă stivele, eliminarea, rotația și restaurarea la 4–6 locuri. Rapoartele Extent și build-urile rămân în dosarul extern al execuției. [Strategia J6](../docs/testing/TEST_STRATEGY.md)
 
-### Sanity de turneu pe Android
+### Calificarea release-ului Android
 
-Folosiți un dispozitiv de test rezervat și o instalare curată, cu engleza implicită. Construiți `:app:assembleDebugAndroidTest`, instalați APK-ul aplicației și APK-ul de test din `app/build/outputs/apk/androidTest/debug/`, apoi rulați instrumentarea.
+Rulați `scripts/Build-HoldemRelease.ps1` dintr-un worktree curat. Scriptul creează o copie unică sub `C:\work\holdem_back\release-runs`, apoi construiește un APK `sanity` pentru turneul determinist și APK-ul `release` pentru distribuție. Ambele folosesc cheia privată J6; numai `sanity` este debuggable și primește seed-ul de fixture. `release` rămâne `debuggable=false` și nu primește seed-uri de test.
 
-```powershell
-adb -s <serial> shell am instrument -w -r ro.atf.holdem.android.test/ro.atf.holdem.android.TournamentSanity
-```
+Runnerul rezervă emulatorul `127.0.0.1:5555`, refuză să înlocuiască o instalare existentă și rulează două călătorii: un turneu complet prin controalele accesibile și navigarea pe APK-ul `release` exact. Receipt-ul cu hash-ul binar, aserțiunile și capturile PNG vine prin instrumentare; nu depinde de `run-as` ori de fișiere private de pe dispozitiv. `PublishTournamentExtent.java` încorporează capturile și raportul JVM în două rapoarte Extent, iar rapoartele componente Maven sunt păstrate în același pachet de ediție.
 
-Runnerul folosește controalele accesibile. Joacă trei mâini până la victorie și o mână separată până la eliminare. Seed-ul explicit al fixture-ului este acceptat numai de build-ul debuggable. Salvați `native.json` și capturile enumerate în el într-un dosar extern cu `adb exec-out run-as ro.atf.holdem.android cat app_tournament-sanity/<fișier>`, folosind o redirecționare care păstrează octeții PNG. `tools/PublishTournamentExtent.java` se lansează cu JDK 21 și classpath-ul Maven din `java.class.path` al suitei `PlatformLibraryAdoptionTest`. Argumentele sunt calea HTML, dosarul cu dovezi native, APK-ul aplicației și fișierele XML JUnit Android.
+Pentru dezvoltare locală, build-ul Debug simplu rămâne util; el nu califică și nu înlocuiește APK-ul Release. [Procesul complet](../docs/release/ATF_Release.md) include semnarea, integritatea, upload-ul și testul anonim al descărcării.
 
 Prima calificare a trecut cu 33 de teste Maven, 5 componente Android JVM și 78 de comparații pe emulatorul API 28. Traseul nativ a verificat un raise respins, un raise acceptat, străzile și conservarea jetoanelor după decontare.
 
@@ -57,7 +55,7 @@ Calificarea compactă a trecut cu 36 de teste Maven, 7 componente Android JVM ș
 
 Starea și cerințele APK-ului sunt în [catalogul release](../release/0.1.0/README.md). Cât timp ediția este `DRAFT`, build-urile Debug rămân doar în TMP; nu există încă un APK de distribuție sau un link public.
 
-Build-urile și capturile brute rămân în TMP. Pentru un candidat, copiați doar APK-ul, checksum-ul, validarea și rapoartele Extent relevante în `release/<versiune>/`; capturile UI rămân încorporate în raport.
+Build-urile, APK-urile intermediare și capturile brute rămân în TMP. Pentru un candidat, copiați doar APK-ul Release, checksum-ul, validarea și rapoartele Extent relevante în `release/<versiune>/`; capturile UI rămân încorporate în raport.
 
 ## Continuare
 

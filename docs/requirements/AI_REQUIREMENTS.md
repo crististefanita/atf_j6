@@ -60,16 +60,24 @@ La un preț existent, call-ul cere depășirea pragului; raise-ul cere și `rais
 
 Toate ponderile de context se află în `equityDecision.contextWeights` din YAML. Fișierul [candidatului equity](../../config/j6-policy-equity.yaml) folosește un eșantion mai mare decât configurația mixtă. Parserul respinge chei lipsă sau suplimentare, iar versiunea din fiecare acțiune include bugetul, modul, pragurile și ponderile folosite.
 
+### Riscul public de stack și all-in
+
+În modul turneu, aceeași observație expune blind-ul mare și contribuția vizibilă a fiecărui loc, în ordinea stabilă din `SEATS`. Politica folosește istoricul public al străzii pentru a adăuga un adaos de risc după un preț mare sau un all-in care a ridicat prețul. Separat, estimează dacă un call ar consuma pragul configurat al stivei și dacă un adversar nefoldat poate acoperi contribuția totală a actorului. Un stack de cel mult zece blind-uri mari activează discountul de urgență configurat. Toate pragurile sunt YAML și au efect numai în turneu; situațiile fără call nu primesc penalizare de eliminare.
+
+Aceste semnale **nu** deduc încă probabilități de cărți din stilul individual al adversarului, ICM, premii, bounty sau equity exactă pe straturi. „Poate acoperi” este o verificare a stivelor și contribuțiilor publice; nu spune dacă acel adversar va plăti și nu garantează că este corect să riști eliminarea. Adaosurile de prag sunt o aproximare explicită, testată separat de simularea Monte Carlo.
+
+Experimentul pereche folosește două fișiere YAML: `equity-baseline` dezactivează adaosurile de bet mare/all-in/eliminare și discountul de short-stack; `equity-stack-aware` le activează. Ambele joacă simultan împotriva unor roluri distincte și sunt rotite prin locuri și poziții de buton pe seed-uri identice. Comparația agregă mai întâi rotațiile din fiecare seed, apoi tratează seed-ul ca unitate independentă. Încrederea statistică nu se mărește doar pentru că au fost rulate mai multe rotații ale aceluiași seed.
+
 `HoldemObservation` expune separat indexul compact folosit de motor și `physicalHeroSeat`, identitatea publică stabilă necesară interpretării jurnalului. Pentru poziția postflop, politica elimină din ordinea de acțiune locurile care au dat fold și locurile fără jetoane. Când istoria publică nu oferă harta locurilor, folosește fallback-ul de poziție din observație.
 
 ## Acceptanță
 
 O politică nouă se acceptă numai dacă:
 
-- bate baseline-ul pe un corpus ținut separat;
+- bate baseline-ul pe un corpus ținut separat și pe seed-uri independente, nu doar pe rotații pereche ale aceluiași seed;
 - nu regresează legalitatea sau timeout-ul;
 - păstrează aceeași decizie pe replay determinist;
-- are rezultate raportate cu număr de mâini, seed, confidence interval și drawdown;
+- are rezultate raportate cu număr de turnee și mâini, seed-cluster, interval de încredere și drawdown;
 - este testată împotriva mai multor stiluri, nu doar împotriva propriei versiuni;
 - nu primește informație ascunsă accidental.
 

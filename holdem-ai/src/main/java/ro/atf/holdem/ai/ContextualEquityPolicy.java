@@ -236,7 +236,8 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                 int amount = positiveOrZero(fields[2]);
                 streetPaid[seat] += amount;
                 totalPot += amount;
-                price = Math.max(price, streetPaid[seat]);
+                price = Math.max(price, fields[0].equals("BB")
+                        ? Math.max(streetPaid[seat], observation.bigBlind()) : streetPaid[seat]);
                 continue;
             }
             if (fields.length != 4 || !fields[0].equals(activeStreet.name())) continue;

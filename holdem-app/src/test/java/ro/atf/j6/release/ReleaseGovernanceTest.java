@@ -21,7 +21,6 @@ import java.util.HexFormat;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /** Offline release governance: version identity, state transitions, and byte-preserving evidence. */
 @AtfComponentTest
@@ -39,29 +38,45 @@ class ReleaseGovernanceTest {
             checks.add(new AtfAssertion("Release metadata can be read", "valid source and release metadata",
                     problem.getClass().getSimpleName() + ": " + problem.getMessage(), false));
         }
-        publish(root, checks);
+        publish(root, "J6ReleaseGovernance", "Current version, APK, and download route", checks);
         assertTrue(failure == null && !checks.isEmpty() && checks.stream().allMatch(AtfAssertion::passed),
                 () -> checks.stream().filter(check -> !check.passed()).map(check -> check.name() + " expected "
                         + check.expected() + " actual " + check.actual()).toList().toString());
     }
 
-    @Test void publicDownloadIsGatedByPublicationAndMustMatchTheCurrentVersion() {
+    @Test void publicDownloadIsGatedByPublicationAndMustMatchTheCurrentVersion() throws Exception {
+        Path root = projectRoot();
+        var checks = new ArrayList<AtfAssertion>();
         String page = "https://github.com/crististefanita/atf_j6/releases/tag/v0.1.0";
         String apk = "https://github.com/crististefanita/atf_j6/releases/download/v0.1.0/HoldemLab-0.1.0.apk";
         String publishedGuide = "## Android\n- [Release](" + page + ")\n- [APK](" + apk + ")\n";
-        assertTrue(routePolicy("DRAFT", "## Android", "0.1.0"), "DRAFT has no public download route");
-        assertTrue(routePolicy("PREPARED", "## Android\n- [Candidate](release/0.1.0/README.md)", "0.1.0"),
-                "PREPARED remains local");
-        assertTrue(routePolicy("PUBLISHED", publishedGuide, "0.1.0"), "Exact current release and APK are accepted");
-        assertFalse(routePolicy("DRAFT", publishedGuide, "0.1.0"), "A DRAFT cannot expose an APK");
-        assertFalse(routePolicy("PUBLISHED", publishedGuide.replace("0.1.0", "0.0.9"), "0.1.0"),
-                "An older version is rejected");
-        assertFalse(routePolicy("PUBLISHED", publishedGuide + "- [Again](" + apk + ")", "0.1.0"),
-                "A duplicate direct asset link is rejected");
-        assertFalse(routePolicy("PUBLISHED", publishedGuide.replace(apk, "https://raw.githubusercontent.com/crististefanita/atf_j6/main/release/0.1.0/HoldemLab-0.1.0.apk"), "0.1.0"),
-                "Raw source links are not release assets");
-        assertFalse(routePolicy("PUBLISHED", publishedGuide.replace(apk, "release/0.1.0/HoldemLab-0.1.0.apk"), "0.1.0"),
-                "A folder path is not a public asset");
+        recordRoute(checks, "DRAFT has no public download route", "DRAFT", "## Android", "0.1.0", false);
+        recordRoute(checks, "PREPARED remains local", "PREPARED",
+                "## Android\n- [Candidate](release/0.1.0/README.md)", "0.1.0", false);
+        recordRoute(checks, "Exact current release and APK are accepted", "PUBLISHED", publishedGuide, "0.1.0", true);
+        recordRoute(checks, "DRAFT cannot expose an APK", "DRAFT", publishedGuide, "0.1.0", false);
+        recordRoute(checks, "An older version is rejected", "PUBLISHED",
+                publishedGuide.replace("0.1.0", "0.0.9"), "0.1.0", false);
+        recordRoute(checks, "Duplicate direct asset links are rejected", "PUBLISHED",
+                publishedGuide + "- [Again](" + apk + ")", "0.1.0", false);
+        String rawAsset = "https://raw.githubusercontent.com/crististefanita/atf_j6/main/release/0.1.0/HoldemLab-0.1.0.apk";
+        recordRoute(checks, "Raw source links are rejected", "PUBLISHED", publishedGuide.replace(apk, rawAsset), "0.1.0", false);
+        String folderAsset = "release/0.1.0/HoldemLab-0.1.0.apk";
+        recordRoute(checks, "Catalog folder is not a public asset", "PUBLISHED", publishedGuide.replace(apk, folderAsset), "0.1.0", false);
+        String downloader = Files.readString(root.resolve("scripts/Test-PublishedHoldemDownload.ps1"));
+        add(checks, "Anonymous download runner disables credentials and cookies", "credentialless HTTP client",
+                downloader.contains("UseCookies = $false") && downloader.contains("$handler.Credentials = $null")
+                        && downloader.contains("$handler.DefaultProxyCredentials = $null")
+                        ? "credentialless HTTP client" : "credentials may be sent");
+        add(checks, "Download runner verifies byte length, digest, and APK signature", "complete APK integrity gate",
+                downloader.contains("$count -ne $expectedBytes") && downloader.contains("$hash -ne $expectedHash")
+                        && downloader.contains("$signature[0] -ne 0x50") ? "complete APK integrity gate" : "integrity gate incomplete");
+        add(checks, "Download runner rejects DRAFT", "PREPARED/PUBLISHED only",
+                downloader.contains("@('PREPARED','PUBLISHED')") ? "PREPARED/PUBLISHED only" : "unqualified state accepted");
+        publish(root, "J6ReleaseDownloadRouteGovernance", "Current version and anonymous download contract", checks);
+        assertTrue(!checks.isEmpty() && checks.stream().allMatch(AtfAssertion::passed),
+                () -> checks.stream().filter(check -> !check.passed()).map(check -> check.name() + " expected "
+                        + check.expected() + " actual " + check.actual()).toList().toString());
     }
 
     private void verify(Path root, List<AtfAssertion> checks) throws Exception {
@@ -91,6 +106,17 @@ class ReleaseGovernanceTest {
         String androidBuild = Files.readString(root.resolve("holdem-android/app/build.gradle"));
         add(checks, "Runtime language resources cannot split from the APK", "bundle language split disabled",
                 androidBuild.contains("enableSplit = false") ? "bundle language split disabled" : "language split may be enabled");
+        add(checks, "Release APK build type disables debugging", "debuggable false",
+                androidBuild.contains("debuggable false") ? "debuggable false" : "debuggable is not disabled");
+        boolean deterministicSanityOnly = androidBuild.contains("testBuildType 'sanity'")
+                && java.util.regex.Pattern.compile("sanity\\s*\\{[^}]*debuggable true", java.util.regex.Pattern.DOTALL).matcher(androidBuild).find()
+                && androidBuild.contains("initWith release");
+        add(checks, "Deterministic deals stay in the non-distributable sanity variant", "sanity-only seeded build",
+                deterministicSanityOnly ? "sanity-only seeded build" : "test seed can reach the distributable build");
+        String androidSanity = Files.readString(root.resolve("holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java"));
+        add(checks, "Native evidence is returned by instrumentation", "receipt and screenshots stream from the test run",
+                androidSanity.contains("result.putString(\"receipt\"") && androidSanity.contains("status.putString(\"pngBase64\"")
+                        ? "receipt and screenshots stream from the test run" : "evidence depends on private device storage");
         add(checks, "Release root avoids Raw and folder downloads", "no raw or source-folder URL",
                 mainReadme.contains("raw.githubusercontent.com") || mainReadme.contains("release/" + version + "/" + packageName)
                         ? "unqualified route present" : "no raw or source-folder URL");
@@ -138,21 +164,21 @@ class ReleaseGovernanceTest {
         }
     }
 
-    private void publish(Path root, List<AtfAssertion> checks) throws Exception {
+    private void publish(Path root, String testClass, String scenario, List<AtfAssertion> checks) throws Exception {
         Path output = Path.of(System.getProperty("atf.test.reportDirectory", "target/atf-reports"));
         Files.createDirectories(output);
-        Path reportPath = output.resolve("j6-release-governance-" + System.currentTimeMillis() + ".html");
+        Path reportPath = output.resolve(testClass + "-" + System.currentTimeMillis() + ".html");
         AtfReportStatus status = checks.stream().allMatch(AtfAssertion::passed) ? AtfReportStatus.PASS : AtfReportStatus.FAIL;
         var settings = ReportingSettings.defaults();
         var redactor = new SensitiveDataRedactor();
         try (var run = new AssertionAuditRun(new ExtentReportSession(reportPath, settings, redactor), redactor, settings);
-             var invocation = run.open(new AssertionAuditReport.Identity("J6ReleaseGovernance", "ro.atf.j6.release",
-                     "Current version, APK, and download route", "release", List.of("component", "governance", "offline")))) {
+             var invocation = run.open(new AssertionAuditReport.Identity(testClass, "ro.atf.j6.release",
+                     scenario, "release", List.of("component", "governance", "offline")))) {
             invocation.phase("TEST BODY", checks, status, "", new ReportPhaseTiming(java.time.Duration.ofMillis(1), 1));
             invocation.complete(status);
         }
         var profile = new ReportArtifactProfile(ReportArtifactProfile.Renderer.EXTENT, List.of(
-                new ReportArtifactProfile.Scenario("J6ReleaseGovernance", "Current version, APK, and download route",
+                new ReportArtifactProfile.Scenario(testClass, scenario,
                         status, List.of(new ReportArtifactProfile.Phase("TEST BODY", status,
                         List.of(new ReportArtifactProfile.Assertions("Component assertions",
                                 checks.stream().map(check -> new ReportArtifactProfile.Comparison(check.name(), check.passed())).toList())))))));
@@ -162,6 +188,13 @@ class ReleaseGovernanceTest {
 
     private static void add(List<AtfAssertion> checks, String name, String expected, String actual) {
         checks.add(new AtfAssertion(name, expected, actual, expected.equals(actual)));
+    }
+
+    private static void recordRoute(List<AtfAssertion> checks, String name, String state, String readme,
+                                    String version, boolean expected) {
+        boolean accepted = routePolicy(state, readme, version);
+        add(checks, name, expected ? "accepted" : "blocked", accepted == expected
+                ? (expected ? "accepted" : "blocked") : (accepted ? "exposed" : "rejected"));
     }
 
     private static String gradleVersion(String build) {
@@ -174,7 +207,7 @@ class ReleaseGovernanceTest {
         String page = prefix + "tag/v" + version;
         String apk = prefix + "download/v" + version + "/HoldemLab-" + version + ".apk";
         long releaseLinks = readme.lines().filter(line -> line.contains(prefix)).count();
-        if (!state.equals("PUBLISHED")) return releaseLinks == 0;
+        if (!state.equals("PUBLISHED")) return false;
         return releaseLinks == 2 && readme.lines().filter(line -> line.contains(page)).count() == 1
                 && readme.lines().filter(line -> line.contains(apk)).count() == 1
                 && !readme.contains("raw.githubusercontent.com") && !readme.contains("/releases/latest");

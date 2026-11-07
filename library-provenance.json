@@ -24,47 +24,216 @@
     {
       "name": "Reporting",
       "release": {
-        "coordinate": "atf.api:atf-reporting:1.0.0-j22",
+        "coordinate": "atf.api:atf-reporting:1.0.0-j23",
         "producerDirectory": "C:/work/1/atf_j0",
-        "producerHead": "5e89e77064a1c57e340c101847f89998395f8197",
+        "producerHead": "f4d9b2ca370b9c53bf456990714860f4ad0919d4",
         "producerHasUncommittedChanges": true,
-        "buildStage": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_REPORT149_ACTIVE_DO_NOT_CLEAN_a0d9bd86\\publisher-final-a",
+        "buildStage": "C:/Users/Cristi/AppData/Local/Temp/ATF_FAILS_156_4237e29c/publisher-budget-j23",
         "javaRelease": 21,
         "sourceIncluded": false,
-        "binarySha256": "DE747A0382027210D3443B98BE8594FC97661B07A7A34E6B61A220984D6BF41B",
-        "publishedPomSha256": "08BF0167B0F896E59D93711ED4B19C66C234B9EB20B2BC5C7265AC9AFE57F08C",
-        "producerInputsSha256": "CFFC125AAB51F4E69799B9E31796FB073DCFFA50E79DA469F51DE44723865066",
-        "publicationInputsSha256": "D0BE50AA4A88DAF3197633F4E3C915CFD198DE73B38C03C86ABEB137B40FD598",
+        "binarySha256": "2378EA9D410690D2424B4BC58E1ED203E55CE2B7F60BE8E8CC8A1847E2E5B756",
+        "publishedPomSha256": "523FEAC2C69AC62771CD24D88A86A7A6082B5379CA158BBD991E2F0BEB44F827",
+        "producerInputsSha256": "527A03EF0F862C4F7FAEEE2831F3AB4BFCEF1AF8FDF78A71F91CC3C5AFC17B1E",
+        "publicationInputsSha256": "570076FAD535012D2A0C797C7C246F1AB86C883AC175578030F0D151D7A39424",
         "producerVerification": {
-          "tests": 120,
+          "tests": 123,
           "failures": 0,
           "errors": 0,
-          "skips": 0,
-          "evidence": "C:/Users/Cristi/AppData/Local/Temp/ATF_REPORT149_ACTIVE_DO_NOT_CLEAN_a0d9bd86/publisher-final-a/ATF_Reporting_Verification.md",
-          "scope": "Original producer publication; separate from J6 adoption",
-          "knownLimits": [
-            "REPORT-TEST-SETUP-153: generic browser setup ownership remains separate; unfinished runs are not passes",
-            "REPORT-SINGLE-ACTIVE-VIEW: the wider cross-view accessibility criterion remains separate; the Fails native-host collision is fixed",
-            "Consumer sanity qualifies shared-session Extent/fallback contracts; physical Android/Kafka/ASR execution is not inferred"
-          ]
+          "skipped": 0
         },
         "currentAcceptance": {
-          "browserLifecycleRegression": {
-            "owner": "atf_j0",
-            "sameBinary": true,
-            "status": "VERIFIED_SCOPED",
-            "nativeAcceptance": "Owned Windows Chromium and driver exit verified on source and physical JAR",
-            "canonicalAcceptance": "OPEN: REPORT-BROWSER-LIFECYCLE-154",
-            "currentVerification": "C:/Users/Cristi/AppData/Local/Temp/ATF_BROWSER_NATIVE_ACTIVE_DO_NOT_CLEAN_d9ef240b/report-browser-native-155-acceptance.json",
-            "junitDiscovery": {
-              "status": "VERIFIED",
-              "sourceControls": 21,
-              "jarControls": 21
+          "status": "PASSED",
+          "evidence": "C:/Users/Cristi/AppData/Local/Temp/ATF_FAILS_156_4237e29c/publisher-budget-j23/ATF_Reporting_Verification.md",
+          "scope": "Terminal UI failure evidence, exact backlinks, preview budgets and browser phase lifecycle",
+          "defaultAssertionPreviewCharacters": 240,
+          "sourceRegressions": {
+            "tests": 883,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          },
+          "physicalJarRegressions": {
+            "tests": 883,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          },
+          "identicalCanonicalVerdicts": true,
+          "nativePhysicalJar": {
+            "tests": 123,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          },
+          "browserAcceptance": {
+            "modes": [
+              "Extent",
+              "fallback"
+            ],
+            "surface": "Fails and exact Tests backlink",
+            "tool": "TAB MCP"
+          },
+          "consumerSanity": [
+            {
+              "workspace": "atf_j1",
+              "mode": "staged",
+              "exit": 0,
+              "log": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_FAILS_156_4237e29c\\staged-smoke-j1.log"
             },
-            "consumerSanity": "C:/Users/Cristi/AppData/Local/Temp/ATF_BROWSER_NATIVE_ACTIVE_DO_NOT_CLEAN_d9ef240b/live-smoke-j6.log",
-            "documentationSha256": "2c04eca0b4af45c666e9b17d1d16b084311c55be81f73ace773fd0c74ca4819a"
+            {
+              "workspace": "atf_j2",
+              "mode": "staged",
+              "exit": 0,
+              "log": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_FAILS_156_4237e29c\\staged-smoke-j2.log"
+            },
+            {
+              "workspace": "atf_j3",
+              "mode": "staged",
+              "exit": 0,
+              "log": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_FAILS_156_4237e29c\\staged-smoke-j3.log"
+            },
+            {
+              "workspace": "atf_j4",
+              "mode": "staged",
+              "exit": 0,
+              "log": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_FAILS_156_4237e29c\\staged-smoke-j4.log"
+            },
+            {
+              "workspace": "atf_j5",
+              "mode": "staged",
+              "exit": 0,
+              "log": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_FAILS_156_4237e29c\\staged-smoke-j5.log"
+            },
+            {
+              "workspace": "atf_j6",
+              "mode": "staged",
+              "exit": 0,
+              "log": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_FAILS_156_4237e29c\\staged-smoke-j6.log"
+            }
+          ]
+        },
+        "nativeTests": 123,
+        "nativeTestFailures": 0,
+        "nativeTestErrors": 0,
+        "nativeTestSkips": 0,
+        "versionTransformation": {
+          "producer": "1.0.0-SNAPSHOT",
+          "published": "1.0.0-j23",
+          "otherPomChanges": false
+        },
+        "producerInputs": {
+          "files": 420,
+          "sha256": "6FC0000A5ECDEC5BD6798E5DB839CEE3E474E445A348BFAE87ADE9EB4D73032F",
+          "scope": "pom.xml, README.md and src/** raw source bytes; generated output excluded",
+          "nativeTests": [
+            {
+              "path": "src/test/java/atf/reporting/standalone/ReportingStandaloneContractTest.java",
+              "sha256": "F5237DF9C40FF16412FC8591A04DDBB8E74E1C6203E9190D8A7C4C079522EB0C"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/ReportingStandaloneDependencyTest.java",
+              "sha256": "29D357B8B6A6705E65F845ACC290146A24EDA5D94EC69AD70ECF58C714A247BA"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/ReportingStandaloneEnvironmentSnapshotTest.java",
+              "sha256": "2D2BD48956B6B0132C06D561F232E2C2468411A0CB3616B730A06CD9C3270452"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/ReportingStandaloneEvidenceLayoutTest.java",
+              "sha256": "CCE0286F5C72B7594B6EA93470D13B1A2D70A89AC4E8B3369350BC0FE9AE6D87"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/ReportingStandaloneObservationTest.java",
+              "sha256": "DB16DB13A25DFE84E4FBF456B5B486B883338978EECB5040671255B50549C480"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/ReportingStandaloneVerdictComponentTest.java",
+              "sha256": "9B7F118FD3C530826DFA331184EFEE645B2AD801944AE88EA353B29602DC6B2E"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/StandaloneBoundaryRules.java",
+              "sha256": "5896EF9D48823375F27CA7949106EC787F60409158DCEA8513DC4E173B1AFEF2"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/StandaloneBoundaryRulesTest.java",
+              "sha256": "ED01C4CD0F0BE551D5B8BD5889A1D56BFBA58D6A4D7BDE9C9804119F8C55BD89"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/artifact/ReportingStandaloneArtifactProfileTest.java",
+              "sha256": "BF0870B1BAD55498696989EDAAF35C7B17E5FBEDBEC6FAF90B228C18C95C2C40"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/artifact/ReportingStandaloneInspectionResultTest.java",
+              "sha256": "6470578F575163851723967EB30DC028D3126376DCBCE5A71D1E1BB90ED34F10"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/json/ReportingStandaloneJsonFidelityTest.java",
+              "sha256": "A9FDDA088069C27F9C55DF07AB7ED27EF7AA1EAC3DAF4CD0F8E5B72B4E4B95D8"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/publication/ReportingStandaloneInlinePayloadTest.java",
+              "sha256": "D520B9ABF0B6886F3135CF998B3C47960377B907ACD874FE206EAC1423FEBCC7"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/resources/ReportingStandaloneResourceAutonomyTest.java",
+              "sha256": "514B06EC3DDA42154CED49BAB7B1E9FB0A62D78418AA45509B0E34DD7FCC0AE9"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/source/ReportingModuleSource.java",
+              "sha256": "00FD26CAB91F72FFBE291CE635647A5F664B22B086A9A6C444CC792D9506D20A"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/source/ReportingSourceArchitectureTest.java",
+              "sha256": "109D8B6E26D72600B07A26EE9E15CA0EF17923D9FC0FC1F28DF65BAD2E5EE074"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/tags/ReportingStandaloneTagCompatibilityTest.java",
+              "sha256": "FE1CFCBFAABB8CB5A6C8B18E9910F13E45EB0315B50D148E253C921DBDEEAA4D"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/timing/ReportingStandaloneTransportTimingTest.java",
+              "sha256": "A9185780FD883AECE1A55398964068267C7BF0956B54C585E4413495B549B5B7"
+            },
+            {
+              "path": "src/test/java/atf/reporting/standalone/validation/ReportingStandaloneValidationDisclosureTest.java",
+              "sha256": "0360B39B331120D87C24D67AB391D9DBA6B480D9E6FE22DDDB241980190E4C96"
+            }
+          ]
+        },
+        "verificationRetention": {
+          "policy": "Only current verification beside its matching producer in owned TMP; historical provenance retained",
+          "currentEvidence": "C:/Users/Cristi/AppData/Local/Temp/ATF_FAILS_156_4237e29c/publisher-budget-j23/ATF_Reporting_Verification.md"
+        },
+        "reproducibility": {
+          "freshParentlessBuilds": 2,
+          "identicalBytes": true,
+          "verifiedSha256": "2378EA9D410690D2424B4BC58E1ED203E55CE2B7F60BE8E8CC8A1847E2E5B756"
+        },
+        "history": [
+          {
+            "coordinate": "atf.api:atf-reporting:1.0.0-j22",
+            "buildStage": "C:\\Users\\Cristi\\AppData\\Local\\Temp\\ATF_REPORT149_ACTIVE_DO_NOT_CLEAN_a0d9bd86\\publisher-final-a",
+            "binarySha256": "DE747A0382027210D3443B98BE8594FC97661B07A7A34E6B61A220984D6BF41B",
+            "publishedPomSha256": "08BF0167B0F896E59D93711ED4B19C66C234B9EB20B2BC5C7265AC9AFE57F08C",
+            "currentAcceptance": {
+              "browserLifecycleRegression": {
+                "owner": "atf_j0",
+                "sameBinary": true,
+                "status": "VERIFIED_SCOPED",
+                "nativeAcceptance": "Owned Windows Chromium and driver exit verified on source and physical JAR",
+                "canonicalAcceptance": "OPEN: REPORT-BROWSER-LIFECYCLE-154",
+                "currentVerification": "C:/Users/Cristi/AppData/Local/Temp/ATF_BROWSER_NATIVE_ACTIVE_DO_NOT_CLEAN_d9ef240b/report-browser-native-155-acceptance.json",
+                "junitDiscovery": {
+                  "status": "VERIFIED",
+                  "sourceControls": 21,
+                  "jarControls": 21
+                },
+                "consumerSanity": "C:/Users/Cristi/AppData/Local/Temp/ATF_BROWSER_NATIVE_ACTIVE_DO_NOT_CLEAN_d9ef240b/live-smoke-j6.log",
+                "documentationSha256": "2c04eca0b4af45c666e9b17d1d16b084311c55be81f73ace773fd0c74ca4819a"
+              }
+            }
           }
-        }
+        ]
       }
     }
   ],
@@ -163,5 +332,8 @@
     "evidence": "C:/Users/Cristi/AppData/Local/Temp/ATF_BROWSER_LIFECYCLE_ACTIVE_DO_NOT_CLEAN_d32b7955/j6-adoption.json",
     "mavenTests": 1,
     "auditableComparisons": 18
+  },
+  "verificationRetention": {
+    "currentEvidence": "C:/Users/Cristi/AppData/Local/Temp/ATF_FAILS_156_4237e29c/publisher-budget-j23/ATF_Reporting_Verification.md"
   }
 }

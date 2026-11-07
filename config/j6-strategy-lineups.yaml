@@ -1,0 +1,9 @@
+schemaVersion: 1
+policyDefaults: config/j6-policy-equity.yaml
+equityPolicyFiles:
+  equity-baseline: config/policy-tuning/j6-policy-equity-baseline.yaml
+  equity-stack-aware: config/policy-tuning/j6-policy-equity-stack-aware.yaml
+lineups:
+  4: [tag, pressure, equity-baseline, equity-stack-aware]
+  5: [tag, calling, bluff, equity-baseline, equity-stack-aware]
+  6: [tag, calling, pressure, loose, equity-baseline, equity-stack-aware]

@@ -160,7 +160,7 @@ class TournamentArenaTest {
         var trace = new StringWriter();
         TournamentArena.play(rules, 45, 12, 500, policies, new PrintWriter(trace));
         var decision = trace.toString().lines().filter(line -> line.startsWith("DECISION ")).findFirst().orElseThrow();
-        assertTrue(decision.matches(".*positionFromButton=\\d+ street=(PREFLOP|FLOP|TURN|RIVER) pot=\\d+ toCall=\\d+ heroStack=\\d+$"), decision);
+        assertTrue(decision.matches(".*positionFromButton=\\d+ street=(PREFLOP|FLOP|TURN|RIVER) pot=\\d+ toCall=\\d+ heroStack=\\d+ activeOpponents=\\d+ bigBlind=\\d+ visibleSeatIds=\\[[0-5,]*\\] visibleStacks=\\[[0-9,]*\\] visibleContributions=\\[[0-9,]*\\] foldedSeatIds=\\[[0-5,]*\\] priorAllInActors=\\[[0-5,]*\\] priorAllInEvents=\\[[0-5:callraise,]*\\] legalActions=.*"), decision);
         assertFalse(decision.contains("holeCards="), "A replay trace must not expose opponents' private cards");
         assertFalse(decision.contains("futureBoard="), "A replay trace must not expose undealt board cards");
     }

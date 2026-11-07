@@ -76,26 +76,27 @@ try {
     } finally { Pop-Location }
     $mavenXml = @(Get-ChildItem -LiteralPath $stage -Recurse -File -Filter 'TEST-*.xml' | Where-Object FullName -match '[\\/]target[\\/]surefire-reports[\\/]')
     $mavenSuites = @($mavenXml | ForEach-Object { [xml](Get-Content -Raw -LiteralPath $_.FullName) })
-    $mavenTests = ($mavenSuites | Measure-Object -Property { [int]$_.testsuite.tests } -Sum).Sum
+    $mavenTests = ($mavenSuites | ForEach-Object { [int]$_.testsuite.tests } | Measure-Object -Sum).Sum
     $mavenFailures = ($mavenSuites | ForEach-Object { [int]$_.testsuite.failures + [int]$_.testsuite.errors + [int]$_.testsuite.skipped } | Measure-Object -Sum).Sum
     if (!$mavenTests -or $mavenFailures) { throw 'Maven XML population contains no tests or a failing/skipped test.' }
 
     $appRoot = Join-Path $stage 'holdem-android'
-    Set-Content -LiteralPath (Join-Path $appRoot 'local.properties') -Value ('sdk.dir=' + $Sdk.Replace('\','/')) -Encoding ascii
+    Set-Content -LiteralPath (Join-Path $appRoot 'local.properties') -Value ('sdk.dir=' + $Sdk.Replace('\','/').Replace(':','\:')) -Encoding ascii
     Push-Location $appRoot
     try {
-        & .\gradlew.bat --offline --no-daemon --max-workers=2 :app:testReleaseUnitTest :app:lintRelease `
-            :app:assembleRelease :app:assembleReleaseAndroidTest `
+        & .\gradlew.bat --offline --no-daemon --max-workers=2 :app:testSanityUnitTest :app:lintRelease `
+            :app:assembleSanity :app:assembleSanityAndroidTest :app:assembleRelease `
             *> (Join-Path $RunRoot 'gradle.log')
         if ($LASTEXITCODE -ne 0) { throw 'Android JVM, lint, or APK build failed; see gradle.log.' }
     } finally { Pop-Location }
-    $unitXml = @(Get-ChildItem -LiteralPath (Join-Path $appRoot 'app/build/test-results/testReleaseUnitTest') -File -Filter 'TEST-*.xml')
+    $unitXml = @(Get-ChildItem -LiteralPath (Join-Path $appRoot 'app/build/test-results/testSanityUnitTest') -File -Filter 'TEST-*.xml')
     $androidSuites = @($unitXml | ForEach-Object { [xml](Get-Content -Raw -LiteralPath $_.FullName) })
-    $androidTests = ($androidSuites | Measure-Object -Property { [int]$_.testsuite.tests } -Sum).Sum
+    $androidTests = ($androidSuites | ForEach-Object { [int]$_.testsuite.tests } | Measure-Object -Sum).Sum
     $androidFailures = ($androidSuites | ForEach-Object { [int]$_.testsuite.failures + [int]$_.testsuite.errors + [int]$_.testsuite.skipped } | Measure-Object -Sum).Sum
     if (!$androidTests -or $androidFailures) { throw 'Android JVM XML population contains no tests or a failing/skipped test.' }
 
     $releaseApk = Join-Path $appRoot 'app/build/outputs/apk/release/app-release.apk'
+    $sanityApk = Join-Path $appRoot 'app/build/outputs/apk/sanity/app-sanity.apk'
     $finalApk = Join-Path $RunRoot "HoldemLab-$version.apk"
     $apksigner = Join-Path $Sdk 'build-tools/36.0.0/apksigner.bat'
     $aapt = Join-Path $Sdk 'build-tools/36.0.0/aapt.exe'
@@ -128,18 +129,21 @@ try {
     $publisher = Join-Path $appRoot 'tools/PublishTournamentExtent.java'
     $tournamentEvidence = Join-Path $RunRoot 'android-tournament-sanity'
     $releaseEvidence = Join-Path $RunRoot 'android-release-smoke'
-    & $java -cp $classPath $publisher (Join-Path $reports 'android-tournament-extent.html') $tournamentEvidence $releaseApk @($unitXml.FullName)
+    & $java -cp $classPath $publisher (Join-Path $reports 'android-tournament-extent.html') $tournamentEvidence $sanityApk @($unitXml.FullName)
     if ($LASTEXITCODE -ne 0) { throw 'Tournament Extent publication failed.' }
     & $java -cp $classPath $publisher (Join-Path $reports 'android-release-smoke-extent.html') $releaseEvidence $releaseApk
     if ($LASTEXITCODE -ne 0) { throw 'Release smoke Extent publication failed.' }
     Get-ChildItem -LiteralPath (Join-Path $reports 'maven') -File -Filter '*.html' | ForEach-Object {
         Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $reports $_.Name)
     }
-    $lint = [xml](Get-Content -Raw -LiteralPath (Join-Path $appRoot 'app/build/reports/lint-results-debug.xml'))
+    $lint = [xml](Get-Content -Raw -LiteralPath (Join-Path $appRoot 'app/build/reports/lint-results-release.xml'))
     $lintWarnings = @($lint.issues.issue | Where-Object severity -eq 'Warning' | ForEach-Object id)
-    $tournament = Get-Content -Raw -LiteralPath (Join-Path $debugEvidence 'native.json') | ConvertFrom-Json
+    if ($lintWarnings.Count) { throw "Release lint has unresolved warnings: $($lintWarnings -join ', ')" }
+    $tournament = Get-Content -Raw -LiteralPath (Join-Path $tournamentEvidence 'native.json') | ConvertFrom-Json
     $releaseSmoke = Get-Content -Raw -LiteralPath (Join-Path $releaseEvidence 'native.json') | ConvertFrom-Json
-    if ($tournament.status -ne 'PASS' -or $releaseSmoke.status -ne 'PASS' -or $releaseSmoke.apkSha256 -ne $apkHash) {
+    $sanityHash = (Get-FileHash -LiteralPath $sanityApk -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($tournament.status -ne 'PASS' -or $releaseSmoke.status -ne 'PASS' -or
+        $tournament.apkSha256 -ne $sanityHash -or $releaseSmoke.apkSha256 -ne $apkHash) {
         throw 'Native receipts do not prove the exact release APK and the tournament flow.'
     }
     $afterManifest = Get-SourceManifest $sourceRoot

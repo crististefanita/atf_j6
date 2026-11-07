@@ -14,11 +14,11 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Base64;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -32,7 +32,6 @@ public final class TournamentSanity extends Instrumentation {
     private final JSONArray assertions = new JSONArray();
     private final JSONArray captures = new JSONArray();
     private UiAutomation ui;
-    private File evidence;
     private Bundle arguments;
 
     @Override public void onCreate(Bundle arguments) {
@@ -47,7 +46,6 @@ public final class TournamentSanity extends Instrumentation {
         String apkHash = "";
         String journey = arguments.getString("mode", "tournament");
         try {
-            evidence = getContext().getDir("tournament-sanity", 0);
             apkHash = installedApkHash();
             ui = getUiAutomation();
             if (journey.equals("tournament")) {
@@ -68,9 +66,7 @@ public final class TournamentSanity extends Instrumentation {
                     .put("density", config.densityDpi).put("fontScale", config.fontScale).put("actions", actions)
                     .put("assertions", assertions).put("captures", captures).put("error", failure)
                     .put("status", failure.isEmpty() ? "PASS" : "FAIL");
-            try (var output = new FileOutputStream(new File(evidence, "native.json"))) {
-                output.write(receipt.toString(2).getBytes(StandardCharsets.UTF_8));
-            }
+            result.putString("receipt", receipt.toString());
         } catch (Exception problem) {
             failure += " Evidence write failed: " + problem;
         }
@@ -242,12 +238,18 @@ public final class TournamentSanity extends Instrumentation {
         ui.waitForIdle(200, 4000);
         var image = ui.takeScreenshot();
         if (image == null) throw new AssertionError("Could not capture " + name);
-        var path = new File(evidence, name + ".png");
-        try (var stream = new FileOutputStream(path)) {
+        byte[] png;
+        try (var stream = new ByteArrayOutputStream()) {
             if (!image.compress(Bitmap.CompressFormat.PNG, 100, stream)) throw new AssertionError("Could not write " + name);
+            png = stream.toByteArray();
         } finally {
             image.recycle();
         }
-        captures.put(path.getName());
+        String fileName = name + ".png";
+        var status = new Bundle();
+        status.putString("capture", fileName);
+        status.putString("pngBase64", Base64.getEncoder().encodeToString(png));
+        sendStatus(2, status);
+        captures.put(fileName);
     }
 }

@@ -24,7 +24,7 @@ android {
         testApplicationId 'ro.atf.holdem.android.test'
         testInstrumentationRunner 'ro.atf.holdem.android.TournamentSanity'
     }
-    testBuildType 'release'
+    testBuildType 'sanity'
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -38,6 +38,10 @@ android {
         release {
             signingConfig signingConfigs.holdemRelease
             debuggable false
+        }
+        sanity {
+            initWith release
+            debuggable true
         }
     }
 }
@@ -60,7 +64,7 @@ def verifyHoldemReleaseSigning = tasks.register('verifyHoldemReleaseSigning') {
         }
     }
 }
-tasks.matching { it.name == 'preReleaseBuild' }.configureEach {
+tasks.matching { it.name in ['preReleaseBuild', 'preSanityBuild'] }.configureEach {
     dependsOn verifyHoldemReleaseSigning
 }
 

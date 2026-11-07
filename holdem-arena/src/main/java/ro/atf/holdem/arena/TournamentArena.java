@@ -40,10 +40,17 @@ public final class TournamentArena {
                 HoldemObservation observation = hand.observeActor();
                 Decision decision = policies.get(seat).decide(observation);
                 hand.act(seat, decision.action(), decision.amount());
-                trace.printf("DECISION seat=%d policy=%s action=%s amount=%d reason=%s positionFromButton=%d street=%s pot=%d toCall=%d heroStack=%d%n",
+                trace.printf("DECISION seat=%d policy=%s action=%s amount=%d reason=%s positionFromButton=%d street=%s pot=%d toCall=%d heroStack=%d activeOpponents=%d bigBlind=%d visibleSeatIds=%s visibleStacks=%s visibleContributions=%s foldedSeatIds=%s priorAllInActors=%s priorAllInEvents=%s legalActions=%s%n",
                         seat, decision.policyVersion(), decision.action(), decision.amount(), decision.explanation(),
                         observation.positionFromButton(), observation.street(), observation.pot(), observation.toCall(),
-                        observation.heroStack());
+                        observation.heroStack(), observation.activeOpponentCount(), observation.bigBlind(),
+                        compactSeatIds(observation), compact(observation.visibleStacks()),
+                        compact(observation.visibleContributions()), foldedSeatIds(observation),
+                        priorAllInActors(observation),
+                        priorAllInEvents(observation),
+                        observation.legalActions().stream().map(action -> action.type() + ":" + action.amount()
+                                + ":" + action.minAmount() + ":" + action.maxAmount())
+                                .collect(java.util.stream.Collectors.joining(",")));
                 published = publishEvents(hand, trace, published);
             }
             var stacks = tournament.stacks();
@@ -62,6 +69,58 @@ public final class TournamentArena {
         var events = hand.history();
         events.subList(from, events.size()).forEach(trace::println);
         return events.size();
+    }
+
+    private static String compactSeatIds(HoldemObservation observation) {
+        return observation.publicActionHistory().stream().filter(event -> event.startsWith("SEATS "))
+                .findFirst().map(event -> event.substring("SEATS ".length()).replace(" ", ""))
+                .orElseThrow(() -> new IllegalStateException("Public seat map is missing from hand history"));
+    }
+
+    private static String compact(List<Integer> values) {
+        return values.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(",", "[", "]"));
+    }
+
+    private static String foldedSeatIds(HoldemObservation observation) {
+        var seats = observation.publicActionHistory().stream()
+                .filter(event -> event.matches("(?:PREFLOP|FLOP|TURN|RIVER) \\d+ FOLD \\d+"))
+                .map(event -> event.split(" ")[1]).distinct().toList();
+        return "[" + String.join(",", seats) + "]";
+    }
+
+    private static String priorAllInActors(HoldemObservation observation) {
+        var actors = observation.publicActionHistory().stream()
+                .filter(event -> event.matches("(?:PREFLOP|FLOP|TURN|RIVER) \\d+ ALL_IN \\d+"))
+                .map(event -> event.split(" ")[1]).distinct().toList();
+        return "[" + String.join(",", actors) + "]";
+    }
+
+    private static String priorAllInEvents(HoldemObservation observation) {
+        var streetPaid = new HashMap<Integer, Integer>();
+        var events = new ArrayList<String>();
+        int price = observation.bigBlind();
+        for (String event : observation.publicActionHistory()) {
+            if (event.startsWith("SB ") || event.startsWith("BB ")) {
+                String[] parts = event.split(" ");
+                streetPaid.put(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+                continue;
+            }
+            if (event.matches("(?:FLOP|TURN|RIVER) \\[.*\\]")) {
+                streetPaid.clear();
+                price = 0;
+                continue;
+            }
+            String[] parts = event.split(" ");
+            if (parts.length != 4 || !parts[0].matches("PREFLOP|FLOP|TURN|RIVER")) continue;
+            int seat = Integer.parseInt(parts[1]);
+            int amount = Integer.parseInt(parts[3]);
+            int after = streetPaid.getOrDefault(seat, 0) + amount;
+            if (parts[2].equals("ALL_IN"))
+                events.add(seat + ":" + (after > price ? "raise" : "call") + ":" + amount);
+            streetPaid.put(seat, after);
+            price = Math.max(price, after);
+        }
+        return "[" + String.join(",", events) + "]";
     }
 
     static DecisionPolicy policyForSeat(int seat, long seed, String cohort, TournamentPolicyConfig config) {

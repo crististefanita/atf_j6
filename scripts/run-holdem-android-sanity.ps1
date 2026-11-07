@@ -11,14 +11,15 @@ $leaseFile = 'C:/work/whist_back/android-ui-lease.json'
 $adb = Join-Path $Sdk 'platform-tools/adb.exe'
 $appId = 'ro.atf.holdem.android'
 $testId = "$appId.test"
-$variant = 'release'
+$variant = if ($Mode -eq 'release-smoke') { 'release' } else { 'sanity' }
 $journey = $Mode
 $label = if ($Mode -eq 'release-smoke') { 'android-release-smoke' } else { 'android-tournament-sanity' }
 $evidenceRoot = Join-Path $RunRoot $label
 New-Item -ItemType Directory -Force -Path $evidenceRoot | Out-Null
 $apkRoot = Join-Path $RunRoot "source/holdem-android/app/build/outputs/apk"
 $appApk = Join-Path $apkRoot "$variant/app-$variant.apk"
-$testApk = Join-Path $apkRoot "androidTest/$variant/app-$variant-androidTest.apk"
+$testApkVariant = 'sanity'
+$testApk = Join-Path $apkRoot "androidTest/$testApkVariant/app-$testApkVariant-androidTest.apk"
 if (!(Test-Path -LiteralPath $appApk) -or !(Test-Path -LiteralPath $testApk)) { throw "Both $variant APKs must be built in the external run first." }
 $token = [guid]::NewGuid().ToString('N')
 $lease = [ordered]@{ active=$true; leaseId=$token; serial=$Serial; owner="J6 $Mode"; run=$evidenceRoot; acquiredUtc=[datetime]::UtcNow.ToString('o') }
@@ -44,11 +45,6 @@ function InvokeAdb([string[]]$Arguments) {
     if ($LASTEXITCODE -ne 0) { throw "ADB failed: $($output -join ' ')" }
     return ($output -join "`n")
 }
-function CopyEvidence([string]$Name) {
-    if ($Name -notmatch '^(native\.json|0[1-5]-[a-z-]+\.png)$') { throw "Unexpected evidence file: $Name" }
-    & $adb -s $Serial exec-out run-as $testId cat "files/tournament-sanity/$Name" > (Join-Path $evidenceRoot $Name)
-    if ($LASTEXITCODE -ne 0) { throw "Could not copy $Name from the instrumentation package." }
-}
 $env:ADB_SERVER_SOCKET = 'tcp:192.168.56.1:5038'
 UpdateLease $true
 try {
@@ -73,9 +69,29 @@ try {
     }
     $instrumentation = InvokeAdb @('shell','am','instrument','-w','-r','-e','mode',$journey,"$testId/ro.atf.holdem.android.TournamentSanity")
     $instrumentation | Set-Content -LiteralPath (Join-Path $evidenceRoot 'instrumentation.txt') -Encoding utf8NoBOM
-    CopyEvidence 'native.json'
-    $receipt = Get-Content -Raw -LiteralPath (Join-Path $evidenceRoot 'native.json') | ConvertFrom-Json
-    foreach ($capture in $receipt.captures) { CopyEvidence $capture }
+    $receiptMatch = [regex]::Match($instrumentation, '(?m)^INSTRUMENTATION_RESULT: receipt=(\{.*\})$')
+    if (!$receiptMatch.Success) {
+        throw 'Android instrumentation returned no JSON receipt; preserve instrumentation.txt and device logs.'
+    }
+    $receiptJson = $receiptMatch.Groups[1].Value
+    $receiptJson | Set-Content -LiteralPath (Join-Path $evidenceRoot 'native.json') -Encoding utf8NoBOM
+    $receipt = $receiptJson | ConvertFrom-Json
+    $currentStatus = @{}
+    foreach ($line in ($instrumentation -split '\r?\n')) {
+        if ($line -match '^INSTRUMENTATION_STATUS: ([^=]+)=(.*)$') {
+            $currentStatus[$matches[1]] = $matches[2]
+            continue
+        }
+        if ($line -match '^INSTRUMENTATION_STATUS_CODE: 2$') {
+            $capture = $currentStatus['capture']
+            $encoded = $currentStatus['pngBase64']
+            if ($capture -and $encoded) {
+                if ($capture -notmatch '^0[1-5]-[a-z-]+\.png$') { throw "Unexpected screenshot name: $capture" }
+                [IO.File]::WriteAllBytes((Join-Path $evidenceRoot $capture), [Convert]::FromBase64String($encoded))
+            }
+            $currentStatus = @{}
+        }
+    }
     if ($receipt.status -ne 'PASS' -or $receipt.journey -ne $journey -or $instrumentation -notmatch 'INSTRUMENTATION_CODE: -1') {
         throw "Android $Mode failed: $($receipt.error)"
     }

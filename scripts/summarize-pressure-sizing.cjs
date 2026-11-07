@@ -18,7 +18,7 @@ function read(file) {
       tournament.hands.push(hand);
       continue;
     }
-    match = /^DECISION seat=(\d+) policy=(\S+) action=([A-Z_]+) amount=(\d+) reason=.* positionFromButton=(\d+) street=(PREFLOP|FLOP|TURN|RIVER) pot=(\d+) toCall=(\d+) heroStack=(\d+)$/.exec(line);
+    match = /^DECISION seat=(\d+) policy=(\S+) action=([A-Z_]+) amount=(\d+) reason=.* positionFromButton=(\d+) street=(PREFLOP|FLOP|TURN|RIVER) pot=(\d+) toCall=(\d+) heroStack=(\d+)(?: .*)?$/.exec(line);
     if (line.startsWith('DECISION ')) assert.ok(match, `${file}:${index + 1} missing public sizing context`);
     if (match && hand) {
       hand.decisions.push({ seat: +match[1], policy: match[2], action: match[3], amount: +match[4],

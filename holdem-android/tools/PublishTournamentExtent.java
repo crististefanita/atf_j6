@@ -1,4 +1,5 @@
 import atf.reporting.audit.AssertionAuditReport;
+import atf.reporting.artifact.ReportArtifactInspector;
 import atf.reporting.configuration.ReportingSettings;
 import atf.reporting.contract.AtfAssertion;
 import atf.reporting.contract.AtfGherkinKeyword;
@@ -18,6 +19,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -28,16 +30,23 @@ import java.util.List;
 class PublishTournamentExtent {
     public static void main(String[] args) throws Exception {
         if (args.length < 3) throw new IllegalArgumentException("Expected report, native evidence directory and app APK; JUnit XML(s) are optional");
+        Path reportPath = Path.of(args[0]);
+        Instant startedAt = Instant.now();
         Path evidence = Path.of(args[1]);
         var receipt = new ObjectMapper().readTree(evidence.resolve("native.json").toFile());
         boolean passed = true;
-        try (var report = new ExtentReportSession(Path.of(args[0]), new ReportingSettings(240, 0))) {
+        try (var report = new ExtentReportSession(reportPath, new ReportingSettings(240, 0))) {
             for (String xml : Arrays.copyOfRange(args, 3, args.length)) {
                 passed &= component(report, Path.of(xml));
             }
             passed &= nativeUi(report, evidence, receipt, Path.of(args[2]));
         }
         if (!passed) throw new IllegalStateException("Report contains a failed or incomplete scenario");
+        var inspection = ReportArtifactInspector.inspectFresh(reportPath, startedAt);
+        if (!inspection.isCompliant()) {
+            throw new IllegalStateException("Published Extent HTML is not autonomous and structurally compliant: "
+                    + inspection.violations());
+        }
     }
 
     private static boolean component(ExtentReportSession report, Path path) throws Exception {

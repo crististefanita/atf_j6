@@ -83,6 +83,43 @@ class ContextualEquityPolicyTest {
         assertTrue(tuned.requiredEquityPercent(observation) > baseline.requiredEquityPercent(observation));
     }
 
+    @Test void potSizedPublicRaiseAddsASeparatePressurePremium() {
+        var quiet = publicPreflopObservation(List.of("SEATS [0, 1]", "SB 0 10", "BB 1 20"),
+                110, 90, 500, List.of(10, 100), List.of(500, 700));
+        var potSizedRaise = publicPreflopObservation(List.of("SEATS [0, 1]", "SB 0 10", "BB 1 20",
+                        "PREFLOP 1 RAISE 80"),
+                110, 90, 500, List.of(10, 100), List.of(500, 700));
+        var policy = policy(ContextualEquityPolicy.GameMode.CASH);
+
+        assertEquals(6, policy.requiredEquityPercent(potSizedRaise) - policy.requiredEquityPercent(quiet),
+                "The public raise adds one aggression margin and one pot-sized-pressure margin");
+    }
+
+    @Test void coveredAllInCommitmentChangesTournamentCallRiskButNotCashRisk() {
+        var allIn = publicPreflopObservation(List.of("SEATS [0, 1]", "SB 0 10", "BB 1 20",
+                        "PREFLOP 1 ALL_IN 280"),
+                310, 290, 100, List.of(10, 300), List.of(100, 0));
+        var baselineWeights = new ContextualEquityPolicy.ContextWeights(
+                3, 3, 2, 5, 2, 2, 3, 3, 2, 2, 164, 0, 0, 0, 0, 75);
+        var stackAwareWeights = ContextualEquityPolicy.ContextWeights.defaults();
+        var baseline = new ContextualEquityPolicy(256, 2, 8, 18, 60,
+                ContextualEquityPolicy.GameMode.TOURNAMENT, baselineWeights);
+        var stackAware = new ContextualEquityPolicy(256, 2, 8, 18, 60,
+                ContextualEquityPolicy.GameMode.TOURNAMENT, stackAwareWeights);
+        var cashBaseline = new ContextualEquityPolicy(256, 2, 8, 18, 60,
+                ContextualEquityPolicy.GameMode.CASH, baselineWeights);
+        var cashAware = new ContextualEquityPolicy(256, 2, 8, 18, 60,
+                ContextualEquityPolicy.GameMode.CASH, stackAwareWeights);
+
+        assertEquals(12, stackAware.requiredEquityPercent(allIn) - baseline.requiredEquityPercent(allIn),
+                "Covered commitment adds large-bet, all-in, and elimination risk, offset by short-stack urgency");
+        assertEquals(9, cashAware.requiredEquityPercent(allIn) - cashBaseline.requiredEquityPercent(allIn),
+                "Cash keeps public pressure premiums but does not apply tournament survival penalties");
+        assertTrue(stackAware.decide(allIn).explanation().contains("opponentAllIn=true"));
+        assertTrue(stackAware.decide(allIn).explanation().contains("covered=true"));
+        assertTrue(stackAware.decide(allIn).explanation().contains("shortStack=true"));
+    }
+
     @Test void postflopPositionUsesOnlyPlayersWhoCanStillAct() {
         var policy = policy(ContextualEquityPolicy.GameMode.CASH);
         var early = livePositionObservation(1, 1, List.of("RIVER 0 FOLD 0"));
@@ -117,6 +154,15 @@ class ContextualEquityPolicyTest {
                 100, 0, 100, position, List.of(100, 100, 100, 100),
                 List.of(LegalAction.noAmount(ActionType.CHECK), new LegalAction(ActionType.BET, 10, 10, 100)),
                 prependSeats(history), heroSeat);
+    }
+
+    private static HoldemObservation publicPreflopObservation(List<String> history, int pot, int toCall,
+                                                               int heroStack, List<Integer> contributions,
+                                                               List<Integer> stacks) {
+        return new HoldemObservation(1, 0, 2, 1, Street.PREFLOP, List.of(card("Ac"), card("Ad")), List.of(),
+                pot, toCall, heroStack, 0, stacks,
+                List.of(LegalAction.noAmount(ActionType.FOLD), new LegalAction(ActionType.ALL_IN,
+                        heroStack, heroStack, heroStack)), history, 0, 20, contributions);
     }
 
     private static List<String> prependSeats(List<String> history) {

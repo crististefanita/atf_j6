@@ -30,7 +30,7 @@ $maven = 'C:\work\holdem_back\infrastructure\cache\maven'
 .\scripts\Build-HoldemRelease.ps1 -RunRoot $run -MavenRepository $maven
 ```
 
-Runnerul fixează commit-ul, confruntă hash-urile snapshot-ului, rulează `mvn clean test`, Android JVM, lint și build-urile Debug/Release în copia externă. Apoi verifică semnătura, certificatul J6, alinierea, package/version/SDK și `debuggable=false`. Pe emulatorul rezervat execută sanity-ul turneului pe APK-ul Debug și navigarea de intrare pe APK-ul Release. Două receipts leagă APK-urile instalate de rapoarte Extent diferite. Orice test lipsă, skip, FAIL, drift, instalare ocupată ori hash diferit oprește calificarea.
+Runnerul fixează commit-ul, confruntă hash-urile snapshot-ului, rulează `mvn clean test`, Android JVM, lint și variantele Android `sanity`/`release` în copia externă. Ambele sunt semnate cu identitatea J6; numai `sanity` este debuggable și acceptă seed-ul fixture-ului. APK-ul distribuibil rămâne `debuggable=false`. Build-ul verifică semnătura, certificatul J6, alinierea, package/version/SDK și flag-ul debug. Pe emulatorul rezervat execută turneul reproductibil în `sanity` și navigarea de intrare în APK-ul `release` exact. Receipt-urile includ hash-ul APK-ului instalat și sunt publicate în Extent, împreună cu acțiunile, aserțiunile și capturile PNG transmise de instrumentare. Orice test lipsă, skip, FAIL, drift, instalare ocupată ori hash diferit oprește calificarea.
 
 Output-ul `qualification.json` și rapoartele din `$run\reports` sunt sursa pentru dosarul ediției. Guvernanța offline din `ReleaseGovernanceTest` verifică numele, starea, linkurile, checksum-ul și politica Git. Guvernanța de descărcare se execută separat numai după publicare; nu se maschează cu un rezultat local.
 
@@ -40,6 +40,6 @@ Output-ul `qualification.json` și rapoartele din `$run\reports` sunt sursa pent
 2. Completați `release-validation.json` cu APK bytes/SHA/certificat, commit-ul sursă, calificarea și hash-urile documentelor. Marcați `PREPARED` numai după reverificarea fișierului copiat.
 3. Commit-ul sursă și tag-ul `v<versiune>` identifică exact binarul. Commit-ul ulterior al dovezilor poate actualiza catalogul și linkurile, dar nu mută tag-ul.
 4. Atașați APK-ul și checksum-ul la GitHub Release, publicați și comparați asset-urile cu manifestul.
-5. Descărcați fără sesiune sau token în TMP. Verificați status HTTP final, numărul de bytes, SHA-256 și arhiva APK. Scrieți observațiile în `publicDownload`, marcați `PUBLISHED` și legați în README release-ul curent și APK-ul direct.
+5. Cu catalogul în `PREPARED`, rulați `scripts/Test-PublishedHoldemDownload.ps1`. Clientul HTTP nu trimite cookies, Authorization sau credentiale implicite; verifică redirect-ul GitHub, statusul final, lungimea completă, SHA-256 și semnătura ZIP/APK în copia externă. Copiați numai receipt-ul JSON în dosarul ediției, completați `publicDownload`, marcați `PUBLISHED` și legați în README pagina release-ului și asset-ul direct.
 
 Pagina de Release și endpointul de download sunt distincte de `release/<versiune>/`, care rămâne catalogul tehnic și dovada locală.

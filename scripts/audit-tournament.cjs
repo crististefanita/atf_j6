@@ -92,12 +92,24 @@ function audit(file, strict) {
                 assert.equal(buttonAnchor, expectedAnchor, 'Tournament button offset does not match its seed');
                 const levels = [...line.matchAll(/smallBlind=(\d+), bigBlind=(\d+), minimumOpen=(\d+)/g)].map(x=>x.slice(1).map(Number));
                 table = {seed,size:seatCount,step:+stepRaw,interval:+intervalRaw,levels,
-                    buttonAnchor,stack:Array(seatCount).fill(+stackRaw),total:seatCount * +stackRaw,number:0};
+                    buttonAnchor,stack:Array(seatCount).fill(+stackRaw),total:seatCount * +stackRaw,number:0,
+                    strategies:new Map()};
+                const policyOffset = / policyOffset=(-?\d+)$/.exec(line);
+                if (policyOffset) table.policyOffset = +policyOffset[1];
                 table.seedState = word(BigInt(seed));
                 stats.bySize[size] ??= {hands:0,tournaments:0};
                 hand = undefined;
+            } else if (m=/^STRATEGY seat=(\d+) id=([a-z-]+) implementation=([A-Za-z0-9_$]+)$/.exec(line)) {
+                assert.ok(table && table.number===0,'Strategy roster must precede its first hand');
+                const seat=+m[1];
+                assert.ok(seat>=0 && seat<table.size,'Strategy seat is outside the table');
+                assert.ok(!table.strategies.has(seat),'Duplicate strategy seat');
+                assert.ok(![...table.strategies.values()].some(value=>value.id===m[2]),'A strategy role appears twice');
+                table.strategies.set(seat,{id:m[2],implementation:m[3]});
             } else if (m=/^HAND (\d+) elapsed=(\d+) eliminated=(\d+) level=(\d+) .*smallBlind=(\d+), bigBlind=(\d+), minimumOpen=(\d+)\] button=(\d+) dealSeed=(-?\d+)$/.exec(line)) {
                 assert.ok(!table.complete && (!hand || hand.complete));
+                assert.ok(table.strategies.size===0 || table.strategies.size===table.size,
+                    'Strategy roster must identify every seat exactly once');
                 const [number,elapsed,eliminated,level,sb,bb,open,button] = m.slice(1,9).map(Number);
                 assert.equal(number,++table.number);
                 assert.equal(elapsed,(number-1)*table.step);
@@ -118,10 +130,10 @@ function audit(file, strict) {
                 const deck = deckFor(BigInt(m[9]));
                 const n = order.length, base = n*2;
                 const hole = new Map(order.map((seat,index)=>[seat,[deck[index],deck[index+n]]]));
-                hand = {number,active,order,hole,board:[1,2,3,5,7].map(offset=>deck[base+offset]),
-                    blindPlan:[['SB',small,sb],['BB',table.big,bb]],blinds:0,after:table.big,open,street:0,price:bb,full:bb,
+                hand = {number,active,order,hole,button,board:[1,2,3,5,7].map(offset=>deck[base+offset]),
+                    blindPlan:[['SB',small,sb],['BB',table.big,bb]],blinds:0,after:table.big,open,bigBlind:bb,street:0,price:bb,full:bb,
                     responded:new Map(),stack:[...table.stack],paid:Array(table.size).fill(0),streetPaid:Array(table.size).fill(0),
-                    folded:new Set(),shortPrices:[],layers:[]};
+                    folded:new Set(),foldedActors:[],shortPrices:[],layers:[],allInActors:[],allInEvents:[]};
                 stats.hands++;
                 stats.bySize[table.size].hands++;
             } else if (line.startsWith('SEATS ')) {
@@ -134,6 +146,35 @@ function audit(file, strict) {
             } else if (m=/^DECISION seat=(\d+) policy=\S+ action=(\w+) amount=(\d+) reason=/.exec(line)) {
                 assert.ok(!hand.decision);
                 hand.decision = m.slice(1);
+                const context=/ positionFromButton=(\d+) street=(PREFLOP|FLOP|TURN|RIVER) pot=(\d+) toCall=(\d+) heroStack=(\d+) activeOpponents=(\d+) bigBlind=(\d+) visibleSeatIds=\[([0-5,]*)\] visibleStacks=\[([0-9,]*)\] visibleContributions=\[([0-9,]*)\] foldedSeatIds=\[([0-5,]*)\] priorAllInActors=\[([0-5,]*)\] priorAllInEvents=\[([0-5:callraise,]*)\] legalActions=(.*)$/.exec(line);
+                if (context) {
+                    const [position,street,pot,toCall,heroStack,opponents,bigBlind] = context.slice(1,8);
+                    const ids=context[8].split(',').filter(Boolean).map(Number);
+                    const stacks=context[9].split(',').filter(Boolean).map(Number);
+                    const contributions=context[10].split(',').filter(Boolean).map(Number);
+                    const folded=context[11].split(',').filter(Boolean).map(Number);
+                    const priorAllIns=context[12].split(',').filter(Boolean).map(Number);
+                    const priorAllInEvents=context[13].split(',').filter(Boolean);
+                    const legal=context[14].split(',').map(value=>value.split(':'));
+                    const seat=+m[1], expectedIds=hand.active;
+                    assert.deepEqual(ids,expectedIds,'Visible seat map differs from active seats');
+                    assert.deepEqual(stacks,expectedIds.map(value=>hand.stack[value]),'Visible stacks differ from public state');
+                    assert.deepEqual(contributions,expectedIds.map(value=>hand.paid[value]),'Visible contributions differ from public state');
+                    assert.deepEqual(folded,hand.foldedActors,'Folded seat context differs from public history');
+                    assert.deepEqual(priorAllIns,hand.allInActors,'Prior all-in actions differ from public history');
+                    assert.deepEqual(priorAllInEvents,hand.allInEvents,'Prior all-in call/raise context differs from public history');
+                    assert.equal(+position,expectedIds.indexOf(seat)-expectedIds.indexOf(hand.button) < 0
+                        ? expectedIds.indexOf(seat)-expectedIds.indexOf(hand.button)+expectedIds.length
+                        : expectedIds.indexOf(seat)-expectedIds.indexOf(hand.button));
+                    assert.equal(street,streets[hand.street]);
+                    assert.equal(+pot,sum(hand.paid));
+                    assert.equal(+toCall,Math.max(0,price()-hand.streetPaid[seat]));
+                    assert.equal(+heroStack,hand.stack[seat]);
+                    assert.equal(+opponents,live().length-1);
+                    assert.equal(+bigBlind,hand.bigBlind);
+                    assert.ok(legal.some(([type,,minimum,maximum])=>type===m[2]
+                        && +m[3]>=+minimum && +m[3]<=+maximum),'Decision is absent from its recorded legal actions');
+                }
             } else if (m=/^(PREFLOP|FLOP|TURN|RIVER) (\d+) (\w+) (\d+)$/.exec(line)) {
                 const [,street,seatText,action,amountText] = m;
                 if (strict || hand.decision) assert.deepEqual(m.slice(2),hand.decision);
@@ -152,7 +193,7 @@ function audit(file, strict) {
                 }
                 assert.ok(amount<=stack);
                 switch (action) {
-                    case 'FOLD': assert.ok(due>0 && amount===0); hand.folded.add(seat); break;
+                    case 'FOLD': assert.ok(due>0 && amount===0); hand.folded.add(seat); hand.foldedActors.push(seat); break;
                     case 'CHECK': assert.ok(due===0 && amount===0); break;
                     case 'CALL':
                         assert.ok(due>0 && amount===Math.min(due,stack),'Call amount differs from price or stack');
@@ -174,6 +215,10 @@ function audit(file, strict) {
                 hand.paid[seat] += amount;
                 hand.streetPaid[seat] += amount;
                 hand.stack[seat] -= amount;
+                if (action==='ALL_IN') {
+                    if (!hand.allInActors.includes(seat)) hand.allInActors.push(seat);
+                    hand.allInEvents.push(seat+':'+(increase>0?'raise':'call')+':'+amount);
+                }
                 stats.actions[action] = (stats.actions[action] ?? 0)+1;
             } else if (m=/^(FLOP|TURN|RIVER) \[(.*)\]$/.exec(line)) {
                 assert.equal(pending(),undefined,'Street closed with pending action');

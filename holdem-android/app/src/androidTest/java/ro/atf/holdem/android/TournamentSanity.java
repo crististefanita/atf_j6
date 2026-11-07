@@ -33,9 +33,11 @@ public final class TournamentSanity extends Instrumentation {
     private final JSONArray captures = new JSONArray();
     private UiAutomation ui;
     private File evidence;
+    private Bundle arguments;
 
     @Override public void onCreate(Bundle arguments) {
         super.onCreate(arguments);
+        this.arguments = arguments;
         start();
     }
 
@@ -43,7 +45,7 @@ public final class TournamentSanity extends Instrumentation {
         var result = new Bundle();
         String failure = "";
         String apkHash = "";
-        String journey = getArguments().getString("mode", "tournament");
+        String journey = arguments.getString("mode", "tournament");
         try {
             evidence = getContext().getDir("tournament-sanity", 0);
             apkHash = installedApkHash();

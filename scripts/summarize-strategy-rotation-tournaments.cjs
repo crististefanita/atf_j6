@@ -334,12 +334,14 @@ function markdown(summary) {
   for (const row of summary.rows) {
     lines.push(`| ${row.profile} | ${row.seats} | ${row.strategy} | ${row.games} | ${row.wins} | ${(row.meanWinRateAcrossSeedClusters * 100).toFixed(1)}% | ${(row.meanHandEndStackShareAcrossSeedClusters * 100).toFixed(1)}% | ${row.winRateStandardErrorAcrossSeeds === null ? 'n/a' : (row.winRateStandardErrorAcrossSeeds * 100).toFixed(1) + '%'} | ${row.handEndStackShareStandardErrorAcrossSeeds === null ? 'n/a' : (row.handEndStackShareStandardErrorAcrossSeeds * 100).toFixed(1) + '%'} | ${row.decisions} | ${row.facingPriorAllInRaise} (${row.foldFacingPriorAllInRaise}/${row.callFacingPriorAllInRaise}/${row.aggressiveResponseFacingPriorAllInRaise}) | +${row.shoveHistoryPositiveAdjustments}/−${row.shoveHistoryNegativeAdjustments} | ${row.coveredCommitmentCalls}/${row.coveredCommitmentFolds} | ${row.shortStackAllInActions}`);
   }
-  lines.push('', '## Comparație pereche: equity cu risc de stack vs equity de bază', '',
-    'Delta = stack-aware minus baseline. Fiecare seed reunește toate rotațiile de loc și buton, apoi seed-urile se mediază egal. Erorile standard sunt descriptive; numărul mic de seed-uri nu susține concluzii de superioritate.', '',
-    '| Profil | Locuri | Seed-uri independente | Δ rată victorii | SE | Δ pondere medie a stivei | SE |',
-    '|---|---:|---:|---:|---:|---:|---:|');
-  for (const row of summary.pairedEquity) {
-    lines.push(`| ${row.profile} | ${row.seats} | ${row.independentSeedClusters} | ${(row.meanWinRateDelta * 100).toFixed(1)} pp | ${row.winRateDeltaStandardError === null ? 'n/a' : (row.winRateDeltaStandardError * 100).toFixed(1) + ' pp'} | ${(row.meanTrajectoryShareDelta * 100).toFixed(2)} pp | ${row.trajectoryShareDeltaStandardError === null ? 'n/a' : (row.trajectoryShareDeltaStandardError * 100).toFixed(2) + ' pp'} |`);
+  if (summary.pairedEquity.length) {
+    lines.push('', '## Comparație pereche: equity cu risc de stack vs equity de bază', '',
+      'Delta = stack-aware minus baseline. Fiecare seed reunește toate rotațiile de loc și buton, apoi seed-urile se mediază egal. Erorile standard sunt descriptive; numărul mic de seed-uri nu susține concluzii de superioritate.', '',
+      '| Profil | Locuri | Seed-uri independente | Δ rată victorii | SE | Δ pondere medie a stivei | SE |',
+      '|---|---:|---:|---:|---:|---:|---:|');
+    for (const row of summary.pairedEquity) {
+      lines.push(`| ${row.profile} | ${row.seats} | ${row.independentSeedClusters} | ${(row.meanWinRateDelta * 100).toFixed(1)} pp | ${row.winRateDeltaStandardError === null ? 'n/a' : (row.winRateDeltaStandardError * 100).toFixed(1) + ' pp'} | ${(row.meanTrajectoryShareDelta * 100).toFixed(2)} pp | ${row.trajectoryShareDeltaStandardError === null ? 'n/a' : (row.trajectoryShareDeltaStandardError * 100).toFixed(2) + ' pp'} |`);
+    }
   }
   if (summary.pairedShoveHistory.length) {
     lines.push('', '## Comparație pereche: istoric public activ vs. control', '',

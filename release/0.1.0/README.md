@@ -10,7 +10,7 @@ Prima ediție Android pentru No-Limit Texas Hold’em offline.
 | Android | API 26–36 declarate · target SDK 36 |
 | Semnare | Release J6 · `debuggable=false` |
 | Sursă calificată | `c4778a45751a5f579820c039e93d5997deb5800a` |
-| Stare | `PREPARED` · validarea locală a trecut; downloadul public urmează |
+| Stare | `PREPARED` · APK și verificări locale trecute; download anonim blocat |
 
 ## Include
 
@@ -18,8 +18,14 @@ Prima ediție Android pentru No-Limit Texas Hold’em offline.
 - Mână de antrenament și turneu offline cu 4–6 locuri.
 - Acțiuni validate de motor, adversari AI locali și final de victorie sau eliminare.
 
+## Descărcare și stare GitHub
+
+Release-ul `v0.1.0` a fost creat (`437875854`), iar APK-ul și checksum-ul au fost încărcate. API-ul autentificat confirmă că repo-ul este `public`, Release-ul nu este draft, iar asset-ul APK se descarcă complet din API-ul Releases cu status API `302` → CDN `200`, `722172` bytes și SHA-256 identic.
+
+Testul fără cookies, Authorization sau credentiale implicite a primit HTTP `404` pentru profilul proprietarului, repo, pagina Release, API-ul anonim al Release-ului și endpointul APK. Asset-ul este stocat corect, dar GitHub nu-l expune momentan prin ruta publică; nu marcăm ediția `PUBLISHED` și nu publicăm un link în README până când acea probă nu trece.
+
+Verificarea s-a făcut la `2026-11-07T22:16:42Z`. Diagnostic și asset identity sunt în [manifest](release-validation.json). Pentru procesul de remediere, vezi [ATF_Release.md](../../docs/release/ATF_Release.md).
+
 ## Dovezi
 
-[Calificarea și rapoartele Extent](reports/README.md) includ rezultatele și capturile. [Manifestul](release-validation.json) fixează APK-ul, certificatul, commitul și hash-urile. Linkul GitHub Release și APK-ul direct vor apărea după verificarea descărcării complete.
-
-Procesul reproductibil: [ATF_Release.md](../../docs/release/ATF_Release.md).
+[Calificarea și rapoartele Extent](reports/README.md) includ rezultatele și capturile. [Manifestul](release-validation.json) fixează APK-ul, certificatul, commitul, asset-urile și observarea HTTP.

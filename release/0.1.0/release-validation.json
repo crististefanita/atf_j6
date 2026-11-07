@@ -17,8 +17,23 @@
     "sourceCommit": "c4778a45751a5f579820c039e93d5997deb5800a",
     "evidenceCommit": null,
     "tag": "v0.1.0",
-    "releaseId": null,
-    "publishedAt": null
+    "releaseId": 437875854,
+    "publishedAt": null,
+    "githubReleaseUrl": "https://github.com/crististefanita/atf_j6/releases/tag/v0.1.0",
+    "githubState": "published",
+    "githubPublishedAt": "2026-11-07T22:09:36Z",
+    "assets": [
+      {
+        "name": "HoldemLab-0.1.0.apk",
+        "state": "uploaded",
+        "bytes": 722172
+      },
+      {
+        "name": "HoldemLab-0.1.0.apk.sha256",
+        "state": "uploaded",
+        "bytes": 86
+      }
+    ]
   },
   "qualification": {
     "status": "PASS",
@@ -34,7 +49,10 @@
       "nativeTournamentSanity": "PASS, API 28, 41 assertions / 5 screenshots",
       "preparedPackageGovernance": "PASS, 13 suites / 76 tests, zero failures, errors, or skips",
       "sourceRunRoot": "C:\\work\\holdem_back\\release-runs\\j6-0.1.0-final-20261107-c4778a4",
-      "preparedPackageReportDirectory": "C:\\work\\holdem_back\\release-runs\\j6-prepared-package-final-20261108\\reports\\maven"
+      "preparedPackageReportDirectory": "C:\\work\\holdem_back\\release-runs\\j6-prepared-package-final-20261108\\reports\\maven",
+      "githubAssets": "PASS · API release v0.1.0 published; APK and checksum uploaded; authenticated API download exact bytes/hash",
+      "anonymousPublicDownload": "BLOCKED · HTTP 404 at owner, repository, release page, public release API, and direct APK URL",
+      "postUploadGovernance": "PASS · 1 suite / 2 tests; current PREPARED metadata and no premature public route"
     }
   },
   "integrity": {
@@ -51,23 +69,23 @@
       },
       {
         "path": "README.md",
-        "bytes": 1052,
-        "sha256": "3c1e64990a94569f43a45dab78acfc9f914bad8772a13f80d53303924a4bb206"
+        "bytes": 1830,
+        "sha256": "1bdae0fcaa3133e6f3a6b756f081732ffbc3f70ae08a44179005692e5ab711e8"
       },
       {
         "path": "release-notes.md",
-        "bytes": 341,
-        "sha256": "3b9623356baa42b8d9951760d5c584f4abf4b95cfe7e4d0b22360492763f5ec9"
+        "bytes": 351,
+        "sha256": "4bc970ee408276b723e4bb9c941cc5417370a8b226cde320523b771207c5e9f5"
       },
       {
         "path": "qualification.json",
-        "bytes": 3533,
-        "sha256": "33ddfca29b0ef6603e3f093931eb28f80445f8596a72a7b9c2d5fa8b81437fc8"
+        "bytes": 4346,
+        "sha256": "875f136e1749a93bbfe69ab8f2dd673bf6f5c7398afc484d0d9ada3bd90f5e07"
       },
       {
         "path": "reports/README.md",
-        "bytes": 1630,
-        "sha256": "4ec18ae2598785260f12030c680ae9bc72abdb85167cc28ae64477dc8372670d"
+        "bytes": 2040,
+        "sha256": "4a579f0fcff80d0968eeda3ed8907fbc12a24a247385d7c21ad38229a7d5e789"
       },
       {
         "path": "reports/android-release-smoke-extent.html",
@@ -86,14 +104,65 @@
       },
       {
         "path": "reports/J6ReleaseDownloadRouteGovernance.html",
-        "bytes": 2411849,
-        "sha256": "b529584e541fab9c376c9da8bfdefaaf0486552c4ddcda58b55c6c3c724d5018"
+        "bytes": 2411853,
+        "sha256": "1b804fc19ccec00631868ad5dc90d7c719717c390ed64a4a481047bc34fef730"
       },
       {
         "path": "reports/J6ReleaseGovernance.html",
-        "bytes": 2413378,
-        "sha256": "c3ce648f7f0911f8d54053946f967f2fa3d83e8b79aaf5b63ec1ffbca35d2a39"
+        "bytes": 2413825,
+        "sha256": "07eb3ba59b9dda6b1eed88082f759bde56464d4b70f4d550394af8b8ca624d2f"
       }
     ]
+  },
+  "authenticatedAssetDownload": {
+    "verified": true,
+    "source": "GitHub Releases REST asset endpoint",
+    "apiStatus": 302,
+    "cdnStatus": 200,
+    "finalHost": "release-assets.githubusercontent.com",
+    "bytes": 722172,
+    "sha256": "646a6d5814534986923eff68a0d4172a38462166e4e64ff45ae9cacfed55a03f",
+    "credentialMode": "authenticated API request; no credential or signed URL stored",
+    "completedUtc": "2026-11-07T22:13:47.6685038Z"
+  },
+  "publicDownloadAttempt": {
+    "verified": false,
+    "status": "BLOCKED",
+    "httpStatus": 404,
+    "checkedAtUtc": "2026-11-07T22:16:42.4131441Z",
+    "credentialMode": "anonymous; cookies, Authorization, and default credentials disabled",
+    "expectedBytes": 722172,
+    "expectedSha256": "646a6d5814534986923eff68a0d4172a38462166e4e64ff45ae9cacfed55a03f",
+    "observations": [
+      {
+        "url": "https://github.com/crististefanita",
+        "status": 404
+      },
+      {
+        "url": "https://github.com/crististefanita/atf_j6",
+        "status": 404
+      },
+      {
+        "url": "https://github.com/crististefanita/atf_j6/releases/tag/v0.1.0",
+        "status": 404
+      },
+      {
+        "url": "https://api.github.com/repos/crististefanita/atf_j6/releases/tags/v0.1.0",
+        "status": 404
+      },
+      {
+        "url": "https://github.com/crististefanita/atf_j6/releases/download/v0.1.0/HoldemLab-0.1.0.apk",
+        "status": 404
+      }
+    ],
+    "authenticatedApi": {
+      "repositoryVisibility": "public",
+      "repositoryDisabled": false,
+      "releaseDraft": false,
+      "apkAssetState": "uploaded",
+      "checksumAssetState": "uploaded",
+      "completeAssetDownloadVerified": true
+    },
+    "interpretation": "APK asset storage and integrity pass; anonymous GitHub owner/repository visibility fails. Cause requires account-owner review by GitHub."
   }
 }

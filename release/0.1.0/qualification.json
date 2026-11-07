@@ -54,6 +54,29 @@
       "skipped": 0,
       "completedLocal": "2026-11-08T00:05:27+02:00",
       "reportDirectory": "C:\\work\\holdem_back\\release-runs\\j6-prepared-package-final-20261108\\reports\\maven"
+    },
+    "githubReleaseAssets": {
+      "status": "PASS",
+      "releaseId": 437875854,
+      "releaseState": "published",
+      "apkAsset": "uploaded · 722172 bytes",
+      "checksumAsset": "uploaded · 86 bytes"
+    },
+    "anonymousPublicDownload": {
+      "status": "BLOCKED",
+      "httpStatus": 404,
+      "checkedAtUtc": "2026-11-07T22:16:42.4131441Z",
+      "reason": "Anonymous requests to owner profile, repository, release page, public release API, and direct APK URL all returned 404."
+    },
+    "postUploadGovernance": {
+      "status": "PASS",
+      "suites": 1,
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "completedUtc": "2026-11-07T22:22:26Z",
+      "reportDirectory": "C:\\work\\holdem_back\\release-runs\\j6-post-upload-governance-20261108\\reports"
     }
   },
   "sourceBuilder": {
@@ -101,14 +124,14 @@
     },
     {
       "path": "J6ReleaseDownloadRouteGovernance.html",
-      "bytes": 2411849,
-      "sha256": "b529584e541fab9c376c9da8bfdefaaf0486552c4ddcda58b55c6c3c724d5018",
+      "bytes": 2411853,
+      "sha256": "1b804fc19ccec00631868ad5dc90d7c719717c390ed64a4a481047bc34fef730",
       "status": "PASS"
     },
     {
       "path": "J6ReleaseGovernance.html",
-      "bytes": 2413378,
-      "sha256": "c3ce648f7f0911f8d54053946f967f2fa3d83e8b79aaf5b63ec1ffbca35d2a39",
+      "bytes": 2413825,
+      "sha256": "07eb3ba59b9dda6b1eed88082f759bde56464d4b70f4d550394af8b8ca624d2f",
       "status": "PASS"
     }
   ]

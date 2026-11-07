@@ -1,4 +1,5 @@
 schemaVersion: 1
+shortStackShoveMaxBigBlinds: 8
 policyDefaults: config/j6-policy-equity.yaml
 equityPolicyFiles:
   equity-baseline: config/policy-tuning/j6-policy-equity-baseline.yaml

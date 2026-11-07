@@ -1,5 +1,6 @@
 import atf.reporting.audit.AssertionAuditReport;
 import atf.reporting.artifact.ReportArtifactInspector;
+import atf.reporting.artifact.ReportArtifactProfile;
 import atf.reporting.configuration.ReportingSettings;
 import atf.reporting.contract.AtfAssertion;
 import atf.reporting.contract.AtfGherkinKeyword;
@@ -34,22 +35,37 @@ class PublishTournamentExtent {
         Instant startedAt = Instant.now();
         Path evidence = Path.of(args[1]);
         var receipt = new ObjectMapper().readTree(evidence.resolve("native.json").toFile());
+        var scenarios = new ArrayList<ReportArtifactProfile.Scenario>();
+        var screenshots = new ArrayList<Path>();
+        for (var capture : receipt.required("captures")) screenshots.add(evidence.resolve(capture.asText()));
         boolean passed = true;
         try (var report = new ExtentReportSession(reportPath, new ReportingSettings(240, 0))) {
             for (String xml : Arrays.copyOfRange(args, 3, args.length)) {
-                passed &= component(report, Path.of(xml));
+                var component = component(report, Path.of(xml));
+                scenarios.add(component);
+                passed &= component.status() == AtfReportStatus.PASS;
             }
-            passed &= nativeUi(report, evidence, receipt, Path.of(args[2]));
+            var nativeScenario = nativeUi(report, evidence, receipt, Path.of(args[2]));
+            scenarios.add(nativeScenario);
+            passed &= nativeScenario.status() == AtfReportStatus.PASS;
         }
         if (!passed) throw new IllegalStateException("Report contains a failed or incomplete scenario");
-        var inspection = ReportArtifactInspector.inspectFresh(reportPath, startedAt);
+        String html = Files.readString(reportPath);
+        for (Path screenshot : screenshots) {
+            String payload = Base64.getEncoder().encodeToString(Files.readAllBytes(screenshot));
+            if (occurrences(html, payload) != 1) {
+                throw new IllegalStateException("Extent must embed the exact native screenshot once: " + screenshot.getFileName());
+            }
+        }
+        var profile = new ReportArtifactProfile(ReportArtifactProfile.Renderer.EXTENT, scenarios);
+        var inspection = ReportArtifactInspector.inspectFresh(reportPath, startedAt, profile);
         if (!inspection.isCompliant()) {
             throw new IllegalStateException("Published Extent HTML is not autonomous and structurally compliant: "
                     + inspection.violations());
         }
     }
 
-    private static boolean component(ExtentReportSession report, Path path) throws Exception {
+    private static ReportArtifactProfile.Scenario component(ExtentReportSession report, Path path) throws Exception {
         var factory = DocumentBuilderFactory.newInstance();
         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         var xml = factory.newDocumentBuilder().parse(path.toFile());
@@ -68,17 +84,23 @@ class PublishTournamentExtent {
             checks.add(new AtfAssertion(result.getAttribute("name"), "JUnit passed", actual, actual.equals("JUnit passed")));
         }
         boolean passed = !checks.isEmpty() && checks.stream().allMatch(AtfAssertion::passed);
+        var result = status(passed);
         try (var test = report.startScenario(xml.getDocumentElement().getAttribute("name"), "Android JVM component suite",
                 List.of("component", "jvm"));
              var phase = test.startPhase("TEST BODY")) {
             AssertionAuditReport.publishStep(phase, "Recorded JUnit outcomes", checks, AtfReportStatus.INFO);
-            phase.complete(status(passed));
-            test.complete(status(passed));
+            phase.complete(result);
+            test.complete(result);
         }
-        return passed;
+        var rows = checks.stream().map(check -> new ReportArtifactProfile.Comparison(check.name(), check.passed())).toList();
+        var assertions = new ReportArtifactProfile.Assertions("Recorded JUnit outcomes", rows);
+        return new ReportArtifactProfile.Scenario(xml.getDocumentElement().getAttribute("name"),
+                "Android JVM component suite", result,
+                List.of(new ReportArtifactProfile.Phase("TEST BODY", result,
+                        List.of(assertions))));
     }
 
-    private static boolean nativeUi(ExtentReportSession report, Path evidence, JsonNode receipt, Path apk) throws Exception {
+    private static ReportArtifactProfile.Scenario nativeUi(ExtentReportSession report, Path evidence, JsonNode receipt, Path apk) throws Exception {
         String journey = receipt.path("journey").asText("tournament");
         boolean releaseSmoke = journey.equals("release-smoke");
         if (!releaseSmoke && !journey.equals("tournament")) throw new IllegalArgumentException("Unknown native journey " + journey);
@@ -96,6 +118,8 @@ class PublishTournamentExtent {
         checks.add(new AtfAssertion("Installed APK matches the supplied build", apkHash, installedApkHash, apkHash.equals(installedApkHash)));
         boolean passed = receipt.required("status").asText().equals("PASS") && !checks.isEmpty()
                 && checks.stream().allMatch(AtfAssertion::passed) && receipt.required("captures").size() == expectedCaptures;
+        var result = status(passed);
+        var checkpointEvidence = new ArrayList<ReportArtifactProfile.Evidence>();
         String scenario = releaseSmoke ? "ReleaseInstallSmoke" : "TournamentSanity";
         String description = releaseSmoke ? "Installable release APK opens and navigates its entry screens"
                 : "Three hands to victory and an opening all-in defeat";
@@ -112,6 +136,10 @@ class PublishTournamentExtent {
                     new ReportField("Execution failure", error.isEmpty() ? "none" : error)),
                     List.of(new ReportObservation.Body("Accessibility actions in order", String.join("\n", actions),
                             ReportObservation.Format.TEXT)), List.of()));
+            checkpointEvidence.add(new ReportArtifactProfile.Observation("Android native evidence",
+                    List.of("Android API", "Window", "Density (dpi)", "Font scale", "Installed APK SHA-256", "Execution failure"),
+                    List.of("Accessibility actions in order")));
+            int captureIndex = 0;
             for (var entry : receipt.required("captures")) {
                 String name = entry.asText();
                 if (!name.matches("0[1-5]-[a-z-]+\\.png")) throw new IllegalArgumentException("Unexpected capture name " + name);
@@ -119,20 +147,46 @@ class PublishTournamentExtent {
                 boolean decodes = image != null && image.getWidth() > 0 && image.getHeight() > 0;
                 passed &= decodes;
                 String dimensions = decodes ? image.getWidth() + " × " + image.getHeight() : "unreadable";
-                phase.step(name.startsWith("01") ? AtfGherkinKeyword.GIVEN : AtfGherkinKeyword.AND, name,
+                var keyword = captureIndex++ == 0 ? AtfGherkinKeyword.GIVEN : AtfGherkinKeyword.AND;
+                phase.step(keyword, name,
                         "Android native UI", Base64.getEncoder().encodeToString(Files.readAllBytes(evidence.resolve(name))),
                         List.of(new AtfAssertion("Native screenshot decodes", "positive raster dimensions", dimensions, decodes)),
                         List.of(), ReportScreenshotPolicy.CapturePoint.CHECKPOINT, status(decodes));
+                String checkpoint = keyword.name() + " " + name;
+                checkpointEvidence.add(nestedValidation(checkpoint,
+                        new ReportArtifactProfile.Assertions("UI validation", List.of(
+                                new ReportArtifactProfile.Comparison("Native screenshot decodes", decodes))), status(decodes)));
             }
-            phase.step(AtfGherkinKeyword.THEN, releaseSmoke ? "The signed release APK opens the expected app flow" : "The device follows the tournament contract",
+            String conclusion = releaseSmoke ? "The signed release APK opens the expected app flow" : "The device follows the tournament contract";
+            phase.step(AtfGherkinKeyword.THEN, conclusion,
                     "Android native UI", null, checks, status(passed));
-            phase.complete(status(passed));
-            test.complete(status(passed));
+            var comparisons = checks.stream().map(check -> new ReportArtifactProfile.Comparison(check.name(), check.passed())).toList();
+            checkpointEvidence.add(nestedValidation("THEN " + conclusion,
+                    new ReportArtifactProfile.Assertions("UI validation", comparisons), status(passed)));
+            result = status(passed);
+            phase.complete(result);
+            test.complete(result);
         }
-        return passed;
+        return new ReportArtifactProfile.Scenario(scenario, description, result,
+                List.of(new ReportArtifactProfile.Phase("TEST BODY", result, checkpointEvidence)));
+    }
+
+    /**
+     * J23 profiles have no generic nested checkpoint type. Optional HTTP fields are deliberately
+     * disabled here; this carrier records only the nested assertion table and never invents an exchange.
+     */
+    private static ReportArtifactProfile.HttpExchange nestedValidation(String title,
+            ReportArtifactProfile.Assertions validation, AtfReportStatus status) {
+        return new ReportArtifactProfile.HttpExchange(title, false, false, List.of(), List.of(validation), status);
     }
 
     private static AtfReportStatus status(boolean passed) {
         return passed ? AtfReportStatus.PASS : AtfReportStatus.FAIL;
+    }
+
+    private static int occurrences(String text, String value) {
+        int matches = 0;
+        for (int offset = 0; (offset = text.indexOf(value, offset)) >= 0; offset += value.length()) matches++;
+        return matches;
     }
 }

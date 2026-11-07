@@ -25,11 +25,12 @@ public final class TournamentStrategyArena {
 
     static TournamentArena.Result play(Tournament.Rules rules, long seed, long buttonOffset, int policyOffset,
                                        List<String> baseRoster, TournamentPolicyConfig defaults,
-                                       Map<String, TournamentPolicyConfig> variants, PrintWriter trace) {
+                                       Map<String, TournamentPolicyConfig> variants, int shortStackShoveMaxBigBlinds,
+                                       PrintWriter trace) {
         if (baseRoster.size() != rules.seats()) throw new IllegalArgumentException("Lineup/seat-count mismatch");
         List<String> roster = rotate(baseRoster, policyOffset);
         var policies = new ArrayList<DecisionPolicy>(rules.seats());
-        for (String strategy : roster) policies.add(policy(strategy, defaults, variants));
+        for (String strategy : roster) policies.add(policy(strategy, defaults, variants, shortStackShoveMaxBigBlinds));
 
         var buffered = new StringWriter();
         var result = TournamentArena.play(rules, seed, SECONDS_PER_HAND, HAND_LIMIT,
@@ -48,7 +49,7 @@ public final class TournamentStrategyArena {
     }
 
     private static DecisionPolicy policy(String strategy, TournamentPolicyConfig defaults,
-                                         Map<String, TournamentPolicyConfig> variants) {
+                                         Map<String, TournamentPolicyConfig> variants, int shoveThreshold) {
         return switch (strategy) {
             case "tag" -> new TightAggressiveBaseline();
             case "calling" -> new CallingStationPolicy();
@@ -58,6 +59,7 @@ public final class TournamentStrategyArena {
                     defaults.looseLatePositionAdjustmentPercent());
             case "bluff" -> new DeterministicBluffPolicy(defaults.bluffFrequencyPercent(),
                     defaults.latePositionWindow());
+            case "short-stack-shove" -> new ShortStackShovePolicy(shoveThreshold);
             case "equity-baseline", "equity-stack-aware" -> equity(variants.get(strategy));
             default -> throw new IllegalArgumentException("Unknown strategy ID " + strategy);
         };
@@ -101,7 +103,7 @@ public final class TournamentStrategyArena {
             for (int trial = 0; trial < count; trial++) {
                 long seed = firstSeed + trial;
                 totalHands += play(rules, seed, buttonOffset, policyOffset, baseRoster,
-                        defaults, variants, trace).hands();
+                        defaults, variants, lineup.shortStackShoveMaxBigBlinds(), trace).hands();
             }
             if (trace.checkError()) throw new IOException("Strategy tournament trace write failed");
             System.out.printf("%d seats: %d tournaments, policyOffset=%d, buttonOffset=%d, %d hands%n",

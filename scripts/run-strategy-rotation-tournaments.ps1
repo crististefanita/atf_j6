@@ -3,6 +3,9 @@ param(
     [long]$FirstSeed = 93000,
     [int]$SeedsPerSeatCount = 4,
     [string[]]$ProfileNames = @('standard', 'stress'),
+    [int[]]$SeatCounts = @(4, 5, 6),
+    [string]$LineupFile = 'config/j6-strategy-lineups.yaml',
+    [string]$MavenRepository = 'C:\work\holdem_back\infrastructure\cache\maven',
     [switch]$Append
 )
 
@@ -17,6 +20,9 @@ if ($OutputRoot.StartsWith($ProjectPrefix, [System.StringComparison]::OrdinalIgn
     throw "Evaluation output must stay outside the source tree: $OutputRoot"
 }
 if ($SeedsPerSeatCount -lt 1) { throw 'SeedsPerSeatCount must be positive' }
+if ($SeatCounts.Count -eq 0 -or @($SeatCounts | Where-Object { $_ -lt 4 -or $_ -gt 6 }).Count -gt 0) {
+    throw 'SeatCounts must contain one or more values from 4 through 6'
+}
 if ($FirstSeed -gt [long]::MaxValue - [long]($SeedsPerSeatCount - 1)) { throw 'Seed range exceeds Int64' }
 $Profiles = @(
     @{ Name = 'standard'; Path = 'config/j6-tournaments.yaml' },
@@ -27,6 +33,14 @@ $unknown = @($ProfileNames | Where-Object { $_ -notin $Profiles.Name })
 if ($unknown.Count -gt 0) { throw "Unknown profile name(s): $($unknown -join ', ')" }
 $Profiles = @($Profiles | Where-Object { $_.Name -in $ProfileNames })
 if ($Profiles.Count -eq 0) { throw 'Select at least one profile' }
+$LineupPath = Join-Path $ProjectRoot $LineupFile
+if (-not (Test-Path -LiteralPath $LineupPath)) { throw "Lineup file does not exist: $LineupFile" }
+$MavenRepository = [System.IO.Path]::GetFullPath($MavenRepository)
+if ($MavenRepository.StartsWith($ProjectPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "Maven repository must stay outside the source tree: $MavenRepository"
+}
+$SnakeYaml = Join-Path $MavenRepository 'org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar'
+if (-not (Test-Path -LiteralPath $SnakeYaml)) { throw "SnakeYAML 2.2 is not present in the configured Maven repository: $MavenRepository" }
 if (Test-Path -LiteralPath $OutputRoot) {
     if (-not $Append) { throw "Refusing to overwrite existing evidence directory: $OutputRoot" }
 } else {
@@ -34,12 +48,13 @@ if (Test-Path -LiteralPath $OutputRoot) {
     New-Item -ItemType Directory -Path $OutputRoot | Out-Null
 }
 
-$ClassPath = 'holdem-core\target\classes;holdem-ai\target\classes;holdem-arena\target\classes;C:\work\holdem_back\maven-cache\org\yaml\snakeyaml\2.2\snakeyaml-2.2.jar'
-$Lineup = 'config/j6-strategy-lineups.yaml'
+$ClassPath = 'holdem-core\target\classes;holdem-ai\target\classes;holdem-arena\target\classes;' + $SnakeYaml
+$Lineup = $LineupFile
 $Index = [System.Collections.Generic.List[string]]::new()
 $Index.Add('# Turnee offline cu rotație strategie–loc–buton')
 $Index.Add('')
-$Index.Add(('Seeds: {0}-{1}; selected profiles: {2}; tables: 4-6 seats.' -f $FirstSeed, ($FirstSeed + $SeedsPerSeatCount - 1), ($Profiles.Name -join ', ')))
+$Index.Add(('Seeds: {0}-{1}; selected profiles: {2}; tables: {3} seats.' -f $FirstSeed,
+    ($FirstSeed + $SeedsPerSeatCount - 1), ($Profiles.Name -join ', '), ($SeatCounts -join ', ')))
 $Index.Add('For each profile, seat count, seed, and button offset, run every strategy-role rotation. Within one seed and button group, all role rotations share the same deal-seed prefix; only policy-to-seat assignment changes.')
 $Index.Add('Button rotations are repeated measurements of a seed, not independent statistical samples. Outcomes remain exploratory until validated on more independent seeds and with calibrated EV.')
 $Index.Add('')
@@ -49,7 +64,7 @@ $Index.Add('|---|---:|---:|---|')
 Push-Location $ProjectRoot
 try {
     foreach ($Profile in $Profiles) {
-        foreach ($Seats in 4..6) {
+        foreach ($Seats in $SeatCounts) {
             foreach ($PolicyOffset in 0..($Seats - 1)) {
                 foreach ($ButtonOffset in 0..($Seats - 1)) {
                     $Directory = Join-Path $OutputRoot (Join-Path $Profile.Name "s$Seats")
@@ -69,8 +84,11 @@ try {
     }
     $TraceFiles = Get-ChildItem -LiteralPath $OutputRoot -Recurse -Filter '*.trace' | Where-Object { $_.Name -notlike '*.audit.json' }
     $EvidenceProfiles = @(Get-ChildItem -LiteralPath $OutputRoot -Directory | Select-Object -ExpandProperty Name)
-    $Index[2] = ('Seeds: {0}-{1}; included profiles: {2}; tables: 4-6 seats.' -f $FirstSeed,
-        ($FirstSeed + $SeedsPerSeatCount - 1), ($EvidenceProfiles -join ', '))
+    $EvidenceSeats = @(Get-ChildItem -LiteralPath $OutputRoot -Directory | ForEach-Object {
+        Get-ChildItem -LiteralPath $_.FullName -Directory | Select-Object -ExpandProperty Name
+    } | ForEach-Object { [int]($_ -replace '^s', '') } | Sort-Object -Unique)
+    $Index[2] = ('Seeds: {0}-{1}; included profiles: {2}; tables: {3} seats.' -f $FirstSeed,
+        ($FirstSeed + $SeedsPerSeatCount - 1), ($EvidenceProfiles -join ', '), ($EvidenceSeats -join ', '))
     foreach ($TraceFile in $TraceFiles) {
         $Relative = $TraceFile.FullName.Substring($OutputRoot.TrimEnd('\').Length + 1)
         $Parts = $Relative -split '[\\/]'
@@ -88,7 +106,7 @@ try {
     $Index | Set-Content -Encoding utf8 (Join-Path $OutputRoot 'README.md')
 
     $SourceFiles = @(
-        'config/j6-strategy-lineups.yaml', 'config/j6-tournaments.yaml', 'config/j6-tournaments-stress.yaml',
+        $LineupFile, 'config/j6-tournaments.yaml', 'config/j6-tournaments-stress.yaml',
         'config/j6-policy-equity.yaml', 'config/policy-tuning/j6-policy-equity-baseline.yaml',
         'config/policy-tuning/j6-policy-equity-stack-aware.yaml',
         'holdem-core/src/main/java/ro/atf/holdem/core/HoldemObservation.java',
@@ -96,6 +114,8 @@ try {
         'holdem-core/src/test/java/ro/atf/holdem/core/HoldemRulesTest.java',
         'holdem-ai/src/main/java/ro/atf/holdem/ai/ContextualEquityPolicy.java',
         'holdem-ai/src/test/java/ro/atf/holdem/ai/ContextualEquityPolicyTest.java',
+        'holdem-ai/src/main/java/ro/atf/holdem/ai/ShortStackShovePolicy.java',
+        'holdem-ai/src/test/java/ro/atf/holdem/ai/ShortStackShovePolicyTest.java',
         'holdem-arena/src/main/java/ro/atf/holdem/arena/TournamentArena.java',
         'holdem-arena/src/main/java/ro/atf/holdem/arena/TournamentStrategyArena.java',
         'holdem-arena/src/main/java/ro/atf/holdem/arena/TournamentStrategyLineups.java',
@@ -117,7 +137,7 @@ try {
                 [xml]$ReportXml = Get-Content -LiteralPath $ReportFile.FullName -Raw
                 $Suite = $ReportXml.testsuite
                 if ($null -ne $Suite) {
-                    [pscustomobject]@{ file = "$Module/$($ReportFile.Name)"; tests = [int]$Suite.tests;
+                    [pscustomobject]@{ report = "$Module/$($ReportFile.Name)"; tests = [int]$Suite.tests;
                         failures = [int]$Suite.failures; errors = [int]$Suite.errors; skipped = [int]$Suite.skipped }
                 }
             }
@@ -130,13 +150,14 @@ try {
         java = (cmd /c "java -version 2>&1" | Select-Object -First 1).ToString().Trim()
         methodology = 'offline deterministic seat-policy and button-position rotation; every trace independently audited before aggregation'
         profiles = $EvidenceProfiles
+        seatCounts = $EvidenceSeats
         firstSeed = $FirstSeed
         seedsPerSeatCount = $SeedsPerSeatCount
         validation = [pscustomobject]@{
             command = 'mvn -B -o -Dmaven.repo.local=C:/work/holdem_back/maven-cache -pl holdem-core,holdem-ai,holdem-arena -am test'
             testModules = @('holdem-core', 'holdem-ai', 'holdem-arena')
             surefireReports = @($SourceReports | ForEach-Object {
-                [pscustomobject]@{ file = $_.Name; tests = [int]$_.tests; failures = [int]$_.failures; errors = [int]$_.errors; skipped = [int]$_.skipped }
+                [pscustomobject]@{ report = $_.report; tests = [int]$_.tests; failures = [int]$_.failures; errors = [int]$_.errors; skipped = [int]$_.skipped }
             })
         }
         sourceFiles = @($Hashes)

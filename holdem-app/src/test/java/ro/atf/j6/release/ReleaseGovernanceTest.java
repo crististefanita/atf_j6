@@ -117,6 +117,14 @@ class ReleaseGovernanceTest {
         add(checks, "Native evidence is returned by instrumentation", "receipt and screenshots stream from the test run",
                 androidSanity.contains("result.putString(\"receipt\"") && androidSanity.contains("status.putString(\"pngBase64\"")
                         ? "receipt and screenshots stream from the test run" : "evidence depends on private device storage");
+        String extentPublisher = Files.readString(root.resolve("holdem-android/tools/PublishTournamentExtent.java"));
+        add(checks, "Extent is checked against its declared evidence profile", "fresh Extent profile inspection",
+                extentPublisher.contains("inspectFresh(reportPath, startedAt, profile)")
+                        ? "fresh Extent profile inspection" : "generic API-only inspection");
+        add(checks, "Exact native screenshots are embedded once in Extent", "receipt image bytes embedded exactly once",
+                extentPublisher.contains("occurrences(html, payload) != 1")
+                        && extentPublisher.contains("Base64.getEncoder().encodeToString(Files.readAllBytes(screenshot))")
+                        ? "receipt image bytes embedded exactly once" : "image attachment identity is not gated");
         add(checks, "Release root avoids Raw and folder downloads", "no raw or source-folder URL",
                 mainReadme.contains("raw.githubusercontent.com") || mainReadme.contains("release/" + version + "/" + packageName)
                         ? "unqualified route present" : "no raw or source-folder URL");

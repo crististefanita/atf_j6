@@ -55,6 +55,13 @@ class TournamentStrategyArenaTest {
         }
     }
 
+    @Test void adversarialShortStackLineupExposesTheConfigurableShoveRole() throws Exception {
+        var lineup = TournamentStrategyLineups.load(config("j6-strategy-lineups-shortstack.yaml"));
+        assertEquals(8, lineup.shortStackShoveMaxBigBlinds());
+        for (int seats : List.of(4, 5, 6)) assertTrue(lineup.forSeats(seats).contains("short-stack-shove"));
+        assertEquals(6, lineup.forSeats(6).size());
+    }
+
     @Test void traceNamesTheRotatedSeatRosterAndLogsOnlyPublicDecisionContext() throws Exception {
         Path profile = config("j6-tournaments.yaml");
         var rules = TournamentProfiles.load(profile).get(4);
@@ -65,7 +72,7 @@ class TournamentStrategyArenaTest {
                 "equity-stack-aware", TournamentPolicyConfig.load(config("policy-tuning/j6-policy-equity-stack-aware.yaml")));
         var trace = new StringWriter();
         TournamentStrategyArena.play(rules, 41, 2, 1, lineup.forSeats(4), defaults, variants,
-                new PrintWriter(trace));
+                lineup.shortStackShoveMaxBigBlinds(), new PrintWriter(trace));
         var lines = trace.toString().lines().toList();
         assertEquals(4, lines.stream().filter(line -> line.startsWith("STRATEGY ")).count());
         assertTrue(lines.stream().anyMatch(line -> line.startsWith("STRATEGY seat=0 id=equity-stack-aware ")));

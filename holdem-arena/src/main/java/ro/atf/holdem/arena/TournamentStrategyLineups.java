@@ -10,12 +10,14 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /** Strict, versioned strategy rosters for seat-rotation tournament experiments. */
 public record TournamentStrategyLineups(Path policyDefaults, Map<String, Path> equityPolicyFiles,
-                                        Map<Integer, List<String>> lineups) {
+                                        Map<Integer, List<String>> lineups, int shortStackShoveMaxBigBlinds) {
     private static final Set<String> ALLOWED = Set.of("tag", "calling", "pressure", "loose", "bluff",
-            "equity-baseline", "equity-stack-aware");
+            "short-stack-shove", "equity-baseline", "equity-stack-aware");
 
     public TournamentStrategyLineups {
         Objects.requireNonNull(policyDefaults, "policyDefaults");
+        if (shortStackShoveMaxBigBlinds < 1 || shortStackShoveMaxBigBlinds > 20)
+            throw new IllegalArgumentException("shortStackShoveMaxBigBlinds must be 1..20");
         equityPolicyFiles = Map.copyOf(equityPolicyFiles);
         var copy = new TreeMap<Integer, List<String>>();
         lineups.forEach((seats, roster) -> copy.put(seats, List.copyOf(roster)));
@@ -29,8 +31,10 @@ public record TournamentStrategyLineups(Path policyDefaults, Map<String, Path> e
         try (var input = Files.newBufferedReader(path)) {
             Object document = new Yaml(new SafeConstructor(options)).load(input);
             if (!(document instanceof Map<?, ?> root)
-                    || !root.keySet().equals(Set.of("schemaVersion", "policyDefaults", "equityPolicyFiles", "lineups"))
+                    || !root.keySet().equals(Set.of("schemaVersion", "policyDefaults", "equityPolicyFiles", "lineups",
+                    "shortStackShoveMaxBigBlinds"))
                     || !Integer.valueOf(1).equals(root.get("schemaVersion"))
+                    || !(root.get("shortStackShoveMaxBigBlinds") instanceof Integer shoveThreshold)
                     || !(root.get("policyDefaults") instanceof String defaults)
                     || !(root.get("equityPolicyFiles") instanceof Map<?, ?> rawFiles)
                     || !(root.get("lineups") instanceof Map<?, ?> rawLineups))
@@ -63,7 +67,7 @@ public record TournamentStrategyLineups(Path policyDefaults, Map<String, Path> e
             }
             if (!lineups.keySet().equals(Set.of(4, 5, 6)))
                 throw new IllegalArgumentException("Lineups must cover 4, 5, and 6 seats");
-            return new TournamentStrategyLineups(Path.of(defaults), files, lineups);
+            return new TournamentStrategyLineups(Path.of(defaults), files, lineups, shoveThreshold);
         } catch (org.yaml.snakeyaml.error.YAMLException failure) {
             throw new IllegalArgumentException("Invalid strategy lineup YAML", failure);
         }

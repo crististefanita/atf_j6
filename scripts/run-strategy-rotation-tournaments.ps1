@@ -6,6 +6,8 @@ param(
     [int[]]$SeatCounts = @(4, 5, 6),
     [string]$LineupFile = 'config/j6-strategy-lineups.yaml',
     [string]$MavenRepository = 'C:\work\holdem_back\infrastructure\cache\maven',
+    [string]$SourceCommit,
+    [switch]$SourceDirty,
     [switch]$Append
 )
 
@@ -75,7 +77,7 @@ try {
                     & java -cp $ClassPath ro.atf.holdem.arena.TournamentStrategyArena $Profile.Path $Lineup $Trace `
                         $SeedsPerSeatCount $FirstSeed $PolicyOffset $Seats $ButtonOffset
                     if ($LASTEXITCODE -ne 0) { throw "Strategy tournament failed: $($Profile.Name), $Seats seats, policy $PolicyOffset, button $ButtonOffset" }
-                    $Audit = & node scripts/audit-tournament.cjs $Trace --require-layers
+                    $Audit = & node scripts/audit-tournament.cjs $Trace --require-layers --require-public-shove-history
                     if ($LASTEXITCODE -ne 0) { throw "Independent tournament audit failed: $Trace" }
                     $Audit | Set-Content -Encoding utf8 ($Trace + '.audit.json')
                 }
@@ -109,7 +111,9 @@ try {
         $LineupFile, 'config/j6-tournaments.yaml', 'config/j6-tournaments-stress.yaml',
         'config/j6-policy-equity.yaml', 'config/policy-tuning/j6-policy-equity-baseline.yaml',
         'config/policy-tuning/j6-policy-equity-stack-aware.yaml',
+        'holdem-arena/src/main/java/ro/atf/holdem/arena/TournamentPolicyConfig.java',
         'holdem-core/src/main/java/ro/atf/holdem/core/HoldemObservation.java',
+        'holdem-core/src/main/java/ro/atf/holdem/core/PublicOpponentTendency.java',
         'holdem-core/src/main/java/ro/atf/holdem/core/HoldemHand.java',
         'holdem-core/src/test/java/ro/atf/holdem/core/HoldemRulesTest.java',
         'holdem-ai/src/main/java/ro/atf/holdem/ai/ContextualEquityPolicy.java',
@@ -128,8 +132,18 @@ try {
         $Path = Join-Path $ProjectRoot $Relative
         [pscustomobject]@{ path = $Relative; sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.ToLowerInvariant() }
     }
-    $Head = (& git rev-parse HEAD).Trim()
-    if ($LASTEXITCODE -ne 0) { throw 'Could not record source revision' }
+    if ([string]::IsNullOrWhiteSpace($SourceCommit)) {
+        $Head = (& git rev-parse HEAD 2>$null).Trim()
+        if ($LASTEXITCODE -ne 0 -or $Head -notmatch '^[0-9a-fA-F]{40}$') {
+            throw 'SourceCommit is required when the evaluation source is a Git-free snapshot.'
+        }
+        $IsSourceDirty = [bool](& git status --porcelain 2>$null)
+        if ($LASTEXITCODE -ne 0) { throw 'Could not inspect source worktree status.' }
+    } else {
+        if ($SourceCommit -notmatch '^[0-9a-fA-F]{40}$') { throw 'SourceCommit must be a full 40-character commit hash.' }
+        $Head = $SourceCommit.ToLowerInvariant()
+        $IsSourceDirty = [bool]$SourceDirty
+    }
     $SourceReports = foreach ($Module in @('holdem-core', 'holdem-ai', 'holdem-arena')) {
         $ReportDirectory = Join-Path $ProjectRoot (Join-Path $Module 'target/surefire-reports')
         if (Test-Path -LiteralPath $ReportDirectory) {
@@ -146,7 +160,7 @@ try {
     $Provenance = [pscustomobject]@{
         createdUtc = [DateTime]::UtcNow.ToString('o')
         sourceHead = $Head
-        sourceDirty = [bool](& git status --porcelain)
+        sourceDirty = $IsSourceDirty
         java = (cmd /c "java -version 2>&1" | Select-Object -First 1).ToString().Trim()
         methodology = 'offline deterministic seat-policy and button-position rotation; every trace independently audited before aggregation'
         profiles = $EvidenceProfiles
@@ -154,7 +168,7 @@ try {
         firstSeed = $FirstSeed
         seedsPerSeatCount = $SeedsPerSeatCount
         validation = [pscustomobject]@{
-            command = 'mvn -B -o -Dmaven.repo.local=C:/work/holdem_back/maven-cache -pl holdem-core,holdem-ai,holdem-arena -am test'
+            reportSource = 'Surefire XML produced by the separately recorded Maven qualification run'
             testModules = @('holdem-core', 'holdem-ai', 'holdem-arena')
             surefireReports = @($SourceReports | ForEach-Object {
                 [pscustomobject]@{ report = $_.report; tests = [int]$_.tests; failures = [int]$_.failures; errors = [int]$_.errors; skipped = [int]$_.skipped }

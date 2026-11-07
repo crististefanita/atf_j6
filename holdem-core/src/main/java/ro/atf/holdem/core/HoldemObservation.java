@@ -22,7 +22,18 @@ public record HoldemObservation(
         List<String> publicActionHistory,
         int physicalHeroSeat,
         int bigBlind,
-        List<Integer> visibleContributions) {
+        List<Integer> visibleContributions,
+        List<PublicOpponentTendency> publicOpponentTendencies) {
+    public HoldemObservation(int handNumber, int heroSeat, int playerCount, int activeOpponentCount,
+                            Street street, List<Card> holeCards, List<Card> communityCards, int pot, int toCall,
+                            int heroStack, int positionFromButton, List<Integer> visibleStacks,
+                            List<LegalAction> legalActions, List<String> publicActionHistory,
+                            int physicalHeroSeat, int bigBlind, List<Integer> visibleContributions) {
+        this(handNumber, heroSeat, playerCount, activeOpponentCount, street, holeCards, communityCards, pot,
+                toCall, heroStack, positionFromButton, visibleStacks, legalActions, publicActionHistory,
+                physicalHeroSeat, bigBlind, visibleContributions, List.of());
+    }
+
     public HoldemObservation(int handNumber, int heroSeat, int playerCount, int activeOpponentCount, Street street,
                              List<Card> holeCards, List<Card> communityCards, int pot, int toCall, int heroStack,
                              int positionFromButton, List<Integer> visibleStacks, List<LegalAction> legalActions,
@@ -60,6 +71,7 @@ public record HoldemObservation(
         legalActions = List.copyOf(legalActions);
         publicActionHistory = List.copyOf(publicActionHistory);
         visibleContributions = List.copyOf(visibleContributions);
+        publicOpponentTendencies = List.copyOf(publicOpponentTendencies);
         if (holeCards.size() > 2 || communityCards.size() > 5) throw new IllegalArgumentException("Card visibility bounds");
         if (pot < 0 || toCall < 0 || heroStack < 0 || bigBlind < 1) throw new IllegalArgumentException("Invalid chip value");
         if (visibleStacks.size() != playerCount || visibleContributions.size() != playerCount)
@@ -67,5 +79,8 @@ public record HoldemObservation(
         if (visibleStacks.stream().anyMatch(value -> value < 0)
                 || visibleContributions.stream().anyMatch(value -> value < 0))
             throw new IllegalArgumentException("Negative visible stack or contribution");
+        if (publicOpponentTendencies.stream().map(PublicOpponentTendency::physicalSeat).distinct().count()
+                != publicOpponentTendencies.size())
+            throw new IllegalArgumentException("Duplicate public opponent tendency seat");
     }
 }

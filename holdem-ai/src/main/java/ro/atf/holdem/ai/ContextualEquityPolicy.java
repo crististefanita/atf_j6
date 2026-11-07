@@ -14,7 +14,10 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                                  int opponentAggressionValueBetMargin, int tournamentValueBetMargin,
                                  int uncertaintyZHundredths, int largeBetCallMargin,
                                  int opponentAllInCallMargin, int tournamentEliminationRiskMargin,
-                                 int tournamentShortStackCallDiscount, int tournamentCommitmentThresholdPercent) {
+                                 int tournamentShortStackCallDiscount, int tournamentCommitmentThresholdPercent,
+                                 int shortStackShovePriorProbabilityPercent, int shortStackShovePriorOpportunities,
+                                 int shortStackShoveWarmupOpportunities, int shortStackShoveSensitivity,
+                                 int shortStackShoveMaxMarginAdjustment) {
         public ContextWeights {
             percent(extraOpponentCallMargin, "extraOpponentCallMargin");
             percent(opponentAggressionCallMargin, "opponentAggressionCallMargin");
@@ -30,10 +33,16 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
             percent(opponentAllInCallMargin, "opponentAllInCallMargin");
             percent(tournamentEliminationRiskMargin, "tournamentEliminationRiskMargin");
             percent(tournamentShortStackCallDiscount, "tournamentShortStackCallDiscount");
+            percent(shortStackShovePriorProbabilityPercent, "shortStackShovePriorProbabilityPercent");
+            percent(shortStackShoveSensitivity, "shortStackShoveSensitivity");
             if (uncertaintyZHundredths < 0 || uncertaintyZHundredths > 500)
                 throw new IllegalArgumentException("uncertaintyZHundredths must be 0..500");
             if (tournamentCommitmentThresholdPercent < 50 || tournamentCommitmentThresholdPercent > 100)
                 throw new IllegalArgumentException("tournamentCommitmentThresholdPercent must be 50..100");
+            if (shortStackShovePriorOpportunities < 1 || shortStackShovePriorOpportunities > 1000
+                    || shortStackShoveWarmupOpportunities < 1 || shortStackShoveWarmupOpportunities > 100
+                    || shortStackShoveMaxMarginAdjustment < 0 || shortStackShoveMaxMarginAdjustment > 20)
+                throw new IllegalArgumentException("Invalid short-stack shove history calibration");
         }
 
         public ContextWeights(int extraOpponentCallMargin, int opponentAggressionCallMargin,
@@ -45,15 +54,33 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
             this(extraOpponentCallMargin, opponentAggressionCallMargin, raiseMarginPerExtraOpponent,
                     extraOpponentValueBetMargin, earlyPositionCallMargin, latePositionCallDiscount,
                     earlyPositionValueBetMargin, latePositionValueBetDiscount, opponentAggressionValueBetMargin,
-                    tournamentValueBetMargin, uncertaintyZHundredths, 3, 6, 8, 5, 75);
+                    tournamentValueBetMargin, uncertaintyZHundredths, 3, 6, 8, 5, 75,
+                    10, 10, 3, 12, 4);
+        }
+
+        public ContextWeights(int extraOpponentCallMargin, int opponentAggressionCallMargin,
+                              int raiseMarginPerExtraOpponent, int extraOpponentValueBetMargin,
+                              int earlyPositionCallMargin, int latePositionCallDiscount,
+                              int earlyPositionValueBetMargin, int latePositionValueBetDiscount,
+                              int opponentAggressionValueBetMargin, int tournamentValueBetMargin,
+                              int uncertaintyZHundredths, int largeBetCallMargin,
+                              int opponentAllInCallMargin, int tournamentEliminationRiskMargin,
+                              int tournamentShortStackCallDiscount, int tournamentCommitmentThresholdPercent) {
+            this(extraOpponentCallMargin, opponentAggressionCallMargin, raiseMarginPerExtraOpponent,
+                    extraOpponentValueBetMargin, earlyPositionCallMargin, latePositionCallDiscount,
+                    earlyPositionValueBetMargin, latePositionValueBetDiscount, opponentAggressionValueBetMargin,
+                    tournamentValueBetMargin, uncertaintyZHundredths, largeBetCallMargin,
+                    opponentAllInCallMargin, tournamentEliminationRiskMargin, tournamentShortStackCallDiscount,
+                    tournamentCommitmentThresholdPercent, 10, 10, 3, 12, 4);
         }
 
         public static ContextWeights defaults() {
-            return new ContextWeights(3, 3, 2, 5, 2, 2, 3, 3, 2, 2, 164, 3, 6, 8, 5, 75);
+            return new ContextWeights(3, 3, 2, 5, 2, 2, 3, 3, 2, 2, 164, 3, 6, 8, 5, 75,
+                    10, 10, 3, 12, 4);
         }
     }
 
-    public static final String VERSION = "EQUITY-MC-0.2";
+    public static final String VERSION = "EQUITY-MC-0.3";
     private final MonteCarloEquityEstimator estimator = new MonteCarloEquityEstimator();
     private final int samples;
     private final int cashRiskMarginPercent;
@@ -97,14 +124,17 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         var estimate = estimator.estimate(observation, samples);
         var pressure = callPressure(observation);
         var stackRisk = stackRisk(observation, contextWeights.tournamentCommitmentThresholdPercent());
+        int shoveHistoryAdjustment = historicalShoveMarginAdjustment(observation, pressure);
         double equity = estimate.expectedShare() * 100.0;
-        int required = requiredEquityPercent(observation, estimate.standardError(), pressure, stackRisk);
+        int required = requiredEquityPercent(observation, estimate.standardError(), pressure, stackRisk,
+                shoveHistoryAdjustment);
         String metrics = String.format(Locale.ROOT,
-                "equity=%.1f%% win=%.1f%% tie=%.1f%% potOdds=%.1f%% required=%.1f%% samples=%d se=%.1f%% opponents=%d mode=%s pressurePotSized=%s opponentAllIn=%s callCommitment=%d%% covered=%s shortStack=%s",
+                "equity=%.1f%% win=%.1f%% tie=%.1f%% potOdds=%.1f%% required=%.1f%% samples=%d se=%.1f%% opponents=%d mode=%s pressurePotSized=%s opponentAllIn=%s shoveHistoryMargin=%+d callCommitment=%d%% covered=%s shortStack=%s",
                 equity, estimate.winProbability() * 100.0, estimate.tieProbability() * 100.0,
                 potOddsPercent(observation), (double) required, estimate.samples(),
                 estimate.standardError() * 100.0, observation.activeOpponentCount(), gameMode,
-                pressure.potSizedAggression(), pressure.opponentAllInAggression(), stackRisk.commitmentPercent(),
+                pressure.potSizedAggression(), pressure.opponentAllInAggression(), shoveHistoryAdjustment,
+                stackRisk.commitmentPercent(),
                 stackRisk.opponentCanCover(), stackRisk.shortStack());
 
         if (observation.toCall() > 0) {
@@ -141,12 +171,14 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
     }
 
     int requiredEquityPercent(HoldemObservation observation) {
-        return requiredEquityPercent(observation, 0.0, callPressure(observation),
-                stackRisk(observation, contextWeights.tournamentCommitmentThresholdPercent()));
+        var pressure = callPressure(observation);
+        return requiredEquityPercent(observation, 0.0, pressure,
+                stackRisk(observation, contextWeights.tournamentCommitmentThresholdPercent()),
+                historicalShoveMarginAdjustment(observation, pressure));
     }
 
     private int requiredEquityPercent(HoldemObservation observation, double standardError,
-                                      CallPressure pressure, StackRisk stackRisk) {
+                                      CallPressure pressure, StackRisk stackRisk, int shoveHistoryAdjustment) {
         double potOdds = potOddsPercent(observation);
         int baseMargin = gameMode == GameMode.CASH ? cashRiskMarginPercent : tournamentRiskMarginPercent;
         int opponentMargin = Math.max(0, observation.activeOpponentCount() - 1)
@@ -158,7 +190,8 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         int uncertaintyMargin = (int) Math.ceil(contextWeights.uncertaintyZHundredths()
                 / 100.0 * standardError * 100.0);
         int largeBetMargin = pressure.potSizedAggression() ? contextWeights.largeBetCallMargin() : 0;
-        int allInMargin = pressure.opponentAllInAggression() ? contextWeights.opponentAllInCallMargin() : 0;
+        int allInMargin = pressure.opponentAllInAggression()
+                ? contextWeights.opponentAllInCallMargin() + shoveHistoryAdjustment : 0;
         int eliminationMargin = gameMode == GameMode.TOURNAMENT && stackRisk.coveredCommitment()
                 ? contextWeights.tournamentEliminationRiskMargin() : 0;
         int shortStackDiscount = gameMode == GameMode.TOURNAMENT && stackRisk.shortStack()
@@ -210,7 +243,9 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         return callPressure(observation).aggressionCount();
     }
 
-    private record CallPressure(int aggressionCount, boolean potSizedAggression, boolean opponentAllInAggression) {}
+    private record PublicAllInRaise(int physicalSeat, int remainingStack) {}
+    private record CallPressure(int aggressionCount, boolean potSizedAggression, boolean opponentAllInAggression,
+                                List<PublicAllInRaise> opponentAllInRaises) {}
     private record StackRisk(boolean coveredCommitment, boolean opponentCanCover, boolean shortStack,
                              int commitmentPercent) {}
 
@@ -222,6 +257,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         Street activeStreet = Street.PREFLOP;
         int aggressions = 0;
         boolean potSized = false, opponentAllIn = false;
+        var allInRaiseAmounts = new TreeMap<Integer, Integer>();
         for (String event : observation.publicActionHistory()) {
             Street marker = streetMarker(event);
             if (marker != null) {
@@ -260,13 +296,46 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                 aggressions++;
                 int raiseBy = Math.max(0, target - previousPrice);
                 if (totalPot > 0 && (long) raiseBy * 100 >= totalPot * 75) potSized = true;
-                if (allInRaise) opponentAllIn = true;
+                if (allInRaise) {
+                    opponentAllIn = true;
+                    allInRaiseAmounts.put(physicalSeats.get(seat), amount);
+                }
             }
             streetPaid[seat] = target;
             totalPot += amount;
             price = Math.max(price, target);
         }
-        return new CallPressure(aggressions, potSized, opponentAllIn);
+        List<PublicAllInRaise> opponentAllInRaises = allInRaiseAmounts.entrySet().stream()
+                .map(entry -> new PublicAllInRaise(entry.getKey(), entry.getValue())).toList();
+        return new CallPressure(aggressions, potSized, opponentAllIn, opponentAllInRaises);
+    }
+
+    private int historicalShoveMarginAdjustment(HoldemObservation observation, CallPressure pressure) {
+        if (gameMode != GameMode.TOURNAMENT || !pressure.opponentAllInAggression()
+                || pressure.opponentAllInRaises().isEmpty()
+                || contextWeights.shortStackShoveSensitivity() == 0
+                || contextWeights.shortStackShoveMaxMarginAdjustment() == 0) return 0;
+        var bySeat = new HashMap<Integer, PublicOpponentTendency>();
+        for (var tendency : observation.publicOpponentTendencies())
+            bySeat.put(tendency.physicalSeat(), tendency);
+        double totalDelta = 0;
+        int measuredRaisers = 0;
+        for (PublicAllInRaise raise : pressure.opponentAllInRaises()) {
+            PublicOpponentTendency tendency = bySeat.get(raise.physicalSeat());
+            if (tendency == null || tendency.shoveOpportunities() == 0) continue;
+            if (!PublicOpponentTendency.inProfileStackRange(raise.remainingStack(), observation.bigBlind())) continue;
+            double prior = contextWeights.shortStackShovePriorProbabilityPercent() / 100.0;
+            double posterior = (tendency.allInRaises() + prior * contextWeights.shortStackShovePriorOpportunities())
+                    / (tendency.shoveOpportunities() + contextWeights.shortStackShovePriorOpportunities());
+            double evidence = Math.min(1.0, tendency.shoveOpportunities()
+                    / (double) contextWeights.shortStackShoveWarmupOpportunities());
+            totalDelta += (prior - posterior) * contextWeights.shortStackShoveSensitivity() * evidence;
+            measuredRaisers++;
+        }
+        if (measuredRaisers == 0) return 0;
+        int adjustment = (int) Math.round(totalDelta / measuredRaisers);
+        return Math.clamp(adjustment, -contextWeights.shortStackShoveMaxMarginAdjustment(),
+                contextWeights.shortStackShoveMaxMarginAdjustment());
     }
 
     private static StackRisk stackRisk(HoldemObservation observation, int commitmentThresholdPercent) {
@@ -425,7 +494,12 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                 + contextWeights.largeBetCallMargin() + "." + contextWeights.opponentAllInCallMargin() + "."
                 + contextWeights.tournamentEliminationRiskMargin() + "."
                 + contextWeights.tournamentShortStackCallDiscount() + "."
-                + contextWeights.tournamentCommitmentThresholdPercent(),
+                + contextWeights.tournamentCommitmentThresholdPercent() + "."
+                + contextWeights.shortStackShovePriorProbabilityPercent() + "."
+                + contextWeights.shortStackShovePriorOpportunities() + "."
+                + contextWeights.shortStackShoveWarmupOpportunities() + "."
+                + contextWeights.shortStackShoveSensitivity() + "."
+                + contextWeights.shortStackShoveMaxMarginAdjustment(),
                 explanation);
     }
 

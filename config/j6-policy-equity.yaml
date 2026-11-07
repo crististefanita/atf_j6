@@ -46,3 +46,8 @@ equityDecision:
     tournamentEliminationRiskMargin: 8
     tournamentShortStackCallDiscount: 5
     tournamentCommitmentThresholdPercent: 75
+    shortStackShovePriorProbabilityPercent: 10
+    shortStackShovePriorOpportunities: 10
+    shortStackShoveWarmupOpportunities: 3
+    shortStackShoveSensitivity: 12
+    shortStackShoveMaxMarginAdjustment: 4

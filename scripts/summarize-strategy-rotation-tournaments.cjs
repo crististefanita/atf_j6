@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 
-const contextPattern = /^DECISION seat=(\d+) policy=(\S+) action=([A-Z_]+) amount=(\d+) reason=.* positionFromButton=(\d+) street=(PREFLOP|FLOP|TURN|RIVER) pot=(\d+) toCall=(\d+) heroStack=(\d+) activeOpponents=(\d+) bigBlind=(\d+) visibleSeatIds=\[([0-5,]*)\] visibleStacks=\[([0-9,]*)\] visibleContributions=\[([0-9,]*)\] foldedSeatIds=\[([0-5,]*)\] priorAllInActors=\[([0-5,]*)\] priorAllInEvents=\[([0-5:callraise,]*)\] legalActions=(.*)$/;
+const contextPattern = /^DECISION seat=(\d+) policy=(\S+) action=([A-Z_]+) amount=(\d+) reason=.* positionFromButton=(\d+) street=(PREFLOP|FLOP|TURN|RIVER) pot=(\d+) toCall=(\d+) heroStack=(\d+) activeOpponents=(\d+) bigBlind=(\d+) visibleSeatIds=\[([0-5,]*)\] visibleStacks=\[([0-9,]*)\] visibleContributions=\[([0-9,]*)\] foldedSeatIds=\[([0-5,]*)\] priorAllInActors=\[([0-5,]*)\] priorAllInEvents=\[([0-5:callraise0-9,]*)\](?: publicOpponentTendencies=\[([0-5:0-9,]*)\])? legalActions=(.*)$/;
 const numbers = text => text ? text.split(',').map(Number) : [];
 const average = values => values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
 const standardError = values => {
@@ -64,13 +64,18 @@ function parseTrace(file, root) {
       const foldedSeatIds = numbers(match[15]);
       const priorAllInActors = numbers(match[16]);
       const priorAllInEvents = match[17] ? match[17].split(',') : [];
+      const publicOpponentTendencies = match[18] ? match[18].split(',').map(value=>value.split(':').map(Number)) : [];
+      const shoveHistoryMargin = Number(line.split('shoveHistoryMargin=')[1]?.split(' ')[0] ?? 0);
+      assert.ok(Number.isInteger(shoveHistoryMargin) && Math.abs(shoveHistoryMargin) <= 20,
+        `${file}:${index + 1}: invalid shove-history margin`);
       assert.ok(visibleSeatIds.length >= 2 && visibleSeatIds.length <= seats, `${file}:${index + 1}: seat map length mismatch`);
       assert.equal(visibleStacks.length, visibleSeatIds.length, `${file}:${index + 1}: stack vector length mismatch`);
       assert.equal(visibleContributions.length, visibleSeatIds.length, `${file}:${index + 1}: contribution vector length mismatch`);
       game.currentHand.decisions.push({ seat, role: role.id, policy: match[2], action: match[3], amount: +match[4],
         positionFromButton: +match[5], street: match[6], pot: +match[7], toCall: +match[8], heroStack: +match[9],
         activeOpponents: +match[10], bigBlind: +match[11], visibleSeatIds, visibleStacks, visibleContributions,
-        foldedSeatIds, priorAllInActors, priorAllInEvents, legalActions: match[18] });
+        foldedSeatIds, priorAllInActors, priorAllInEvents, publicOpponentTendencies, shoveHistoryMargin,
+        legalActions: match[19] });
       continue;
     }
     match = /^STACKS (\[.*\])$/.exec(line);
@@ -132,11 +137,13 @@ function summarize(root) {
   const roleMetrics = new Map();
   const seedMetrics = new Map();
   let tournamentCount = 0, handCount = 0, decisionCount = 0, decisionContextCount = 0;
-  let allInRaiseResponses = 0, largePriceResponses = 0, coveredCommitmentCalls = 0, shortStackDecisions = 0;
+  let allInRaiseResponses = 0, historyPositiveAdjustments = 0, historyNegativeAdjustments = 0;
+  let largePriceResponses = 0, coveredCommitmentCalls = 0, shortStackDecisions = 0;
 
   function roleStat(key) {
     if (!roleMetrics.has(key)) roleMetrics.set(key, { games: 0, wins: 0, trajectoryShares: [],
       decisions: 0, allInRaiseFacing: 0, allInRaiseFolds: 0, allInRaiseCalls: 0, allInRaiseAggressiveResponses: 0,
+      shoveHistoryPositiveAdjustments: 0, shoveHistoryNegativeAdjustments: 0,
       largePriceFacing: 0, largePriceFolds: 0, largePriceCalls: 0, largePriceAggressiveResponses: 0,
       coveredCommitmentCalls: 0, coveredCommitmentFolds: 0, shortStackDecisions: 0, shortStackAllIns: 0 });
     return roleMetrics.get(key);
@@ -175,6 +182,13 @@ function summarize(root) {
           if (context.facingAllInRaise) {
             stat.allInRaiseFacing++;
             allInRaiseResponses++;
+            if (decision.shoveHistoryMargin > 0) {
+              stat.shoveHistoryPositiveAdjustments++;
+              historyPositiveAdjustments++;
+            } else if (decision.shoveHistoryMargin < 0) {
+              stat.shoveHistoryNegativeAdjustments++;
+              historyNegativeAdjustments++;
+            }
             if (decision.action === 'FOLD') stat.allInRaiseFolds++;
             else if (decision.action === 'CALL') stat.allInRaiseCalls++;
             else stat.allInRaiseAggressiveResponses++;
@@ -239,6 +253,8 @@ function summarize(root) {
       decisions: stat.decisions, facingPriorAllInRaise: stat.allInRaiseFacing,
       foldFacingPriorAllInRaise: stat.allInRaiseFolds, callFacingPriorAllInRaise: stat.allInRaiseCalls,
       aggressiveResponseFacingPriorAllInRaise: stat.allInRaiseAggressiveResponses,
+      shoveHistoryPositiveAdjustments: stat.shoveHistoryPositiveAdjustments,
+      shoveHistoryNegativeAdjustments: stat.shoveHistoryNegativeAdjustments,
       facingLargePriceAtLeast75PercentOfPot: stat.largePriceFacing,
       foldFacingLargePrice: stat.largePriceFolds, callFacingLargePrice: stat.largePriceCalls,
       aggressiveResponseFacingLargePrice: stat.largePriceAggressiveResponses,
@@ -285,11 +301,15 @@ function summarize(root) {
       handAssignment: 'same seed and button offset retain the same deal-seed prefix across strategy rotations',
       stackTrajectory: 'mean fraction of total chips held at each completed hand, averaged within tournament, then equally across tournaments/seeds',
       allInContext: 'prior public ALL_IN actions are distinguished as call versus price-raising action; responses count only when a call price remains',
+      publicShoveHistory: 'preflop raise-capable all-in opportunities are counted only at 2–10 big blinds and become visible after the hand closes; Bayesian prior and bounded call-margin adjustment are YAML-configured',
       caveats: ['small independent seed count; results are exploratory', 'win rates are noisy and coupled by the shared table',
-        'no opponent action-conditioned hand ranges, calibrated EV, rake, bounty, or ICM model',
+        'public shove frequency is not a hand-range estimate; no opponent action-conditioned hand ranges, calibrated EV, rake, bounty, or ICM model',
         'covered-stack signal is a public chip-coverage proxy, not exact side-pot equity'] },
     totals: { tournaments: tournamentCount, hands: handCount, decisions: decisionCount, publicDecisionContexts: decisionContextCount,
-      priorAllInRaiseResponseDecisions: allInRaiseResponses, largePriceResponseDecisions: largePriceResponses,
+      priorAllInRaiseResponseDecisions: allInRaiseResponses,
+      shoveHistoryPositiveAdjustments: historyPositiveAdjustments,
+      shoveHistoryNegativeAdjustments: historyNegativeAdjustments,
+      largePriceResponseDecisions: largePriceResponses,
       coveredCommitmentDecisions: coveredCommitmentCalls, shortStackDecisions: shortStackDecisions }, rows, pairedEquity };
 }
 
@@ -297,12 +317,14 @@ function markdown(summary) {
   const lines = ['# Rezultate exploratorii: rotația strategiilor de turneu', '',
     `Turnee: ${summary.totals.tournaments}; mâini încheiate: ${summary.totals.hands}; decizii: ${summary.totals.decisions}.`,
     `Decizii cu all-in anterior care a mărit prețul: ${summary.totals.priorAllInRaiseResponseDecisions}; contexte de preț mare: ${summary.totals.largePriceResponseDecisions}; stack scurt (≤10 BB): ${summary.totals.shortStackDecisions}.`,
+    `Ajustări de marjă din istoricul shove: +${summary.totals.shoveHistoryPositiveAdjustments} conservatoare / −${summary.totals.shoveHistoryNegativeAdjustments} pentru call-uri mai largi.`,
+    'Istoricul public de shove măsoară doar oportunități de raise preflop la 2–10 BB și se actualizează după încheierea mâinii; frecvența nu dezvăluie range-ul real al adversarului.',
     '', '## Strategii și stivă', '',
     'Stiva medie la închiderea mâinilor este media ponderii de jetoane pe mâna fiecărui turneu, apoi media egal ponderată pe jocuri. Rotațiile sunt măsurători repetate; seed-ul turneului rămâne unitatea independentă.', '',
-    '| Profil | Locuri | Rol | Jocuri | Victorii | Rată victorii / seed | Stivă medie / seed | SE rată | SE stivă | Decizii | Răspunsuri la raise all-in (fold/call/agresiv) | Call de angajament acoperit | Acțiuni short-stack all-in |',
-    '|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|'];
+    '| Profil | Locuri | Rol | Jocuri | Victorii | Rată victorii / seed | Stivă medie / seed | SE rată | SE stivă | Decizii | Răspunsuri la raise all-in (fold/call/agresiv) | Ajustare istoric +/− | Call de angajament acoperit | Acțiuni short-stack all-in |',
+    '|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|'];
   for (const row of summary.rows) {
-    lines.push(`| ${row.profile} | ${row.seats} | ${row.strategy} | ${row.games} | ${row.wins} | ${(row.meanWinRateAcrossSeedClusters * 100).toFixed(1)}% | ${(row.meanHandEndStackShareAcrossSeedClusters * 100).toFixed(1)}% | ${row.winRateStandardErrorAcrossSeeds === null ? 'n/a' : (row.winRateStandardErrorAcrossSeeds * 100).toFixed(1) + '%'} | ${row.handEndStackShareStandardErrorAcrossSeeds === null ? 'n/a' : (row.handEndStackShareStandardErrorAcrossSeeds * 100).toFixed(1) + '%'} | ${row.decisions} | ${row.facingPriorAllInRaise} (${row.foldFacingPriorAllInRaise}/${row.callFacingPriorAllInRaise}/${row.aggressiveResponseFacingPriorAllInRaise}) | ${row.coveredCommitmentCalls}/${row.coveredCommitmentFolds} | ${row.shortStackAllInActions}`);
+    lines.push(`| ${row.profile} | ${row.seats} | ${row.strategy} | ${row.games} | ${row.wins} | ${(row.meanWinRateAcrossSeedClusters * 100).toFixed(1)}% | ${(row.meanHandEndStackShareAcrossSeedClusters * 100).toFixed(1)}% | ${row.winRateStandardErrorAcrossSeeds === null ? 'n/a' : (row.winRateStandardErrorAcrossSeeds * 100).toFixed(1) + '%'} | ${row.handEndStackShareStandardErrorAcrossSeeds === null ? 'n/a' : (row.handEndStackShareStandardErrorAcrossSeeds * 100).toFixed(1) + '%'} | ${row.decisions} | ${row.facingPriorAllInRaise} (${row.foldFacingPriorAllInRaise}/${row.callFacingPriorAllInRaise}/${row.aggressiveResponseFacingPriorAllInRaise}) | +${row.shoveHistoryPositiveAdjustments}/−${row.shoveHistoryNegativeAdjustments} | ${row.coveredCommitmentCalls}/${row.coveredCommitmentFolds} | ${row.shortStackAllInActions}`);
   }
   lines.push('', '## Comparație pereche: equity cu risc de stack vs equity de bază', '',
     'Delta = stack-aware minus baseline. Fiecare seed reunește toate rotațiile de loc și buton, apoi seed-urile se mediază egal. Erorile standard sunt descriptive; numărul mic de seed-uri nu susține concluzii de superioritate.', '',

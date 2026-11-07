@@ -120,6 +120,46 @@ class ContextualEquityPolicyTest {
         assertTrue(stackAware.decide(allIn).explanation().contains("shortStack=true"));
     }
 
+    @Test void historicalShortStackShovesAdjustOnlyTheFacingOpponentsCallMargin() {
+        var policy = policy(ContextualEquityPolicy.GameMode.TOURNAMENT);
+        var noEvidence = shoveHistoryObservation(200, 0, 0);
+        var frequentShove = shoveHistoryObservation(200, 5, 5);
+        var noShove = shoveHistoryObservation(200, 20, 0);
+        int neutral = policy.requiredEquityPercent(noEvidence);
+
+        assertEquals(neutral, policy.requiredEquityPercent(shoveHistoryObservation(200, 0, 0)),
+                "A cold-start opponent retains the configured all-in margin");
+        assertTrue(policy.requiredEquityPercent(frequentShove) < neutral,
+                "Repeated public short-stack shoves modestly widen the call response");
+        assertTrue(policy.requiredEquityPercent(noShove) > neutral,
+                "Repeated shove opportunities without a shove modestly tighten the response");
+        assertTrue(neutral - policy.requiredEquityPercent(frequentShove) <= 4,
+                "History may only adjust the configured call margin within its cap");
+        assertTrue(policy.decide(frequentShove).explanation().contains("shoveHistoryMargin=-4"));
+        assertEquals(policy(ContextualEquityPolicy.GameMode.CASH).requiredEquityPercent(noEvidence),
+                policy(ContextualEquityPolicy.GameMode.CASH).requiredEquityPercent(frequentShove),
+                "Tournament-local shove history must not change cash decisions");
+    }
+
+    @Test void historicalShoveUsesTheRemainingStackAtTheRaiseAndHonorsBothProfileBounds() {
+        var policy = policy(ContextualEquityPolicy.GameMode.TOURNAMENT);
+        var exactlyTwoBigBlinds = shoveHistoryObservation(40, 20, 0);
+        var justAboveTwoBigBlinds = shoveHistoryObservation(41, 20, 0);
+        var exactlyTenBigBlinds = shoveHistoryObservation(200, 20, 0);
+        var aboveTenBigBlinds = shoveHistoryObservation(201, 20, 0);
+
+        assertEquals(policy.requiredEquityPercent(shoveHistoryObservation(40, 0, 0)),
+                policy.requiredEquityPercent(exactlyTwoBigBlinds), "The lower bound is exclusive");
+        assertTrue(policy.requiredEquityPercent(justAboveTwoBigBlinds)
+                        > policy.requiredEquityPercent(shoveHistoryObservation(41, 0, 0)),
+                "Evidence applies immediately above the lower bound");
+        assertTrue(policy.requiredEquityPercent(exactlyTenBigBlinds)
+                        > policy.requiredEquityPercent(shoveHistoryObservation(200, 0, 0)),
+                "The upper bound is inclusive");
+        assertEquals(policy.requiredEquityPercent(shoveHistoryObservation(201, 0, 0)),
+                policy.requiredEquityPercent(aboveTenBigBlinds), "Stacks above the profile are ignored");
+    }
+
     @Test void postflopPositionUsesOnlyPlayersWhoCanStillAct() {
         var policy = policy(ContextualEquityPolicy.GameMode.CASH);
         var early = livePositionObservation(1, 1, List.of("RIVER 0 FOLD 0"));
@@ -163,6 +203,20 @@ class ContextualEquityPolicyTest {
                 pot, toCall, heroStack, 0, stacks,
                 List.of(LegalAction.noAmount(ActionType.FOLD), new LegalAction(ActionType.ALL_IN,
                         heroStack, heroStack, heroStack)), history, 0, 20, contributions);
+    }
+
+    private static HoldemObservation shoveHistoryObservation(int remainingStack, int opportunities, int raises) {
+        int villainContribution = 20 + remainingStack;
+        int pot = 10 + villainContribution;
+        List<String> history = List.of("SEATS [0, 1]", "SB 0 10", "BB 1 20",
+                "PREFLOP 1 ALL_IN " + remainingStack);
+        var base = publicPreflopObservation(history, pot, villainContribution - 10, 500,
+                List.of(10, villainContribution), List.of(500, 0));
+        return new HoldemObservation(base.handNumber(), base.heroSeat(), base.playerCount(), base.activeOpponentCount(),
+                base.street(), base.holeCards(), base.communityCards(), base.pot(), base.toCall(), base.heroStack(),
+                base.positionFromButton(), base.visibleStacks(), base.legalActions(), base.publicActionHistory(),
+                base.physicalHeroSeat(), base.bigBlind(), base.visibleContributions(),
+                List.of(new PublicOpponentTendency(1, opportunities, raises)));
     }
 
     private static List<String> prependSeats(List<String> history) {

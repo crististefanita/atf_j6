@@ -84,11 +84,42 @@ class HoldemRulesTest {
         assertEquals(List.of("handNumber", "heroSeat", "playerCount", "activeOpponentCount", "street", "holeCards",
                 "communityCards", "pot", "toCall", "heroStack", "positionFromButton",
                 "visibleStacks", "legalActions", "publicActionHistory", "physicalHeroSeat", "bigBlind",
-                "visibleContributions"), names);
+                "visibleContributions", "publicOpponentTendencies"), names);
         assertFalse(names.stream().anyMatch(name -> name.toLowerCase(Locale.ROOT).contains("seed")
                 || name.toLowerCase(Locale.ROOT).contains("deck")
                 || name.toLowerCase(Locale.ROOT).contains("opponenthole")
                 || name.toLowerCase(Locale.ROOT).contains("remainingcards")));
+    }
+
+    @Test void publicOpponentTendenciesStayBoundToVisiblePhysicalSeats() {
+        var hand = hand(100, 0, 100, 100);
+        var stats = List.of(new PublicOpponentTendency(0, 2, 1),
+                new PublicOpponentTendency(1, 9, 4), new PublicOpponentTendency(2, 1, 0),
+                new PublicOpponentTendency(3, 3, 2));
+
+        var observation = hand.observeActor(stats);
+
+        assertEquals(List.of(0, 2, 3), observation.publicOpponentTendencies().stream()
+                .map(PublicOpponentTendency::physicalSeat).toList());
+        assertEquals(List.of(2, 1, 3), observation.publicOpponentTendencies().stream()
+                .map(PublicOpponentTendency::shoveOpportunities).toList());
+        assertEquals(List.of(1, 0, 2), observation.publicOpponentTendencies().stream()
+                .map(PublicOpponentTendency::allInRaises).toList());
+        assertThrows(IllegalArgumentException.class, () -> new PublicOpponentTendency(2, 1, 2));
+        assertThrows(IllegalArgumentException.class,
+                () -> hand.observeActor(List.of(new PublicOpponentTendency(4, 0, 0))));
+        assertThrows(IllegalArgumentException.class, () -> hand.observeActor(List.of(
+                new PublicOpponentTendency(2, 1, 0), new PublicOpponentTendency(2, 2, 1))));
+        assertThrows(NullPointerException.class, () -> hand.observeActor(null));
+    }
+
+    @Test void publicShoveProfileUsesAnExclusiveTwoBigBlindAndInclusiveTenBigBlindBoundary() {
+        assertFalse(PublicOpponentTendency.inProfileStackRange(40, 20));
+        assertTrue(PublicOpponentTendency.inProfileStackRange(41, 20));
+        assertTrue(PublicOpponentTendency.inProfileStackRange(200, 20));
+        assertFalse(PublicOpponentTendency.inProfileStackRange(201, 20));
+        assertFalse(PublicOpponentTendency.inProfileStackRange(20, 0));
+        assertFalse(PublicOpponentTendency.inProfileStackRange(-1, 20));
     }
 
     @Test void observationReportsOnlyOpponentsStillInTheHand() {

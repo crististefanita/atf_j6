@@ -81,14 +81,29 @@ public final class HoldemHand {
     public List<String> history() { return List.copyOf(history); }
 
     public HoldemObservation observeActor() {
+        return observeActor(List.of());
+    }
+
+    public HoldemObservation observeActor(List<PublicOpponentTendency> publicTendencies) {
         if (actor < 0) throw new IllegalStateException("Hand is complete");
+        Objects.requireNonNull(publicTendencies, "publicTendencies");
         int localSeat = seats.indexOf(actor);
         int position = Math.floorMod(localSeat - seats.indexOf(button), seats.size());
+        var tendencyBySeat = new HashMap<Integer, PublicOpponentTendency>();
+        for (var tendency : publicTendencies) {
+            Objects.requireNonNull(tendency, "public tendency");
+            if (tendency.physicalSeat() >= stacks.length)
+                throw new IllegalArgumentException("Public tendency seat is outside the table: " + tendency.physicalSeat());
+            if (tendencyBySeat.put(tendency.physicalSeat(), tendency) != null)
+                throw new IllegalArgumentException("Duplicate public tendency seat " + tendency.physicalSeat());
+        }
+        var visibleTendencies = seats.stream().map(seat -> tendencyBySeat.getOrDefault(seat,
+                new PublicOpponentTendency(seat, 0, 0))).toList();
         return new HoldemObservation(number, localSeat, seats.size(), count(i -> !folded[i]) - 1,
                 street, List.copyOf(hole.get(actor)),
                 board(), Arrays.stream(paid).sum(), toCall(), stacks[actor], position,
                 seats.stream().map(i -> stacks[i]).collect(Collectors.toList()), legal(), history(), actor,
-                level.bigBlind(), seats.stream().map(i -> paid[i]).collect(Collectors.toList()));
+                level.bigBlind(), seats.stream().map(i -> paid[i]).collect(Collectors.toList()), visibleTendencies);
     }
 
     public HoldemTableViewState viewFor(int viewer) {

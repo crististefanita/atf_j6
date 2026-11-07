@@ -59,7 +59,7 @@ function rankSeven(cards) {
     return best;
 }
 
-function audit(file, strict) {
+function audit(file, strict, requirePublicShoveHistory = false) {
     const stats = {tournaments:0,hands:0,showdowns:0,actions:{},sidePotHands:0,sidePots:0,returns:0,
         shortCalls:0,shortAllInIncreases:0,lockedResponses:0,cumulativeReopens:0,splitPots:0,bySize:{},examples:{}};
     let table, hand, lineNo = 0;
@@ -93,7 +93,8 @@ function audit(file, strict) {
                 const levels = [...line.matchAll(/smallBlind=(\d+), bigBlind=(\d+), minimumOpen=(\d+)/g)].map(x=>x.slice(1).map(Number));
                 table = {seed,size:seatCount,step:+stepRaw,interval:+intervalRaw,levels,
                     buttonAnchor,stack:Array(seatCount).fill(+stackRaw),total:seatCount * +stackRaw,number:0,
-                    strategies:new Map()};
+                    strategies:new Map(),shortStackShoveOpportunities:Array(seatCount).fill(0),
+                    shortStackAllInRaises:Array(seatCount).fill(0)};
                 const policyOffset = / policyOffset=(-?\d+)$/.exec(line);
                 if (policyOffset) table.policyOffset = +policyOffset[1];
                 table.seedState = word(BigInt(seed));
@@ -133,7 +134,7 @@ function audit(file, strict) {
                 hand = {number,active,order,hole,button,board:[1,2,3,5,7].map(offset=>deck[base+offset]),
                     blindPlan:[['SB',small,sb],['BB',table.big,bb]],blinds:0,after:table.big,open,bigBlind:bb,street:0,price:bb,full:bb,
                     responded:new Map(),stack:[...table.stack],paid:Array(table.size).fill(0),streetPaid:Array(table.size).fill(0),
-                    folded:new Set(),foldedActors:[],shortPrices:[],layers:[],allInActors:[],allInEvents:[]};
+                    folded:new Set(),foldedActors:[],shortPrices:[],layers:[],allInActors:[],allInEvents:[],shoveObservations:[]};
                 stats.hands++;
                 stats.bySize[table.size].hands++;
             } else if (line.startsWith('SEATS ')) {
@@ -146,7 +147,9 @@ function audit(file, strict) {
             } else if (m=/^DECISION seat=(\d+) policy=\S+ action=(\w+) amount=(\d+) reason=/.exec(line)) {
                 assert.ok(!hand.decision);
                 hand.decision = m.slice(1);
-                const context=/ positionFromButton=(\d+) street=(PREFLOP|FLOP|TURN|RIVER) pot=(\d+) toCall=(\d+) heroStack=(\d+) activeOpponents=(\d+) bigBlind=(\d+) visibleSeatIds=\[([0-5,]*)\] visibleStacks=\[([0-9,]*)\] visibleContributions=\[([0-9,]*)\] foldedSeatIds=\[([0-5,]*)\] priorAllInActors=\[([0-5,]*)\] priorAllInEvents=\[([0-5:callraise,]*)\] legalActions=(.*)$/.exec(line);
+                const context=/ positionFromButton=(\d+) street=(PREFLOP|FLOP|TURN|RIVER) pot=(\d+) toCall=(\d+) heroStack=(\d+) activeOpponents=(\d+) bigBlind=(\d+) visibleSeatIds=\[([0-5,]*)\] visibleStacks=\[([0-9,]*)\] visibleContributions=\[([0-9,]*)\] foldedSeatIds=\[([0-5,]*)\] priorAllInActors=\[([0-5,]*)\] priorAllInEvents=\[([0-5:callraise0-9,]*)\](?: publicOpponentTendencies=\[([0-5:0-9,]*)\])? legalActions=(.*)$/.exec(line);
+                if (!context && requirePublicShoveHistory)
+                    assert.fail('Decision has malformed or incomplete public context at line ' + lineNo);
                 if (context) {
                     const [position,street,pot,toCall,heroStack,opponents,bigBlind] = context.slice(1,8);
                     const ids=context[8].split(',').filter(Boolean).map(Number);
@@ -155,7 +158,8 @@ function audit(file, strict) {
                     const folded=context[11].split(',').filter(Boolean).map(Number);
                     const priorAllIns=context[12].split(',').filter(Boolean).map(Number);
                     const priorAllInEvents=context[13].split(',').filter(Boolean);
-                    const legal=context[14].split(',').map(value=>value.split(':'));
+                    const publicTendencies=context[14];
+                    const legal=context[15].split(',').map(value=>value.split(':'));
                     const seat=+m[1], expectedIds=hand.active;
                     assert.deepEqual(ids,expectedIds,'Visible seat map differs from active seats');
                     assert.deepEqual(stacks,expectedIds.map(value=>hand.stack[value]),'Visible stacks differ from public state');
@@ -163,6 +167,14 @@ function audit(file, strict) {
                     assert.deepEqual(folded,hand.foldedActors,'Folded seat context differs from public history');
                     assert.deepEqual(priorAllIns,hand.allInActors,'Prior all-in actions differ from public history');
                     assert.deepEqual(priorAllInEvents,hand.allInEvents,'Prior all-in call/raise context differs from public history');
+                    if (requirePublicShoveHistory) assert.notEqual(publicTendencies,undefined,
+                        'Decision omits public tournament-local shove history');
+                    if (publicTendencies !== undefined) {
+                        const observed = publicTendencies ? publicTendencies.split(',').map(value=>value.split(':').map(Number)) : [];
+                        const expected = ids.map(physicalSeat=>[physicalSeat,
+                            table.shortStackShoveOpportunities[physicalSeat],table.shortStackAllInRaises[physicalSeat]]);
+                        assert.deepEqual(observed,expected,'Public shove history differs from prior completed-hand actions');
+                    }
                     assert.equal(+position,expectedIds.indexOf(seat)-expectedIds.indexOf(hand.button) < 0
                         ? expectedIds.indexOf(seat)-expectedIds.indexOf(hand.button)+expectedIds.length
                         : expectedIds.indexOf(seat)-expectedIds.indexOf(hand.button));
@@ -172,6 +184,13 @@ function audit(file, strict) {
                     assert.equal(+heroStack,hand.stack[seat]);
                     assert.equal(+opponents,live().length-1);
                     assert.equal(+bigBlind,hand.bigBlind);
+                    const [actionName, amountText] = hand.decision.slice(1);
+                    const amount = +amountText;
+                    const allIn = legal.find(([type])=>type==='ALL_IN');
+                    const opportunity = street==='PREFLOP' && +heroStack>+bigBlind*2 && +heroStack<=+bigBlind*10
+                        && allIn!==undefined && +allIn[1]>+toCall;
+                    hand.shoveObservations.push({seat,opportunity,
+                        raisedAllIn:opportunity && actionName==='ALL_IN' && amount>+toCall});
                     assert.ok(legal.some(([type,,minimum,maximum])=>type===m[2]
                         && +m[3]>=+minimum && +m[3]<=+maximum),'Decision is absent from its recorded legal actions');
                 }
@@ -273,6 +292,11 @@ function audit(file, strict) {
                 table.stack = hand.stack.map((chips,seat)=>chips+hand.awards[seat]);
                 assert.deepEqual(JSON.parse(line.slice(7)),table.stack);
                 assert.equal(sum(table.stack),table.total);
+                for (const decision of hand.shoveObservations) {
+                    if (!decision.opportunity) continue;
+                    table.shortStackShoveOpportunities[decision.seat]++;
+                    if (decision.raisedAllIn) table.shortStackAllInRaises[decision.seat]++;
+                }
                 hand.complete = true;
             } else if (m=/^COMPLETE winner=(\d+) hands=(\d+)$/.exec(line)) {
                 assert.ok(hand.complete && !table.complete);
@@ -293,8 +317,11 @@ function audit(file, strict) {
 module.exports = {audit};
 if (require.main===module) {
     try {
-        const [file,option] = process.argv.slice(2);
-        if (!file || (option!==undefined && option!=='--require-layers')) throw new Error('Usage: node scripts/audit-tournament.cjs trace.txt [--require-layers]');
-        console.log(JSON.stringify(audit(file,option==='--require-layers'),null,2));
+        const [file,...options] = process.argv.slice(2);
+        const allowed = new Set(['--require-layers','--require-public-shove-history']);
+        if (!file || options.some(option=>!allowed.has(option)) || new Set(options).size!==options.length)
+            throw new Error('Usage: node scripts/audit-tournament.cjs trace.txt [--require-layers] [--require-public-shove-history]');
+        console.log(JSON.stringify(audit(file,options.includes('--require-layers'),
+            options.includes('--require-public-shove-history')),null,2));
     } catch (error) { console.error(error.message); process.exitCode=1; }
 }

@@ -6,6 +6,7 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import ro.atf.holdem.ai.*;
+import ro.atf.holdem.core.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TournamentArenaTest {
@@ -109,6 +110,23 @@ class TournamentArenaTest {
         assertThrows(IllegalArgumentException.class, () -> new TournamentPolicyConfig(18, 2, 45, 20, 35, 0, 51));
     }
 
+    @Test void everyCheckedInPolicyYamlSatisfiesTheStrictContextWeightSchema() throws IOException {
+        Path config = Path.of("config");
+        if (!Files.exists(config)) config = Path.of("..", "config");
+        var profiles = new ArrayList<Path>(List.of(config.resolve("j6-policy.yaml"),
+                config.resolve("j6-policy-equity.yaml")));
+        try (var tuning = Files.list(config.resolve("policy-tuning"))) {
+            tuning.filter(path -> path.getFileName().toString().endsWith(".yaml"))
+                    .sorted().forEach(profiles::add);
+        }
+
+        assertTrue(profiles.size() >= 4, "The checked-in comparison profile set must be present");
+        for (Path profile : profiles) {
+            assertDoesNotThrow(() -> TournamentPolicyConfig.load(profile),
+                    "Policy YAML must include the exact current context schema: " + profile);
+        }
+    }
+
     @Test void cliKeepsTheRequestedStyleWhenAnExplicitPolicyYamlIsPassed() {
         assertEquals("mixed", TournamentArena.cohortFromArgs(new String[]{"profile", "trace", "10", "7000"}));
         assertEquals("calling", TournamentArena.cohortFromArgs(new String[]{"profile", "trace", "10", "7000", "calling"}));
@@ -160,9 +178,42 @@ class TournamentArenaTest {
         var trace = new StringWriter();
         TournamentArena.play(rules, 45, 12, 500, policies, new PrintWriter(trace));
         var decision = trace.toString().lines().filter(line -> line.startsWith("DECISION ")).findFirst().orElseThrow();
-        assertTrue(decision.matches(".*positionFromButton=\\d+ street=(PREFLOP|FLOP|TURN|RIVER) pot=\\d+ toCall=\\d+ heroStack=\\d+ activeOpponents=\\d+ bigBlind=\\d+ visibleSeatIds=\\[[0-5,]*\\] visibleStacks=\\[[0-9,]*\\] visibleContributions=\\[[0-9,]*\\] foldedSeatIds=\\[[0-5,]*\\] priorAllInActors=\\[[0-5,]*\\] priorAllInEvents=\\[[0-5:callraise,]*\\] legalActions=.*"), decision);
+        assertTrue(decision.matches(".*positionFromButton=\\d+ street=(PREFLOP|FLOP|TURN|RIVER) pot=\\d+ toCall=\\d+ heroStack=\\d+ activeOpponents=\\d+ bigBlind=\\d+ visibleSeatIds=\\[[0-5,]*\\] visibleStacks=\\[[0-9,]*\\] visibleContributions=\\[[0-9,]*\\] foldedSeatIds=\\[[0-5,]*\\] priorAllInActors=\\[[0-5,]*\\] priorAllInEvents=\\[[0-5:callraise,]*\\] publicOpponentTendencies=\\[[0-5:0-9,]*\\] legalActions=.*"), decision);
         assertFalse(decision.contains("holeCards="), "A replay trace must not expose opponents' private cards");
         assertFalse(decision.contains("futureBoard="), "A replay trace must not expose undealt board cards");
+    }
+
+    @Test void tournamentSharesOnlyCompletedHandsShortStackShoveHistory() {
+        var rules = new Tournament.Rules(4, 100, 12, List.of(new BlindLevel(5, 10, 15),
+                new BlindLevel(10, 20, 25), new BlindLevel(20, 40, 50), new BlindLevel(40, 80, 100),
+                new BlindLevel(80, 160, 200), new BlindLevel(160, 320, 400), new BlindLevel(320, 640, 800)));
+        var policies = new ArrayList<DecisionPolicy>();
+        policies.add(observation -> observation.handNumber() == 1
+                && observation.legalActions().stream().anyMatch(action -> action.type() == ActionType.ALL_IN
+                && action.amount() > observation.toCall())
+                ? new Decision(ActionType.ALL_IN, observation.heroStack(), "TEST-SHORT-SHOVE", "public-history probe")
+                : safeCheckOrFold(observation));
+        for (int seat = 1; seat < 4; seat++) policies.add(TournamentArenaTest::safeCheckOrFold);
+        var trace = new StringWriter();
+
+        TournamentArena.play(rules, 13, 12, 500, policies, new PrintWriter(trace));
+
+        var lines = trace.toString().lines().toList();
+        var firstHand = lines.stream().dropWhile(line -> !line.startsWith("HAND 1 "))
+                .takeWhile(line -> !line.startsWith("STACKS ")).filter(line -> line.startsWith("DECISION ")).toList();
+        assertTrue(firstHand.stream().allMatch(line -> line.contains("publicOpponentTendencies=[0:0:0")),
+                "The current hand must not leak its own later actions into earlier decisions");
+        var secondHand = lines.stream().dropWhile(line -> !line.startsWith("HAND 2 "))
+                .takeWhile(line -> !line.startsWith("STACKS ")).filter(line -> line.startsWith("DECISION ")).toList();
+        assertFalse(secondHand.isEmpty());
+        assertTrue(secondHand.stream().allMatch(line -> line.contains("0:1:1")),
+                "A completed public short-stack shove should be visible in the next hand");
+    }
+
+    private static Decision safeCheckOrFold(ro.atf.holdem.core.HoldemObservation observation) {
+        return observation.toCall() > 0
+                ? new Decision(ActionType.FOLD, 0, "TEST-FOLD", "avoid price")
+                : new Decision(ActionType.CHECK, 0, "TEST-CHECK", "no price");
     }
 
     @Test void legacyPotCandidateReplacesOnlyItsSeededSeatsAcrossEveryTableSize() {

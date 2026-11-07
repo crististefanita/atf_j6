@@ -102,7 +102,9 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
                     "opponentAggressionValueBetMargin", "tournamentValueBetMargin",
                     "uncertaintyZHundredths", "largeBetCallMargin", "opponentAllInCallMargin",
                     "tournamentEliminationRiskMargin", "tournamentShortStackCallDiscount",
-                    "tournamentCommitmentThresholdPercent")))
+                    "tournamentCommitmentThresholdPercent", "shortStackShovePriorProbabilityPercent",
+                    "shortStackShovePriorOpportunities", "shortStackShoveWarmupOpportunities",
+                    "shortStackShoveSensitivity", "shortStackShoveMaxMarginAdjustment")))
                 throw new IllegalArgumentException("Expected exact equityDecision.contextWeights settings");
             var contextWeights = new ContextualEquityPolicy.ContextWeights(
                     integer(weights, "extraOpponentCallMargin"), integer(weights, "opponentAggressionCallMargin"),
@@ -113,7 +115,12 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
                     integer(weights, "uncertaintyZHundredths"), integer(weights, "largeBetCallMargin"),
                     integer(weights, "opponentAllInCallMargin"), integer(weights, "tournamentEliminationRiskMargin"),
                     integer(weights, "tournamentShortStackCallDiscount"),
-                    integer(weights, "tournamentCommitmentThresholdPercent"));
+                    integer(weights, "tournamentCommitmentThresholdPercent"),
+                    integer(weights, "shortStackShovePriorProbabilityPercent"),
+                    integer(weights, "shortStackShovePriorOpportunities"),
+                    integer(weights, "shortStackShoveWarmupOpportunities"),
+                    integer(weights, "shortStackShoveSensitivity"),
+                    integer(weights, "shortStackShoveMaxMarginAdjustment"));
             return new TournamentPolicyConfig(frequency, window, open, raise, callPot, betPot, lateAdjustment,
                     samples, cashMargin, tournamentMargin, raiseEdge, valueThreshold, contextWeights);
         } catch (org.yaml.snakeyaml.error.YAMLException failure) {

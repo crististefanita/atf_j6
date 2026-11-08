@@ -63,7 +63,8 @@ Turneul local pornește la 4–6 locuri. La creare, jucătorul alege blindurile 
 
 - Aplicația oferă un clasament local, cumulativ, al punctelor obținute în turnee. Totalurile se grupează după un ID stabil al participantului, nu după aliasul afișat la masă.
 - Fiecare rezultat terminal intră o singură dată în registrul local, după ID-ul stabil al participantului. Topul arată punctele cumulate, turneele jucate și cea mai bună clasare; egalitățile de puncte împart același rang. Tabela este derulabilă și nu pretinde sincronizare online.
-- Regula inițială propusă normalizează plasările la o scară de 0–100 și împarte egal locurile ocupate la eliminări simultane. Formula exactă și criteriile complete rămân în [feedback-ul clasamentului](../feedback/J6-UI-08-TOURNAMENT-LEADERBOARD.md) până la calificare.
+- Redenumirea profilului actualizează eticheta intrării identificate prin același ID. Rangul, punctele, turneele și intrările celorlalți participanți se păstrează, inclusiv după restartul procesului.
+- Punctele se calculează cu `rotunjire(100 × (N − rang_mediu) / (N − 1))`, unde `N` este numărul participanților. La o eliminare simultană, rangul mediu este media locurilor ocupate. O schimbare a curbei cere versiune nouă și migrarea explicită a totalurilor. [Verificările clasamentului](../testing/TEST_STRATEGY.md#interfața-android-locală)
 
 ### Istoricul pariurilor
 

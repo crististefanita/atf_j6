@@ -44,6 +44,11 @@ class PublishTournamentExtent {
     private static final List<String> LEADERBOARD_ASSERTIONS = List.of(
             "Result screen has not opened", "Settled tournament is already recorded", "New tournament replaced the settled checkpoint",
             "Leaderboard keeps the unopened result once", "Reopened app keeps the original tournament ID once");
+    private static final List<String> PROFILE_RESTART_ASSERTIONS = List.of(
+            "Original profile has one completed tournament and 100 points", "Tournament belongs to the stable profile",
+            "Renamed profile is visible exactly once", "Rename leaves the recorded tournament unchanged",
+            "Android process restarted", "Restart shows the renamed profile exactly once",
+            "Restart preserves the stable profile ID", "Restart preserves the recorded points and tournament IDs");
 
     private record Journey(String scenario, String description, String conclusion,
                            List<String> assertions, List<String> captures) { }
@@ -90,6 +95,9 @@ class PublishTournamentExtent {
                     "The accepted continuation survives once", SETTLEMENT_ASSERTIONS, SETTLEMENT_CAPTURES);
             case "leaderboard-settlement" -> new Journey("LeaderboardSettlementSanity", "Start another tournament from a settled table",
                     "The unopened result stays in the leaderboard once", LEADERBOARD_ASSERTIONS, List.of("01-leaderboard-after-new-game.png"));
+            case "leaderboard-profile-restart" -> new Journey("LeaderboardProfileRestartSanity", "Rename the ranked player and restart the Android process",
+                    "The current name is visible once with the original ID and points", PROFILE_RESTART_ASSERTIONS,
+                    List.of("01-profile-renamed.png", "02-profile-after-restart.png"));
             default -> throw new IllegalArgumentException("Unknown native journey " + journey);
         };
         var checks = nativeChecks(receipt, contract.assertions());

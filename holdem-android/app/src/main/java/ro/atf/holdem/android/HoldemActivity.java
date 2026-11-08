@@ -525,7 +525,7 @@ public final class HoldemActivity extends Activity {
     private void showLeaderboard() {
         var page = views.page(null, text(R.string.tournament_leaderboard));
         try {
-            var top = leaderboard.load().top();
+            var top = leaderboard.load().topForProfile(stablePlayerId(), displayName());
             if (top.isEmpty()) {
                 views.addText(page, text(R.string.leaderboard_empty), 14, ScreenViews.MUTED, false, 10, 0);
             } else {

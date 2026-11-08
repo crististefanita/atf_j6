@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Instrumentation;
 import android.app.UiAutomation;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.drawable.InsetDrawable;
@@ -31,6 +32,9 @@ import java.util.function.Predicate;
 
 /** A small device suite that drives the same accessible controls as the player. */
 public final class TournamentSanity extends Instrumentation {
+    private static final String RENAMED_PROFILE = "Alex Poker";
+    private static final String ORIGINAL_LEADERBOARD_ROW = "#1 · You · Points 100 · Tournaments 1 · Best finish 1";
+    private static final String RENAMED_LEADERBOARD_ROW = "#1 · " + RENAMED_PROFILE + " · Points 100 · Tournaments 1 · Best finish 1";
     private final JSONArray actions = new JSONArray();
     private final JSONArray assertions = new JSONArray();
     private final JSONArray captures = new JSONArray();
@@ -62,6 +66,12 @@ public final class TournamentSanity extends Instrumentation {
                 resumeResultDuringSettlement();
             } else if (journey.equals("leaderboard-settlement")) {
                 recordBeforeOpeningResult();
+            } else if (journey.equals("leaderboard-profile-restart")) {
+                switch (arguments.getString("phase", "")) {
+                    case "rename" -> renameRankedProfile();
+                    case "restart" -> verifyRankedProfileAfterRestart();
+                    default -> throw new IllegalArgumentException("Expected rename or restart phase");
+                }
             } else {
                 throw new IllegalArgumentException("Unknown Android sanity mode: " + journey);
             }
@@ -348,9 +358,108 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private Activity launchHoldem() {
+        return launchHoldem(1L);
+    }
+
+    private Activity launchHoldem(long seed) {
         var intent = new Intent(getTargetContext(), HoldemActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                .putExtra(HoldemActivity.DEBUG_DEAL_SEED, 1L);
+                .putExtra(HoldemActivity.DEBUG_DEAL_SEED, seed);
         return startActivitySync(intent);
+    }
+
+    private void renameRankedProfile() throws Exception {
+        // Seed 10 settles a four-seat tournament in one opening all-in.
+        var activity = launchHoldem(10L);
+        try {
+            dealTournament();
+            tap("All-in · 2000");
+            see("Profile fixture tournament settles on the first hand", "Hand 1 · Settled");
+            sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
+            actions.put("Return from the settled tournament without opening the result");
+            see("Back opens the home menu", "Hold’em Lab");
+            tap("Tournament leaderboard");
+            see("Original profile has one completed tournament and 100 points", ORIGINAL_LEADERBOARD_ROW);
+            var before = loadLeaderboard();
+            String id = profileId();
+            check("Tournament belongs to the stable profile", "one completed tournament and one matching profile row",
+                    before.completedTournamentIds().size() == 1 && before.entries().stream().anyMatch(
+                            entry -> entry.playerId().equals(id) && entry.points() == 100 && entry.tournaments() == 1)
+                            ? "one completed tournament and one matching profile row" : "unexpected leaderboard");
+            tap("Main menu");
+            tap("Profile · You");
+            var edit = collect(AccessibilityNodeInfo::isEditable);
+            var input = new Bundle();
+            input.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, RENAMED_PROFILE);
+            check("Profile name can be edited", "name entered",
+                    edit.size() == 1 && edit.get(0).performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, input)
+                            ? "name entered" : "profile editor unavailable");
+            actions.put("Enter " + RENAMED_PROFILE + " in the profile dialog");
+            waitForIdleSync();
+            var save = collect(node -> ("android:id/button1".equals(node.getViewIdResourceName())
+                    || "android.widget.Button".equals(value(node.getClassName())))
+                    && "Save".equalsIgnoreCase(value(node.getText())));
+            check("Tap Save in the profile dialog", "click dispatched",
+                    save.size() == 1 && save.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                            ? "click dispatched" : "control unavailable");
+            actions.put("Save the profile name");
+            see("Home displays the saved profile", "Profile · " + RENAMED_PROFILE);
+            capture("01-profile-renamed");
+            tap("Tournament leaderboard");
+            checkRankedProfile("Renamed profile is visible exactly once");
+            check("Rename leaves the recorded tournament unchanged", "same profile ID and leaderboard",
+                    id.equals(profileId()) && before.equals(loadLeaderboard()) ? "same profile ID and leaderboard" : "ledger changed");
+            check("Restart fixture saved", "saved", restartFixture().edit()
+                    .putString("profileId", id).putString("leaderboardDigest", leaderboardDigest(before))
+                    .putInt("pid", android.os.Process.myPid()).commit() ? "saved" : "write failed");
+        } finally {
+            runOnMainSync(activity::finish);
+        }
+    }
+
+    private void verifyRankedProfileAfterRestart() throws Exception {
+        var fixture = restartFixture();
+        int previousPid = fixture.getInt("pid", -1);
+        int currentPid = android.os.Process.myPid();
+        check("Android process restarted", "different positive process IDs", previousPid + " → " + currentPid,
+                previousPid > 0 && currentPid > 0 && previousPid != currentPid);
+        var activity = launchHoldem();
+        try {
+            see("Fresh process loads the renamed profile", "Profile · " + RENAMED_PROFILE);
+            tap("Tournament leaderboard");
+            checkRankedProfile("Restart shows the renamed profile exactly once");
+            check("Restart preserves the stable profile ID", "same profile ID",
+                    profileId().equals(fixture.getString("profileId", "")) ? "same profile ID" : "profile ID changed");
+            var board = loadLeaderboard();
+            check("Restart preserves the recorded points and tournament IDs", "same leaderboard digest",
+                    leaderboardDigest(board).equals(fixture.getString("leaderboardDigest", ""))
+                            ? "same leaderboard digest" : "ledger changed, completed tournaments: " + board.completedTournamentIds().size());
+            capture("02-profile-after-restart");
+        } finally {
+            runOnMainSync(activity::finish);
+        }
+    }
+
+    private void checkRankedProfile(String assertion) throws Exception {
+        var rows = collect(node -> value(node.getText()).contains(" · " + RENAMED_PROFILE + " · Points "));
+        check(assertion, RENAMED_LEADERBOARD_ROW, rows.size() == 1 ? value(rows.get(0).getText()) : "visible rows: " + rows.size());
+        check("Old profile name absent from the leaderboard", "absent", find(ORIGINAL_LEADERBOARD_ROW) == null ? "absent" : "present");
+    }
+
+    private TournamentLeaderboard.State loadLeaderboard() throws Exception {
+        return new TournamentLeaderboardRepository(new AtomicFileTournamentLeaderboardStorage(getTargetContext().getFilesDir())).load();
+    }
+
+    private static String leaderboardDigest(TournamentLeaderboard.State state) throws Exception {
+        var payload = TournamentLeaderboardCodec.encode(state).getBytes(StandardCharsets.UTF_8);
+        return Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(payload));
+    }
+
+    private String profileId() {
+        return getTargetContext().getSharedPreferences("holdem-profile", 0).getString("player-id", "");
+    }
+
+    private SharedPreferences restartFixture() {
+        return getTargetContext().getSharedPreferences("leaderboard-profile-sanity", 0);
     }
 
     private void resumeNextHandDuringSettlement() throws Exception {

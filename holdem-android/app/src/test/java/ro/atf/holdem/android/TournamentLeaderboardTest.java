@@ -121,6 +121,27 @@ public final class TournamentLeaderboardTest {
         assertEquals(1, storage.writes);
     }
 
+    @Test public void currentProfileNameChangesOnlyTheMatchingRowAfterReload() throws Exception {
+        var storage = new MemoryStorage();
+        var repository = new TournamentLeaderboardRepository(storage);
+        repository.record("one", List.of(new TournamentLeaderboard.Placement("human", "Ada", 1),
+                new TournamentLeaderboard.Placement("ai-1", "Ada", 1),
+                new TournamentLeaderboard.Placement("ai-2", "Zoe", 3),
+                new TournamentLeaderboard.Placement("ai-3", "Dan", 4)));
+
+        var restored = new TournamentLeaderboardRepository(storage).load();
+        var renamed = restored.topForProfile("human", "Zoe");
+        assertEquals(List.of("ai-1", "human", "ai-2", "ai-3"),
+                renamed.stream().map(TournamentLeaderboard.Entry::playerId).toList());
+        assertEquals(new TournamentLeaderboard.Entry("human", "Zoe", 83, 1, 1, 1), renamed.get(1));
+        assertEquals("Ada", renamed.get(0).displayName());
+        assertEquals("Zoe", renamed.get(2).displayName());
+        assertEquals(1, TournamentLeaderboard.rankAt(renamed, 1));
+        assertEquals(restored.top(), restored.topForProfile("unranked", "Zoe"));
+        assertEquals("Ada", repository.load().top().get(1).displayName());
+        assertEquals(1, storage.writes);
+    }
+
     @Test public void invalidRanksAndDuplicateParticipantIdsAreRejected() {
         assertThrows(IllegalArgumentException.class, () -> TournamentLeaderboard.record(
                 TournamentLeaderboard.State.empty(), "bad-gap", placements(4, 1, 3, 3, 4)));

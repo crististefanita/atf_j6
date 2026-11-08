@@ -83,6 +83,21 @@ class NativeTournamentExtentPublisherTest {
         assertAuditedFailure(publish(temp, receipt), "Missing: [Opening hand, First hand pot is paid");
     }
 
+    @Test
+    void profileRenameAloneCannotPassTheProcessRestartJourney(@TempDir Path temp) throws Exception {
+        var receipt = smokeReceipt().put("journey", "leaderboard-profile-restart");
+        receipt.putArray("actions").add("Rename the profile");
+        receipt.putArray("captures").add("01-profile-renamed.png");
+        var assertions = receipt.putArray("assertions");
+        for (String name : List.of("Original profile has one completed tournament and 100 points",
+                "Tournament belongs to the stable profile", "Renamed profile is visible exactly once",
+                "Rename leaves the recorded tournament unchanged")) {
+            assertions.add(assertion(name, true));
+        }
+
+        assertAuditedFailure(publish(temp, receipt), "Missing: [Android process restarted");
+    }
+
     private static ObjectNode smokeReceipt() {
         var receipt = JSON.createObjectNode().put("journey", "release-smoke").put("status", "PASS")
                 .put("error", "").put("api", 28).put("window", "392 × 626 dp").put("density", 320).put("fontScale", 1);

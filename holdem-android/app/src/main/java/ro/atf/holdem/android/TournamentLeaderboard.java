@@ -51,6 +51,15 @@ final class TournamentLeaderboard {
             return Collections.unmodifiableList(entries.stream().sorted(ORDER)
                     .limit(DISPLAY_LIMIT).collect(Collectors.toList()));
         }
+
+        List<Entry> topForProfile(String playerId, String displayName) {
+            return Collections.unmodifiableList(top().stream()
+                    .map(entry -> entry.playerId().equals(playerId)
+                            ? new Entry(entry.playerId(), displayName, entry.points(), entry.tournaments(),
+                                    entry.bestRank(), entry.lastRank())
+                            : entry)
+                    .collect(Collectors.toList()));
+        }
     }
 
     record RecordResult(State state, boolean newlyRecorded, Map<String, Integer> pointsAwarded) {

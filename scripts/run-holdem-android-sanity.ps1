@@ -1,7 +1,7 @@
 #requires -Version 7.0
 param(
     [Parameter(Mandatory)][string]$RunRoot,
-    [ValidateSet('tournament','release-smoke','settlement-resume','leaderboard-settlement')][string]$Mode = 'tournament',
+    [ValidateSet('tournament','release-smoke','settlement-resume','leaderboard-settlement','leaderboard-profile-restart')][string]$Mode = 'tournament',
     [string]$Serial = '127.0.0.1:5555',
     [string]$Sdk = 'C:\tools\whist-android-sdk'
 )
@@ -67,6 +67,52 @@ function WriteFailureDiagnostics() {
         $_.ToString() | Set-Content -LiteralPath (Join-Path $evidenceRoot 'failure-diagnostics.txt') -Encoding utf8NoBOM
     }
 }
+function Invoke-NativePhase([string]$Phase, [System.Collections.IDictionary]$Device) {
+    $command = @('shell','am','instrument','-w','-r','-e','mode',$journey)
+    if ($Phase) { $command += @('-e','phase',$Phase) }
+    $command += "$testId/ro.atf.holdem.android.TournamentSanity"
+    $instrumentation = InvokeAdb $command
+    $instrumentation | Add-Content -LiteralPath (Join-Path $evidenceRoot 'instrumentation.txt') -Encoding utf8NoBOM
+    $capturedNames = [Collections.Generic.List[string]]::new()
+    $currentStatus = @{}
+    foreach ($line in ($instrumentation -split '\r?\n')) {
+        if ($line -match '^INSTRUMENTATION_STATUS: ([^=]+)=(.*)$') {
+            $currentStatus[$matches[1]] = $matches[2]
+            continue
+        }
+        if ($line -match '^INSTRUMENTATION_STATUS_CODE: 2$') {
+            $capture = $currentStatus['capture']
+            $encoded = $currentStatus['pngBase64']
+            if ($capture -and $encoded) {
+                if ($capture -notmatch '^0[1-5][a-z]?-[a-z-]+\.png$') { throw "Unexpected screenshot name: $capture" }
+                [IO.File]::WriteAllBytes((Join-Path $evidenceRoot $capture), [Convert]::FromBase64String($encoded))
+                $capturedNames.Add($capture)
+            }
+            $currentStatus = @{}
+        }
+    }
+    $receiptMatch = [regex]::Match($instrumentation, '(?m)^INSTRUMENTATION_RESULT: receipt=(\{.*\})$')
+    if (!$receiptMatch.Success) {
+        $errorMessage = 'Android instrumentation returned no JSON receipt; Process crashed.'
+        return [ordered]@{
+            api=[int]$device.api; journey=$journey; window=$device.size; density=$device.density; fontScale=$device.fontScale
+            apkSha256=$device.appApkSha256; actions=@(); captures=@($capturedNames)
+            assertions=@([ordered]@{name='Native instrumentation completed'; expected='JSON receipt and INSTRUMENTATION_CODE: -1'
+                actual='receipt missing; instrumentation process crashed'; passed=$false})
+            error=$errorMessage; status='FAIL'
+        }
+    }
+    $receipt = $receiptMatch.Groups[1].Value | ConvertFrom-Json -AsHashtable
+    if ($receipt.journey -ne $journey -or $receipt.apkSha256 -ne $device.appApkSha256 -or
+            ($receipt.captures -join ',') -cne ($capturedNames -join ',') -or
+            ($receipt.status -eq 'PASS' -and $instrumentation -notmatch '(?m)^INSTRUMENTATION_CODE: -1$')) {
+        $receipt.status = 'FAIL'
+        $receipt.error = "Native receipt does not match the requested journey, installed APK, decoded captures or exit code. $($receipt.error)".Trim()
+        $receipt.captures = @($capturedNames)
+    }
+    return $receipt
+}
+
 $env:ADB_SERVER_SOCKET = 'tcp:192.168.56.1:5038'
 UpdateLease $true
 try {
@@ -89,44 +135,29 @@ try {
         if ($message -notmatch 'Success') { throw $message }
         $installed.Add($entry[0])
     }
-    $instrumentation = InvokeAdb @('shell','am','instrument','-w','-r','-e','mode',$journey,"$testId/ro.atf.holdem.android.TournamentSanity")
-    $instrumentation | Set-Content -LiteralPath (Join-Path $evidenceRoot 'instrumentation.txt') -Encoding utf8NoBOM
-    $capturedNames = [Collections.Generic.List[string]]::new()
-    $currentStatus = @{}
-    foreach ($line in ($instrumentation -split '\r?\n')) {
-        if ($line -match '^INSTRUMENTATION_STATUS: ([^=]+)=(.*)$') {
-            $currentStatus[$matches[1]] = $matches[2]
-            continue
-        }
-        if ($line -match '^INSTRUMENTATION_STATUS_CODE: 2$') {
-            $capture = $currentStatus['capture']
-            $encoded = $currentStatus['pngBase64']
-            if ($capture -and $encoded) {
-                if ($capture -notmatch '^0[1-5][a-z]?-[a-z-]+\.png$') { throw "Unexpected screenshot name: $capture" }
-                [IO.File]::WriteAllBytes((Join-Path $evidenceRoot $capture), [Convert]::FromBase64String($encoded))
-                $capturedNames.Add($capture)
-            }
-            $currentStatus = @{}
+    Set-Content -LiteralPath (Join-Path $evidenceRoot 'instrumentation.txt') -Value '' -NoNewline -Encoding utf8NoBOM
+    $profileRestart = $Mode -eq 'leaderboard-profile-restart'
+    $firstPhase = if ($profileRestart) { 'rename' } else { '' }
+    $receipt = Invoke-NativePhase $firstPhase $device
+    if ($profileRestart -and $receipt.status -eq 'PASS') {
+        try {
+            InvokeAdb @('shell','am','force-stop',$appId) | Out-Null
+            $remainingPid = (InvokeAdb @('shell',"pidof $appId || true")).Trim()
+            if ($remainingPid) { throw "App process still running after force-stop: $remainingPid" }
+            $receipt.actions = @($receipt.actions) + @('ADB force-stop and verify the app process is absent')
+            $restarted = Invoke-NativePhase 'restart' $device
+            $receipt.actions = @($receipt.actions) + @($restarted.actions)
+            $receipt.assertions = @($receipt.assertions) + @($restarted.assertions)
+            $receipt.captures = @($receipt.captures) + @($restarted.captures)
+            $receipt.status = $restarted.status
+            $receipt.error = $restarted.error
+        } catch {
+            $receipt.status = 'FAIL'
+            $receipt.error = $_.ToString()
         }
     }
-    $receiptMatch = [regex]::Match($instrumentation, '(?m)^INSTRUMENTATION_RESULT: receipt=(\{.*\})$')
-    if (!$receiptMatch.Success) {
-        $errorMessage = 'Android instrumentation returned no JSON receipt; Process crashed.'
-        $runnerFailure = [ordered]@{
-            api=[int]$device.api; journey=$journey; window=$device.size; density=$device.density; fontScale=$device.fontScale
-            apkSha256=$device.appApkSha256; actions=@(); captures=@($capturedNames)
-            assertions=@([ordered]@{name='Native instrumentation completed'; expected='JSON receipt and INSTRUMENTATION_CODE: -1'
-                actual='receipt missing; instrumentation process crashed'; passed=$false})
-            error=$errorMessage; status='FAIL'
-        }
-        $runnerFailure | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'native.json') -Encoding utf8NoBOM
-        WriteFailureDiagnostics
-        throw "$errorMessage A partial failure receipt, decoded captures, and filtered device diagnostics were retained."
-    }
-    $receiptJson = $receiptMatch.Groups[1].Value
-    $receiptJson | Set-Content -LiteralPath (Join-Path $evidenceRoot 'native.json') -Encoding utf8NoBOM
-    $receipt = $receiptJson | ConvertFrom-Json
-    if ($receipt.status -ne 'PASS' -or $receipt.journey -ne $journey -or $instrumentation -notmatch 'INSTRUMENTATION_CODE: -1') {
+    $receipt | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'native.json') -Encoding utf8NoBOM
+    if ($receipt.status -ne 'PASS') {
         WriteFailureDiagnostics
         throw "Android $Mode failed: $($receipt.error)"
     }

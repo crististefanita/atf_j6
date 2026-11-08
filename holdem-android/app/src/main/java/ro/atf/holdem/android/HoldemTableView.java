@@ -74,7 +74,7 @@ final class HoldemTableView {
         var policy = new TableViewportPolicy(viewport.screenHeightDp, viewport.fontScale);
         boolean compact = policy.isCompact() || viewport.screenWidthDp < 340 || names.size() == 2;
         LinearLayout root = views.gamePage();
-        var scroll = new HoldemViewport(views);
+        var scroll = new HoldemViewport(activity);
         compactViewport = compact ? scroll : null;
         root.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT));

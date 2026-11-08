@@ -1,9 +1,9 @@
 package ro.atf.holdem.android;
 
+import android.content.Context;
 import android.view.View;
 import android.widget.ScrollView;
 import ro.cardtable.ui.cards.CardFaceMetrics;
-import ro.cardtable.ui.screens.ScreenViews;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,12 +12,10 @@ import java.util.List;
 final class HoldemViewport extends ScrollView {
     private record CardSize(View view, int preferredDp) { }
 
-    private final ScreenViews views;
     private final List<CardSize> cards = new ArrayList<>();
 
-    HoldemViewport(ScreenViews views) {
-        super(views.activity());
-        this.views = views;
+    HoldemViewport(Context context) {
+        super(context);
         setFillViewport(true);
         setOverScrollMode(OVER_SCROLL_NEVER);
         setTag("holdem-game-viewport");
@@ -67,16 +65,20 @@ final class HoldemViewport extends ScrollView {
             var metrics = CardFaceMetrics.atHeight(height);
             var view = card.view();
             var box = view.getLayoutParams();
-            int widthPx = views.dp(metrics.widthDp());
-            int heightPx = views.dp(metrics.heightDp());
+            int widthPx = dp(metrics.widthDp());
+            int heightPx = dp(metrics.heightDp());
             if (box.width == widthPx && box.height == heightPx) continue;
             box.width = widthPx;
             box.height = heightPx;
             if (view.getTranslationY() < 0)
-                view.setTranslationY(-views.dp(Math.max(4, Math.round(height * .08f))));
+                view.setTranslationY(-dp(Math.max(4, Math.round(height * .08f))));
             // Invalidate the measuring path within this pass, without requesting another layout.
             for (View changed = view; changed != this; changed = (View) changed.getParent())
                 changed.forceLayout();
         }
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 }

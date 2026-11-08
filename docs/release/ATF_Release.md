@@ -18,7 +18,11 @@ Dosarul ediției păstrează calificarea, raportarea și receipt-urile. [Catalog
 
 Inspecția comparativă a J4 și J5 a ghidat această structură. J5 oferă exemplul concis cu două linkuri și catalog tehnic separat. În copia J4 inspectată, README-ul principal indica `0.13.0`, dar `release/index.json` indica `0.12.0`; J6 leagă prin guvernanță versiunea, ambele URL-uri și dosarul de aceeași intrare `currentVersion`, ca acest tip de drift să blocheze calificarea.
 
+<<<<<<< Updated upstream
 J5 documentează un RAG read-only pentru găsirea cerințelor și a dovezilor, cu citări și proveniență. J6 implementează acum un context de impact offline, lexical și consultativ, plus o politică semver testată. Contextul nu este model semantic, nu decide porțile și nu poate deduce `PASS`; catalogul și receipt-urile rămân sursa stării. Citările consultative și verificarea referințelor locale sunt documentate în [J6-REL-05](../feedback/J6-REL-05-RELEASE-RAG-GOVERNANCE.md). Acoperirea Extent este urmărită separat în [J6-REL-04](../feedback/J6-REL-04-EXTENT-SUITE-COVERAGE.md).
+=======
+J5 documentează un RAG read-only pentru găsirea cerințelor și a dovezilor, cu citări și proveniență. J6 folosește un context de impact offline, lexical și consultativ, plus o politică semver testată. Catalogul și receipt-urile decid starea porților. [Criteriile RAG rămase](../feedback/J6-REL-05-RELEASE-RAG-GOVERNANCE.md) · [Acceptanța raportului nativ](../testing/TEST_STRATEGY.md#acceptanța-raportului-nativ)
+>>>>>>> Stashed changes
 
 ## Semnare J6
 
@@ -43,9 +47,13 @@ $maven = 'C:\work\holdem_back\infrastructure\cache\maven'
 
 Runnerul fixează commit-ul, confruntă hash-urile snapshot-ului, rulează `mvn clean test`, Android JVM, lint și variantele Android `sanity`/`release` în copia externă. Ambele sunt semnate cu identitatea J6; numai `sanity` este debuggable și acceptă seed-ul fixture-ului. APK-ul distribuibil rămâne `debuggable=false`. Build-ul verifică semnătura, certificatul J6, alinierea, package/version/SDK și flag-ul debug. Pe emulatorul rezervat execută turneul reproductibil în `sanity` și navigarea de intrare în APK-ul `release` exact. Receipt-urile includ hash-ul APK-ului instalat și sunt publicate în Extent, împreună cu acțiunile, aserțiunile și capturile PNG transmise de instrumentare. Publicarea verifică raportul HTML cu un profil declarat pentru scenariile reale și compară fiecare captură încorporată cu octeții PNG originali, exact o dată. Orice test lipsă, skip, FAIL, drift, instalare ocupată ori hash diferit oprește calificarea.
 
+<<<<<<< Updated upstream
 Runnerul publică rapoarte Extent separate pentru componentele Maven, componentele Android JVM, turneul pe APK-ul sanity și proba de instalare pe APK-ul Release. `ReportArtifactInspector` verifică inventarul și structura fiecărui raport. Un caz lipsă, duplicat, sărit sau eșuat blochează calificarea. Dosarul ediției leagă rapoartele selectate de manifest, iar copia externă păstrează XML-urile și capturile originale. [Catalogul edițiilor](../../release/README.md)
 
 Pentru o ediție care schimbă lizibilitatea chenarelor, adăugați `-IncludeSeatMetrics` la runner. Acesta cere Android Accessibility Suite pe emulator și include dovada Extent pentru viewport-ul compact și TalkBack în aceeași calificare. [Strategia de testare Android](../testing/TEST_STRATEGY.md#interfața-android-locală)
+=======
+Runnerul publică separat `maven-component-suites-extent.html` și `android-component-suites-extent.html` din inventarul JUnit versionat. Fiecare raport este inspectat cu `ReportArtifactInspector`; raportul cu inventory/case mismatch, suite lipsă/duplicată, test `SKIP` sau diagnostic eșuat nu poate trece poarta. XML-ul JUnit rămâne numai în copia externă. `android-tournament-extent.html` și `android-release-smoke-extent.html` conțin numai E2E Android nativ, cu receipts/capturi; componentele JVM nu se mai amestecă în ele. Snapshotul sincronizat din 2026-11-08 a trecut 16/16 suite Maven (97 teste), 5/5 suite Android JVM (44 teste) și tournament sanity API 28 (64 aserțiuni, 8 capturi). Rapoartele celor trei domenii au fost generate în TMP și inspectate. Acesta nu este raport de calificare `v0.1.1` și nu mută artefacte în dosarul ei.
+>>>>>>> Stashed changes
 
 Output-ul `qualification.json` și rapoartele din `$run\reports` sunt sursa pentru dosarul ediției. Guvernanța offline din `ReleaseGovernanceTest` verifică numele, starea, forma README-ului principal, legăturile documentației, rutele, integritatea pachetului, politica Git și compatibilitatea API-urilor Java folosite de codul inclus în APK cu `minSdk`. Testele de guvernanță publică rapoarte Extent și le inspectează cu profilul declarat; păstrați numai rapoartele relevante ediției. Sanity-ul nativ este necesar pentru API-urile runtime care nu sunt semnalate de compilator sau Lint. Guvernanța de descărcare se execută separat numai după publicare; nu se maschează cu un rezultat local.
 

@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>atf.api</groupId>
     <artifactId>atf-reporting</artifactId>
-    <version>1.0.0-j23</version>
+    <version>1.0.0-j24</version>
     <name>ATF Reporting</name>
     <description>Standalone semantic renderer and reporting contract library.</description>
     <properties>

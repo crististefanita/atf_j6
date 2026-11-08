@@ -19,11 +19,14 @@ import java.util.stream.Collectors;
 final class HoldemTablePresentation {
     private HoldemTablePresentation() { }
 
+<<<<<<< Updated upstream
     static final int FULL_CARD_SCALE = 100;
     static final int MIN_CARD_SCALE = 70;
     static final int ACTION_TARGET_DP = 48;
     static final float ACTION_FACE_INSET = .1875f;
 
+=======
+>>>>>>> Stashed changes
     record ActionRow(int ordinal, int physicalSeat, String player, Street street, BettingAction.Kind kind,
                      int amount, int totalContribution) { }
     record SeatFactStyle(int labelSp, int valueSp, int labelColor, int valueColor) { }
@@ -71,6 +74,7 @@ final class HoldemTablePresentation {
 
     static SeatFactStyle seatFactStyle(boolean active, boolean compact) {
         return new SeatFactStyle(8, compact ? 9 : 10,
+<<<<<<< Updated upstream
                 active ? 0xff5d675b : 0xffa9ccb8,
                 active ? 0xff29362e : 0xffd3efe2);
     }
@@ -87,6 +91,12 @@ final class HoldemTablePresentation {
         return labelPx + gapPx + valuePx > widthPx;
     }
 
+=======
+                active ? 0xff788274 : 0xff9fc0ad,
+                active ? 0xff29362e : 0xffd3efe2);
+    }
+
+>>>>>>> Stashed changes
     static SeatActionStyle seatActionStyle(boolean compact, boolean latest, boolean active) {
         return new SeatActionStyle(compact ? 8 : 9,
                 latest ? 0xfff0d486 : active ? 0xff29362e : 0xffd3efe2,

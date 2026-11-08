@@ -46,9 +46,13 @@ J6 trebuie să permită dezvoltarea și evaluarea unui AI de No-Limit Texas Hold
 
 Primul increment reutilizează meniul, selectorul de limbă, editorul numelui, geometria mesei, chenarele și mâna centrată din J4/J5. Limba implicită este engleza; româna se poate selecta din meniu.
 
+<<<<<<< Updated upstream
 Masa locală arată cărțile proprii, cărțile comunitare, potul, jetoanele, contribuțiile și rolurile. În timpul mâinii, cărțile adverse nu sunt afișate; după decontare sunt dezvăluite pentru recapitulare, inclusiv cele ale jucătorilor care au dat fold. Un marcaj textual Fold persistă pe locul retras până la următoarea mână. Eticheta centrală identifică explicit actorul; indicatorul combinației folosește doar cărțile proprii și board-ul public. Coach-ul AI oferă o acțiune legală, explică estimările disponibile și nu aplică mutarea. Butonul de preluare joacă mâna locală curentă prin aceeași validare a motorului. Politica nu primește niciodată cărțile adverse; proiecția de recapitulare le expune interfeței numai după decontarea terminală a mâinii. [Contractul interfeței](../../holdem-android/README.md) · [Criteriile mâinii interactive](../feedback/J6-UI-01-INTERACTIVE-TABLE.md) · [Coach și recapitulare](../feedback/J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md)
+=======
+Masa locală arată cărțile proprii, cărțile comunitare, potul, jetoanele, contribuțiile și rolurile. În timpul mâinii, cărțile adverse rămân cu fața în jos; după decontare sunt dezvăluite pentru recapitulare, inclusiv cele ale jucătorilor care au dat fold. Un marcaj textual Fold persistă pe locul retras până la următoarea mână. Eticheta centrală identifică explicit actorul; indicatorul combinației folosește doar cărțile proprii și board-ul public. Coach-ul AI oferă o acțiune legală, explică estimările disponibile și nu aplică mutarea. Butonul de preluare joacă mâna locală curentă prin aceeași validare a motorului. Politica nu primește niciodată cărțile adverse; proiecția de recapitulare le expune interfeței numai după decontarea terminală a mâinii. [Contractul interfeței](../../holdem-android/README.md) · [Contractul mâinii](../../holdem-android/README.md#contractul-mâinii) · [Coach și recapitulare](../feedback/J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md)
+>>>>>>> Stashed changes
 
-Turneul local pornește la 4–6 locuri. La creare, jucătorul alege blindurile să crească la fiecare 1, 2, 3 sau 5 minute; implicit este 1 minut. Nivelul se aplică de la următoarea mână după expirarea intervalului. Eliminarea unui loc continuă să avanseze nivelul conform regulilor turneului. La fiecare plată, stivele decid cine continuă și ce locuri sunt eliminate. Locul uman rămâne fix când se schimbă dealerul sau masa ajunge heads-up. Ecranul terminal păstrează dezvăluirea ultimei mâini și arată rezultatul turneului. [Criteriile turneului](../feedback/J6-UI-03-TOURNAMENT-SANITY.md)
+Turneul local pornește la 4–6 locuri. La creare, jucătorul alege blindurile să crească la fiecare 1, 2, 3 sau 5 minute; implicit este 1 minut. Nivelul se aplică de la următoarea mână după expirarea intervalului. Eliminarea unui loc continuă să avanseze nivelul conform regulilor turneului. La fiecare plată, stivele decid cine continuă și ce locuri sunt eliminate. Locul uman rămâne fix când se schimbă dealerul sau masa ajunge heads-up. Ecranul terminal păstrează dezvăluirea ultimei mâini și arată rezultatul turneului. [Turneu și reluare](../../holdem-android/README.md#turneu-și-reluare)
 
 ### Claritatea rezultatului mâinii
 
@@ -59,12 +63,20 @@ Turneul local pornește la 4–6 locuri. La creare, jucătorul alege blindurile 
 - Captionul combinației este scurt și discret; `Hand complete` nu se repetă în centrul unei mese deja închise. Cărțile terminale rămân vizibile până la acțiunea explicită `New hand` sau rezultatul de turneu.
 - [Criteriile de showdown și animare](../feedback/J6-UI-07-SHOWDOWN-WIN-CLARITY.md)
 
+### Continuarea în timpul decontării
+
+O comandă de continuare acceptată în timpul animației salvează destinația în checkpoint. După întrerupere, reluarea deschide mâna sau rezultatul salvat. Dacă scrierea eșuează, utilizatorul rămâne la masa terminală și poate reîncerca. [Starea integrării](../feedback/J6-UI-06-RESUMABLE-TURNS-AND-SETTLEMENT.md)
+
 ### Clasamentul turneelor
 
 - Aplicația oferă un clasament local, cumulativ, al punctelor obținute în turnee. Totalurile se grupează după un ID stabil al participantului, nu după aliasul afișat la masă.
 - Fiecare rezultat terminal intră o singură dată în registrul local, după ID-ul stabil al participantului. Topul arată punctele cumulate, turneele jucate și cea mai bună clasare; egalitățile de puncte împart același rang. Tabela este derulabilă și nu pretinde sincronizare online.
+<<<<<<< Updated upstream
 - Redenumirea profilului actualizează eticheta intrării identificate prin același ID. Rangul, punctele, turneele și intrările celorlalți participanți se păstrează, inclusiv după restartul procesului.
 - Punctele se calculează cu `rotunjire(100 × (N − rang_mediu) / (N − 1))`, unde `N` este numărul participanților. La o eliminare simultană, rangul mediu este media locurilor ocupate. O schimbare a curbei cere versiune nouă și migrarea explicită a totalurilor. [Verificările clasamentului](../testing/TEST_STRATEGY.md#interfața-android-locală)
+=======
+- Punctele unui turneu se calculează ca `round(100 × (N − rangMediu) / (N − 1))`, unde `N` este numărul de participanți. La egalitate, `rangMediu` este media locurilor ocupate de grup. Registrul deduplică rezultatele după ID-ul turneului, iar clasamentul afișează numele curent al profilului după ID-ul stabil al jucătorului. [Starea integrării](../feedback/J6-UI-08-TOURNAMENT-LEADERBOARD.md)
+>>>>>>> Stashed changes
 
 ### Istoricul pariurilor
 
@@ -73,6 +85,7 @@ Turneul local pornește la 4–6 locuri. La creare, jucătorul alege blindurile 
 ### Ierarhia informației de la loc
 
 - Stiva și sumele decontării folosesc etichete secundare discrete, cu valori lizibile și descrieri accesibile complete. Premiile și restituirile rămân semantic distincte.
+- Când lățimea disponibilă nu ajunge, eticheta trece deasupra sumei. Locul actorului expune o descriere completă și poate primi focus de accesibilitate.
 - [Criteriile etichetelor de loc](../feedback/J6-UI-09-SEAT-METRIC-HIERARCHY.md)
 
 ## P2 — îmbunătățire AI

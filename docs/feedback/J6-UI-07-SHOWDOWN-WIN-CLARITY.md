@@ -1,9 +1,8 @@
-# J6-UI-07 · Cărți decisive și semnalul câștigătorului
+# J6-UI-07 · Cărțile decisive și semnalul premiului
 
-**Prioritate:** P1  
-**Stare:** Implementare parțială — evaluatorul exact, separarea premiu/rest, evidențierea și păstrarea mesei sunt conectate; verificarea completă UI/E2E este restantă  
-**Domeniu:** recapitularea mâinii locale și decontarea Hold’em
+**Prioritate:** P1
 
+<<<<<<< Updated upstream
 ## Problema de verificare
 
 Codul live folosește aceeași dimensiune pentru cărțile proprii și adverse la decontare, `HandEvaluation.bestFive()` pentru selecție și un marker de premiu per loc beneficiar. Raportul de turneu acoperă dimensiunile și premiul afișat. Acceptanța rămasă cere o probă a destinației markerului în mișcare și un caz cu restituire nenulă la același loc. [J6-UI-04](J6-UI-04-PAYOUT-READABILITY.md)
@@ -46,3 +45,16 @@ Un singur traseu sanity vizual pornește o mână locală, verifică un showdown
 - `J6-UI-05` rămâne ownerul pentru confidențialitatea cărților, coach și recapitularea după joc. Acest feedback completează recapitularea cu selecția exactă a mâinii și egalitatea de dimensiune.
 - `J6-UI-06` deține pacing-ul și reluarea. Masa terminală rămâne afișată până la `New hand`, iar markerul premiului pornește din pot către beneficiarii decontării. Proba nativă rămasă trebuie să confirme destinația markerului. [Continuarea decontării](J6-UI-06-RESUMABLE-TURNS-AND-SETTLEMENT.md)
 - `J6-UI-04` deține semantica separării `potWon` și `returned`. Interfața expune acum `Won` și `Returned` ca valori distincte; testele UI trebuie să confirme că markerul de premiu folosește numai `potWon`.
+=======
+**Stare:** Proiecția are probe de componentă, acceptanța vizuală exactă rămâne deschisă
+
+**Owner:** Recapitularea Android J6
+
+`HandEvaluation.bestFive` oferă identitățile exacte. Proiecția exclude un loc cu numai restituire și nu inventează o combinație pentru fold-win. Sanity-ul calificat verifică dimensiunea și păstrarea cărților, dar nu identifică fiecare marcaj de carte sau destinația markerului. [Proiecția](../../holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTablePresentation.java) · [Cerința](../requirements/PRODUCT_REQUIREMENTS.md#claritatea-rezultatului-mâinii)
+
+## Criterii de închidere
+
+- Verificați identitatea fiecărei cărți evidențiate și proveniența ei, board sau mână privată. Într-un showdown pierdut, separați vizual combinația proprie de combinația premiată. Cazurile trebuie să distingă și board-play, și victoria fără showdown.
+- Reutilizați fixture-ul [J6-UI-04](J6-UI-04-PAYOUT-READABILITY.md) pentru un split sau side-pot. Verificați exact locurile premiate și markerii, inclusiv când o destinație este în afara porțiunii vizibile. Când mișcarea este dezactivată, textul trebuie să ofere aceeași informație.
+- Păstrați toate fețele terminale egale și lizibile în profilul compact. Un traseu nativ scurt verifică marcajele, eticheta localizată și starea până la comanda explicită. [J6-UI-06](J6-UI-06-RESUMABLE-TURNS-AND-SETTLEMENT.md) deține politica animației la restart.
+>>>>>>> Stashed changes

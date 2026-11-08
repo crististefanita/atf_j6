@@ -15,8 +15,11 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 - După decontare, recapitularea dezvăluie mâinile distribuite, inclusiv cele ale jucătorilor care au făcut fold. Eticheta `Fold` rămâne până la următoarea distribuire.
 - Masa indică actorul curent și combinația proprie calculată din cărțile vizibile. Sub fiecare jucător apar ultima mutare și jetoanele adăugate prin acea mutare.
 - `Istoric pariuri` deschide lista cronologică a mâinii, cu strada și contribuția cumulată pentru fiecare mutare. Istoricul poate fi consultat și după decontare, până la următoarea distribuire.
+<<<<<<< Updated upstream
 - În configurarea unui turneu, bifa „Arată șansa mea de câștig” activează indicatorul din antet. Alegerea se păstrează cu turneul salvat și pornește debifată pentru un turneu nou. Indicatorul arată șansa estimată de a câștiga singur mâna, pe baza cărților proprii, a board-ului și a numărului de adversari rămași. Estimarea folosește 256 de eșantioane cu mâini adverse necunoscute, pe un worker separat de AI. După fold nu se afișează procent.
 - Butoanele de decizie au fețe vizuale reduse și ținte de atingere de cel puțin 48 dp. Închiderea editorului Raise revine la acțiunile mesei. Tastatura se deschide când este selectat câmpul sumei.
+=======
+>>>>>>> Stashed changes
 - Coach-ul oferă o recomandare locală fără s-o aplice. `Let AI finish this hand` este o acțiune explicită pentru mâna locală și trimite mutări prin validarea motorului.
 - Profilul, limba și o sesiune întreruptă pot fi reluate din meniul principal.
 
@@ -31,8 +34,12 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 
 - Nivelul blindurilor se calculează la început de mână. Un interval expirat și eliminările se aplică mâinii următoare.
 - Stivele se păstrează între mâinile turneului; dealerul și blindurile se mută numai printre locurile eligibile.
+<<<<<<< Updated upstream
 - Clasamentul local înregistrează turneul după salvarea stării terminale. ID-ul turneului împiedică punctarea repetată. Pornirea unei alte partide verifică întâi că rezultatul anterior a intrat în registru. Rândul jucătorului afișează numele curent al profilului pentru același ID, cu rangul, punctele și numărul de turnee deja înregistrate.
 - În chenare, valoarea are mai mult contrast decât eticheta. Când spațiul măsurat nu ajunge pentru o linie, eticheta rămâne întreagă deasupra sumei. Chenarul oferă un singur punct de focus pentru nume, rol, sume și starea jucătorului.
+=======
+- Clasamentul local acumulează punctele din turneele finalizate. Rezultatul folosește numele afișate la masă, iar redeschiderea lui nu punctează din nou același turneu.
+>>>>>>> Stashed changes
 - Fiecare acțiune acceptată se salvează într-un checkpoint privat, cu locul fizic al actorului și ordinea replay-ului.
 - La redeschidere, motorul reconstruiește și revalidează istoricul înainte de afișarea mesei. Se reiau mâna, turneul sau rezultatul confirmat.
 - O comandă acceptată în timpul decontării salvează direct următoarea mână sau rezultatul. Efectul poate amâna afișarea până la final. După pauză ori recreare se afișează destinația deja salvată, cu aceeași identitate de turneu.
@@ -40,7 +47,11 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 
 ## Prezentarea mesei
 
+<<<<<<< Updated upstream
 - `TurnPacing` programează câte o acțiune automată la `550 ms` <!-- rag:contract android.turn-pacing --> după primul cadru vizibil și verifică din nou tokenul turei înainte de aplicare.
+=======
+- `TurnPacing` programează câte o acțiune automată la 550 ms după primul cadru vizibil și verifică din nou tokenul turei înainte de aplicare.
+>>>>>>> Stashed changes
 - `PlayerSeatFrame` marchează actorul. După decontare, masa păstrează cărțile vizibile până la următoarea comandă. Cele folosite în combinația câștigătoare sunt evidențiate, iar marcajul premiului se deplasează spre locurile care au câștigat din pot.
 - Pe ferestre înguste sau cu font mărit, locurile se rearanjează în jurul potului și al board-ului; conținutul dialogului de raise derulează separat de acțiuni.
 - Masa compactă măsoară fereastra cu istoricul pliat și reduce proporțional fețele cărților doar când conținutul depășește spațiul disponibil. Dacă dimensiunea minimă încă depășește fereastra, derularea păstrează comenzile accesibile. Istoricul deschis are propria listă derulabilă.

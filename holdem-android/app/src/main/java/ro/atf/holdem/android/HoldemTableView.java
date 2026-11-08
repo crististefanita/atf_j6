@@ -166,12 +166,18 @@ final class HoldemTableView {
             addSeatFacts(seatView, facts, active, compact);
             addSeatAction(seatView, latestForSeat,
                     latestForSeat != null && latestForSeat.ordinal() == latestActionOrdinal, active, compact);
+<<<<<<< Updated upstream
             View framedSeat = seatView;
             if (!compact) {
                 framedSeat = new PlayerSeatView(activity, seatView, text.get(R.string.actor), active, seat, false);
                 framedSeat.findViewWithTag("seat-turn-badge:" + seat)
                         .setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             }
+=======
+            if (player.folded() || eliminated) seatView.setAlpha(.65f);
+            View framedSeat = compact ? seatView
+                    : new PlayerSeatView(activity, seatView, text.get(R.string.actor), active, seat, false);
+>>>>>>> Stashed changes
             View withCards = withOpponentCards(framedSeat, player, compact, seat == frame.viewer(), seat,
                     complete, frame);
             withCards.setTag("settlement-target:seat:" + seat);
@@ -245,6 +251,12 @@ final class HoldemTableView {
     private void addSeatFacts(LinearLayout seat, List<SeatContent.Fact> facts, boolean active, boolean compact) {
         var style = HoldemTablePresentation.seatFactStyle(active, compact);
         for (var fact : facts) {
+<<<<<<< Updated upstream
+=======
+            var row = new LinearLayout(views.activity());
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(0, 0, 0, 0);
+>>>>>>> Stashed changes
             var label = views.text(fact.label(), style.labelSp(), style.labelColor(), false);
             var value = views.text(fact.value(), style.valueSp(), style.valueColor(), true);
             seat.addView(SeatFactRow.of(label, value), views.matchWrap());

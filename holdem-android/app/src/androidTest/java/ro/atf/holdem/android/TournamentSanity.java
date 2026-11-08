@@ -359,7 +359,11 @@ public final class TournamentSanity extends Instrumentation {
 
     private void assertTournamentStandingsHavePlayerNames() throws Exception {
         var rows = collect(node -> value(node.getText()).startsWith("#")
+<<<<<<< Updated upstream
                 && value(node.getText()).contains(" · Points "));
+=======
+                && value(node.getText()).contains(" points"));
+>>>>>>> Stashed changes
         var observed = new ArrayList<String>(rows.size());
         for (var row : rows) observed.add(value(row.getText()));
         boolean named = observed.size() == 4 && observed.stream().allMatch(row -> {

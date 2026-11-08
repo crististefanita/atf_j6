@@ -27,6 +27,7 @@ import java.util.List;
 /** Publishes observed native Android E2E results using the admitted J0 Reporting JAR. */
 class PublishTournamentExtent {
     private static final List<String> TOURNAMENT_ASSERTIONS = List.of("Opening hand", "First hand pot is paid",
+<<<<<<< Updated upstream
             "Raise opens the amount editor", "Call remains accessible after closing Raise",
             "Opt-in shows the human win chance", "Unchecked setup leaves the win chance hidden",
             "Third hand starts heads-up", "Winner sees congratulations",
@@ -35,10 +36,18 @@ class PublishTournamentExtent {
             "Release APK opens hand setup", "Hand setup returns to the home menu", "Release APK opens tournament setup");
     private static final List<String> TOURNAMENT_CAPTURES = List.of(
             "01b-opening-preflop.png", "01-call-ledger-visible.png", "01-betting-ledger-history.png", "01-hand-one-settled.png",
+=======
+            "Third hand starts heads-up", "Winner sees congratulations", "Losing player sees the elimination result");
+    private static final List<String> RELEASE_SMOKE_ASSERTIONS = List.of("Release APK opens the branded home menu",
+            "Release APK opens hand setup", "Hand setup returns to the home menu", "Release APK opens tournament setup");
+    private static final List<String> TOURNAMENT_CAPTURES = List.of(
+            "01-call-ledger-visible.png", "01-betting-ledger-history.png", "01-hand-one-settled.png",
+>>>>>>> Stashed changes
             "01a-settlement-retained.png", "02-two-seats-eliminated.png", "03-heads-up.png",
             "04-tournament-won.png", "05-tournament-lost.png");
     private static final List<String> RELEASE_SMOKE_CAPTURES = List.of(
             "01-release-hand-setup.png", "02-release-tournament-setup.png");
+<<<<<<< Updated upstream
     private static final List<String> SETTLEMENT_ASSERTIONS = List.of(
             "Next hand tap accepted during settlement", "Activity recreation opens exactly hand two", "Next hand persisted once",
             "Result tap accepted during settlement", "Result persisted before reopening",
@@ -55,6 +64,8 @@ class PublishTournamentExtent {
 
     private record Journey(String scenario, String description, String conclusion,
                            List<String> assertions, List<String> captures) { }
+=======
+>>>>>>> Stashed changes
 
     public static void main(String[] args) throws Exception {
         if (args.length != 3) throw new IllegalArgumentException("Expected report, native evidence directory and app APK");
@@ -89,6 +100,7 @@ class PublishTournamentExtent {
 
     private static ReportArtifactProfile.Scenario nativeUi(ExtentReportSession report, Path evidence, JsonNode receipt, Path apk) throws Exception {
         String journey = receipt.path("journey").asText("tournament");
+<<<<<<< Updated upstream
         var contract = switch (journey) {
             case "release-smoke" -> new Journey("ReleaseInstallSmoke", "Installable release APK opens and navigates its entry screens",
                     "The signed release APK opens the expected app flow", RELEASE_SMOKE_ASSERTIONS, RELEASE_SMOKE_CAPTURES);
@@ -114,6 +126,14 @@ class PublishTournamentExtent {
         var captureNames = new ArrayList<String>();
         for (var entry : receipt.required("captures")) captureNames.add(entry.asText());
         var expectedCaptures = contract.captures();
+=======
+        boolean releaseSmoke = journey.equals("release-smoke");
+        if (!releaseSmoke && !journey.equals("tournament")) throw new IllegalArgumentException("Unknown native journey " + journey);
+        var checks = nativeChecks(receipt, releaseSmoke ? RELEASE_SMOKE_ASSERTIONS : TOURNAMENT_ASSERTIONS);
+        var captureNames = new ArrayList<String>();
+        for (var entry : receipt.required("captures")) captureNames.add(entry.asText());
+        var expectedCaptures = releaseSmoke ? RELEASE_SMOKE_CAPTURES : TOURNAMENT_CAPTURES;
+>>>>>>> Stashed changes
         checks.add(new AtfAssertion("Native capture inventory matches the journey", String.join(", ", expectedCaptures),
                 String.join(", ", captureNames), expectedCaptures.equals(captureNames)));
         var actions = new ArrayList<String>();
@@ -145,7 +165,10 @@ class PublishTournamentExtent {
                     List.of("Android API", "Window", "Density (dpi)", "Font scale", "Installed APK SHA-256", "Execution failure"),
                     List.of("Accessibility actions in order")));
             int captureIndex = 0;
+<<<<<<< Updated upstream
             var unusableCaptures = new ArrayList<String>();
+=======
+>>>>>>> Stashed changes
             for (String name : captureNames) {
                 if (!name.matches("0[1-5][a-z]?-[a-z-]+\\.png")) throw new IllegalArgumentException("Unexpected capture name " + name);
                 var image = ImageIO.read(evidence.resolve(name).toFile());
@@ -185,6 +208,7 @@ class PublishTournamentExtent {
                 List.of(new ReportArtifactProfile.Phase("TEST BODY", result, checkpointEvidence)));
     }
 
+<<<<<<< Updated upstream
     private static boolean hasImageDetail(java.awt.image.BufferedImage image) {
         int first = image.getRGB(0, 0);
         for (int y = 1; y < 8; y++) {
@@ -195,6 +219,8 @@ class PublishTournamentExtent {
         return false;
     }
 
+=======
+>>>>>>> Stashed changes
     private static List<AtfAssertion> nativeChecks(JsonNode receipt, List<String> requiredAssertions) {
         var checks = new ArrayList<AtfAssertion>();
         var assertions = receipt.path("assertions");

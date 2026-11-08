@@ -196,6 +196,7 @@ final class LocalHoldemGame {
 
     synchronized boolean isTournament() { return tournament != null; }
 
+<<<<<<< Updated upstream
     boolean showsWinChance() { return showWinChance; }
 
     synchronized long displayNameSeed() { return seed; }
@@ -204,6 +205,10 @@ final class LocalHoldemGame {
         return id != null && id.codePoints().anyMatch(codePoint -> !Character.isWhitespace(codePoint));
     }
 
+=======
+    synchronized long displayNameSeed() { return seed; }
+
+>>>>>>> Stashed changes
     synchronized String tournamentId() { return tournamentId; }
 
     synchronized String playerId(int physicalSeat) {

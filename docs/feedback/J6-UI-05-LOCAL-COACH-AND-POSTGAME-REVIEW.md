@@ -1,15 +1,14 @@
-# J6-UI-05 · Antrenor local și recapitulare după joc
+# J6-UI-05 · Probe pentru coach, preluare și blinduri
 
-**Prioritate:** P1  
-**Stare:** Implementat parțial; calificarea JVM este raportată, acceptanța UI rămâne  
-**Domeniu:** Android local, modurile offline de antrenament Hold’em
+**Prioritate:** P1
 
-## De ce este necesar
+**Stare:** Comportamentul de bază este implementat, verificările de mai jos rămân deschise
 
-J6 afișează actorul și primește cărțile proprii și board-ul public. Adversarii locali check/call. Cerința extinde masa cu recapitulare după mână, coach offline și o preluare limitată a mâinii curente. `J6-UI-01` descrie fluxul de bază; acest contract permite cărțile adverse numai în proiecția de prezentare după decontare, niciodată în observația AI.
+**Owner:** Interfață și sesiune Android J6
 
-## Situația implementării în codul live
+`LocalHoldemGameTest` verifică sugestia legală și terminarea mâinii curente prin AI. `LocalHoldemTournamentTest` verifică intervalul și restaurarea la nivel de sesiune. Sanity-ul calificat 0.2.0 exercită turneul. [Contract Android](../../holdem-android/README.md) · [Testele de sesiune](../../holdem-android/app/src/test/java/ro/atf/holdem/android/LocalHoldemGameTest.java)
 
+<<<<<<< Updated upstream
 - **Implementat:** locurile adverse afișează cărțile distribuite după `Street.COMPLETE`, inclusiv pentru locurile foldate. Rezultatul turneului păstrează recapitularea cu nume, Fold/Out și cărțile ultimei mâini.
 - **Implementat:** etichetă centrală cu numele actorului, categorie de mână formată din cele două cărți proprii și board-ul vizibil, marcaj Fold pe locul retras și selector de blinduri 1/2/3/5 minute, implicit 1. Nivelul se schimbă la începutul mâinii următoare după expirare.
 - **Implementat:** hint-ul rulează în fundal, nu aplică acțiunea și afișează acțiunea, equity, pot odds, pragul, versiunea politicii, eșantioanele și eroarea standard disponibile.
@@ -85,3 +84,11 @@ Indicatorul opțional de șansă este descris în [contractul Android](../../hol
 - Egalitatea dimensiunii cărților, selecția vizuală a celor cinci cărți alese și semnalul premiului spre beneficiari sunt extensii separate, urmărite în [J6-UI-07](J6-UI-07-SHOWDOWN-WIN-CLARITY.md). Acest feedback păstrează owner-ul pentru coach și confidențialitatea dezvăluirii.
 - Eticheta combinației reutilizează evaluatorul de reguli Hold’em, iar hint-ul reutilizează politica AI și observația actorului. UI-ul nu implementează logică paralelă de poker și nu deduce cărți din adversari.
 - Prioritatea nu justifică prezentarea actualului estimator Monte Carlo drept solver: documentația AI continuă să declare limitele de calibrare și estimare din [AI și evaluare](../requirements/AI_REQUIREMENTS.md).
+=======
+## Criterii de închidere
+
+- Verificați că schimbarea exclusivă a cărților ascunse păstrează hint-ul pentru aceeași observație și același seed de estimare. Cererea hint-ului păstrează revizia, stivele și istoricul. Testați fallback-ul și respingerea unei sugestii întârziate după schimbarea turei.
+- Clarificați oprirea preluării AI. `HoldemTableView` afișează starea AI fără comandă de oprire pe masă. Criteriul anterior cerea revenirea la următoarea decizie umană. Dacă produsul păstrează acest criteriu, cereți o comandă explicită și dovediți că rezultatul din fundal invalidat nu aplică o mutare.
+- Verificați conexiunea selectorului 1/2/3/5 minute, implicit 1, până la valoarea salvată și reîncărcată. Păstrați avansul nivelului la începutul mâinii următoare.
+- Comparați categoria și cele cinci cărți cu un oracol independent pentru kicker și board-play. Proba UI poate rămâne o singură mână scurtă cu hint și recapitulare. [J6-UI-07](J6-UI-07-SHOWDOWN-WIN-CLARITY.md) deține marcajele terminale.
+>>>>>>> Stashed changes

@@ -1,15 +1,16 @@
-# J6-REL-03 — Compatibilitatea API Android minimă
+# J6-REL-03 · Verifică runtime-ul Android minim
 
-**Prioritate:** P1
+**Prioritate:** P2
 
-**Stare:** Corectat și verificat pe API 28; poartă inclusă în calificarea următoarei ediții
+**Stare:** Regresiile Java cunoscute sunt corectate, proba API 26 rămâne deschisă
 
-## Constatare
+**Owner:** Calificare Android J6
 
-În sanity-ul Android API 28, deschiderea mâinii apela recomandarea coach-ului. Prima rulare s-a oprit în `HoldemHand.observeActor()` deoarece `Stream.toList()` nu există în runtime-ul API 28. După corectarea acelui apel, proba a ajuns mai departe și a găsit `ArrayList.toArray(IntFunction)` în `MonteCarloEquityEstimator`; nici această metodă nu există pe dispozitiv. Ambele terminau procesul aplicației cu `NoSuchMethodError`, iar instrumentarea nu emitea receipt. Testele JVM, compilarea Release și Lint treceau, deci nu acopereau aceste diferențe API runtime.
+`minSdk` este 26, iar calificarea 0.2.0 din `origin/main:release/0.2.0/qualification.json` a rulat pe API 28. Guvernanța acoperă metodele incompatibile descoperite anterior, inclusiv în coach și stocarea clasamentului. [Configurația Android](../../holdem-android/app/build.gradle) · [Guvernanța](../../holdem-app/src/test/java/ro/atf/j6/release/ReleaseGovernanceTest.java)
 
-La integrarea clasamentului, verificarea pe același API a mai descoperit `HexFormat` indisponibil și `ByteArrayOutputStream.toString(Charset)` indisponibil. Defectele au apărut la hash-ul și citirea datelor clasamentului, după ce primele incompatibilități fuseseră corectate; testele JVM singure nu le-au prins.
+## Criteriu de închidere
 
+<<<<<<< Updated upstream
 ## Corecție și protecție
 
 - Proiecția folosește `collect(Collectors.toList())`, consecvent cu celelalte colecții din motor.
@@ -35,3 +36,6 @@ Compatibilitatea trebuie verificată și pentru API-uri de utilitate aparent ban
 - [Guvernanța de release](../../holdem-app/src/test/java/ro/atf/j6/release/ReleaseGovernanceTest.java)
 - [Strategia de testare](../testing/TEST_STRATEGY.md)
 - [Procesul release Android](../release/ATF_Release.md)
+=======
+- Folosiți API 26 pentru un sanity scurt care exercită coach-ul, reluarea și citirea/scrierea clasamentului, plus intrarea în APK-ul semnat. Receipt-ul fixează API-ul și identitatea fiecărui binar. [Procesul](../release/ATF_Release.md)
+>>>>>>> Stashed changes

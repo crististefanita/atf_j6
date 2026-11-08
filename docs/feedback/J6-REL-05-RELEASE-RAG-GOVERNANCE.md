@@ -1,16 +1,21 @@
-# J6-REL-05 — Context de impact release cu proveniență și guvernanță
+# J6-REL-05 · Impact de release pentru ștergeri și surse contradictorii
 
+<<<<<<< Updated upstream
 **Prioritate:** P1  
 **Stare:** Închis. RAG citează contradicțiile, observațiile depășite și referințele locale rupte din feedback.
+=======
+**Prioritate:** P1
+>>>>>>> Stashed changes
 
-## Constatare și rezultat
+**Stare:** Integrare calificată pentru 0.2.0, criterii de relevanță și păstrare deschise
 
-Catalogul și manifestele dau starea oficială, dar o rundă de schimbări avea nevoie de un mod reproductibil de a găsi feedback, cerințe și suite posibil afectate. Acum runnerul creează în spațiul extern al rulării un context JSON citabil și versionat, iar `ReleaseVersionPolicy` verifică versiunea declarată.
+**Owner:** Uneltele de release J6
 
-Retrieval-ul este intenționat **determinist, lexical și read-only**; nu folosește embeddinguri, model generativ sau raționament semantic. `CONTEXT_READY` înseamnă numai că a găsit o potrivire suficientă între semnale din diff, cel puțin o sursă citată și o suită din inventar. Nu înseamnă că impactul este complet ori că testele au trecut. Lipsa dovezii produce `NEEDS_EVIDENCE`.
+Calificarea 0.2.0 a executat RAG-ul pe candidatul curat. `origin/main:release/0.2.0/qualification.json` consemnează `CONTEXT_READY` și SHA-256. Dosarul ediției conține manifestul cu digestul, iar JSON-ul citabil lipsește din acel dosar.
 
-## Corpus și proveniență
+`ReleaseImpactRag` filtrează fișierele cu `--diff-filter=ACMR` și folosește ca semnale de schimbare doar liniile adăugate. O ștergere pură de fișier dispare din `changedFiles`. Un termen comun cu un fragment și o suită sugerată lexical pot produce `CONTEXT_READY` chiar când fragmentul descrie o decizie veche. [Implementarea](../../holdem-app/src/test/java/ro/atf/j6/release/ReleaseImpactRag.java)
 
+<<<<<<< Updated upstream
 Corpusul permis este explicit: Markdown din `docs/feedback`, `docs/requirements`, `docs/testing`, `docs/release` și `docs/architecture`; README-ul principal și ghidul Android; catalogul și indexul release; inventarul suitelor; proveniența bibliotecilor J6/Card Table; și README-urile/notițele edițiilor. Rapoartele HTML, capturile, APK-urile, receipt-urile brute, cache-urile, build-urile și directoarele TMP nu sunt surse de retrieval.
 
 Fiecare fragment returnat poartă cale, titlu/heading, linii, hash-ul fișierului și al fragmentului, commit-ul indexat, versiunea candidatului și starea feedback-ului, când există. Hash-urile sunt calculate din sursa originală; fragmentele redactează secrete și căi locale înainte de afișare. Corpusul are digest propriu, iar contextul este scris doar în directorul extern al rulării.
@@ -61,3 +66,11 @@ Contextul calificat pentru `cebeb4b` → `013c731` cita de două ori provenienț
 - [Catalogul versiunilor](../../release/README.md)
 - [Strategia de testare](../testing/TEST_STRATEGY.md)
 - [Referința RAG J5](https://github.com/crististefanita/atf_j5/blob/master/docs/feedback/ATF_Release_RAG.md) — model pentru consultare; corpusul și verdictul rămân proprii J6.
+=======
+## Criterii de închidere
+
+- Acoperiți ștergerea pură, editarea care elimină text, redenumirea și schimbarea tipului. Citați textul eliminat cu sursa și commitul de bază, marcat ca istoric.
+- Folosiți un corpus etalon cu potriviri lexicale irelevante, feedback rezolvat și surse contradictorii. Rezultatul trebuie să arate conflictele și să se abțină când lipsește o legătură justificată între schimbare, cerință și suită.
+- Păstrați contextul redactat într-o locație durabilă, legată de manifest. Verificați hash-ul la citire și respingeți fișierul lipsă sau schimbat. `gateEffect=NONE` și `testReceiptState=NOT_EVALUATED` rămân contractul consultativ.
+- Tratați separarea executabilului de classpath-ul Surefire la prima schimbare a modului de distribuție. [Teste curente](../../holdem-app/src/test/java/ro/atf/j6/release/ReleaseImpactRagTest.java) · [Procesul](../release/ATF_Release.md)
+>>>>>>> Stashed changes

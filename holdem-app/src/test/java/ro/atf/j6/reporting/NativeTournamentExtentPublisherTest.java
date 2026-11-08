@@ -84,6 +84,20 @@ class NativeTournamentExtentPublisherTest {
     }
 
     @Test
+    void openingAndDismissingRaiseCannotReplaceTheAccessibleCall(@TempDir Path temp) throws Exception {
+        var receipt = smokeReceipt().put("journey", "tournament");
+        receipt.putArray("captures");
+        var assertions = receipt.putArray("assertions");
+        for (String name : List.of("Opening hand", "First hand pot is paid", "Raise opens the amount editor",
+                "Dismiss the amount editor", "Opt-in shows the human win chance", "Unchecked setup leaves the win chance hidden",
+                "Third hand starts heads-up", "Winner sees congratulations", "Losing player sees the elimination result")) {
+            assertions.add(assertion(name, true));
+        }
+
+        assertAuditedFailure(publish(temp, receipt), "Missing: [Call remains accessible after closing Raise]");
+    }
+
+    @Test
     void profileRenameAloneCannotPassTheProcessRestartJourney(@TempDir Path temp) throws Exception {
         var receipt = smokeReceipt().put("journey", "leaderboard-profile-restart");
         receipt.putArray("actions").add("Rename the profile");

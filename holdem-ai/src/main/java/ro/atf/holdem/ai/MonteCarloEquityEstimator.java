@@ -28,14 +28,19 @@ public final class MonteCarloEquityEstimator {
     /** Explicit seeds make hand comparisons reproducible across candidate policies. */
     public Estimate estimate(HoldemObservation observation, int samples, long seed) {
         Objects.requireNonNull(observation, "observation");
+        return estimate(observation.holeCards(), observation.communityCards(), observation.activeOpponentCount(), samples, seed);
+    }
+
+    /** Estimates from visible cards regardless of whose turn it is. */
+    public Estimate estimate(List<Card> hole, List<Card> community, int opponents, int samples, long seed) {
         if (samples < 1 || samples > MAX_SAMPLES) throw new IllegalArgumentException("samples must be 1..1,000,000");
-        if (observation.holeCards().size() != 2) throw new IllegalArgumentException("Equity requires two private cards");
-        if (observation.activeOpponentCount() < 1) throw new IllegalArgumentException("Equity requires a live opponent");
+        if (hole.size() != 2 || community.size() > 5) throw new IllegalArgumentException("Invalid visible cards");
+        if (opponents < 1 || opponents > 22) throw new IllegalArgumentException("Invalid live opponent count");
 
         var known = new HashSet<Card>();
-        known.addAll(observation.holeCards());
-        known.addAll(observation.communityCards());
-        if (known.size() != observation.holeCards().size() + observation.communityCards().size())
+        known.addAll(hole);
+        known.addAll(community);
+        if (known.size() != hole.size() + community.size())
             throw new IllegalArgumentException("Visible cards must be distinct");
 
         var deck = new ArrayList<Card>(52 - known.size());
@@ -44,8 +49,8 @@ public final class MonteCarloEquityEstimator {
                 var card = new Card(rank, suit);
                 if (!known.contains(card)) deck.add(card);
             }
-        int missingBoard = 5 - observation.communityCards().size();
-        int draws = observation.activeOpponentCount() * 2 + missingBoard;
+        int missingBoard = 5 - community.size();
+        int draws = opponents * 2 + missingBoard;
         if (draws > deck.size()) throw new IllegalArgumentException("Not enough unseen cards for this table state");
 
         var random = new SplittableRandom(seed);
@@ -63,14 +68,14 @@ public final class MonteCarloEquityEstimator {
             }
 
             var board = new ArrayList<Card>(5);
-            board.addAll(observation.communityCards());
-            int index = observation.activeOpponentCount() * 2;
+            board.addAll(community);
+            int index = opponents * 2;
             for (int i = 0; i < missingBoard; i++) board.add(draw[index++]);
-            int heroRank = rank(observation.holeCards(), board);
+            int heroRank = rank(hole, board);
             int bestRank = heroRank;
             int winningPlayers = 1;
             boolean heroIsBest = true;
-            for (int opponent = 0; opponent < observation.activeOpponentCount(); opponent++) {
+            for (int opponent = 0; opponent < opponents; opponent++) {
                 int opponentRank = rank(List.of(draw[opponent * 2], draw[opponent * 2 + 1]), board);
                 if (opponentRank > bestRank) {
                     bestRank = opponentRank;

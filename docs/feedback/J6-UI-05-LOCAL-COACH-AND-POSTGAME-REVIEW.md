@@ -80,6 +80,8 @@ Un traseu local de mână verifică hint-ul fără execuție, alegerea manuală,
 
 ## Limite și dependențe
 
+Indicatorul opțional de șansă este descris în [contractul Android](../../holdem-android/README.md). Rămân aici doar contractele și probele specifice coach-ului și recapitulării.
+
 - `J6-UI-01` rămâne descrierea fluxului existent de mână și a contractului de vizibilitate. Cerința nouă extinde contractul doar pentru ecranul local terminal de review; nu schimbă regulile de showdown.
 - Egalitatea dimensiunii cărților, selecția vizuală a celor cinci cărți alese și semnalul premiului spre beneficiari sunt extensii separate, urmărite în [J6-UI-07](J6-UI-07-SHOWDOWN-WIN-CLARITY.md). Acest feedback păstrează owner-ul pentru coach și confidențialitatea dezvăluirii.
 - Eticheta combinației reutilizează evaluatorul de reguli Hold’em, iar hint-ul reutilizează politica AI și observația actorului. UI-ul nu implementează logică paralelă de poker și nu deduce cărți din adversari.

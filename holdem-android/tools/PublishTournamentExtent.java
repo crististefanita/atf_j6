@@ -27,7 +27,9 @@ import java.util.List;
 /** Publishes observed native Android E2E results using the admitted J0 Reporting JAR. */
 class PublishTournamentExtent {
     private static final List<String> TOURNAMENT_ASSERTIONS = List.of("Opening hand", "First hand pot is paid",
-            "Raise opens the amount editor", "Third hand starts heads-up", "Winner sees congratulations",
+            "Raise opens the amount editor", "Call remains accessible after closing Raise",
+            "Opt-in shows the human win chance", "Unchecked setup leaves the win chance hidden",
+            "Third hand starts heads-up", "Winner sees congratulations",
             "Losing player sees the elimination result");
     private static final List<String> RELEASE_SMOKE_ASSERTIONS = List.of("Release APK opens the branded home menu",
             "Release APK opens hand setup", "Hand setup returns to the home menu", "Release APK opens tournament setup");

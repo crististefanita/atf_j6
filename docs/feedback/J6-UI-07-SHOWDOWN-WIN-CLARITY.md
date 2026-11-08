@@ -4,13 +4,9 @@
 **Stare:** Implementare parțială — evaluatorul exact, separarea premiu/rest, evidențierea și păstrarea mesei sunt conectate; verificarea completă UI/E2E este restantă  
 **Domeniu:** recapitularea mâinii locale și decontarea Hold’em
 
-## Problema observată în cod
+## Problema de verificare
 
-Prezentarea terminală arată cărțile proprii mai mari decât pe cele adverse. `HoldemTableView` folosește înălțimi de 56 dp pentru mâna proprie, 24/32 dp pentru cărțile de pe locurile adverse și 38 dp în recapitularea turneului. La șase locuri, diferența reduce lizibilitatea exact când utilizatorul compară mâinile.
-
-`bestHandLabel` arată numai categoria calculată din cărțile proprii și board. `HandRank.bestOf` returnează scorul ordonat, nu identitățile celor cinci cărți selectate din cele 5–7 disponibile. Prin urmare, interfața nu poate ridica în mod corect exact cărțile care compun mâna.
-
-Animația curentă colectează cărțile proprii, board-ul și cărțile dezvăluite către eticheta potului. Contractul din `J6-UI-06` confirmă că această mișcare nu indică locul care primește premiul. `HoldemHand` are suma acordată fiecărui loc, iar `PotSettlement` păstrează câștigătorii pe fiecare strat de pot; prezentarea trebuie să folosească această sursă autoritară.
+Codul live folosește aceeași dimensiune pentru cărțile proprii și adverse la decontare, `HandEvaluation.bestFive()` pentru selecție și un marker de premiu per loc beneficiar. Raportul de turneu acoperă dimensiunile și premiul afișat. Acceptanța rămasă cere o probă a destinației markerului în mișcare și un caz cu restituire nenulă la același loc. [J6-UI-04](J6-UI-04-PAYOUT-READABILITY.md)
 
 ## Contractul cerut
 

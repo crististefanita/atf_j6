@@ -14,6 +14,37 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 public class LocalHoldemGameTest {
+    @Test public void winChanceUsesOnlyVisibleCardsAndPersistsAcrossActorChanges() {
+        var game = LocalHoldemGame.tournament(4, 1);
+        var opening = HoldemWinChance.from(game.view());
+        assertNotNull(opening);
+        assertEquals(3, opening.opponents());
+        assertEquals(game.view().ownCards(), opening.ownCards());
+        assertTrue(opening.board().isEmpty());
+        game.play(game.turn(), new LocalHoldemGame.Move(ActionType.CALL, 20));
+        assertTrue(game.hasPassiveTurn());
+        assertEquals(opening, HoldemWinChance.from(game.view()));
+        while (game.hasPassiveTurn()) game.advancePassiveAction(game.turn());
+        var flop = HoldemWinChance.from(game.view());
+        assertNotNull(flop);
+        assertEquals(3, flop.board().size());
+        assertEquals(flop.estimatePercent(), HoldemWinChance.from(LocalHoldemGame.restore(game.save()).view()).estimatePercent());
+    }
+
+    @Test public void chanceCountsOutrightWinsSeparatelyFromSharedPots() {
+        var royal = List.of(Card.fromLabel("Ts"), Card.fromLabel("Js"), Card.fromLabel("Qs"),
+                Card.fromLabel("Ks"), Card.fromLabel("As"));
+        var shared = List.of(Card.fromLabel("2c"), Card.fromLabel("3d"));
+        assertEquals(0, new HoldemWinChance(shared, royal, 1).estimatePercent());
+        var winning = List.of(Card.fromLabel("As"), Card.fromLabel("Ks"));
+        var board = List.of(Card.fromLabel("Ts"), Card.fromLabel("Js"), Card.fromLabel("Qs"),
+                Card.fromLabel("2h"), Card.fromLabel("3d"));
+        assertEquals(100, new HoldemWinChance(winning, board, 3).estimatePercent());
+        var game = LocalHoldemGame.tournament(4, 1);
+        game.play(game.turn(), new LocalHoldemGame.Move(ActionType.FOLD, 0));
+        assertNull(HoldemWinChance.from(game.view()));
+    }
+
     @Test public void raiseAndChecksReachSettlementWithoutChangingTheViewersCards() {
         for (int seats : LocalHoldemGame.TABLE_SIZES) {
             var game = new LocalHoldemGame(seats, 62);

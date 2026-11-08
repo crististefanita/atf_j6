@@ -15,6 +15,8 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 - După decontare, recapitularea dezvăluie mâinile distribuite, inclusiv cele ale jucătorilor care au făcut fold. Eticheta `Fold` rămâne până la următoarea distribuire.
 - Masa indică actorul curent și combinația proprie calculată din cărțile vizibile. Sub fiecare jucător apar ultima mutare și jetoanele adăugate prin acea mutare.
 - `Istoric pariuri` deschide lista cronologică a mâinii, cu strada și contribuția cumulată pentru fiecare mutare. Istoricul poate fi consultat și după decontare, până la următoarea distribuire.
+- În configurarea unui turneu, bifa „Arată șansa mea de câștig” activează indicatorul din antet. Alegerea se păstrează cu turneul salvat și pornește debifată pentru un turneu nou. Indicatorul arată șansa estimată de a câștiga singur mâna, pe baza cărților proprii, a board-ului și a numărului de adversari rămași. Estimarea folosește 256 de eșantioane cu mâini adverse necunoscute, pe un worker separat de AI. După fold nu se afișează procent.
+- Butoanele de decizie au fețe vizuale reduse și ținte de atingere de cel puțin 48 dp. Închiderea editorului Raise revine la acțiunile mesei. Tastatura se deschide când este selectat câmpul sumei.
 - Coach-ul oferă o recomandare locală fără s-o aplice. `Let AI finish this hand` este o acțiune explicită pentru mâna locală și trimite mutări prin validarea motorului.
 - Profilul, limba și o sesiune întreruptă pot fi reluate din meniul principal.
 

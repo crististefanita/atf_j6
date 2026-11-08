@@ -112,4 +112,10 @@
     <string name="post_game_review">Cards from the final hand · post-game review</string>
     <string name="no_cards_in_last_hand">Not dealt in this hand</string>
     <string name="unknown_player">Unknown player</string>
+    <string name="show_win_chance">Show my chance to win</string>
+    <string name="win_chance_pending">Estimating…</string>
+    <string name="win_chance">~%1$d%% win</string>
+    <string name="win_chance_description">Estimated chance to win this hand outright: %1$d percent, against unknown hands</string>
+    <string name="win_chance_unavailable">Win chance —</string>
+    <string name="win_chance_unavailable_description">Win chance unavailable</string>
 </resources>

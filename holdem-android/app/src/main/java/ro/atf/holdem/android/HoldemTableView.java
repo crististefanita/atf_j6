@@ -1,15 +1,18 @@
 package ro.atf.holdem.android;
 
-import android.app.AlertDialog;
 import android.animation.ValueAnimator;
+import android.app.AlertDialog;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.InsetDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -46,8 +49,8 @@ import java.util.function.Predicate;
 final class HoldemTableView {
     // BoardLayout gives this center the full measured width. Its width hint only has to fit that region.
     private static final int FULL_WIDTH_CENTER_HINT_DP = 1;
-    private static final float DECISION_BACKGROUND_VERTICAL_INSET = .125f;
     private record BoardView(View root, TextView turnStatus) {}
+    record Labels(TextView advice, TextView winChance) { }
     interface Text { String get(int resource, Object... arguments); }
 
     private final ScreenViews views;
@@ -65,7 +68,7 @@ final class HoldemTableView {
         this.text = text;
     }
 
-    TextView show(HoldemTableViewState frame, List<String> names, LocalHoldemGame game, Runnable home,
+    Labels show(HoldemTableViewState frame, List<String> names, LocalHoldemGame game, Runnable home,
                   Runnable newHand, Predicate<LocalHoldemGame.Move> submit, boolean automatedHumanTurn,
                   Runnable autoPlay) {
         var activity = views.activity();
@@ -104,6 +107,15 @@ final class HoldemTableView {
         if (compact && !game.isTournament()) title.setContentDescription(fullTitle);
         title.setPadding(views.dp(10), 0, 0, 0);
         header.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        TextView winChance = null;
+        if (game.showsWinChance() && !complete) {
+            winChance = views.text(text.get(R.string.win_chance_pending), 12, 0xFFDDF4E9, true);
+            winChance.setSingleLine(true);
+            winChance.setPadding(views.dp(6), views.dp(3), views.dp(6), views.dp(3));
+            winChance.setBackground(views.roundedBackground(Color.rgb(32, 91, 73), ScreenViews.MUTED, 8));
+            header.addView(winChance, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT));
+        }
         content.addView(header, views.matchWrap());
 
         var seatFrame = new PlayerSeatFrame(activity, compact);
@@ -217,10 +229,17 @@ final class HoldemTableView {
                     decisionControls.forEach(control -> control.setEnabled(false));
                     autoPlay.run();
                 });
+                compactActionFace(takeover, false);
                 content.addView(takeover, views.matchWrap());
             }
         }
-        return advice;
+        return new Labels(advice, winChance);
+    }
+
+    void renderWinChance(TextView label, Integer percent) {
+        label.setText(percent == null ? text.get(R.string.win_chance_unavailable) : text.get(R.string.win_chance, percent));
+        label.setContentDescription(percent == null ? text.get(R.string.win_chance_unavailable_description)
+                : text.get(R.string.win_chance_description, percent));
     }
 
     private void addSeatFacts(LinearLayout seat, List<SeatContent.Fact> facts, boolean active, boolean compact) {
@@ -679,18 +698,12 @@ final class HoldemTableView {
                 case CHECK, CALL -> true;
                 default -> false;
             };
-            var button = views.actionButton(label, option.type().name(), true, () -> {
-                if (sized) requestAmount(title, option, compact, submit);
+            var button = views.actionButton(label, option.type().name(), true, () -> { }, primary, compact ? 13 : 14);
+            button.setOnClickListener(opener -> {
+                if (sized) requestAmount(opener, title, option, compact, submit);
                 else submit.test(new LocalHoldemGame.Move(option.type(), option.amount()));
-            }, primary, 14);
-            // Inset the background while the shared Button keeps its full touch bounds.
-            int left = button.getPaddingLeft();
-            int top = button.getPaddingTop();
-            int right = button.getPaddingRight();
-            int bottom = button.getPaddingBottom();
-            button.setBackground(new InsetDrawable(button.getBackground(), 0f,
-                    DECISION_BACKGROUND_VERTICAL_INSET, 0f, DECISION_BACKGROUND_VERTICAL_INSET));
-            button.setPadding(left, top, right, bottom);
+            });
+            compactActionFace(button, primary);
             if (compact) {
                 button.setPadding(views.dp(4), 0, views.dp(4), 0);
                 button.setIncludeFontPadding(false);
@@ -699,13 +712,29 @@ final class HoldemTableView {
             }
             decisionControls.add(button);
             var box = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-            int verticalMargin = views.dp(compact ? 1 : 3);
+            int verticalMargin = views.dp(compact ? 0 : 1);
             box.setMargins(views.dp(3), verticalMargin, views.dp(3), verticalMargin);
             row.addView(button, box);
         }
     }
 
-    private void requestAmount(String title, LegalAction option, boolean compact,
+    private void compactActionFace(Button button, boolean primary) {
+        int left = button.getPaddingLeft();
+        int top = button.getPaddingTop();
+        int right = button.getPaddingRight();
+        int bottom = button.getPaddingBottom();
+        float inset = HoldemTablePresentation.ACTION_FACE_INSET;
+        var face = views.roundedBackground(primary ? 0xFF30694E : 0xFF205443,
+                primary ? 0xFF77AF8D : 0xFF609180, 12);
+        var pressed = new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), face, null);
+        button.setBackground(new InsetDrawable(pressed, 0f, inset, 0f, inset));
+        button.setTextColor(primary ? Color.WHITE : 0xFFDDF4E9);
+        button.setStateListAnimator(null);
+        button.setPadding(left, top, right, bottom);
+        button.setMinimumHeight(views.dp(HoldemTablePresentation.ACTION_TARGET_DP));
+    }
+
+    private void requestAmount(View opener, String title, LegalAction option, boolean compact,
                                Predicate<LocalHoldemGame.Move> submit) {
         var input = new EditText(views.activity());
         input.setSingleLine(true);
@@ -722,6 +751,7 @@ final class HoldemTableView {
         input.setSelectAllOnFocus(true);
         var form = new LinearLayout(views.activity());
         form.setOrientation(LinearLayout.VERTICAL);
+        form.setFocusableInTouchMode(true);
         form.setPadding(views.dp(20), 0, views.dp(20), 0);
         views.addText(form, range, 14, ScreenViews.INK, false, 0, 0);
         form.addView(input, views.matchWrap());
@@ -750,8 +780,16 @@ final class HoldemTableView {
         } else {
             builder.setTitle(title);
         }
-        var dialog = builder.show();
-        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        var dialog = builder.create();
+        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                | WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        form.requestFocus();
+        dialog.setOnDismissListener(ignored -> opener.post(() -> {
+            if (!opener.isAttachedToWindow()) return;
+            if (!opener.isInTouchMode()) opener.requestFocus();
+            opener.requestRectangleOnScreen(new Rect(0, 0, opener.getWidth(), opener.getHeight()), true);
+        }));
+        dialog.show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(ignored -> {
             try {
                 int amount = Integer.parseInt(input.getText().toString());

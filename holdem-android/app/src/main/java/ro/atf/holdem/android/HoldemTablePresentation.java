@@ -21,6 +21,8 @@ final class HoldemTablePresentation {
 
     static final int FULL_CARD_SCALE = 100;
     static final int MIN_CARD_SCALE = 70;
+    static final int ACTION_TARGET_DP = 48;
+    static final float ACTION_FACE_INSET = .1875f;
 
     record ActionRow(int ordinal, int physicalSeat, String player, Street street, BettingAction.Kind kind,
                      int amount, int totalContribution) { }

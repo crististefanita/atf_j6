@@ -20,6 +20,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.accessibility.AccessibilityWindowInfo;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -66,10 +67,12 @@ public final class TournamentSanity extends Instrumentation {
             apkHash = installedApkHash();
             ui = journey.equals("seat-metrics") ? getUiAutomation(UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES)
                     : getUiAutomation();
+            var service = ui.getServiceInfo();
+            service.flags |= AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
+            ui.setServiceInfo(service);
             if (journey.equals("tournament")) {
                 winAcrossThreeHands();
                 loseOnTheOpeningAllIn();
-                inspectRaiseEditor();
             } else if (journey.equals("release-smoke")) {
                 releaseEntryNavigation();
             } else if (journey.equals("settlement-resume")) {
@@ -139,10 +142,11 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private void winAcrossThreeHands() throws Exception {
-        Activity activity = openTournament();
+        Activity activity = openTournament(true);
         try {
             see("Opening hand", "Hand 1 · Preflop");
             see("The first preflop decision is available", "Call · 20");
+            awaitWinChance("Opt-in shows the human win chance", true);
             capture("01b-opening-preflop");
             countDescriptions("The opening shows neither opponent card backs nor opponent faces",
                     "Face-down player card", 0);
@@ -150,8 +154,9 @@ public final class TournamentSanity extends Instrumentation {
             countDescriptions("The player sees exactly their two hole cards", "Your hand ·", 2);
             checkCollapsedViewport(activity, "The opening table fits without page scrolling");
             checkOpeningControls(activity);
-            tap("Call · 20");
+            inspectRaiseEditorAndCall(activity);
             see("First hand reaches the flop", "Hand 1 · Flop");
+            awaitWinChance("The win chance remains visible on the flop", true);
             capture("01-call-ledger-visible");
             checkSeatActionCount("Each player keeps a visible latest action under the seat", 4);
             seeActionForPlayer("You", "Call", 20);
@@ -217,18 +222,68 @@ public final class TournamentSanity extends Instrumentation {
         }
     }
 
-    private void inspectRaiseEditor() throws Exception {
-        var activity = openTournament();
-        try {
-            tap("Raise");
-            var ranges = collect(node -> value(node.getText()).startsWith("Add now ·")
-                    || value(node.getText()).startsWith("Chips to add now ·"));
-            check("Raise opens the amount editor", "visible amount range",
-                    ranges.isEmpty() ? "range absent" : value(ranges.get(0).getText()), !ranges.isEmpty());
-            closeAmountEditor();
-        } finally {
-            runOnMainSync(activity::finish);
-        }
+    private void inspectRaiseEditorAndCall(Activity activity) throws Exception {
+        tap("Raise");
+        var ranges = collect(node -> value(node.getText()).startsWith("Add now ·")
+                || value(node.getText()).startsWith("Chips to add now ·"));
+        check("Raise opens the amount editor", "visible amount range",
+                ranges.isEmpty() ? "range absent" : value(ranges.get(0).getText()), !ranges.isEmpty());
+        closeAmountEditor();
+        long deadline = SystemClock.uptimeMillis() + 4000;
+        AccessibilityNodeInfo call = null;
+        do {
+            var candidates = collect(node -> "Call · 20".equals(value(node.getText()))
+                    && node.isClickable() && node.isEnabled());
+            if (activity.hasWindowFocus() && candidates.size() == 1) {
+                call = candidates.get(0);
+                break;
+            }
+            SystemClock.sleep(80);
+        } while (SystemClock.uptimeMillis() < deadline);
+        boolean clicked = call != null && call.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        String dispatched = "one enabled Call with accessibility click dispatched";
+        check("Call remains accessible after closing Raise", dispatched,
+                clicked ? dispatched : callDiagnostic(activity, call));
+        actions.put("Call · 20 via Android accessibility after closing Raise");
+        waitForIdleSync();
+    }
+
+    private String callDiagnostic(Activity activity, AccessibilityNodeInfo candidate) {
+        var root = accessibilityRoot();
+        String active = root == null ? "none" : root.getClassName() + " / " + root.getPackageName();
+        var visibleCall = find("Call · 20");
+        var state = new String[1];
+        runOnMainSync(() -> {
+            var call = activity.getWindow().getDecorView().findViewWithTag("CALL");
+            var bounds = new Rect();
+            state[0] = call == null ? "missing" : "shown=" + call.isShown() + ", attached=" + call.isAttachedToWindow()
+                    + ", window focus=" + call.hasWindowFocus() + ", visible=" + call.getGlobalVisibleRect(bounds) + " " + bounds;
+        });
+        return "Call " + (candidate == null ? "not matched" : "click rejected") + " · window=" + active
+                + " · accessible=" + (visibleCall == null ? "missing"
+                : visibleCall.getClassName() + " clickable=" + visibleCall.isClickable() + " enabled=" + visibleCall.isEnabled())
+                + " · view=" + state[0];
+    }
+
+    private void awaitWinChance(String name, boolean enabled) throws Exception {
+        String actual = "no estimate";
+        long deadline = SystemClock.uptimeMillis() + 4000;
+        do {
+            var matches = collect(node -> value(node.getContentDescription())
+                    .startsWith("Estimated chance to win this hand outright:")
+                    || List.of("Estimating…", "Win chance —").contains(value(node.getText())));
+            if (matches.size() == 1) {
+                actual = value(matches.get(0).getText());
+                if (!enabled || actual.startsWith("~")) break;
+            } else if (matches.size() > 1) {
+                actual = "duplicate estimates";
+                break;
+            }
+            if (!enabled) break;
+            SystemClock.sleep(80);
+        } while (SystemClock.uptimeMillis() < deadline);
+        check(name, enabled ? "one visible percentage with an accessible explanation" : "no estimate",
+                actual, enabled ? actual.matches("~(?:[0-9]{1,2}|100)% win") : actual.equals("no estimate"));
     }
 
     private void closeAmountEditor() throws Exception {
@@ -264,11 +319,11 @@ public final class TournamentSanity extends Instrumentation {
                 var visibleBounds = new Rect();
                 if (!view.isClickable() || !view.getGlobalVisibleRect(visibleBounds)
                         || visibleBounds.width() < minimum || visibleBounds.height() < minimum
-                        || Math.abs(visible - height * .75) > 2) invalid.add(tag);
+                        || Math.abs(visible - height * .625) > 2) invalid.add(tag);
             }
         });
         check("Opening action buttons retain their tap bounds with shorter backgrounds",
-                "Fold, Call, Raise and All-in have at least 48 dp touch bounds and 75% visual height",
+                "Fold, Call, Raise and All-in have at least 48 dp touch bounds and 62.5% visual height",
                 String.join(", ", sizes) + (invalid.isEmpty() ? "" : " · invalid " + invalid), invalid.isEmpty());
     }
 
@@ -288,6 +343,7 @@ public final class TournamentSanity extends Instrumentation {
     private void loseOnTheOpeningAllIn() throws Exception {
         var activity = openTournament();
         try {
+            awaitWinChance("Unchecked setup leaves the win chance hidden", false);
             tap("All-in · 2000");
             see("Opening all-in settles before elimination is asserted", "Hand 1 · Settled");
             countDescriptions("Human seat is eliminated after the opening all-in", "You, Stack 0, Won 0, Eliminated", 1);
@@ -316,14 +372,23 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private Activity openTournament() throws Exception {
+        return openTournament(false);
+    }
+
+    private Activity openTournament(boolean winChance) throws Exception {
         var activity = launchHoldem();
-        dealTournament();
+        dealTournament(winChance);
         return activity;
     }
 
     private void dealTournament() throws Exception {
+        dealTournament(false);
+    }
+
+    private void dealTournament(boolean winChance) throws Exception {
         tap("Play a tournament");
         see("Setup opens with four seats", "4");
+        if (winChance) tap("Show my chance to win");
         tap("Deal cards");
     }
 
@@ -588,9 +653,6 @@ public final class TournamentSanity extends Instrumentation {
         int actor = frame.actor();
         runOnMainSync(() -> reveal(seatFrame(activity.getWindow().getDecorView(), actor)));
         waitForIdleSync();
-        var service = ui.getServiceInfo();
-        service.flags |= AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
-        ui.setServiceInfo(service);
         var seats = collect(node -> node.isFocusable() && value(node.getContentDescription()).contains(", La rând")
                 && value(node.getContentDescription()).contains(", Jetoane ") && value(node.getContentDescription()).contains(", În pot "));
         check("Active seat exposes one full accessibility description", "one node with name, chips, contribution and turn",
@@ -917,8 +979,21 @@ public final class TournamentSanity extends Instrumentation {
 
     private List<AccessibilityNodeInfo> collect(Predicate<AccessibilityNodeInfo> matches) {
         var found = new ArrayList<AccessibilityNodeInfo>();
-        collect(ui.getRootInActiveWindow(), matches, found);
+        collect(accessibilityRoot(), matches, found);
         return found;
+    }
+
+    private AccessibilityNodeInfo accessibilityRoot() {
+        var active = ui.getRootInActiveWindow();
+        if (active != null) return active;
+        // On API 28 the active window may be absent after a modal even when input focus has returned.
+        for (var window : ui.getWindows()) {
+            if (window.getType() == AccessibilityWindowInfo.TYPE_APPLICATION && window.isFocused()) {
+                var root = window.getRoot();
+                if (root != null) return root;
+            }
+        }
+        return null;
     }
 
     private static void collect(AccessibilityNodeInfo node, Predicate<AccessibilityNodeInfo> matches, List<AccessibilityNodeInfo> found) {

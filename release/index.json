@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.2.2",
-  "previousVersion": "0.2.1",
-  "changeClass": "PATCH_FIX",
-  "changeRationale": "Corectează lizibilitatea sumelor în chenare, păstrarea numelui curent în clasament și reluarea comenzilor deja acceptate la decontare.",
-  "state": "PREPARED",
+  "currentVersion": "0.3.0",
+  "previousVersion": "0.2.2",
+  "changeClass": "COMPATIBLE_FEATURE",
+  "changeRationale": "Adaugă estimarea opțională a șansei de câștig în turneu, rafinează acțiunile mesei și repară revenirea la Call după editorul Raise.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.2.2"
+    "0.3.0"
   ]
 }

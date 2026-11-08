@@ -104,6 +104,44 @@ public final class HoldemSessionRepositoryComponentTest {
         }
     }
 
+    @Test public void winChanceSettingBelongsToOneTournamentAndSurvivesCheckpointReplay() throws Exception {
+        var storage = new MemoryStorage();
+        var repository = new HoldemSessionRepository(storage);
+        var enabled = LocalHoldemGame.tournament(4, 1, 1, "player", true);
+        repository.save(enabled, false);
+        var restored = new HoldemSessionRepository(storage).load().resumed().game();
+        assertTrue(restored.showsWinChance());
+        assertEquals(enabled.view(), restored.view());
+        repository.save(LocalHoldemGame.tournament(4, 1, 1, "player"), false);
+        assertFalse(repository.load().resumed().game().showsWinChance());
+    }
+
+    @Test public void schemaTwoTournamentDefaultsToHiddenWinChance() throws Exception {
+        var bytes = new java.io.ByteArrayOutputStream();
+        try (var out = new java.io.DataOutputStream(bytes)) {
+            out.writeInt(0x484C534A);
+            out.writeInt(2);
+            out.writeBoolean(false);
+            out.writeInt(4);
+            out.writeInt(0);
+            out.writeLong(1);
+            out.writeBoolean(true);
+            out.writeInt(1);
+            out.writeLong(0);
+            out.writeUTF("existing-tournament");
+            out.writeUTF("existing-player");
+            out.writeInt(1);
+            out.writeLong(0);
+            out.writeInt(0);
+        }
+        var storage = new MemoryStorage();
+        storage.value = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes.toByteArray());
+        var result = new HoldemSessionRepository(storage).load();
+        assertTrue(result.hasCheckpoint());
+        assertEquals("existing-tournament", result.resumed().game().tournamentId());
+        assertFalse(result.resumed().game().showsWinChance());
+    }
+
     @Test public void terminalTournamentCheckpointReopensTheResultScreen() throws Exception {
         Path directory = Files.createTempDirectory("holdem-session-result-");
         try {

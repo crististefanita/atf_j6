@@ -1,5 +1,10 @@
 # Dovezi de calificare
 
-Runnerul păstrează contextul RAG, manifestul calificării și rapoartele Extent în dosarul extern al rulării. Calificarea include Maven, Android JVM, lint, verificarea semnăturii, turneul determinist și smoke-ul APK-ului semnat.
+| Probă | Rezultat |
+|---|---|
+| [Maven și guvernanță](maven-component-suites-extent.html) | 113 teste |
+| [Android JVM](android-component-suites-extent.html) | 58 teste |
+| [Turneu Android](android-tournament-extent.html) | 76 aserțiuni, 9 capturi |
+| [Instalarea APK-ului Release](android-release-smoke-extent.html) | 7 aserțiuni, 2 capturi |
 
-[Procesul de release](../../../docs/release/ATF_Release.md)
+Probele native au rulat pe API 28. Lint Release a raportat zero avertismente. Manifestul leagă rapoartele, contextul RAG și APK-ul semnat de sursa calificată. [Calificare](../qualification.json) · [Procesul de release](../../../docs/release/ATF_Release.md)

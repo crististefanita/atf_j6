@@ -1,5 +1,8 @@
 # Hold’em Lab 0.3.1
 
-Candidatul 0.3.1 califică din nou APK-ul semnat după corecția procesului J6-REL-05.
+Actualizarea verifică referințele locale din feedback prin RAG și aliniază documentația cu sursa calificată. Tagul indică sursa calificată 4836ca8.
 
-[Note de versiune](release-notes.md) · [Manifestul candidatului](release-validation.json) · [Procesul de calificare](reports/README.md)
+- Descărcați HoldemLab-0.3.1.apk din secțiunea Assets. [Release GitHub](https://github.com/crististefanita/atf_j6/releases/tag/v0.3.1)
+- API-ul GitHub autentificat a verificat integral APK-ul și checksum-ul. Ruta anonimă din README răspunde HTTP 404. Catalogul rămâne PREPARED. [Manifestul ediției](release-validation.json)
+
+[Note de versiune](release-notes.md) · [Calificare](qualification.json) · [Rapoarte Extent](reports/README.md) · [Context RAG](release-impact-context.json)

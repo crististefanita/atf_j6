@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "sourceCommit": "4836ca836b12901b7cdb4e053708711ac58cd5de",
+  "versionName": "0.3.1",
+  "apkName": "HoldemLab-0.3.1.apk",
+  "apkBytes": 794136,
+  "sha256": "b0efd3451eeaef5b0c0956b9ca68d76a348406889f892c728b3cd0fd4f0084a9",
+  "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
+  "debuggable": false,
+  "targetSdk": 36,
+  "minSdk": 26,
+  "qualification": {
+    "maven": {
+      "suites": 17,
+      "tests": 113.0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mavenComponentExtent": {
+      "path": "maven-component-suites-extent.html",
+      "suites": 17,
+      "tests": 113.0
+    },
+    "androidJvm": {
+      "suites": 5,
+      "tests": 58.0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "androidComponentExtent": {
+      "path": "android-component-suites-extent.html",
+      "suites": 5,
+      "tests": 58.0
+    },
+    "releaseImpactContext": {
+      "path": "release-impact-context.json",
+      "contextState": "CONTEXT_READY",
+      "advisoryOnly": true,
+      "sha256": "e7418e9d4e36bd7896a589a156acf6d74c6dcb029a5ef5d5978c344c121d1b08"
+    },
+    "versionPolicy": {
+      "previousVersion": "0.3.0",
+      "changeClass": "PATCH_FIX",
+      "candidateVersion": "0.3.1",
+      "rationale": "Corectează verificarea consultativă a referințelor locale din feedback și actualizează documentația pe baza sursei live."
+    },
+    "lint": {
+      "status": "PASS",
+      "warnings": []
+    },
+    "tournamentSanity": {
+      "status": "PASS",
+      "api": 28,
+      "assertions": 76,
+      "screenshots": 9,
+      "apkSha256": "679154b95b3f0e46ff91d7003187419f108b5bfabb81b6de962e8f0028dab25c"
+    },
+    "releaseInstallSmoke": {
+      "status": "PASS",
+      "api": 28,
+      "assertions": 7,
+      "screenshots": 2,
+      "apkSha256": "b0efd3451eeaef5b0c0956b9ca68d76a348406889f892c728b3cd0fd4f0084a9"
+    }
+  },
+  "reports": [
+    {
+      "path": "android-component-suites-extent.html",
+      "bytes": 2469138,
+      "sha256": "356f97024f0cbd570cda959a7bf4360a378ded5ca248b99111a19248c3a25969"
+    },
+    {
+      "path": "android-release-smoke-extent.html",
+      "bytes": 2613569,
+      "sha256": "0ecc1fdb9e9a4e7cfca8e6280464f634be7c813559649f74a3a7bf4f7b5da036"
+    },
+    {
+      "path": "android-tournament-extent.html",
+      "bytes": 4236692,
+      "sha256": "178056cf932603b3500e3f6c6cf7e2f5898dc3358fb1a6dfe5374cf28d82bd75"
+    },
+    {
+      "path": "j6-library-component-1794170898990.html",
+      "bytes": 2411342,
+      "sha256": "d78359d7103e3a248fbe3d5eab8d6b7e575343b2d9cea49988f5ca55936b03c8"
+    },
+    {
+      "path": "J6AndroidRuntimeApiGovernance-1794170912242.html",
+      "bytes": 2411440,
+      "sha256": "a345638530314fd7fa3e650e2cb7f920adb1c4a59229ace2c5074acf1c1555bf"
+    },
+    {
+      "path": "J6EditionEvidenceMutationGovernance-1794170904219.html",
+      "bytes": 2410878,
+      "sha256": "db48a97d6a306d76644be26885df5d732b73ee934df5a342e1a68e3fec765fed"
+    },
+    {
+      "path": "J6ExtentSuiteGovernance-1794170917528.html",
+      "bytes": 2411200,
+      "sha256": "2e7454f3ac9f62ebd3044665c787f9993eb6ec6f25d995a25f846315d49f8b2a"
+    },
+    {
+      "path": "J6MainReadmeGovernance-1794170909273.html",
+      "bytes": 2412759,
+      "sha256": "213e67d9bbdd82e691d4af668c2437fabe3a8a47f9d5918d07e289b2ba2090d8"
+    },
+    {
+      "path": "J6ReleaseDownloadRouteGovernance-1794170906720.html",
+      "bytes": 2412385,
+      "sha256": "b2ac725f7088e42247a038febb1443c6578e6b4482cd917c84aa695e4f5d22e7"
+    },
+    {
+      "path": "J6ReleaseGovernance-1794170914830.html",
+      "bytes": 2415744,
+      "sha256": "cb710a7afffb09292b4b2dd73e92e678141b5c6b61faae9a8e81adaab217a32d"
+    },
+    {
+      "path": "maven-component-suites-extent.html",
+      "bytes": 2584913,
+      "sha256": "5355f53110d4d54eab1bf22001f117eed476f97dfe321a4dd08c2d9fd2721990"
+    }
+  ],
+  "runRoot": "C:\\work\\holdem_back\\release-runs\\j6-0.3.1-20261108",
+  "completedUtc": "2026-11-08T20:56:56.8847030Z"
+}

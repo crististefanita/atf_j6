@@ -8,7 +8,7 @@ Acest director indexează edițiile Android. Dosarul unei versiuni deține ident
 
 | Versiune | Documentație | Identitatea pachetului |
 |---|---|---|
-| 0.3.1 | [Dosarul ediției](0.3.1/README.md) · `DRAFT` | [Manifestul ediției](0.3.1/release-validation.json) |
+| 0.3.1 | [Dosarul ediției](0.3.1/README.md) · `PREPARED` | [Manifestul ediției](0.3.1/release-validation.json) |
 | 0.3.0 | [Dosarul ediției](0.3.0/README.md) · `PREPARED` | [Manifestul ediției](0.3.0/release-validation.json) |
 | 0.2.2 | [Dosarul ediției](0.2.2/README.md) · `PREPARED` | [Manifestul ediției](0.2.2/release-validation.json) |
 | 0.2.1 | [Dosarul ediției](0.2.1/README.md) · `PREPARED` | [Manifestul ediției](0.2.1/release-validation.json) |

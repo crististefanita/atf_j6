@@ -59,10 +59,9 @@ public class LocalHoldemGameTest {
         assertEquals(1, opening.dealer());
         assertEquals(1, opening.smallBlind());
         assertEquals(0, opening.bigBlind());
-        assertEquals(0, opening.actor());
-        assertEquals(40, opening.pot());
-        assertEquals(List.of(ActionType.CHECK, ActionType.RAISE, ActionType.ALL_IN),
-                opening.legalActions().stream().map(action -> action.type()).collect(java.util.stream.Collectors.toList()));
+        assertEquals("The dealer/small blind acts first preflop heads-up", 1, opening.actor());
+        assertEquals(30, opening.pot());
+        assertTrue("Opponent legal actions are not exposed to the human view", opening.legalActions().isEmpty());
         assertEquals(opening, LocalHoldemGame.restore(next.save()).view());
         play(next, ActionType.CHECK, 0);
         assertEquals(Street.FLOP, next.view().street());
@@ -110,11 +109,30 @@ public class LocalHoldemGameTest {
         play(fold, ActionType.FOLD, 0);
         assertEquals(Street.COMPLETE, fold.view().street());
         assertTrue(fold.view().seats().get(fold.view().viewer()).folded());
+        assertTrue(fold.view().seats().get(fold.view().viewer()).dealtCards());
+        assertEquals(2, fold.view().seats().get(fold.view().viewer()).shownCards().size());
+        assertTrue(fold.view().seats().stream().allMatch(seat -> seat.shownCards().size() == 2));
         assertEquals(2000, fold.view().seats().get(fold.view().viewer()).stack());
         var allIn = new LocalHoldemGame(6, 11);
         play(allIn, ActionType.ALL_IN, 2000);
         assertEquals(Street.COMPLETE, allIn.view().street());
         assertEquals(12000, allIn.view().seats().stream().mapToInt(seat -> seat.received()).sum());
+    }
+
+    @Test public void coachSuggestionIsLegalAndAutoPlayCompletesOnlyTheCurrentHand() {
+        var game = new LocalHoldemGame(4, 2201);
+        var initial = game.view();
+        var turn = game.turn();
+        var suggestion = game.suggest(turn);
+        assertEquals(initial, game.view());
+        assertTrue(initial.legalActions().stream().anyMatch(action -> action.type() == suggestion.move().action()
+                && suggestion.move().amount() >= action.minAmount() && suggestion.move().amount() <= action.maxAmount()));
+
+        game.autoPlayHand(turn);
+        assertEquals(Street.COMPLETE, game.view().street());
+        assertEquals(1, game.handNumber());
+        assertTrue(game.view().seats().stream().allMatch(seat -> seat.shownCards().size() == 2));
+        assertThrows(IllegalArgumentException.class, () -> game.autoPlayHand(turn));
     }
 
     @Test public void recreationReplaysOnlyAcceptedHumanMovesAndRejectsTheOldToken() {
@@ -123,10 +141,37 @@ public class LocalHoldemGameTest {
         play(original, ActionType.BET, 40);
         var restored = LocalHoldemGame.restore(original.save());
         assertEquals(original.view(), restored.view());
+        assertEquals(original.hasPassiveTurn(), restored.hasPassiveTurn());
         assertThrows(IllegalArgumentException.class,
                 () -> restored.play(original.turn(), new LocalHoldemGame.Move(ActionType.CHECK, 0)));
         play(restored, ActionType.CHECK, 0);
         assertEquals(Street.RIVER, restored.view().street());
+    }
+
+    @Test public void passiveActorsAdvanceOneValidatedActionAndCheckpointRestoresThatExactTurn() {
+        var game = new LocalHoldemGame(6, 418);
+        var turn = game.turn();
+        var legal = game.view().legalActions().stream().filter(option -> option.type() == ActionType.CALL)
+                .findFirst().orElseThrow(AssertionError::new);
+        game.play(turn, new LocalHoldemGame.Move(ActionType.CALL, legal.amount()));
+        assertTrue("A human action leaves the first passive actor visible", game.hasPassiveTurn());
+        var firstBot = game.turn();
+        game.advancePassiveAction(firstBot);
+        assertThrows("A passive action invalidates its old token", IllegalArgumentException.class,
+                () -> game.advancePassiveAction(firstBot));
+
+        var restored = LocalHoldemGame.restore(game.save());
+        assertEquals("Restoration reproduces the visible actor and public state", game.view(), restored.view());
+        assertEquals("Restoration preserves whether the next action is automated", game.hasPassiveTurn(), restored.hasPassiveTurn());
+        assertEquals("Action history includes the human and exactly one passive action", 2,
+                restored.save().rounds().get(0).size());
+        int revision = restored.turn().revision();
+        if (restored.hasPassiveTurn()) {
+            restored.advancePassiveAction(restored.turn());
+            assertEquals("The next passive action remains engine validated", revision + 1, restored.turn().revision());
+        } else {
+            assertEquals("A human or completed street remains unchanged", revision, restored.turn().revision());
+        }
     }
 
     @Test public void cardFacesAndCommonGeometryStayCompatible() {
@@ -143,6 +188,17 @@ public class LocalHoldemGameTest {
     }
 
     private static void play(LocalHoldemGame game, ActionType action, int amount) {
+        advancePassiveTurns(game);
+        if (game.view().street() == Street.COMPLETE) return;
         game.play(game.turn(), new LocalHoldemGame.Move(action, amount));
+        advancePassiveTurns(game);
+    }
+
+    private static void advancePassiveTurns(LocalHoldemGame game) {
+        int actions = 0;
+        while (game.hasPassiveTurn()) {
+            if (++actions > 64) throw new AssertionError("Passive action bound exceeded");
+            game.advancePassiveAction(game.turn());
+        }
     }
 }

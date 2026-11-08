@@ -133,7 +133,7 @@ public final class TournamentSanity extends Instrumentation {
             countDescriptions("Human seat holds the heads-up dealer and small blind", "You, Dealer, Small blind", 1);
             countDescriptions("Only the human hole cards are announced", "Your hand ·", 2);
             capture("03-heads-up");
-            tap("All-in · 7910");
+            tap("All-in · 7900");
             see("Last all-in pays all tournament chips", "Pot paid · 8000");
             countDescriptions("Last all-in eliminates the final opponent", ", Eliminated", 3);
             check("No next hand after the win", "absent", find("New hand") == null ? "absent" : "present");

@@ -1,126 +1,102 @@
-# ATF J6 · Hold'em Lab
+# ATF J6 · Hold’em Lab
 
-ATF J6 este laboratorul JVM pentru un sistem local de No-Limit Texas Hold'em: motor de reguli, AI, arena de simulare, aplicație de consolă și adaptor online pentru platforme care acceptă explicit boți.
+## Pe scurt
 
-Nucleul se antrenează și se evaluează local. Adaptorul online vizează numai arene care autorizează explicit boții, precum Open Poker. Android oferă o mână de antrenament sau un turneu offline cu eliminări, pe componentele comune Whist și Rentz. [Interfața Android](holdem-android/README.md)
+ATF J6 este un laborator pentru dezvoltarea și evaluarea locală a unui joc No-Limit Texas Hold’em. Motorul, politicile AI și arena de simulare funcționează fără serviciu extern.
 
-## Release Android curent
+- `holdem-core` deține regulile, starea și acțiunile legale.
+- `holdem-ai` decide numai din observația permisă jucătorului curent.
+- `holdem-arena` rulează mese și turnee reproductibile, cu replay.
+- `holdem-android` oferă joc offline și revizuirea mâinii.
+- `holdem-online` este numai un scaffold `dry-run`: nu deschide WebSocket, nu intră în lobby și nu trimite acțiuni. Cerințele online sunt plan de lucru, nu funcție livrată.
 
-`0.1.0` este `PREPARED`: asset-urile GitHub sunt complete, iar ultima probă anonimă (`2026-11-07T22:16:42Z`) a primit HTTP 404. Descărcarea din browserul conectat la contul GitHub a fost verificată. **Linkurile necesită autentificare GitHub.** [Pagina Release](https://github.com/crististefanita/atf_j6/releases/tag/v0.1.0) · [Descarcă APK-ul](https://github.com/crististefanita/atf_j6/releases/download/v0.1.0/HoldemLab-0.1.0.apk). [Dosarul ediției și rapoartele](release/0.1.0/README.md) păstrează calificarea; [J6-REL-01](docs/feedback/J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) urmărește accesul anonim.
+## Jocul
 
-## Obiectivul primei faze
+- **[Hold’em Lab 0.1.0 — documentația release-ului](https://github.com/crististefanita/atf_j6/releases/tag/v0.1.0)**
+- **[Descarcă APK-ul Hold’em Lab 0.1.0](https://github.com/crististefanita/atf_j6/releases/download/v0.1.0/HoldemLab-0.1.0.apk)**
 
-Construim o buclă completă și repetabilă:
+## Bucla locală
 
 ```text
-stare Hold'em -> observație publică -> politică AI -> acțiune legală
-      ^                                             |
-      |------------- motor + replay ----------------|
+stare de joc → observația actorului → politică AI → acțiune legală
+      ↑                                           │
+      └──────────── motor și replay ──────────────┘
 ```
 
-Motorul local implementează distribuirea, acțiunile legale, evaluarea mâinii, decontarea poturilor, turneele de 4–6 locuri și mesele cash cu blind-uri fixe. AI-ul are baseline-uri și un candidat Monte Carlo care estimează cota potului din cărțile vizibile și cărți ascunse eșantionate. Contextul ajustează pragurile, însă range-urile adversarilor nu sunt încă modelate. Testele de componentă și auditorii independenți verifică regulile și sesiunile fără UI; rezultatele offline nu califică singure o strategie de nivel profesionist.
+- Motorul aplică tranziția și verifică acțiunea față de starea curentă.
+- Politica primește cărțile proprii, board-ul vizibil și informațiile publice.
+- Arena păstrează seed-ul și istoricul necesare reluării și comparației.
+- Rezultatele offline verifică implementarea și compară politici; nu dovedesc singure o strategie profesionistă sau profit financiar.
 
 ## Module
 
-| Modul | Rol |
+| Modul | Contract |
 |---|---|
-| `holdem-core` | Cărți, străzi, acțiuni legale și observația actorului; fără Android, rețea sau AI. |
-| `holdem-ai` | Baseline-uri și estimator Monte Carlo reproductibil, cu pot odds și ponderi de context din YAML. |
-| `holdem-arena` | Turnee cu blind-uri progresive, mese cash cu blind-uri fixe, seed-uri și jurnale verificabile. |
-| `holdem-online` | Transport/adaptor pentru protocoale autorizate; prima țintă este Open Poker WebSocket V2. |
-| `holdem-app` | Aplicație de consolă pentru smoke-run local și comenzi viitoare de simulare. |
-| [`holdem-android`](holdem-android/README.md) | Meniu, profil, mână de antrenament și turneu la 4–6 locuri până la victorie sau eliminare. Gradle compilează sursele aceluiași motor. |
+| `holdem-core` | Cărți, străzi, observația actorului, acțiuni legale și decontarea poturilor; fără Android sau rețea. |
+| `holdem-ai` | Politici baseline și estimator Monte Carlo reproductibil; ponderi de context configurate în YAML. |
+| `holdem-arena` | Turnee cu blinduri progresive, mese cash cu blinduri fixe, seed-uri și replay. |
+| `holdem-online` | Configurație și raportare `dry-run` doar; nu implementează transportul protocolului. Poate fi scos din produs până când online devine o etapă aprobată. |
+| `holdem-app` | Vertical slice de consolă pentru o decizie locală și inspecția scaffold-ului online. |
+| `holdem-android` | Interfață locală pentru mâini de antrenament și turnee de 4–6 locuri; Gradle folosește sursele comune ale motorului și AI-ului. |
 
 ## Biblioteci comune
 
-J6 consumă Core, Reporting, Console, Mock și Test Kit ca JAR/POM direct în [lib](lib/README.md). POM-ul rădăcină instalează perechile la `validate`; IntelliJ folosește același JDK 21 și repository Maven. Dependențele sunt declarate pentru testele din `holdem-app`, fără a lega motorul Hold’em de Reporting.
+J6 consumă Core, Reporting, Console, Mock și Test Kit din perechile JAR/POM din [lib](lib/README.md). POM-ul rădăcină fixează versiunile și instalarea; testele verifică proveniența și integrarea.
 
-[PlatformLibraryAdoptionTest](holdem-app/src/test/java/ro/atf/j6/libraries/PlatformLibraryAdoptionTest.java) verifică originea și hash-ul fiecărui binar, JSON, transportul mock și aserțiunile din HTML-ul Extent. Output-ul rămâne în TMP prin `atf.test.reportDirectory`. Proveniența bibliotecilor este în `library-provenance.json`; mentenanța și feedback-ul comun au owner în J0, iar regulile de joc rămân în J6.
+[PlatformLibraryAdoptionTest](holdem-app/src/test/java/ro/atf/j6/libraries/PlatformLibraryAdoptionTest.java) verifică hash-urile binare, proveniența JSON, transportul mock și raportul Extent. Biblioteca comună este întreținută în J0; regulile Hold’em rămân în J6.
 
 ## Cerințe și documentație
 
 - [Cerințe generale](docs/requirements/README.md)
 - [Cerințe de produs](docs/requirements/PRODUCT_REQUIREMENTS.md)
-- [Cerințe de domeniu Hold'em](docs/requirements/DOMAIN_REQUIREMENTS.md)
+- [Cerințe de domeniu Hold’em](docs/requirements/DOMAIN_REQUIREMENTS.md)
 - [Reguli și simulare de turneu](docs/requirements/TOURNAMENT_RULES.md)
 - [Cerințe AI și evaluare](docs/requirements/AI_REQUIREMENTS.md)
 - [Cerințe online și siguranță](docs/requirements/ONLINE_REQUIREMENTS.md)
 - [Arhitectură](docs/architecture/ARCHITECTURE.md)
 - [Strategie de testare](docs/testing/TEST_STRATEGY.md)
+- [Catalogul release-urilor](release/README.md)
 - [Procesul de release Android](docs/release/ATF_Release.md)
-- [Feedback](docs/feedback/README.md)
+- [Feedback activ](docs/feedback/README.md)
 
 ## Construire locală
 
-### Precondiții
+### Cerințe
 
 - JDK 21 sau mai nou;
 - Maven 3.9 sau mai nou;
-- PowerShell 7 este recomandat pe Windows;
-- acces la internet numai pentru faza online și numai după configurarea explicită a cheii.
+- Android SDK platform 36 pentru aplicația Android;
+- PowerShell 7 recomandat pe Windows.
 
-Verificare:
+### Maven
 
-```powershell
-java -version
-mvn -version
-```
-
-### Compilare
-
-Dintr-o copie proprie a proiectului în TMP, cu repository Maven tot în TMP:
+Dintr-o copie proprie a proiectului, cu repository-ul Maven în directorul temporar:
 
 ```powershell
 mvn -B -ntp "-Dmaven.repo.local=$env:TEMP\atf-j6-m2" test
 ```
 
-Pentru prima verificare fără a executa scenariul online:
+Pentru compilare fără rularea testelor:
 
 ```powershell
 mvn -B -DskipTests package
 ```
 
-Dacă Maven nu este instalat încă, vertical slice-ul poate fi verificat numai cu JDK 21:
-
-```powershell
-.\scripts\compile-and-run-local.ps1
-```
-
-### Smoke-run local
+Vertical slice-ul de consolă se poate porni astfel:
 
 ```powershell
 mvn -B -pl holdem-app -am exec:java -Dexec.mainClass=ro.atf.holdem.app.LocalAppMain
 ```
 
-Dacă pluginul `exec` nu este disponibil în cache, folosește:
+Dacă pluginul Maven `exec` nu este disponibil, împachetați modulele și porniți `LocalAppMain` cu classpath-ul local. Execuția implicită nu trimite acțiuni către o platformă externă.
 
-```powershell
-mvn -B -pl holdem-app -am package
-java -cp holdem-app/target/classes;holdem-ai/target/classes;holdem-core/target/classes ro.atf.holdem.app.LocalAppMain
-```
+## Reguli și limite
 
-### Online, numai explicit
+- Motorul gestionează starea completă; politica vede numai observația actorului.
+- Motorul validează fiecare acțiune înainte de aplicare.
+- Evaluările păstrează seed-ul, versiunea politicii și replay-ul.
+- Politicile curente rămân euristice, iar estimatorul Monte Carlo nu modelează încă range-uri adversare.
+- Un client WebSocket real nu este implementat; orice integrare viitoare cere autorizarea explicită a platformei.
+- Nu se adaugă scraping, auto-click, real-time assistance interzisă sau ocolirea detecției.
 
-Open Poker documentează un endpoint WebSocket V2 la `wss://openpoker.ai/ws`, autentificare Bearer, mesaje JSON și limite de reconectare/idempotency. Cheia nu se pune în fișiere sau argumente de comandă.
-
-```powershell
-$env:OPEN_POKER_API_KEY = 'cheia-ta-locala'
-mvn -B -pl holdem-online -am package
-```
-
-Conectarea, `join_lobby` și trimiterea acțiunilor vor fi comenzi separate, cu jurnal și oprire controlată. Rularea locală implicită nu face conexiuni externe.
-
-## Reguli de proiect
-
-1. Motorul primește starea completă a jocului, dar politica AI primește numai observația permisă actorului.
-2. Nicio mână adversă reală nu intră în decizie.
-3. Orice acțiune este validată de motor înainte de aplicare.
-4. Orice rezultat de performanță are seed, versiune de politică, corpus și replay.
-5. Un rezultat pozitiv în arena virtuală nu este o garanție de profit financiar.
-6. Nu se implementează scraping, click automation, RTA sau ocolirea detecției pe platforme care nu autorizează boți.
-
-## Starea proiectului
-
-Implementat în această bază: structură multi-modul, motor local No-Limit Hold'em, evaluator de 7 cărți, poturi secundare, creșteri all-in și redeschidere cumulativă, turnee reproducibile de 4–6 locuri, baseline-uri AI, explorare de bluff configurabilă și verificări independente pe jurnale.
-
-În lucru: calibrarea equity-ului la range-urile adversarilor, căutarea prin rollout, MCCFR/self-play, replay persistent între sesiuni și client online complet. Equity-ul curent pornește de la cărți adverse aleatoare și ponderi explicite de context; politica de bluff rămâne un amestec determinist de laborator, nu un model exploatativ calibrat.
+Pentru contractele și criteriile de acceptare, începeți din [indexul cerințelor](docs/requirements/README.md) și [strategia de testare](docs/testing/TEST_STRATEGY.md).

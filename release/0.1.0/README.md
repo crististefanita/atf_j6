@@ -1,6 +1,10 @@
 # Hold’em Lab 0.1.0
 
-Prima ediție Android pentru No-Limit Texas Hold’em offline.
+## Pe scurt
+
+Prima ediție Android pentru No-Limit Texas Hold’em offline. Manifestul ediției deține identitatea APK-ului și starea verificărilor; `PREPARED` nu înseamnă că descărcarea publică anonimă a trecut.
+
+## Identitate
 
 | Detaliu | Valoare |
 |---|---|
@@ -10,22 +14,29 @@ Prima ediție Android pentru No-Limit Texas Hold’em offline.
 | Android | API 26–36 declarate · target SDK 36 |
 | Semnare | Release J6 · `debuggable=false` |
 | Sursă calificată | `c4778a45751a5f579820c039e93d5997deb5800a` |
-| Stare | `PREPARED` · APK și verificări locale trecute; download anonim blocat |
+| Stare | `PREPARED` · verificări locale trecute; acces anonim blocat la ultima probă |
 
-## Include
+## Funcționalitate
 
 - Meniu și masă pe UI-ul comun Whist/Rentz.
-- Mână de antrenament și turneu offline cu 4–6 locuri.
-- Acțiuni validate de motor, adversari AI locali și final de victorie sau eliminare.
+- Mână offline și turneu cu 4–6 locuri.
+- Acțiuni validate de motor, adversari locali și rezultat la victorie sau eliminare.
 
-## Descărcare și stare GitHub
+## Acces și verificarea publicării
 
-Release-ul `v0.1.0` a fost creat (`437875854`), iar APK-ul și checksum-ul au fost încărcate. API-ul autentificat confirmă că repo-ul este `public`, Release-ul nu este draft, iar asset-ul APK se descarcă complet din API-ul Releases cu status API `302` → CDN `200`, `722172` bytes și SHA-256 identic.
+| Probă | Rezultat înregistrat |
+|---|---|
+| API GitHub autentificat | Repo-ul este public, release-ul nu este draft, iar asset-ul APK răspunde `302` urmat de `200`; dimensiune `722172` bytes. |
+| Descărcare autenticată în browser | La `2026-11-08T06:38:01Z`, fișierul primit avea 722.172 bytes și identitatea din manifest. |
+| Probe anonime | La `2026-11-07T22:16:42Z`, profilul, repo-ul, pagina Release, API-ul Release și APK-ul au răspuns `404`. |
+| Decizie de publicare | Starea rămâne `PREPARED` până trece descărcarea completă fără cookies sau credentiale. |
 
-Testul fără cookies, Authorization sau credentiale implicite a primit HTTP `404` pentru profilul proprietarului, repo, pagina Release, API-ul anonim al Release-ului și endpointul APK. Descărcarea APK-ului din pagina Release a reușit în browserul autentificat la `2026-11-08T06:38:01Z`; fișierul primit are 722.172 bytes și identitatea din manifest. README-ul principal oferă acum pagina Release și asset-ul direct cu avertismentul de autentificare. Ediția rămâne `PREPARED` până când trece și proba anonimă.
+Checksum-ul și certificatul se verifică în [manifestul ediției](release-validation.json). Receipt-ul autentificat nu substituie poarta de acces anonim.
 
-Verificarea s-a făcut la `2026-11-07T22:16:42Z`. Diagnostic și asset identity sunt în [manifest](release-validation.json). Blocajul extern este urmărit în [J6-REL-01](../../docs/feedback/J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md); procesul de remediere este în [ATF_Release.md](../../docs/release/ATF_Release.md).
+## Calificare
 
-## Dovezi
+[Indexul rapoartelor și acoperirea](reports/README.md) prezintă probele locale. [Procesul de release](../../docs/release/ATF_Release.md) definește verificarea semnării și a descărcării publice.
 
-[Calificarea și rapoartele Extent](reports/README.md) includ rezultatele și capturile. [Manifestul](release-validation.json) fixează APK-ul, certificatul, commitul, asset-urile și observarea HTTP.
+## Blocaj activ
+
+[J6-REL-01](../../docs/feedback/J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) urmărește vizibilitatea anonimă. Diagnosticul tehnic și identitatea asset-ului sunt păstrate în manifest, nu în README-ul root.

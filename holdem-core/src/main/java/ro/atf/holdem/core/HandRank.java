@@ -5,6 +5,22 @@ import java.util.*;
 public final class HandRank {
     private HandRank() {}
 
+    public enum Category {
+        HIGH_CARD, ONE_PAIR, TWO_PAIR, THREE_OF_A_KIND, STRAIGHT, FLUSH,
+        FULL_HOUSE, FOUR_OF_A_KIND, STRAIGHT_FLUSH
+    }
+
+    public static Category categoryOf(List<Card> cards) {
+        return categoryOfScore(bestOf(cards));
+    }
+
+    public static Category categoryOfScore(int score) {
+        int category = score >>> 20;
+        if (category >= Category.values().length)
+            throw new IllegalArgumentException("Unknown packed hand category: " + category);
+        return Category.values()[category];
+    }
+
     /** Higher scores win. Suits never break ties. */
     public static int bestOf(List<Card> cards) {
         if (cards.size() < 5 || cards.size() > 7 || new HashSet<>(cards).size() != cards.size())

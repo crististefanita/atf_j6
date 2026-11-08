@@ -45,7 +45,26 @@ flowchart LR
     Library["Card Table · AAR și JAR din J4"] --> App
 ```
 
-Gradle compilează sursele `holdem-core` pentru Java 17. Motorul expune o vedere imutabilă pentru un loc fix. Sesiunea leagă fiecare comandă umană de identitatea mâinii și revizia turului, apoi trece prin același validator și pentru răspunsurile adversarilor. În turneu, `Tournament` păstrează stivele și alege următorul dealer dintre locurile cu jetoane. Sesiunea Android stabilește când parcursul uman se încheie și reface rundele din seed și comenzile acceptate. UI rotește locurile în jurul jucătorului propriu și prezintă plata mâinii înainte de ecranul final. [Integrarea și frontiera bibliotecii](../../holdem-android/README.md)
+Gradle compilează sursele `holdem-core` pentru Java 17. Motorul expune o vedere imutabilă pentru un loc fix. Sesiunea leagă fiecare comandă de identitatea mâinii și revizia turului, apoi trece prin același validator și pentru răspunsurile adversarilor. În turneu, `Tournament` păstrează stivele și alege următorul dealer dintre locurile cu jetoane. Sesiunea Android persistă fiecare acțiune acceptată împreună cu actorul fizic, seed-ul și timpul de start al rundelor. La restaurare, replay-ul aplică din nou fiecare acțiune numai când motorul confirmă actorul și legalitatea; checkpoint-ul invalid nu este expus ca joc. La suspendare, timerul turneului se oprește, iar mutările AI rămân read-only până când Activity revine și revalidează tokenul; la revenire scena confirmată se redesenează. UI rotește locurile în jurul jucătorului propriu, colorează locul activ și prezintă colectarea cărților spre pot înaintea ecranului final. [Integrarea și frontiera bibliotecii](../../holdem-android/README.md)
+
+```mermaid
+sequenceDiagram
+    participant UI as HoldemActivity
+    participant Session as LocalHoldemGame
+    participant Engine as HoldemHand / Tournament
+    participant Store as Checkpoint privat
+    UI->>Session: comandă cu tokenul turei
+    Session->>Engine: validează actor și mutare
+    Engine-->>Session: stare nouă
+    Session-->>UI: snapshot vizibil
+    UI->>Store: jurnal + actori + metadate
+    Note over UI,Store: fiecare acțiune automată apare individual după 550 ms și un cadru vizibil
+    UI->>Session: onPause · oprește ceasul și salvează checkpoint-ul
+    Note over UI: sugestia AI nu schimbă starea până când Activity este activă din nou
+    Store-->>UI: încărcare la redeschidere
+    UI->>Engine: replay ordonat al acțiunilor
+    Engine-->>UI: sesiune restaurată sau eroare explicită
+```
 
 ## Reducer și replay
 

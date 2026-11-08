@@ -44,11 +44,11 @@ J6 trebuie să permită dezvoltarea și evaluarea unui AI de No-Limit Texas Hold
 
 ## Interfață locală Android
 
-Primul increment reutilizează meniul, selectorul de limbă, editorul numelui, geometria mesei, chenarele și mâna centrată din J4/J5. J6 furnizează potul, jetoanele, contribuțiile, dealerul, actorul și cele cinci poziții pentru cărțile comunitare. Limba implicită este engleza. Româna se poate selecta din meniu.
+Primul increment reutilizează meniul, selectorul de limbă, editorul numelui, geometria mesei, chenarele și mâna centrată din J4/J5. Limba implicită este engleza; româna se poate selecta din meniu.
 
-Mâna locală heads-up sau la 4–6 locuri folosește o observație fixată pe jucătorul uman și comenzi validate de motor. Adversarii de antrenament dau check sau call, iar decontarea arată distribuția jetoanelor. Cărțile adversarilor rămân ascunse și la rezultat. [Contractul interfeței](../../holdem-android/README.md) · [Criteriile mâinii interactive](../feedback/J6-UI-01-INTERACTIVE-TABLE.md)
+Masa locală arată cărțile proprii, cărțile comunitare, potul, jetoanele, contribuțiile și rolurile. În timpul mâinii, cărțile adverse rămân cu fața în jos; după decontare sunt dezvăluite pentru recapitulare, inclusiv cele ale jucătorilor care au dat fold. Un marcaj textual Fold persistă pe locul retras până la următoarea mână. Eticheta centrală identifică explicit actorul; indicatorul combinației folosește doar cărțile proprii și board-ul public. Coach-ul AI oferă o acțiune legală, explică estimările disponibile și nu aplică mutarea. Butonul de preluare joacă mâna locală curentă prin aceeași validare a motorului. Politica nu primește niciodată cărțile adverse; proiecția de recapitulare le expune interfeței numai după decontarea terminală a mâinii. [Contractul interfeței](../../holdem-android/README.md) · [Criteriile mâinii interactive](../feedback/J6-UI-01-INTERACTIVE-TABLE.md) · [Coach și recapitulare](../feedback/J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md)
 
-Turneul local pornește la 4–6 locuri. La fiecare plată, stivele decid cine continuă și ce locuri sunt eliminate. Locul uman rămâne fix când se schimbă dealerul sau masa ajunge heads-up. Jucătorul vede decontarea ultimei mâini și poate deschide rezultatul parcursului său, fie victorie, fie eliminare. [Criteriile turneului](../feedback/J6-UI-03-TOURNAMENT-SANITY.md)
+Turneul local pornește la 4–6 locuri. La creare, jucătorul alege blindurile să crească la fiecare 1, 2, 3 sau 5 minute; implicit este 1 minut. Nivelul se aplică de la următoarea mână după expirarea intervalului. Eliminarea unui loc continuă să avanseze nivelul conform regulilor turneului. La fiecare plată, stivele decid cine continuă și ce locuri sunt eliminate. Locul uman rămâne fix când se schimbă dealerul sau masa ajunge heads-up. Ecranul terminal păstrează dezvăluirea ultimei mâini și arată rezultatul turneului. [Criteriile turneului](../feedback/J6-UI-03-TOURNAMENT-SANITY.md)
 
 ## P2 — îmbunătățire AI
 

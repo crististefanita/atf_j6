@@ -1,8 +1,31 @@
-# APK Android
+# Catalog APK Android
 
-## Candidat curent
+## Pe scurt
 
-- [0.1.0 — APK calificat local](0.1.0/README.md)
-- Stare: `PREPARED` — build-ul semnat, 88 teste, sanity Android API 28 și rapoartele Extent au trecut. GitHub Release `v0.1.0` și ambele assets sunt create; ultima probă anonimă înregistrată (`2026-11-07T22:16:42Z`) a primit HTTP 404 pentru profil, repo, pagina Release și APK. Descărcarea completă a APK-ului a reușit în browserul autentificat. `PUBLISHED` rămâne blocat până trece descărcarea completă fără autentificare.
+Acest director indexează edițiile Android. Dosarul unei versiuni deține identitatea binarului, starea publicării și dovezile specifice acelei ediții.
 
-Fiecare versiune păstrează APK-ul, checksum-ul, notele, calificarea și rapoartele Extent relevante. README-ul principal poate arăta linkurile exactei versiuni cu mențiunea că autentificarea GitHub este necesară; starea `PUBLISHED` cere separat proba anonimă.
+## Versiuni
+
+| Versiune | Documentație | Identitatea pachetului |
+|---|---|---|
+| 0.1.0 | [Dosarul ediției](0.1.0/README.md) | [Manifestul de validare](0.1.0/release-validation.json) |
+
+[`index.json`](index.json) selectează versiunea curentă și starea ei. Nu duplicați în acest index numărul testelor, hash-urile sau rezultatele unei verificări.
+
+## Stări de publicare
+
+| Stare | Înțeles |
+|---|---|
+| `PREPARED` | APK-ul semnat și verificările locale sunt în dosarul ediției; descărcarea anonimă nu este încă acceptată. |
+| `PUBLISHED` | APK-ul poate fi descărcat complet fără autentificare, iar identitatea binarului corespunde manifestului. |
+
+README-ul principal al proiectului păstrează două legături ordonate: pagina Release, apoi APK-ul. Limitările de acces și detaliile de verificare aparțin dosarului versiunii.
+
+## Conținutul fiecărei ediții
+
+- APK și checksum;
+- versiune, package name, semnare și commit sursă;
+- manifest de verificare și raportare;
+- indexul rapoartelor Extent relevante.
+
+[Procesul de build, semnare și publicare](../docs/release/ATF_Release.md) definește poarta comună pentru edițiile următoare.

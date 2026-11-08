@@ -54,7 +54,7 @@ public final class MonteCarloEquityEstimator {
         double shares = 0.0;
         double squaredShares = 0.0;
         for (int trial = 0; trial < samples; trial++) {
-            Card[] draw = deck.toArray(Card[]::new);
+            Card[] draw = deck.toArray(new Card[deck.size()]);
             for (int i = 0; i < draws; i++) {
                 int selected = i + random.nextInt(draw.length - i);
                 Card temporary = draw[i];

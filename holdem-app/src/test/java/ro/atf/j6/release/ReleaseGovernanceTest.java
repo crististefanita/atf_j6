@@ -50,22 +50,23 @@ class ReleaseGovernanceTest {
         String page = "https://github.com/crististefanita/atf_j6/releases/tag/v0.1.0";
         String apk = "https://github.com/crististefanita/atf_j6/releases/download/v0.1.0/HoldemLab-0.1.0.apk";
         String publishedGuide = "## Android\n- [Release](" + page + ")\n- [APK](" + apk + ")\n";
-        String authenticatedGuide = "## Android\nAutentificare GitHub necesară.\n- [Release](" + page + ")\n- [APK](" + apk + ")\n";
-        recordRoute(checks, "DRAFT has no public download route", "DRAFT", "## Android", "0.1.0", false);
+        recordRoute(checks, "DRAFT has no public download route", "DRAFT", "## Android", "0.1.0", false, false);
         recordRoute(checks, "PREPARED without browser proof remains local", "PREPARED",
-                "## Android\n- [Candidate](release/0.1.0/README.md)", "0.1.0", false);
-        recordRoute(checks, "PREPARED allows verified account download", "PREPARED", authenticatedGuide, "0.1.0", true);
-        recordRoute(checks, "PREPARED direct links require an account notice", "PREPARED", publishedGuide, "0.1.0", false);
-        recordRoute(checks, "Exact current release and APK are accepted", "PUBLISHED", publishedGuide, "0.1.0", true);
-        recordRoute(checks, "DRAFT cannot expose an APK", "DRAFT", publishedGuide, "0.1.0", false);
+                "## Android\n- [Candidate](release/0.1.0/README.md)", "0.1.0", false, false);
+        recordRoute(checks, "PREPARED allows minimal links after authenticated download proof", "PREPARED",
+                publishedGuide, "0.1.0", true, true);
+        recordRoute(checks, "PREPARED without browser proof blocks direct links", "PREPARED",
+                publishedGuide, "0.1.0", false, false);
+        recordRoute(checks, "Exact current release and APK are accepted", "PUBLISHED", publishedGuide, "0.1.0", false, true);
+        recordRoute(checks, "DRAFT cannot expose an APK", "DRAFT", publishedGuide, "0.1.0", false, false);
         recordRoute(checks, "An older version is rejected", "PUBLISHED",
-                publishedGuide.replace("0.1.0", "0.0.9"), "0.1.0", false);
+                publishedGuide.replace("0.1.0", "0.0.9"), "0.1.0", false, false);
         recordRoute(checks, "Duplicate direct asset links are rejected", "PUBLISHED",
-                publishedGuide + "- [Again](" + apk + ")", "0.1.0", false);
+                publishedGuide + "- [Again](" + apk + ")", "0.1.0", false, false);
         String rawAsset = "https://raw.githubusercontent.com/crististefanita/atf_j6/main/release/0.1.0/HoldemLab-0.1.0.apk";
-        recordRoute(checks, "Raw source links are rejected", "PUBLISHED", publishedGuide.replace(apk, rawAsset), "0.1.0", false);
+        recordRoute(checks, "Raw source links are rejected", "PUBLISHED", publishedGuide.replace(apk, rawAsset), "0.1.0", false, false);
         String folderAsset = "release/0.1.0/HoldemLab-0.1.0.apk";
-        recordRoute(checks, "Catalog folder is not a public asset", "PUBLISHED", publishedGuide.replace(apk, folderAsset), "0.1.0", false);
+        recordRoute(checks, "Catalog folder is not a public asset", "PUBLISHED", publishedGuide.replace(apk, folderAsset), "0.1.0", false, false);
         String downloader = Files.readString(root.resolve("scripts/Test-PublishedHoldemDownload.ps1"));
         add(checks, "Anonymous download runner disables credentials and cookies", "credentialless HTTP client",
                 downloader.contains("UseCookies = $false") && downloader.contains("$handler.Credentials = $null")
@@ -82,22 +83,56 @@ class ReleaseGovernanceTest {
                         + check.expected() + " actual " + check.actual()).toList().toString());
     }
 
-    @Test void mainReadmeOmitsChecksumAndPinsTheCurrentReleaseFolder() throws Exception {
+    @Test void mainReadmeKeepsOnlyCurrentReleaseDocumentationAndApkLinks() throws Exception {
         Path root = projectRoot();
         var checks = new ArrayList<AtfAssertion>();
         JsonNode index = JSON.readTree(root.resolve("release/index.json").toFile());
         String version = index.path("currentVersion").asText();
+        String state = index.path("state").asText();
         String mainReadme = Files.readString(root.resolve("README.md"));
         add(checks, "Main README omits checksum labels and digests", "no checksum disclosure",
                 containsChecksumDisclosure(mainReadme) ? "checksum disclosure present" : "no checksum disclosure");
-        add(checks, "Main README links the current version dossier", "current version and exact dossier",
-                referencesVersionedDossier(mainReadme, version) ? "current version and exact dossier" : "version/dossier drift");
-        String staleVersion = version.equals("0.0.1") ? "0.0.2" : "0.0.1";
-        add(checks, "Governance rejects a stale dossier path", "blocked",
-                !referencesVersionedDossier("`" + version + "` [Ediție](release/" + staleVersion + "/README.md)", version)
+        add(checks, "Main README release links identify the indexed version", "two current version labels",
+                hasCurrentReleaseLabels(mainReadme, version) ? "two current version labels" : "version labels drift");
+        add(checks, "Main README release block contains only the two intended links", "minimal ordered release and APK links",
+                hasMainReleaseGuide(mainReadme, version, state) ? "minimal ordered release and APK links" : "extra detail, link, or route drift");
+        add(checks, "Main README links the technical catalog and release process", "both documentation links",
+                hasReleaseDocumentationLinks(mainReadme) ? "both documentation links" : "catalog/process link missing or misplaced");
+
+        String preparedGuide = releaseGuideFixture(version, "PREPARED");
+        add(checks, "Governance rejects a missing Jocul heading", "blocked",
+                !hasMainReleaseGuide(preparedGuide.replace("## Jocul", "## Android"), version, "PREPARED")
                         ? "blocked" : "accepted");
+        add(checks, "Governance rejects reversed release and APK links", "blocked",
+                !hasMainReleaseGuide(reverseGameBullets(preparedGuide), version, "PREPARED") ? "blocked" : "accepted");
+        add(checks, "Governance rejects an extra release link", "blocked",
+                !hasMainReleaseGuide(preparedGuide.replace("\n\n## Cerințe și documentație",
+                        "\n- [APK duplicat](https://github.com/crististefanita/atf_j6/releases/download/v" + version
+                                + "/HoldemLab-" + version + ".apk)\n\n## Cerințe și documentație"), version, "PREPARED")
+                        ? "blocked" : "accepted");
+        String apkUrl = "https://github.com/crististefanita/atf_j6/releases/download/v" + version
+                + "/HoldemLab-" + version + ".apk";
+        add(checks, "Governance rejects file size noise", "blocked",
+                !hasMainReleaseGuide(preparedGuide.replace("](" + apkUrl + ")**", "](" + apkUrl + ")** — 722172 bytes"), version, "PREPARED")
+                        ? "blocked" : "accepted");
+        add(checks, "Governance rejects authentication notes in the game block", "blocked",
+                !hasMainReleaseGuide(preparedGuide.replace("\n- **[Descarcă", "\nAutentificare GitHub necesară.\n- **[Descarcă"), version, "PREPARED")
+                        ? "blocked" : "accepted");
+        String pageUrl = "https://github.com/crististefanita/atf_j6/releases/tag/v" + version;
+        add(checks, "Governance rejects lifecycle state noise in the game block", "blocked",
+                !hasMainReleaseGuide(preparedGuide.replace("](" + pageUrl + ")**\n- **[Descarcă",
+                        "](" + pageUrl + ")** — PREPARED\n- **[Descarcă"), version, "PREPARED")
+                        ? "blocked" : "accepted");
+        add(checks, "Governance rejects stale release URLs", "blocked",
+                !hasMainReleaseGuide(preparedGuide.replace("v" + version, "v9.9.9")
+                        .replace("HoldemLab-" + version, "HoldemLab-9.9.9"), version, "PREPARED")
+                        ? "blocked" : "accepted");
+        add(checks, "Governance requires catalog and process links", "blocked",
+                !hasReleaseDocumentationLinks(preparedGuide.replace("[Catalogul release-urilor](release/README.md)", "Catalog omis"))
+                        ? "blocked" : "accepted");
+        String staleVersion = version.equals("0.0.1") ? "0.0.2" : "0.0.1";
         add(checks, "Governance rejects a stale README version", "blocked",
-                !referencesVersionedDossier("`" + staleVersion + "` [Ediție](release/" + version + "/README.md)", version)
+                !hasMainReleaseGuide(releaseGuideFixture(staleVersion, "PREPARED"), version, "PREPARED")
                         ? "blocked" : "accepted");
 
         String digest = "a".repeat(64);
@@ -107,10 +142,28 @@ class ReleaseGovernanceTest {
                 containsChecksumDisclosure("Checksum: " + digest) ? "blocked" : "not blocked");
         add(checks, "Governance detects a bare digest", "blocked",
                 containsChecksumDisclosure(digest) ? "blocked" : "not blocked");
-        add(checks, "Governance accepts ordinary release navigation", "allowed",
-                !containsChecksumDisclosure("Release 0.1.0 · dosarul ediției și rapoarte") ? "allowed" : "rejected");
+        add(checks, "Governance accepts the minimal release and APK links", "allowed",
+                hasMainReleaseGuide(preparedGuide, version, "PREPARED") ? "allowed" : "rejected");
 
-        publish(root, "J6MainReadmeGovernance", "No checksum in the project README; current release dossier is linked", checks);
+        publish(root, "J6MainReadmeGovernance", "Two current release links without size, checksum, state, or extra routes", checks);
+        assertTrue(!checks.isEmpty() && checks.stream().allMatch(AtfAssertion::passed),
+                () -> checks.stream().filter(check -> !check.passed()).map(check -> check.name() + " expected "
+                        + check.expected() + " actual " + check.actual()).toList().toString());
+    }
+
+    @Test void androidMinSdkGovernanceRejectsUnsupportedCollectionMethods() throws Exception {
+        Path root = projectRoot();
+        var checks = new ArrayList<AtfAssertion>();
+        add(checks, "Governance rejects Stream.toList in packaged runtime code", "blocked",
+                unsupportedCollectionApi("seats.stream().map(this::project).toList()") ? "blocked" : "allowed");
+        add(checks, "Governance rejects Collection.toArray(IntFunction) in packaged runtime code", "blocked",
+                unsupportedCollectionApi("deck.toArray(Card[]::new)") ? "blocked" : "allowed");
+        add(checks, "Governance accepts Android-compatible collectors and array conversion", "allowed",
+                !unsupportedCollectionApi("seats.stream().map(this::project).collect(Collectors.toList()); "
+                        + "deck.toArray(new Card[deck.size()])") ? "allowed" : "blocked");
+        add(checks, "Current Android runtime sources satisfy minSdk 26 collection policy",
+                "no unsupported collection API in packaged Java", androidRuntimeCollectionApiPolicy(root));
+        publish(root, "J6AndroidRuntimeApiGovernance", "Android minSdk collection API compatibility", checks);
         assertTrue(!checks.isEmpty() && checks.stream().allMatch(AtfAssertion::passed),
                 () -> checks.stream().filter(check -> !check.passed()).map(check -> check.name() + " expected "
                         + check.expected() + " actual " + check.actual()).toList().toString());
@@ -137,13 +190,24 @@ class ReleaseGovernanceTest {
         add(checks, "Allowed release lifecycle state", allowedState ? "allowed " + state : "unknown",
                 allowedState ? "allowed " + state : "unknown");
         add(checks, "Index and validation state", state, publication.path("state").asText());
-        add(checks, "Main README identifies the indexed version and evidence", version,
-                referencesVersionedDossier(mainReadme, version) ? version : "missing or stale version dossier");
+        add(checks, "Main README release labels use the indexed version", "two current version labels",
+                hasCurrentReleaseLabels(mainReadme, version) ? "two current version labels" : "version labels drift");
+        add(checks, "Main README keeps the shared release block in sync", "ordered state-valid release links",
+                hasMainReleaseGuide(mainReadme, version, state) ? "ordered state-valid release links" : "format, version, or state drift");
+        add(checks, "Main README links the release catalog and process", "both documentation links",
+                hasReleaseDocumentationLinks(mainReadme) ? "both documentation links" : "catalog/process link missing or misplaced");
+        add(checks, "Release catalog link target exists", "release/README.md",
+                Files.isRegularFile(root.resolve("release/README.md")) ? "release/README.md" : "missing");
+        add(checks, "Release process link target exists", "docs/release/ATF_Release.md",
+                Files.isRegularFile(root.resolve("docs/release/ATF_Release.md"))
+                        ? "docs/release/ATF_Release.md" : "missing");
         add(checks, "Main README contains no checksum material", "no checksum disclosure",
                 containsChecksumDisclosure(mainReadme) ? "checksum disclosure present" : "no checksum disclosure");
         add(checks, "APK filename follows the product version", packageName, identity.path("apkName").asText());
         add(checks, "Android Gradle version matches the release", version,
                 gradleVersion(Files.readString(root.resolve("holdem-android/app/build.gradle"))));
+        add(checks, "Android runtime avoids collection APIs missing on minSdk 26",
+                "no unsupported collection API in packaged Java", androidRuntimeCollectionApiPolicy(root));
         String androidBuild = Files.readString(root.resolve("holdem-android/app/build.gradle"));
         add(checks, "Runtime language resources cannot split from the APK", "bundle language split disabled",
                 androidBuild.contains("enableSplit = false") ? "bundle language split disabled" : "language split may be enabled");
@@ -173,12 +237,9 @@ class ReleaseGovernanceTest {
                 && validation.path("authenticatedBrowserDownload").path("bytes").asLong() == identity.path("apkBytes").asLong()
                 && validation.path("authenticatedBrowserDownload").path("sha256").asText().equals(identity.path("sha256").asText());
         boolean authenticatedPreparedDownload = state.equals("PREPARED") && browserReceiptMatches;
-        boolean accountNotice = mainReadme.toLowerCase(java.util.Locale.ROOT).contains("autentificare github");
         if (state.equals("PREPARED") && (mainReadme.contains(releaseUrl) || mainReadme.contains(apkUrl))) {
             add(checks, "PREPARED links have a complete authenticated browser receipt", "verified bytes and digest",
                     browserReceiptMatches ? "verified bytes and digest" : "missing or mismatched browser receipt");
-            add(checks, "PREPARED links disclose the authentication requirement", "GitHub account required",
-                    accountNotice ? "GitHub account required" : "account requirement missing");
         }
         add(checks, "README has the current release page", published || authenticatedPreparedDownload ? releaseUrl : "no release route",
                 (published || authenticatedPreparedDownload) && mainReadme.contains(releaseUrl) ? releaseUrl
@@ -249,9 +310,116 @@ class ReleaseGovernanceTest {
         assertTrue(inspection.isCompliant(), () -> inspection.violations().toString());
     }
 
-    private static boolean referencesVersionedDossier(String readme, String version) {
-        return readme.contains("`" + version + "`")
-                && readme.contains("(release/" + version + "/README.md)");
+    private static boolean hasMainReleaseGuide(String readme, String version, String state) {
+        String section = markdownSection(readme, "## Jocul");
+        if (section.isBlank()) return false;
+        String githubReleases = "https://github.com/crististefanita/atf_j6/releases/";
+        if (state.equals("DRAFT")) {
+            String dossier = "- **[Hold'em Lab " + version + " — dosarul ediției](release/" + version + "/README.md)**";
+            List<String> content = section.lines().map(String::strip).filter(line -> !line.isEmpty()).toList();
+            return content.equals(List.of("## Jocul", dossier))
+                    && countOccurrences(section, githubReleases) == 0 && !section.contains(".apk");
+        }
+        if (!List.of("PREPARED", "PUBLISHED").contains(state)) return false;
+
+        String releaseUrl = githubReleases + "tag/v" + version;
+        String apkUrl = githubReleases + "download/v" + version + "/HoldemLab-" + version + ".apk";
+        String releaseLine = "- **[Hold'em Lab " + version + " — documentația release-ului](" + releaseUrl + ")**";
+        String apkLine = "- **[Descarcă APK-ul Hold'em Lab " + version + "](" + apkUrl + ")**";
+        List<String> content = section.lines().map(String::strip).filter(line -> !line.isEmpty()).toList();
+        return content.equals(List.of("## Jocul", releaseLine, apkLine))
+                && countOccurrences(section, githubReleases) == 2;
+    }
+
+    private static String androidRuntimeCollectionApiPolicy(Path root) throws Exception {
+        for (Path directory : List.of(root.resolve("holdem-core/src/main/java"),
+                root.resolve("holdem-ai/src/main/java"), root.resolve("holdem-android/app/src/main/java"))) {
+            if (!Files.isDirectory(directory)) continue;
+            try (var files = Files.walk(directory)) {
+                for (Path file : files.filter(Files::isRegularFile)
+                        .filter(path -> path.toString().endsWith(".java")).toList()) {
+                    if (unsupportedCollectionApi(Files.readString(file))) {
+                        return "unsupported collection API in " + root.relativize(file).toString().replace('\\', '/');
+                    }
+                }
+            }
+        }
+        return "no unsupported collection API in packaged Java";
+    }
+
+    private static boolean unsupportedCollectionApi(String source) {
+        return java.util.regex.Pattern.compile("(?<!Collectors)\\.toList\\s*\\(").matcher(source).find()
+                || java.util.regex.Pattern.compile("\\bdeck\\.toArray\\s*\\(\\s*Card\\[\\]\\s*::\\s*new\\s*\\)")
+                .matcher(source).find();
+    }
+
+    private static boolean hasCurrentReleaseLabels(String readme, String version) {
+        return countOccurrences(markdownSection(readme, "## Jocul"), "Hold'em Lab " + version) == 2;
+    }
+
+    private static boolean hasReleaseDocumentationLinks(String readme) {
+        String section = markdownSection(readme, "## Cerințe și documentație");
+        return !section.isBlank()
+                && section.contains("[Catalogul release-urilor](release/README.md)")
+                && section.contains("[Procesul de release Android](docs/release/ATF_Release.md)")
+                && countOccurrences(section, "(release/README.md)") == 1
+                && countOccurrences(section, "(docs/release/ATF_Release.md)") == 1;
+    }
+
+    private static String markdownSection(String markdown, String heading) {
+        String[] lines = markdown.split("\\R", -1);
+        int start = -1;
+        for (int index = 0; index < lines.length; index++) {
+            if (lines[index].strip().equals(heading)) {
+                if (start >= 0) return "";
+                start = index;
+            }
+        }
+        if (start < 0) return "";
+        int end = lines.length;
+        for (int index = start + 1; index < lines.length; index++) {
+            if (lines[index].startsWith("## ")) {
+                end = index;
+                break;
+            }
+        }
+        return String.join("\n", java.util.Arrays.copyOfRange(lines, start, end));
+    }
+
+    private static String releaseGuideFixture(String version, String state) {
+        String page = "https://github.com/crististefanita/atf_j6/releases/tag/v" + version;
+        String apk = "https://github.com/crististefanita/atf_j6/releases/download/v" + version
+                + "/HoldemLab-" + version + ".apk";
+        if (state.equals("DRAFT")) {
+            return "## Jocul\n\n"
+                    + "- **[Hold'em Lab " + version + " — dosarul ediției](release/" + version + "/README.md)**\n\n"
+                    + "## Cerințe și documentație\n\n"
+                    + "- [Catalogul release-urilor](release/README.md)\n"
+                    + "- [Procesul de release Android](docs/release/ATF_Release.md)\n";
+        }
+        return "## Jocul\n\n"
+                + "- **[Hold'em Lab " + version + " — documentația release-ului](" + page + ")**\n"
+                + "- **[Descarcă APK-ul Hold'em Lab " + version + "](" + apk + ")**\n\n"
+                + "## Cerințe și documentație\n\n"
+                + "- [Catalogul release-urilor](release/README.md)\n"
+                + "- [Procesul de release Android](docs/release/ATF_Release.md)\n";
+    }
+
+    private static String reverseGameBullets(String readme) {
+        String section = markdownSection(readme, "## Jocul");
+        List<String> bullets = section.lines().map(String::strip).filter(line -> line.startsWith("- ")).toList();
+        if (bullets.size() != 2) return readme;
+        return readme.replace(bullets.get(0) + "\n" + bullets.get(1), bullets.get(1) + "\n" + bullets.get(0));
+    }
+
+    private static int countOccurrences(String text, String needle) {
+        int count = 0;
+        int offset = 0;
+        while ((offset = text.indexOf(needle, offset)) >= 0) {
+            count++;
+            offset += needle.length();
+        }
+        return count;
     }
 
     private static boolean containsChecksumDisclosure(String text) {
@@ -264,8 +432,8 @@ class ReleaseGovernanceTest {
     }
 
     private static void recordRoute(List<AtfAssertion> checks, String name, String state, String readme,
-                                    String version, boolean expected) {
-        boolean accepted = routePolicy(state, readme, version);
+                                    String version, boolean authenticatedBrowserReceipt, boolean expected) {
+        boolean accepted = routePolicy(state, readme, version, authenticatedBrowserReceipt);
         add(checks, name, expected ? "accepted" : "blocked", accepted == expected
                 ? (expected ? "accepted" : "blocked") : (accepted ? "exposed" : "rejected"));
     }
@@ -275,7 +443,7 @@ class ReleaseGovernanceTest {
         return matcher.find() ? matcher.group(1) : "missing";
     }
 
-    private static boolean routePolicy(String state, String readme, String version) {
+    private static boolean routePolicy(String state, String readme, String version, boolean authenticatedBrowserReceipt) {
         String prefix = "https://github.com/crististefanita/atf_j6/releases/";
         String page = prefix + "tag/v" + version;
         String apk = prefix + "download/v" + version + "/HoldemLab-" + version + ".apk";
@@ -284,8 +452,7 @@ class ReleaseGovernanceTest {
                 && readme.lines().filter(line -> line.contains(apk)).count() == 1
                 && !readme.contains("raw.githubusercontent.com") && !readme.contains("/releases/latest");
         if (state.equals("PUBLISHED")) return exactCurrentLinks;
-        return state.equals("PREPARED") && exactCurrentLinks
-                && readme.toLowerCase(java.util.Locale.ROOT).contains("autentificare github");
+        return state.equals("PREPARED") && exactCurrentLinks && authenticatedBrowserReceipt;
     }
 
     private static Path projectRoot() {

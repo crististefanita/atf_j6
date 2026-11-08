@@ -38,6 +38,8 @@
     <string name="board">Community cards</string>
     <string name="hand">Your hand</string>
     <string name="restore_error">The hand could not be restored.</string>
+    <string name="continue_game">Continue saved game</string>
+    <string name="checkpoint_error">The move was applied, but the latest game checkpoint could not be saved.</string>
     <string name="hand_complete">Hand complete</string>
     <string name="settled_pot">Pot paid · %1$d</string>
     <string name="received">Received</string>
@@ -55,4 +57,32 @@
     <string name="invalid_amount">Enter an amount in the range above.</string>
     <string name="invalid_amount_compact">Use a value from %1$d to %2$d.</string>
     <string name="chip_number" translatable="false">%1$d</string>
+    <string name="blind_interval">Blind level interval</string>
+    <string name="blind_interval_option">Every %1$d min</string>
+    <string name="tournament_blinds">Level %1$d · blinds %2$d/%3$d · every %4$d min</string>
+    <string name="fixed_blinds">Blinds · %1$d/%2$d</string>
+    <string name="folded_badge">Fold</string>
+    <string name="turn_status">To act · %1$s</string>
+    <string name="best_hand_waiting">Best hand · waiting for community cards</string>
+    <string name="best_hand">Your best hand · %1$s</string>
+    <string name="hand_high_card">High card</string>
+    <string name="hand_one_pair">One pair</string>
+    <string name="hand_two_pair">Two pair</string>
+    <string name="hand_three_of_a_kind">Three of a kind</string>
+    <string name="hand_straight">Straight</string>
+    <string name="hand_flush">Flush</string>
+    <string name="hand_full_house">Full house</string>
+    <string name="hand_four_of_a_kind">Four of a kind</string>
+    <string name="hand_straight_flush">Straight flush</string>
+    <string name="ai_thinking">AI coach is evaluating this decision…</string>
+    <string name="ai_hint">AI %5$s suggests %1$s · equity %2$s · pot odds %3$s · target %4$s · n=%6$s · ±%7$s</string>
+    <string name="ai_hint_description">Policy %5$s suggests action %1$s. Estimated equity %2$s. Pot price %3$s. Required equity %4$s. Samples %6$s. Standard error %7$s.</string>
+    <string name="ai_finish_hand">Let AI finish this hand</string>
+    <string name="ai_playing">AI is playing this hand…</string>
+    <string name="ai_action_error">AI could not complete the hand. The current hand is still available.</string>
+    <string name="hidden_player_card">Face-down player card</string>
+    <string name="opponent_cards">Player cards</string>
+    <string name="post_game_review">Cards from the final hand · post-game review</string>
+    <string name="no_cards_in_last_hand">Not dealt in this hand</string>
+    <string name="unknown_player">Unknown player</string>
 </resources>

@@ -3,6 +3,7 @@ package ro.atf.holdem.ai;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import ro.atf.holdem.core.*;
 
 /** Small reproducible mixed policy for exercising bets without a premium hole card. */
@@ -79,7 +80,7 @@ public final class DeterministicBluffPolicy implements DecisionPolicy {
         }
         if (boardIndex < 0) return false;
         List<String> streetActions = history.subList(boardIndex + 1, history.size()).stream()
-                .filter(event -> event.startsWith(street + " ")).toList();
+                .filter(event -> event.startsWith(street + " ")).collect(Collectors.toList());
         return !streetActions.isEmpty() && streetActions.stream()
                 .allMatch(event -> event.matches(street + " \\d+ CHECK 0"));
     }

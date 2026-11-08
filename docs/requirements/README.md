@@ -1,31 +1,38 @@
 # Cerințe J6
 
-Acest director este contractul de produs înaintea implementării. Cerințele disting patru lucruri care nu trebuie confundate:
+## Pe scurt
 
-1. corectitudinea regulilor;
-2. calitatea deciziei AI;
-3. robustețea aplicației și a transportului online;
-4. profitabilitatea financiară, care nu poate fi garantată de software.
+Acest director definește contractele de produs și condițiile de promovare. Folosiți documentul potrivit domeniului, iar `README.md` rămâne harta comună.
 
-## Ordinea de livrare
+| Întrebare | Document owner |
+|---|---|
+| Ce trebuie să ofere produsul și cui? | [Cerințe de produs](PRODUCT_REQUIREMENTS.md) |
+| Ce stări și reguli are mâna? | [Cerințe de domeniu](DOMAIN_REQUIREMENTS.md) |
+| Cum funcționează masa, blindurile și turneul? | [Reguli de turneu](TOURNAMENT_RULES.md) |
+| Cum se măsoară decizia AI? | [Cerințe AI și evaluare](AI_REQUIREMENTS.md) |
+| Ce limitează o eventuală conexiune externă? | [Cerințe online și siguranță](ONLINE_REQUIREMENTS.md) |
 
-| Etapă | Rezultat obligatoriu | Nu se promovează fără |
+## Ordinea de maturizare
+
+| Etapă | Contract | Poarta de promovare |
 |---|---|---|
-| E0 | Model de cărți și stare | invariantă de conservare a cărților |
-| E1 | Motor legal Hold'em | testare exhaustivă pe stări mici și replay |
-| E2 | Evaluator și equity | comparație cu oracol independent |
-| E3 | Arena locală | seed, audit, mai multe politici și rezultate repetabile |
-| E4 | AI baseline | benchmark pe distribuții nefolosite la reglaj |
-| E5 | Adaptor online | protocol, timeout, reconectare și idempotency |
-| E6 | AI avansat | benchmark statistic și regresii anti-exploit |
+| E0 | Model de cărți și stare | Invariantă de conservare a cărților. |
+| E1 | Motor legal Hold’em | Stări-limită și replay independent. |
+| E2 | Evaluator și equity | Comparație cu un oracol independent. |
+| E3 | Arena locală | Seed, audit, politici comparabile și rezultate reproductibile. |
+| E4 | AI baseline | Set de evaluare separat de reglaj. |
+| E5 | Adaptor online | Autorizare, protocol, timeout, reconectare și idempotency. |
+| E6 | AI avansat | Benchmark statistic și regresii anti-exploit. |
+
+Etapele online și AI avansat nu sunt declarate livrate doar fiindcă au cerințe scrise. Starea reală se verifică în [codul și testele ownerului](../../README.md).
 
 ## Termeni de acceptanță
 
 - `legal`: acțiunea este permisă de starea curentă;
-- `correct`: motorul produce tranziția și plata regulilor Hold'em;
+- `correct`: motorul produce tranziția și plata regulilor Hold’em;
 - `reproducible`: aceeași intrare și același seed produc același replay;
-- `stronger`: politica bate baseline-ul pe set de evaluare separat, cu incertitudine raportată;
-- `online-ready`: clientul poate relua o sesiune fără dublarea acțiunilor și fără pierderea stării;
+- `stronger`: politica depășește baseline-ul pe set de evaluare separat, cu incertitudine raportată;
+- `online-ready`: clientul reia sesiunea fără acțiuni duplicate sau pierderea stării și are autorizare explicită;
 - `authorized`: platforma publică sau confirmă că permite exact comportamentul clientului.
 
-Niciunul dintre acești termeni nu înseamnă „profit sigur”.
+Niciunul dintre acești termeni nu înseamnă profit financiar garantat.

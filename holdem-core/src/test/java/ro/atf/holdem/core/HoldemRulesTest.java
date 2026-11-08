@@ -78,6 +78,25 @@ class HoldemRulesTest {
         assertEquals(List.of(5, 10), before.seats().stream().map(HoldemTableViewState.Seat::contributed).toList());
     }
 
+    @Test void tableViewKeepsOpponentCardsHiddenUntilTheHandIsSettled() {
+        var hand = new HoldemHand(1, List.of(100, 100, 100, 100), 0, BLINDS, HoldemHand.shuffledDeck(55));
+        var duringHand = hand.viewFor(0);
+        assertTrue(duringHand.seats().stream().allMatch(seat -> seat.shownCards().isEmpty()));
+        assertEquals(2, duringHand.ownCards().size());
+
+        while (hand.actor() >= 0) {
+            var legal = hand.legal();
+            var action = legal.stream().filter(option -> option.type() == CHECK).findFirst()
+                    .orElseGet(() -> legal.stream().filter(option -> option.type() == CALL).findFirst().orElseThrow());
+            hand.act(hand.actor(), action.type(), action.amount());
+        }
+
+        var settled = hand.viewFor(0);
+        assertEquals(Street.COMPLETE, settled.street());
+        assertTrue(settled.seats().stream().allMatch(seat -> seat.shownCards().size() == 2));
+        assertEquals(settled.ownCards(), settled.seats().get(0).shownCards());
+    }
+
     @Test void policyObservationSchemaHasNoSeedDeckOrOpponentHoleCardField() {
         var names = Arrays.stream(HoldemObservation.class.getRecordComponents())
                 .map(java.lang.reflect.RecordComponent::getName).toList();
@@ -280,6 +299,18 @@ class HoldemRulesTest {
         assertEquals(HandRank.bestOf(first), HandRank.bestOf(second));
         assertTrue(HandRank.bestOf(cards("2c 3h 4s 5d 6c")) > HandRank.bestOf(cards("Ac 2h 3s 4d 5c")));
         assertThrows(IllegalArgumentException.class, () -> HandRank.bestOf(cards("Ac Ac 3s 4d 5c")));
+    }
+
+    @Test void handCategoryNamesCoverEveryPackedRankClass() {
+        assertEquals(HandRank.Category.HIGH_CARD, HandRank.categoryOf(cards("Ac 9d 7h 4s 2c")));
+        assertEquals(HandRank.Category.ONE_PAIR, HandRank.categoryOf(cards("Ac Ad 9h 4s 2c")));
+        assertEquals(HandRank.Category.TWO_PAIR, HandRank.categoryOf(cards("Ac Ad 9h 9s 2c")));
+        assertEquals(HandRank.Category.THREE_OF_A_KIND, HandRank.categoryOf(cards("Ac Ad Ah 9s 2c")));
+        assertEquals(HandRank.Category.STRAIGHT, HandRank.categoryOf(cards("Ac Kd Qh Js Tc")));
+        assertEquals(HandRank.Category.FLUSH, HandRank.categoryOf(cards("Ac 9c 7c 4c 2c")));
+        assertEquals(HandRank.Category.FULL_HOUSE, HandRank.categoryOf(cards("Ac Ad Ah 9s 9c")));
+        assertEquals(HandRank.Category.FOUR_OF_A_KIND, HandRank.categoryOf(cards("Ac Ad Ah As 9c")));
+        assertEquals(HandRank.Category.STRAIGHT_FLUSH, HandRank.categoryOf(cards("Ac Kc Qc Jc Tc")));
     }
 
     private static List<Card> cards(String labels) {

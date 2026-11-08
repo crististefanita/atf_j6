@@ -19,7 +19,7 @@ public final class TightAggressiveBaseline implements DecisionPolicy {
         LegalAction fold = observation.legalActions().stream().filter(a -> a.type() == ActionType.FOLD).findFirst().orElse(null);
 
         if (observation.street() == Street.PREFLOP && (hasPair || hasAce) && raise != null) {
-            int amount = (int) Math.clamp(2L * observation.pot(), raise.minAmount(), raise.maxAmount());
+            int amount = Math.toIntExact(Bounds.clamp(2L * observation.pot(), raise.minAmount(), raise.maxAmount()));
             return new Decision(ActionType.RAISE, amount, VERSION, "L0 premium preflop holding");
         }
         if (check != null && observation.toCall() == 0) return new Decision(ActionType.CHECK, 0, VERSION, "L0 no-cost continuation");

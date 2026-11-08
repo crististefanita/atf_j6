@@ -64,11 +64,11 @@ def verifyHoldemReleaseSigning = tasks.register('verifyHoldemReleaseSigning') {
         }
     }
 }
-tasks.matching { it.name in ['preReleaseBuild', 'preSanityBuild'] }.configureEach {
+tasks.matching { it.name in ['packageRelease', 'packageSanity', 'signReleaseBundle', 'signSanityBundle'] }.configureEach {
     dependsOn verifyHoldemReleaseSigning
 }
 
-def cardUi = 'ro.cardtable:card-table-ui:0.1.6'
+def cardUi = 'ro.cardtable:card-table-ui:0.1.7'
 def cardNames = 'ro.cardtable:card-table-names:0.1.0'
 def uiLibrary = rootProject.layout.projectDirectory.dir('ui-library')
 

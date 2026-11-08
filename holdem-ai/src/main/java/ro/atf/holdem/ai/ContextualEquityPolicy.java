@@ -1,6 +1,7 @@
 package ro.atf.holdem.ai;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import ro.atf.holdem.core.*;
 
 /** Uses sampled random-hand equity, pot price, live opponents, aggression and position. */
@@ -207,9 +208,9 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                 ? contextWeights.tournamentEliminationRiskMargin() : 0;
         int shortStackDiscount = gameMode == GameMode.TOURNAMENT && stackRisk.shortStack()
                 ? contextWeights.tournamentShortStackCallDiscount() : 0;
-        return (int) Math.clamp(Math.ceil(potOdds) + baseMargin + opponentMargin
+        return (int) Bounds.clamp(Math.ceil(potOdds) + baseMargin + opponentMargin
                 + aggressionMargin + positionMargin + uncertaintyMargin + largeBetMargin + allInMargin
-                + eliminationMargin - shortStackDiscount, 0, 98);
+                + eliminationMargin - shortStackDiscount, 0.0, 98.0);
     }
 
     int valueBetThreshold(HoldemObservation observation) {
@@ -220,12 +221,12 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         int aggressionMargin = Math.min(12, aggressionCountThisStreet(observation)
                 * contextWeights.opponentAggressionValueBetMargin());
         int modeMargin = gameMode == GameMode.TOURNAMENT ? contextWeights.tournamentValueBetMargin() : 0;
-        return (int) Math.clamp(valueBetThresholdPercent + opponentMargin + positionMargin
+        return Bounds.clamp(valueBetThresholdPercent + opponentMargin + positionMargin
                 + aggressionMargin + modeMargin, 5, 98);
     }
 
     private int betAmount(HoldemObservation observation, LegalAction legal, double edge) {
-        int fractionPercent = (int) Math.clamp(25 + Math.floor(edge), 25, 75);
+        int fractionPercent = (int) Bounds.clamp(25 + Math.floor(edge), 25.0, 75.0);
         long target = Math.max(legal.minAmount(), (long) observation.pot() * fractionPercent / 100);
         if (target > legal.maxAmount() || target >= observation.heroStack()) return legal.minAmount();
         return Math.toIntExact(target);
@@ -234,7 +235,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
     private int raiseAmount(HoldemObservation observation, LegalAction legal, double edge) {
         int callAmount = Math.min(observation.toCall(), observation.heroStack());
         long potAfterCall = (long) observation.pot() + callAmount;
-        int fractionPercent = (int) Math.clamp(25 + Math.floor(edge), 25, 75);
+        int fractionPercent = (int) Bounds.clamp(25 + Math.floor(edge), 25.0, 75.0);
         long raiseBy = Math.max((long) legal.minAmount() - callAmount,
                 potAfterCall * fractionPercent / 100);
         long target = callAmount + raiseBy;
@@ -317,7 +318,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
             price = Math.max(price, target);
         }
         List<PublicAllInRaise> opponentAllInRaises = allInRaiseAmounts.entrySet().stream()
-                .map(entry -> new PublicAllInRaise(entry.getKey(), entry.getValue())).toList();
+                .map(entry -> new PublicAllInRaise(entry.getKey(), entry.getValue())).collect(Collectors.toList());
         return new CallPressure(aggressions, potSized, opponentAllIn, opponentAllInRaises);
     }
 
@@ -345,7 +346,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         }
         if (measuredRaisers == 0) return 0;
         int adjustment = (int) Math.round(totalDelta / measuredRaisers);
-        return Math.clamp(adjustment, -contextWeights.shortStackShoveMaxMarginAdjustment(),
+        return Bounds.clamp(adjustment, -contextWeights.shortStackShoveMaxMarginAdjustment(),
                 contextWeights.shortStackShoveMaxMarginAdjustment());
     }
 
@@ -385,7 +386,8 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
             try {
                 String body = event.substring("SEATS [".length(), event.length() - 1);
                 List<Integer> parsed = body.isBlank() ? List.of()
-                        : Arrays.stream(body.split(",")).map(String::trim).map(Integer::parseInt).toList();
+                        : Arrays.stream(body.split(",")).map(String::trim).map(Integer::parseInt)
+                        .collect(Collectors.toList());
                 if (parsed.size() == observation.playerCount()
                         && observation.heroSeat() < parsed.size()
                         && parsed.get(observation.heroSeat()) == observation.physicalHeroSeat()) return parsed;
@@ -394,7 +396,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
             }
             break;
         }
-        return java.util.stream.IntStream.range(0, observation.playerCount()).boxed().toList();
+        return java.util.stream.IntStream.range(0, observation.playerCount()).boxed().collect(Collectors.toList());
     }
 
     private static int localSeat(List<Integer> physicalSeats, String token, int playerCount) {
@@ -429,7 +431,8 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
             try {
                 String body = event.substring("SEATS [".length(), event.length() - 1);
                 physicalSeats = body.isBlank() ? List.of()
-                        : Arrays.stream(body.split(",")).map(String::trim).map(Integer::parseInt).toList();
+                        : Arrays.stream(body.split(",")).map(String::trim).map(Integer::parseInt)
+                        .collect(Collectors.toList());
             } catch (NumberFormatException ignored) {
                 physicalSeats = null;
             }
@@ -486,7 +489,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
             LegalAction legal = find(observation.legalActions(), preferred);
             if (legal != null) return decision(preferred, legal.amount(), explanation);
         }
-        LegalAction legal = observation.legalActions().getFirst();
+        LegalAction legal = observation.legalActions().get(0);
         return decision(legal.type(), legal.amount(), explanation);
     }
 

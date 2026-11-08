@@ -1,15 +1,37 @@
 # Rapoarte 0.1.0
 
-Pachetul păstrează cele cinci rapoarte Extent care justifică APK-ul și gate-urile de release. Intermediarii, cache-urile și logurile brute rămân în `C:\work\holdem_back\release-runs`.
+## Pe scurt
 
-| Raport Extent | Acoperire | Rezultat |
+Acest index descrie rapoartele Extent incluse în pachetul 0.1.0. Capturile UI sunt inline; jurnalele brute, cache-urile și directoarele de build rămân sub `<external-release-run-root>`.
+
+| Raport | Acoperire | Rezultat în pachet |
 |---|---|---|
-| `android-release-smoke-extent.html` | Instalarea APK-ului Release și navigarea principală | PASS · API 28 · 7 aserțiuni · 2 capturi încorporate |
-| `android-tournament-extent.html` | Turneu determinist cu 4 locuri până la victorie | PASS · API 28 · 41 aserțiuni · 5 capturi încorporate |
-| `j6-library-component.html` | Contracte componente și proveniența bibliotecilor comune | PASS · 1 test |
-| `J6ReleaseGovernance.html` | Versiune, APK, semnare, README și pachet PREPARED | PASS · 1 test |
-| `J6ReleaseDownloadRouteGovernance.html` | Politica rutelor și verificarea descărcării anonime | PASS · 1 test |
+| `android-release-smoke-extent.html` | Instalarea APK-ului Release și navigarea principală | PASS · API 28 · 7 aserțiuni · 2 capturi inline |
+| `android-tournament-extent.html` | Turneu determinist de patru locuri până la victorie | PASS · API 28 · 41 aserțiuni · 5 capturi inline |
+| `j6-library-component.html` | Contractele componentelor și proveniența bibliotecilor | PASS · 1 test |
+| `J6ReleaseGovernance.html` | Versiune, APK, semnare și pachet `PREPARED` | PASS · 1 test |
+| `J6ReleaseDownloadRouteGovernance.html` | Politica rutelor și poarta descărcării anonime | PASS · 1 test |
 
-Calificare curată: Maven 13 suite / 76 teste; Android JVM 2 suite / 12 teste; Lint fără avertismente; Android API 28: două sanity-uri, 48 aserțiuni și 7 capturi. Total: 88 teste, zero eșecuri, erori sau teste omise. Gate-ul Maven rerulat pe candidatul PREPARED a trecut la `2026-11-08 00:05:27 +02:00`. Revalidarea guvernanței după încărcarea assets a trecut 2/2 la `2026-11-07T22:22:26Z`; pachetul rămâne `PREPARED`, iar README nu expune link până la o descărcare anonimă completă. Aceste rapoarte califică APK-ul și contractul offline; proba publică este distinctă și rămâne blocată de HTTP 404 la nivelul profilului/repo-ului proprietarului. Detaliile sunt în `../release-validation.json`.
+## Calificarea inclusă
 
-Capturile Android sunt încorporate în Extent, fără copii PNG redundante. Mărimile și SHA-256-urile celor cinci rapoarte sunt în `../qualification.json`, iar integritatea fișierelor de release este în `../release-validation.json`. Evaluarea strategiei AI rămâne exploratorie și nu este gate Android; limitele și proveniența ei sunt în [J6-AI-04](../../../docs/feedback/J6-AI-04-PUBLIC-SHOVE-ABLATION.md).
+- Maven: 13 suite și 76 teste.
+- Android JVM: 2 suite și 12 teste.
+- Lint: fără avertismente.
+- Sanity Android API 28: două scenarii, 48 aserțiuni și 7 capturi.
+- Total: 88 teste, fără eșecuri, erori sau teste omise.
+
+Aceste rapoarte verifică pachetul local și flow-urile incluse. Descărcarea publică anonimă este o poartă separată și rămâne blocată la starea `PREPARED`.
+
+[Manifestul de release](../release-validation.json) fixează APK-ul și proveniența; [manifestul calificării](../qualification.json) fixează identitatea rapoartelor și integritatea lor. Capturile nu sunt copiate separat în pachet.
+
+<details>
+<summary><strong>Rulări UI anterioare ediției 0.1.0</strong></summary>
+
+Aceste două verificări precedă candidatul Release 0.1.0 și nu intră în totalul celor 88 de teste:
+
+- Prima calificare UI: 33 teste Maven, 5 componente Android JVM și 78 comparații pe API 28; verifică raise, străzi și conservarea jetoanelor.
+- Calificarea compactă: 36 teste Maven, 7 componente Android JVM și 88 comparații pe API 28 la font 2,0; verifică șase locuri, tastatura dialogului și ordinea heads-up.
+
+</details>
+
+Evaluarea AI rămâne exploratorie și nu este poartă Android. Limitele strategiei sunt urmărite în [J6-AI-04](../../../docs/feedback/J6-AI-04-PUBLIC-SHOVE-ABLATION.md).

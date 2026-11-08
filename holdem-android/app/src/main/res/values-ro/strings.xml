@@ -27,6 +27,8 @@
     <string name="board">Cărți comunitare</string>
     <string name="hand">Mâna ta</string>
     <string name="restore_error">Mâna nu a putut fi restaurată.</string>
+    <string name="continue_game">Continuă jocul salvat</string>
+    <string name="checkpoint_error">Mutarea a fost aplicată, dar jocul nu a putut fi salvat.</string>
     <string name="hand_complete">Mână încheiată</string>
     <string name="settled_pot">Pot distribuit · %1$d</string>
     <string name="received">Primit</string>
@@ -54,4 +56,32 @@
     <string name="tournament_lost">Ai fost eliminat</string>
     <string name="tournament_summary">Mâini jucate · %1$d\nStivă finală · %2$d</string>
     <string name="play_again">Joacă din nou</string>
+    <string name="blind_interval">Intervalul nivelurilor de blinduri</string>
+    <string name="blind_interval_option">La fiecare %1$d min</string>
+    <string name="tournament_blinds">Nivelul %1$d · blinduri %2$d/%3$d · la %4$d min</string>
+    <string name="fixed_blinds">Blinduri · %1$d/%2$d</string>
+    <string name="folded_badge">Fold</string>
+    <string name="turn_status">La rând · %1$s</string>
+    <string name="best_hand_waiting">Cea mai bună mână · se așteaptă cărțile comune</string>
+    <string name="best_hand">Cea mai bună combinație a ta · %1$s</string>
+    <string name="hand_high_card">Carte mare</string>
+    <string name="hand_one_pair">O pereche</string>
+    <string name="hand_two_pair">Două perechi</string>
+    <string name="hand_three_of_a_kind">Trei de-un fel</string>
+    <string name="hand_straight">Chintă</string>
+    <string name="hand_flush">Culoare</string>
+    <string name="hand_full_house">Full house</string>
+    <string name="hand_four_of_a_kind">Careu</string>
+    <string name="hand_straight_flush">Chintă de culoare</string>
+    <string name="ai_thinking">Coach-ul AI evaluează decizia…</string>
+    <string name="ai_hint">AI %5$s sugerează %1$s · echitate %2$s · preț pot %3$s · prag %4$s · n=%6$s · ±%7$s</string>
+    <string name="ai_hint_description">Politica %5$s sugerează %1$s. Echitate estimată %2$s. Preț pot %3$s. Echitate necesară %4$s. Eșantioane %6$s. Eroare standard %7$s.</string>
+    <string name="ai_finish_hand">Lasă AI-ul să termine mâna</string>
+    <string name="ai_playing">AI-ul joacă această mână…</string>
+    <string name="ai_action_error">AI-ul nu a putut termina mâna. Poți continua jocul curent.</string>
+    <string name="hidden_player_card">Carte a jucătorului, cu fața în jos</string>
+    <string name="opponent_cards">Cărțile jucătorului</string>
+    <string name="post_game_review">Cărțile din ultima mână · recapitulare</string>
+    <string name="no_cards_in_last_hand">Nu a primit cărți în această mână</string>
+    <string name="unknown_player">Jucător necunoscut</string>
 </resources>

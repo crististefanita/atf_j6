@@ -77,7 +77,7 @@ public final class LooseAggressivePolicy implements DecisionPolicy {
         boolean late = DeterministicBluffPolicy.isLatePosition(observation.positionFromButton(),
                 observation.playerCount(), 2);
         int adjustment = late ? latePositionAdjustmentPercent : -latePositionAdjustmentPercent;
-        return Math.clamp(openFrequencyPercent + adjustment, 0, 100);
+        return Bounds.clamp(openFrequencyPercent + adjustment, 0, 100);
     }
 
     private static boolean hasAggressionThisStreet(HoldemObservation observation) {

@@ -6,7 +6,11 @@ import java.util.List;
 public record HoldemTableViewState(int viewer, int actor, int dealer, int smallBlind, int bigBlind, Street street, int pot,
                                    List<Card> ownCards, List<Card> board, List<Seat> seats,
                                    List<LegalAction> legalActions) {
-    public record Seat(int stack, int contributed, boolean folded, int received) {}
+    /** Presentation-only reveal; empty during a hand and populated after settlement. */
+    public record Seat(int stack, int contributed, boolean folded, int received, boolean dealtCards,
+                       List<Card> shownCards) {
+        public Seat { shownCards = List.copyOf(shownCards); }
+    }
 
     public HoldemTableViewState {
         ownCards = List.copyOf(ownCards);

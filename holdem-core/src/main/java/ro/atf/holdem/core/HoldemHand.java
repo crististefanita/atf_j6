@@ -98,7 +98,7 @@ public final class HoldemHand {
                 throw new IllegalArgumentException("Duplicate public tendency seat " + tendency.physicalSeat());
         }
         var visibleTendencies = seats.stream().map(seat -> tendencyBySeat.getOrDefault(seat,
-                new PublicOpponentTendency(seat, 0, 0))).toList();
+                new PublicOpponentTendency(seat, 0, 0))).collect(Collectors.toList());
         return new HoldemObservation(number, localSeat, seats.size(), count(i -> !folded[i]) - 1,
                 street, List.copyOf(hole.get(actor)),
                 board(), Arrays.stream(paid).sum(), toCall(), stacks[actor], position,
@@ -111,7 +111,8 @@ public final class HoldemHand {
         var visibleSeats = new ArrayList<HoldemTableViewState.Seat>(stacks.length);
         for (int seat = 0; seat < stacks.length; seat++) {
             visibleSeats.add(new HoldemTableViewState.Seat(stacks[seat], paid[seat], folded[seat],
-                    awards == null ? 0 : awards[seat]));
+                    awards == null ? 0 : awards[seat], hole.get(seat).size() == 2,
+                    street == Street.COMPLETE ? hole.get(seat) : List.of()));
         }
         return new HoldemTableViewState(viewer, actor, button, smallBlindSeat, bigBlindSeat, street, Arrays.stream(paid).sum(),
                 hole.get(viewer), board, visibleSeats, viewer == actor ? legal() : List.of());

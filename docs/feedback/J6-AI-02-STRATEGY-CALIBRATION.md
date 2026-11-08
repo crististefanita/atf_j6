@@ -62,7 +62,7 @@ Jurnalele complete, auditul butonului, sizing-ul pe poziții și sumarul ablați
 
 Comparațiile de fold sunt temporale, nu cauzale; un fold poate urma unei acțiuni fără să fi fost provocat de mărimea ei. Traiectoria stivei și victoriile sunt zgomotoase și nu substituie EV, chips/hand, intervale de încredere sau drawdown. Câmpul adversarilor este încă restrâns la TAG și calling station. Candidatul Monte Carlo calculează equity împotriva distribuției uniforme de mâini necunoscute, dar nu estimează range-ul condiționat al fiecărui adversar din acțiunile sale.
 
-Aceste rezultate califică numai `TournamentArena`. Jocul local Android din `holdem-android/app/src/main/java/ro/atf/holdem/android/LocalHoldemGame.java` răspunde momentan cu check/call și nu folosește politicile din arena. Nu atribuiți progresul de aici comportamentului din aplicație; integrarea AI în jocul local este o sarcină distinctă și nu a fost modificată în această etapă offline.
+Aceste rezultate califică numai `TournamentArena`. În aplicația Android, locurile adverse continuă să folosească acțiuni pasive check/call prin `advancePassiveAction`; separat, coach-ul și preluarea locală a mâinii folosesc `ContextualEquityPolicy` prin observația legală a actorului. Această integrare nu are încă o evaluare de turneu proprie și nu este calificată drept `Hard`. Nu transferați rezultatele din `TournamentArena` asupra jocurilor locale; folosirea politicii drept adversar local și calibrarea ei rămân lucrări distincte.
 
 ## Următorul prag de închidere
 

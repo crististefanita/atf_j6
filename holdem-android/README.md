@@ -2,71 +2,73 @@
 
 ## Pe scurt
 
-Android folosește aspectul Whist și Rentz pentru meniu, limbă, profil și masă. Jucătorul își poate edita numele și alege unul dintre modurile offline.
+Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. Folosește componentele comune de card-table pentru shell și aplică regulile prin sursele `holdem-core` și `holdem-ai` compilate de modulul Gradle `engine`.
 
-- **Play a hand** oferă heads-up sau o masă cu 4–6 locuri. Fiecare mână pornește cu stive noi.
-- **Play a tournament** pornește la 4–6 locuri, cu 2.000 de jetoane per loc și blinduri fixe de 10/20. Stivele trec dintr-o mână în alta, locurile eliminate rămân marcate pe masă, iar motorul mută blindurile printre locurile cu jetoane. După plata ultimului pot, **Tournament result** arată rezultatul, numărul de mâini și stiva finală.
+| Mod | Locuri | Jetoane inițiale | Blinduri |
+|---|---:|---:|---|
+| `Play a hand` | heads-up sau 4–6 | 2.000 per loc | fixe, 10/20 |
+| `Play a tournament` | 4–6 | 2.000 per loc | progresive; interval configurabil 1, 2, 3 sau 5 minute, implicit 1 |
 
-Adversarii de antrenament dau check sau call în ambele moduri.
+## Ce vede și poate face jucătorul
 
-## Candidatul curent 0.1.0
+- În timpul mâinii, jucătorul vede cele două cărți proprii, board-ul public și starea mesei; cărțile adverse sunt ascunse.
+- După decontare, recapitularea dezvăluie mâinile distribuite, inclusiv cele ale jucătorilor care au făcut fold. Eticheta `Fold` rămâne până la următoarea distribuire.
+- Masa indică permanent actorul curent și combinația proprie calculată din cărțile vizibile.
+- Coach-ul oferă o recomandare locală fără s-o aplice. `Let AI finish this hand` este o acțiune explicită pentru mâna locală și trimite mutări prin validarea motorului.
+- Profilul, limba și o sesiune întreruptă pot fi reluate din meniul principal.
 
-APK-ul Release semnat trece calificarea locală, inclusiv sanity Android API 28. Identitatea, selecțiile și rapoartele Extent sunt în [dosarul 0.1.0](../release/0.1.0/README.md). GitHub a primit release-ul și ambele assets; ultima probă anonimă înregistrată (`2026-11-07T22:16:42Z`) a primit `404` la profil, repo, pagina Release și APK, astfel că starea rămâne `PREPARED`. Vezi [diagnosticul urmărit](../docs/feedback/J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md).
+## Contractul mâinii
 
-| Comun J4/J5 | Personalizare J6 |
-|---|---|
-| Tema, widgeturile, selectorul de limbă, editorul de nume și numele adversarilor | Rutele, textele EN/RO și persistența profilului Hold’em |
-| Geometria mesei și chenarul activ | Jucătorul propriu jos, rotația locurilor, dealerul, stiva și contribuția fiecăruia |
-| Fețele și mâna centrată | Două cărți proprii și cinci poziții comunitare în centru, lângă pot |
+- `engine` compilează sursele `holdem-core` și `holdem-ai`; Java se compilează cu JDK 21 și țintă Java 17.
+- Acțiunile afișate provin din acțiunile legale ale motorului. Suma de bet/raise este numărul de jetoane adăugate la acțiunea curentă; motorul respinge valori invalide și comenzi depășite.
+- Politica primește numai observația actorului. Dezvăluirea de după decontare ține de prezentare și nu intră în observația AI.
+- Adversarii locali de antrenament folosesc check/call; această configurație verifică flow-ul produsului, nu forța unui adversar strategic.
 
-## Frontiera motorului
+## Turneu și reluare
 
-`engine` compilează sursele `holdem-core` cu JDK 21 și țintă Java 17. Android afișează acțiunile permise de motor. La bet sau raise, suma introdusă este numărul de jetoane adăugate în acel moment. Motorul respinge valorile din afara intervalului, iar sesiunea respinge comenzile unui alt tur sau ale altei mâini.
+- Nivelul blindurilor se calculează la început de mână. Un interval expirat și eliminările se aplică mâinii următoare.
+- Stivele se păstrează între mâinile turneului; dealerul și blindurile se mută numai printre locurile eligibile.
+- Fiecare acțiune acceptată se salvează într-un checkpoint privat, cu locul fizic al actorului și ordinea replay-ului.
+- La redeschidere, motorul reconstruiește și revalidează istoricul înainte de afișarea mesei. Se reiau mâna, turneul sau rezultatul confirmat.
+- Suspendarea invalidează callback-urile UI și oprește ceasul turneului; revenirea îl continuă din timpul salvat.
 
-Interfața primește numai cele două cărți proprii, board-ul public și faptele de masă. La decontare arată jetoanele primite de fiecare loc, inclusiv eventualele restituiri. Cărțile adversarilor rămân în motor. La recrearea activității, starea privată salvată reconstruiește mâinile din seed și comenzile umane acceptate, în ordinea rundelor. Dacă ecranul final era deschis, este afișat din nou.
+## Prezentarea mesei
 
-În heads-up, dealerul pune blindul mic și acționează primul preflop. Blindul mare primește prima carte și acționează primul după flop. Butonul dealerului se mută la următoarea mână heads-up, iar locul jucătorului uman rămâne jos, inclusiv când un turneu se reduce la doi participanți. [Poker TDA, regula 36-C](https://www.pokertda.com/view-poker-tda-rules/)
+- `TurnPacing` programează câte o acțiune automată la 550 ms după primul cadru vizibil și verifică din nou tokenul turei înainte de aplicare.
+- `PlayerSeatFrame` comun marchează locul actorului fizic; la final, cărțile vizibile se colectează spre pot în 1,5 secunde.
+- Pe ferestre înguste sau cu font mărit, locurile se rearanjează în jurul potului și al board-ului; conținutul dialogului de raise derulează separat de acțiuni.
+- Heads-up: dealerul postează small blind și acționează primul preflop; big blind-ul acționează primul după flop. [Poker TDA, regula 36-C](https://www.pokertda.com/view-poker-tda-rules/)
 
-Pe ferestre înguste, joase sau cu font mărit, J6 așază chenarele pe două rânduri în jurul potului și al cărților comunitare. Antetul arată strada, iar mâna proprie folosește două cărți mai mici, fără suprapunere. La heads-up sunt două chenare opuse. Fereastra poate derula vertical dacă înălțimea disponibilă o cere. În dialogul de raise, conținutul derulează separat, iar butoanele rămân în zona de acțiuni.
+## Verificare locală
 
-## Proveniență
-
-`ui-library` păstrează copia binară admisă în J5 pentru `ro.cardtable:card-table-ui:0.1.6` și `ro.cardtable:card-table-names:0.1.0`. Producătorul este J4. Build-ul verifică manifestul și SHA-256 înainte de împachetare. Modificările comune se califică la producător, apoi se sincronizează în consumatori. [Manifest](ui-library/provenance.json)
-
-## Verificare
-
-Folosiți JDK 21 și Android SDK cu platforma 36, dintr-o copie externă care conține și `holdem-core`. Setați `ANDROID_HOME` către SDK și rulați din `holdem-android`.
+Folosiți JDK 21, Android SDK platform 36 și o copie de lucru care conține `holdem-core` și `holdem-ai`. Din directorul `holdem-android`, configurați `ANDROID_HOME` și păstrați build-ul Gradle sub o rădăcină temporară.
 
 ```powershell
-.\gradlew.bat --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+$tmp = Join-Path $env:TEMP 'atf-j6-android-components'
+$env:ATF_TMP_BUILD_ROOT = Join-Path $tmp 'build'
+$init = Join-Path $tmp 'tmp-build.gradle'
+New-Item -ItemType Directory -Force $tmp | Out-Null
+@"
+gradle.beforeProject { project ->
+    def root = System.getenv('ATF_TMP_BUILD_ROOT')
+    if (root) {
+        def part = project.path == ':' ? 'root' : project.path.replace(':', '_')
+        project.buildDir = new File(root, project.rootProject.name + '/' + part)
+    }
+}
+"@ | Set-Content -Encoding utf8 $init
+.\gradlew.bat --no-daemon -I $init `
+    :app:testSanityUnitTest :engine:test :app:lintDebug :app:assembleDebug
 ```
 
-APK-ul de dezvoltare se generează în `app/build/outputs/apk/debug/`. Componentele Android JVM acoperă stivele, eliminarea, rotația și restaurarea la 4–6 locuri. Rapoartele Extent și build-urile rămân în dosarul extern al execuției. [Strategia J6](../docs/testing/TEST_STRATEGY.md)
+- `testSanityUnitTest` și `engine:test` verifică componentele JVM fără cheie de release.
+- `lintDebug` și `assembleDebug` verifică build-ul local; nu califică APK-ul de distribuție.
+- `sanity` și `release` păstrează verificarea cheii private. Acceptanța lor este descrisă în [procesul de release](../docs/release/ATF_Release.md) și în [catalogul versiunilor](../release/README.md).
+- Raportarea și APK-urile intermediare rămân în rădăcina temporară configurată.
 
-### Calificarea release-ului Android
+## Documente owner
 
-Rulați `scripts/Build-HoldemRelease.ps1` dintr-un worktree curat. Scriptul creează o copie unică sub `C:\work\holdem_back\release-runs`, apoi construiește un APK `sanity` pentru turneul determinist și APK-ul `release` pentru distribuție. Ambele folosesc cheia privată J6; numai `sanity` este debuggable și primește seed-ul de fixture. `release` rămâne `debuggable=false` și nu primește seed-uri de test.
-
-Runnerul rezervă emulatorul `127.0.0.1:5555`, refuză să înlocuiască o instalare existentă și rulează două călătorii: un turneu complet prin controalele accesibile și navigarea pe APK-ul `release` exact. Receipt-ul cu hash-ul binar, aserțiunile și capturile PNG vine prin instrumentare; nu depinde de `run-as` ori de fișiere private de pe dispozitiv. `PublishTournamentExtent.java` încorporează capturile și raportul JVM în două rapoarte Extent, iar rapoartele componente Maven sunt păstrate în același pachet de ediție.
-
-Pentru dezvoltare locală, build-ul Debug simplu rămâne util; el nu califică și nu înlocuiește APK-ul Release. [Procesul complet](../docs/release/ATF_Release.md) include semnarea, integritatea, upload-ul și testul anonim al descărcării.
-
-## Calificări UI istorice
-
-Aceste două rulări preced calificarea release 0.1.0. Pentru numărul actual de teste și hash-urile APK-ului, manifestul versionat este sursa de adevăr.
-
-Prima calificare UI a trecut cu 33 de teste Maven, 5 componente Android JVM și 78 de comparații pe emulatorul API 28. Traseul nativ a verificat un raise respins, un raise acceptat, străzile și conservarea jetoanelor după decontare.
-
-Calificarea compactă a trecut cu 36 de teste Maven, 7 componente Android JVM și 88 de comparații pe API 28 la font 2,0. A verificat încadrarea la șase locuri, dialogul cu tastatura deschisă și ordinea heads-up înainte și după mutarea dealerului.
-
-## Starea APK-ului 0.1.0
-
-Ediția 0.1.0 nu mai este `DRAFT`: APK-ul există și release-ul GitHub are asset-urile încărcate. Catalogul rămâne `PREPARED` până când testul anonim verifică descărcarea completă. Build-urile Debug și fișierele intermediare rămân doar în TMP; nu le folosiți ca APK de distribuție.
-
-Build-urile, APK-urile intermediare și capturile brute rămân în TMP. Pentru un candidat, copiați doar APK-ul Release, checksum-ul, validarea și rapoartele Extent relevante în `release/<versiune>/`; capturile UI rămân încorporate în raport.
-
-## Continuare
-
-- [Prima mână interactivă](../docs/feedback/J6-UI-01-INTERACTIVE-TABLE.md) păstrează criteriile pentru observație și comenzi.
-- [Matricea compactă și heads-up](../docs/feedback/J6-UI-02-TABLE-COVERAGE.md) descrie calificarea geometriei și ordinea pozițiilor.
-- [Turneu și sanity reproductibil](../docs/feedback/J6-UI-03-TOURNAMENT-SANITY.md) fixează criteriile de eliminare, rezultat și audit.
+- [Cerințe și reguli](../docs/requirements/README.md)
+- [Catalog Android](../release/README.md)
+- [Coach și recapitulare](../docs/feedback/J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md)
+- [Reluare, pacing și decontare](../docs/feedback/J6-UI-06-RESUMABLE-TURNS-AND-SETTLEMENT.md)

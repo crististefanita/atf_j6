@@ -15,6 +15,7 @@
     { "module": "holdem-app", "testClass": "ro.atf.j6.libraries.PlatformLibraryAdoptionTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseGovernanceTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.ComponentSuiteExtentPublisherTest" },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.NativeTournamentExtentPublisherTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseImpactRagTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseVersionPolicyTest" }
   ],

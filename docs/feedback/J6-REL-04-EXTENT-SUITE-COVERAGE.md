@@ -1,30 +1,17 @@
-# J6-REL-04 — Acoperirea Extent a suitelor componentă și E2E
+# J6-REL-04 · Extent cere aserțiuni native pentru fiecare parcurs
 
-**Prioritate:** P1  
-**Stare:** Verificat la calificarea ediției 0.2.0. Rapoartele componentă și E2E sunt în dosarul ediției.
+**Prioritate:** P1
 
-## Constatare și rezultat
+**Stare:** Închis pe ramura `release/holdem-0.2.1`
 
-Calificarea istorică `v0.1.1` a trecut 13 suite Maven / 80 teste și 4 suite Android JVM / 27 teste. Rapoartele ei rămân neschimbate și nu trebuie confundate cu verificarea sursei curente.
+**Owner:** Adaptorul de raportare Android J6
 
-Runnerul folosește acum inventarul versionat [release-test-suites.json](../../config/release-test-suites.json) și publică prin J0 `atf-reporting` două rapoarte componentă distincte de rapoartele Android native E2E. `ComponentSuiteExtentPublisher` reconciliază clasele și cazurile JUnit, publică outcome, durată, hash-ul XML și diagnosticele redacted, apoi inspectează raportul proaspăt cu `ReportArtifactInspector`. Suita lipită, lipsă, duplicată, cu număr diferit, `SKIP`, `FAIL` sau XML invalid nu poate deveni PASS.
+## Rezultat
 
-Ediția 0.2.0 a exercitat contractul complet pe un candidat curat. Dosarul leagă rapoartele de hash-urile din manifest și separă turneul pe varianta sanity de instalarea APK-ului Release. [Rapoartele ediției](../../release/0.2.0/reports/README.md)
+Publisherul cere o listă de aserțiuni native și verifică prezența unică a observațiilor obligatorii pentru turneu și smoke. Inventarul capturilor și identitatea APK-ului au verificări proprii. [Contractul și probele](../testing/TEST_STRATEGY.md)
 
-## Contract păstrat
+- Maven în TMP a trecut 15/15 probe, inclusiv 5 de guvernanță și 7 pentru publisher. [Testele publisherului](../../holdem-app/src/test/java/ro/atf/j6/reporting/NativeTournamentExtentPublisherTest.java)
+- Replay API 28 din calificarea sursei `828b461`. Turneul normal și profilul scund au produs `PASS` cu 76 de aserțiuni și 9 capturi fiecare. Smoke-ul Release a produs `PASS` cu 7 aserțiuni și 2 capturi.
+- Receipt-ul de turneu fără aserțiuni a produs Extent `FAIL` și cod 1, cu toate cele 9 capturi. Receipt-ul real întrerupt a produs `FAIL` cu diagnosticul și cele 2 capturi. Inspectorul a validat structura celor cinci rapoarte de replay.
 
-- Unicul renderer HTML Extent este `atf-reporting`; adaptorul J6 doar mapează XML JUnit către contractele și profilul de inspecție ATF.
-- Inventarul este verificat față de clasele JUnit reale de testul `ComponentSuiteExtentPublisherTest`; adăugarea unei suite fără actualizarea contractului oprește verificarea.
-- Maven și Android au câte un raport componentă. Turneul nativ și smoke-ul APK-ului Release au rapoarte E2E distincte, cu acțiuni, aserțiuni și capturi încorporate.
-- XML Surefire/Gradle și logurile brute rămân în spațiul extern al rulării. Numai rapoartele Extent selectate pentru o ediție calificată se copiază în `release/<versiune>/reports/`.
-- Parserul XML dezactivează DTD/entități externe și pune limită la dimensiunea inputului. Diagnosticele sunt limitate și trecute prin `SensitiveDataRedactor`.
-
-## Referințe
-
-- [Inventarul suitelor](../../config/release-test-suites.json)
-- [Adaptorul Extent pentru suite JUnit](../../holdem-app/src/test/java/ro/atf/j6/reporting/ComponentSuiteExtentPublisher.java)
-- [Testele adaptorului și ale inventarului](../../holdem-app/src/test/java/ro/atf/j6/reporting/ComponentSuiteExtentPublisherTest.java)
-- [Publicarea E2E Android](../../holdem-android/tools/PublishTournamentExtent.java)
-- [Runnerul de calificare](../../scripts/Build-HoldemRelease.ps1)
-- [Strategia de testare](../testing/TEST_STRATEGY.md)
-- [Procesul de release](../release/ATF_Release.md)
+Rapoartele de replay sunt dovezi externe ale corecției. [Dosarul calificării 0.2.1](../../release/0.2.1/reports/README.md)

@@ -1,4 +1,3 @@
-import atf.reporting.audit.AssertionAuditReport;
 import atf.reporting.artifact.ReportArtifactInspector;
 import atf.reporting.artifact.ReportArtifactProfile;
 import atf.reporting.configuration.ReportingSettings;
@@ -21,11 +20,23 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 
 /** Publishes observed native Android E2E results using the admitted J0 Reporting JAR. */
 class PublishTournamentExtent {
+    private static final List<String> TOURNAMENT_ASSERTIONS = List.of("Opening hand", "First hand pot is paid",
+            "Third hand starts heads-up", "Winner sees congratulations", "Losing player sees the elimination result");
+    private static final List<String> RELEASE_SMOKE_ASSERTIONS = List.of("Release APK opens the branded home menu",
+            "Release APK opens hand setup", "Hand setup returns to the home menu", "Release APK opens tournament setup");
+    private static final List<String> TOURNAMENT_CAPTURES = List.of(
+            "01b-opening-preflop.png", "01-call-ledger-visible.png", "01-betting-ledger-history.png", "01-hand-one-settled.png",
+            "01a-settlement-retained.png", "02-two-seats-eliminated.png", "03-heads-up.png",
+            "04-tournament-won.png", "05-tournament-lost.png");
+    private static final List<String> RELEASE_SMOKE_CAPTURES = List.of(
+            "01-release-hand-setup.png", "02-release-tournament-setup.png");
+
     public static void main(String[] args) throws Exception {
         if (args.length != 3) throw new IllegalArgumentException("Expected report, native evidence directory and app APK");
         Path reportPath = Path.of(args[0]);
@@ -61,20 +72,20 @@ class PublishTournamentExtent {
         String journey = receipt.path("journey").asText("tournament");
         boolean releaseSmoke = journey.equals("release-smoke");
         if (!releaseSmoke && !journey.equals("tournament")) throw new IllegalArgumentException("Unknown native journey " + journey);
-        int expectedCaptures = releaseSmoke ? 2 : 9;
-        var checks = new ArrayList<AtfAssertion>();
-        for (var entry : receipt.required("assertions")) {
-            checks.add(new AtfAssertion(entry.required("name").asText(), entry.required("expected").asText(),
-                    entry.required("actual").asText(), entry.required("passed").asBoolean()));
-        }
+        var checks = nativeChecks(receipt, releaseSmoke ? RELEASE_SMOKE_ASSERTIONS : TOURNAMENT_ASSERTIONS);
+        var captureNames = new ArrayList<String>();
+        for (var entry : receipt.required("captures")) captureNames.add(entry.asText());
+        var expectedCaptures = releaseSmoke ? RELEASE_SMOKE_CAPTURES : TOURNAMENT_CAPTURES;
+        checks.add(new AtfAssertion("Native capture inventory matches the journey", String.join(", ", expectedCaptures),
+                String.join(", ", captureNames), expectedCaptures.equals(captureNames)));
         var actions = new ArrayList<String>();
         for (var entry : receipt.required("actions")) actions.add(entry.asText());
         String apkHash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(apk)));
         String error = receipt.required("error").asText();
         String installedApkHash = receipt.required("apkSha256").asText();
         checks.add(new AtfAssertion("Installed APK matches the supplied build", apkHash, installedApkHash, apkHash.equals(installedApkHash)));
-        boolean passed = receipt.required("status").asText().equals("PASS") && !checks.isEmpty()
-                && checks.stream().allMatch(AtfAssertion::passed) && receipt.required("captures").size() == expectedCaptures;
+        boolean passed = receipt.required("status").asText().equals("PASS")
+                && checks.stream().allMatch(AtfAssertion::passed);
         var result = status(passed);
         var checkpointEvidence = new ArrayList<ReportArtifactProfile.Evidence>();
         String scenario = releaseSmoke ? "ReleaseInstallSmoke" : "TournamentSanity";
@@ -97,8 +108,7 @@ class PublishTournamentExtent {
                     List.of("Android API", "Window", "Density (dpi)", "Font scale", "Installed APK SHA-256", "Execution failure"),
                     List.of("Accessibility actions in order")));
             int captureIndex = 0;
-            for (var entry : receipt.required("captures")) {
-                String name = entry.asText();
+            for (String name : captureNames) {
                 if (!name.matches("0[1-5][a-z]?-[a-z-]+\\.png")) throw new IllegalArgumentException("Unexpected capture name " + name);
                 var image = ImageIO.read(evidence.resolve(name).toFile());
                 boolean decodes = image != null && image.getWidth() > 0 && image.getHeight() > 0;
@@ -126,6 +136,35 @@ class PublishTournamentExtent {
         }
         return new ReportArtifactProfile.Scenario(scenario, description, result,
                 List.of(new ReportArtifactProfile.Phase("TEST BODY", result, checkpointEvidence)));
+    }
+
+    private static List<AtfAssertion> nativeChecks(JsonNode receipt, List<String> requiredAssertions) {
+        var checks = new ArrayList<AtfAssertion>();
+        var assertions = receipt.path("assertions");
+        var counts = new HashMap<String, Integer>();
+        if (assertions.isArray()) {
+            for (var entry : assertions) {
+                String name = entry.required("name").asText();
+                counts.merge(name, 1, Integer::sum);
+                checks.add(new AtfAssertion(name, entry.required("expected").asText(),
+                        entry.required("actual").asText(), entry.required("passed").booleanValue()));
+            }
+        }
+        checks.add(new AtfAssertion("Native journey assertions are present", "Non-empty assertions array",
+                assertions.isArray() ? assertions.size() + " native assertions" : assertions.getNodeType().name(),
+                assertions.isArray() && !assertions.isEmpty()));
+        // Repeated tap labels are legitimate. Only the required journey observations must be unique.
+        var missing = new ArrayList<String>();
+        var repeated = new ArrayList<String>();
+        for (String name : requiredAssertions) {
+            int occurrences = counts.getOrDefault(name, 0);
+            if (occurrences == 0) missing.add(name);
+            if (occurrences > 1) repeated.add(name);
+        }
+        boolean complete = missing.isEmpty() && repeated.isEmpty();
+        checks.add(new AtfAssertion("Required native journey assertions occur once", String.join(", ", requiredAssertions),
+                complete ? "All required assertions present once" : "Missing: " + missing + "; repeated: " + repeated, complete));
+        return checks;
     }
 
     /**

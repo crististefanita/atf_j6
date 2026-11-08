@@ -9,17 +9,16 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 ## Ordinea curentă
 
 1. **J6-REL-01 · P1 · Blocat extern.** Pentru `v0.2.0`, ambele fișiere au trecut verificarea prin API autentificat. APK-ul și checksum-ul răspund anonim cu HTTP 404, iar catalogul rămâne `PREPARED`.
-2. **J6-REL-04 · P1 · Verificat în calificarea 0.2.0.** Dosarul ediției conține Extent pentru componente și cele două trasee Android native.
-3. **J6-REL-05 · P1 · Verificat în calificare:** retrieval-ul lexical și politica de versiuni au rulat pe candidatul curat 0.2.0. Conflictele semantice și feedback-ul învechit rămân de detectat.
-4. **J6-AI-02 · P1 · Deschis:** politicile sunt încă euristice, iar modelul de range și evaluarea independentă nu justifică eticheta `Hard`.
-5. **J6-AI-04 · P1 · Deschis, exploratoriu:** ablația pereche are 16 seed-uri independente, sub pragul de 20 pentru fiecare mărime de masă; efectul nu justifică o pondere generală.
-6. **J6-UI-05 · P1 · 27/27 JVM, sanity API 28 trecut; acceptanță parțială:** Fold, reveal, coach, preluare locală și selectorul de blinduri există. Rămân evaluatorul kicker/board-play, invariabilitatea față de cărți ascunse, wiring-ul intervalului și verificările dedicate de accesibilitate/layout.
-7. **J6-UI-06 · P1 · Cod nou implementat, testare restantă:** masa terminală rămâne până la input, iar premiul se animă spre beneficiari; pacing-ul și reluarea anterioară rămân calificate.
-8. **J6-UI-07 · P1 · Implementare parțială:** evaluatorul, cărțile terminale egale, separarea premiu/rest și animația către beneficiari sunt conectate; lipsesc acceptanța Android și unele cazuri de componentă.
-9. **J6-UI-04 · P2 · Implementare parțială:** motorul și locurile separă `Won` de `Returned`; mai lipsesc verificarea E2E a cazurilor de decontare și acceptanța vizuală.
-10. **J6-UI-08 · P2 · API 28 verificat parțial:** modelul și repository-ul au probe JVM; sanity-ul nativ verifică sumarul, clasamentul și reîncărcarea activității. Restartul real al procesului și redenumirea profilului rămân neverificate.
-11. **J6-UI-09 · P2 · Implementare parțială:** etichetele `Stack`, `Committed`, `Won` și `Returned` sunt secundare față de valori; mai lipsesc verificarea de viewport și TalkBack.
-12. **J6-UI-10 · P1 · Verificat pe API 28:** fiecare loc arată ultima sa acțiune sub nume, iar istoricul complet este derulabil și ascuns inițial. Componentele trec 11/11; sanity-ul nativ trece 64/64 cu 8 capturi. Viewport-urile joase, TalkBack și traseul UI real `Bet → Raise → Call` rămân de calificat.
+2. **J6-REL-05 · P1 · Verificat în calificare:** retrieval-ul lexical și politica de versiuni au rulat pe candidatul curat 0.2.0. Conflictele semantice și feedback-ul învechit rămân de detectat.
+3. **J6-AI-02 · P1 · Deschis:** politicile sunt încă euristice, iar modelul de range și evaluarea independentă nu justifică eticheta `Hard`.
+4. **J6-AI-04 · P1 · Deschis, exploratoriu:** ablația pereche are 16 seed-uri independente, sub pragul de 20 pentru fiecare mărime de masă; efectul nu justifică o pondere generală.
+5. **J6-UI-05 · P1 · 27/27 JVM, sanity API 28 trecut; acceptanță parțială:** Fold, reveal, coach, preluare locală și selectorul de blinduri există. Rămân evaluatorul kicker/board-play, invariabilitatea față de cărți ascunse, wiring-ul intervalului și verificările dedicate de accesibilitate/layout.
+6. **J6-UI-06 · P1 · Cod nou implementat, testare restantă:** masa terminală rămâne până la input, iar premiul se animă spre beneficiari; pacing-ul și reluarea anterioară rămân calificate.
+7. **J6-UI-07 · P1 · Implementare parțială:** evaluatorul, cărțile terminale egale, separarea premiu/rest și animația către beneficiari sunt conectate; lipsesc acceptanța Android și unele cazuri de componentă.
+8. **J6-UI-04 · P2 · Implementare parțială:** motorul și locurile separă `Won` de `Returned`; mai lipsesc verificarea E2E a cazurilor de decontare și acceptanța vizuală.
+9. **J6-UI-08 · P2 · API 28 verificat parțial:** modelul și repository-ul au probe JVM; sanity-ul nativ verifică sumarul, clasamentul și reîncărcarea activității. Restartul real al procesului și redenumirea profilului rămân neverificate.
+10. **J6-UI-09 · P2 · Implementare parțială:** etichetele `Stack`, `Committed`, `Won` și `Returned` sunt secundare față de valori; mai lipsesc verificarea de viewport și TalkBack.
+11. **J6-UI-10 · P1 · Verificat pe API 28:** fiecare loc arată ultima sa acțiune sub nume, iar istoricul complet este derulabil și ascuns inițial. Componentele trec 11/11; sanity-ul nativ trece 64/64 cu 8 capturi. Viewport-urile joase, TalkBack și traseul UI real `Bet → Raise → Call` rămân de calificat.
 
 `J6-REL-01` cere acțiunea proprietarului contului și nu se rezolvă prin redenumirea asset-ului sau schimbarea rutelor. Celelalte priorități sunt lucru de produs și cod.
 
@@ -28,7 +27,7 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 | [J6-REL-01](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | P1 | Blocat extern, `v0.2.0` anonim HTTP 404 | API-ul autentificat descarcă integral APK-ul și checksum-ul. |
 | [J6-REL-02](J6-REL-02-README-VERSION-GOVERNANCE.md) | P2 | Rezolvat | Bloc comun cu două linkuri ordonate, sincronizat cu indexul; catalog/proces legate și stări `PREPARED`/`PUBLISHED` guvernate; fără checksum în README. |
 | [J6-REL-03](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) | P1 | Corectat; tournament și release-smoke trecute pe API 28 | Recomandarea AI folosea două metode Java de colecții indisponibile pe API-ul minim. |
-| [J6-REL-04](J6-REL-04-EXTENT-SUITE-COVERAGE.md) | P1 | Verificat la calificarea 0.2.0 | Rapoartele componentă și E2E sunt separate și identificate prin hash. |
+| [J6-REL-04](J6-REL-04-EXTENT-SUITE-COVERAGE.md) | P1 | Închis pe 0.2.1 | Extent cere aserțiuni native obligatorii și verifică inventarul capturilor. |
 | [J6-REL-05](J6-REL-05-RELEASE-RAG-GOVERNANCE.md) | P1 | Verificat în calificare, contradicții restante | Retrieval-ul lexical consultativ păstrează citările și digestul în manifestul calificării. |
 | [J6-AI-01](J6-AI-01-LATE-POSITION.md) | P2 | Rezolvat | Fereastra de poziție omitea butonul și nu se adapta meselor scurtate. |
 | [J6-AI-02](J6-AI-02-STRATEGY-CALIBRATION.md) | P1 | Deschis | Stilurile sunt euristici; comparațiile mici nu justifică promovarea unei strategii Hard. |

@@ -18,7 +18,7 @@ Dosarul ediției păstrează calificarea, raportarea și receipt-urile. [Catalog
 
 Inspecția comparativă a J4 și J5 a ghidat această structură. J5 oferă exemplul concis cu două linkuri și catalog tehnic separat. În copia J4 inspectată, README-ul principal indica `0.13.0`, dar `release/index.json` indica `0.12.0`; J6 leagă prin guvernanță versiunea, ambele URL-uri și dosarul de aceeași intrare `currentVersion`, ca acest tip de drift să blocheze calificarea.
 
-J5 documentează un RAG read-only pentru găsirea cerințelor și a dovezilor, cu citări și proveniență. J6 implementează acum un context de impact offline, lexical și consultativ, plus o politică semver testată. Contextul nu este model semantic, nu decide porțile și nu poate deduce `PASS`; catalogul și receipt-urile rămân sursa stării. Limitele și pașii rămași sunt în [J6-REL-05](../feedback/J6-REL-05-RELEASE-RAG-GOVERNANCE.md). Acoperirea Extent este urmărită separat în [J6-REL-04](../feedback/J6-REL-04-EXTENT-SUITE-COVERAGE.md).
+J5 documentează un RAG read-only pentru găsirea cerințelor și a dovezilor, cu citări și proveniență. J6 implementează acum un context de impact offline, lexical și consultativ, plus o politică semver testată. Contextul nu este model semantic, nu decide porțile și nu poate deduce `PASS`; catalogul și receipt-urile rămân sursa stării. Citările consultative și verificarea referințelor locale sunt documentate în [J6-REL-05](../feedback/J6-REL-05-RELEASE-RAG-GOVERNANCE.md). Acoperirea Extent este urmărită separat în [J6-REL-04](../feedback/J6-REL-04-EXTENT-SUITE-COVERAGE.md).
 
 ## Semnare J6
 

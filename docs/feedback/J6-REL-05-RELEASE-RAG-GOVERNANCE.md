@@ -1,7 +1,7 @@
 # J6-REL-05 — Context de impact release cu proveniență și guvernanță
 
 **Prioritate:** P1  
-**Stare:** Prioritizarea este verificată pe diff-ul 0.3.0. Contradicțiile între contracte explicite și feedbackul depășit au probe cu citări.
+**Stare:** Închis. RAG citează contradicțiile, observațiile depășite și referințele locale rupte din feedback.
 
 ## Constatare și rezultat
 
@@ -35,12 +35,13 @@ Proba de feedback a folosit `320 dp` <!-- rag:observed android.seat-metrics.view
 - Citările din `documentFindings` includ calea, linia, fragmentul redactat, SHA-256 al fișierului și commitul. Exemplele din blocuri de cod, dosarele istorice de release și feedbackul marcat ca închis sunt în afara comparației.
 - Probele folosesc un dezacord de temporizare de 550 față de 600 ms și o observație de 360 dp rămasă după actualizarea contractului la 320 dp. Valorile concordante produc o listă goală. Rezultatul rămâne consultativ. [Teste](../../holdem-app/src/test/java/ro/atf/j6/release/ReleaseImpactRagTest.java)
 
-## Limite rămase
+## Referințe locale din feedback
 
-Comparația folosește valorile marcate explicit și normalizează spațiile și majusculele. Reviewerul interpretează diferențele de unitate și verifică autoritatea documentelor. Detectarea linkurilor sau ancorelor dispărute rămâne de acoperit. Rapoartele Extent și receipt-urile sunt evaluate separat de porțile deterministe.
+- `MISSING_FEEDBACK_LINK` citează linia cu linkul Markdown inline când calea lipsește din fișierele urmărite de Git.
+- `MISSING_FEEDBACK_ANCHOR` citează linia din feedback și documentul țintă când fragmentul lipsește. Verificarea înțelege titlurile Markdown, ancorele explicite, diacriticele și sufixele titlurilor duplicate.
+- Proba șterge nota de continuare și redenumește secțiunea despre reluare. Verifică ambele citări, precum și linkurile valide și exemplele din cod. Linkurile externe rămân în afara verificării offline. [Teste](../../holdem-app/src/test/java/ro/atf/j6/release/ReleaseImpactRagTest.java) · [Convențiile GitHub](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#section-links)
 
-Runnerul a exercitat integrarea pe candidatul curat 0.2.2. Manifestul păstrează digestul contextului de impact separat de
-rezultatele testelor. [Manifestul de calificare](../../release/0.2.2/qualification.json) · [Contextul RAG](../../release/0.2.2/release-impact-context.json)
+Comparația contractelor folosește valorile marcate explicit. Reviewerul interpretează diferențele de unitate și autoritatea documentelor. Rapoartele Extent și receipt-urile sunt evaluate separat de porțile deterministe.
 
 ## Verificare pe diff-ul 0.3.0
 

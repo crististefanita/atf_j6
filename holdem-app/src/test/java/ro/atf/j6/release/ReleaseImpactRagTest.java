@@ -231,6 +231,81 @@ class ReleaseImpactRagTest {
         assertAdvisory(review);
     }
 
+    @Test
+    void citesDeletedFeedbackTargetsAndRenamedHeadings(@TempDir Path temp) throws Exception {
+        Path root = project(temp, "0.3.1", "holdem-android", "ro.atf.holdem.android.LocalHoldemGameTest");
+        String feedback = "docs/feedback/README.md";
+        String guide = "holdem-android/README.md";
+        String deleted = "docs/feedback/J6-UI-06-RESUMABLE-TURNS-AND-SETTLEMENT.md";
+        write(root, feedback, """
+                # Feedback
+                [Continuarea](J6-UI-06-RESUMABLE-TURNS-AND-SETTLEMENT.md)
+                [Reluare](../../holdem-android/README.md#turneu-%C8%99i-reluare)
+                [Secțiune locală](#feedback)
+                [Titlu repetat](/holdem-android/README.md#probe-1)
+                [Ancoră explicită](../../holdem-android/README.md#dovadă)
+                [Caz Setext](../../holdem-android/README.md#instrucțiuni)
+                [`Ghid`](../../holdem-android/README.md)
+                [Referință externă](https://example.invalid/missing)
+                <!-- [Comentariu](missing-comment.md) -->
+                `[Exemplu inline](missing-example.md)`
+                ~~~markdown
+                [Exemplu](missing-fenced-example.md)
+                ~~~
+                """);
+        write(root, deleted, "# Continuarea din timpul decontării\n");
+        write(root, guide, """
+                # Ghid
+                ## Turneu și reluare
+                ## Probe
+                ## Probe
+                <a name="dovadă"></a>
+
+                Instrucțiuni
+                -----------
+                """);
+        String base = commit(root, "valid links and anchors");
+        assertTrue(ReleaseImpactRag.review(root, base, base, "0.3.1", temp.resolve("valid.json"))
+                .path("documentFindings").isEmpty());
+
+        Files.delete(root.resolve(deleted));
+        write(root, guide, Files.readString(root.resolve(guide)).replace("Turneu și reluare", "Turneu și checkpoint"));
+        String candidate = commit(root, "remove the feedback note and rename the heading");
+        JsonNode review = ReleaseImpactRag.review(root, base, candidate, "0.3.1", temp.resolve("findings.json"));
+
+        JsonNode findings = review.path("documentFindings");
+        assertEquals(2, findings.size(), findings.toPrettyString());
+        JsonNode missingFile = findings.get(0);
+        assertEquals("MISSING_FEEDBACK_LINK", missingFile.path("kind").asText());
+        assertEquals(deleted, missingFile.path("targetPath").asText());
+        assertEquals(1, missingFile.path("citations").size());
+        assertFeedbackCitation(root, missingFile.path("citations").get(0), feedback, 2, candidate);
+
+        JsonNode missingAnchor = findings.get(1);
+        assertEquals("MISSING_FEEDBACK_ANCHOR", missingAnchor.path("kind").asText());
+        assertEquals(guide, missingAnchor.path("targetPath").asText());
+        assertEquals("turneu-și-reluare", missingAnchor.path("fragment").asText());
+        assertEquals(2, missingAnchor.path("citations").size());
+        assertFeedbackCitation(root, missingAnchor.path("citations").get(0), feedback, 3, candidate);
+        JsonNode destination = missingAnchor.path("citations").get(1);
+        assertEquals("target", destination.path("role").asText());
+        assertEquals(guide, destination.path("path").asText());
+        assertEquals(candidate, destination.path("indexedCommit").asText());
+        assertEquals(ReleaseImpactRag.digest(Files.readAllBytes(root.resolve(guide))), destination.path("sourceSha256").asText());
+        assertAdvisory(review);
+    }
+
+    private static void assertFeedbackCitation(Path root, JsonNode citation, String path, int line, String commit)
+            throws Exception {
+        assertEquals("feedback", citation.path("role").asText());
+        assertEquals(path, citation.path("path").asText());
+        assertEquals(line, citation.path("startLine").asInt());
+        assertEquals(line, citation.path("endLine").asInt());
+        assertEquals(Files.readAllLines(root.resolve(path)).get(line - 1), citation.path("excerpt").asText());
+        assertEquals(ReleaseImpactRag.digest(Files.readAllBytes(root.resolve(path))), citation.path("sourceSha256").asText());
+        assertEquals(commit, citation.path("indexedCommit").asText());
+    }
+
     private static void assertCitation(Path root, JsonNode citation, String path, int line, String value, String commit)
             throws Exception {
         assertEquals(path, citation.path("path").asText());

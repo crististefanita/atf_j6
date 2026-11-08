@@ -30,20 +30,8 @@ final class ReleaseDocumentReview {
         if ((!feedback && !contract) || (feedback && CLOSED.matcher(feedbackState).find())) return List.of();
 
         List<Claim> claims = new ArrayList<>();
-        String fence = "";
-        String[] lines = content.split("\\R", -1);
+        String[] lines = proseLines(content);
         for (int i = 0; i < lines.length; i++) {
-            var delimiter = FENCE.matcher(lines[i]);
-            if (delimiter.matches()) {
-                String marker = delimiter.group(1);
-                if (fence.isEmpty()) {
-                    fence = marker;
-                } else if (marker.startsWith(fence) && delimiter.group(2).isBlank()) {
-                    fence = "";
-                }
-                continue;
-            }
-            if (!fence.isEmpty()) continue;
             var matcher = CLAIM.matcher(lines[i]);
             while (matcher.find()) {
                 if (!matcher.group(2).equals(feedback ? "observed" : "contract")) continue;
@@ -53,6 +41,26 @@ final class ReleaseDocumentReview {
             }
         }
         return claims;
+    }
+
+    static String[] proseLines(String content) {
+        String[] lines = content.split("\\R", -1);
+        String fence = "";
+        for (int i = 0; i < lines.length; i++) {
+            var delimiter = FENCE.matcher(lines[i]);
+            if (delimiter.matches()) {
+                String marker = delimiter.group(1);
+                if (fence.isEmpty()) {
+                    fence = marker;
+                } else if (marker.startsWith(fence) && delimiter.group(2).isBlank()) {
+                    fence = "";
+                }
+                lines[i] = "";
+            } else if (!fence.isEmpty()) {
+                lines[i] = "";
+            }
+        }
+        return lines;
     }
 
     static void appendFindings(ArrayNode findings, List<Claim> claims, String commit, UnaryOperator<String> redact) {

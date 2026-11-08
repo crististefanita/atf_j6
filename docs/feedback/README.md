@@ -2,14 +2,13 @@
 
 ## Pe scurt
 
-Indexul urmărește lacunele verificabile ale J6. Cerințele stabile apar în documentele owner, iar rezultatele unei ediții rămân în catalogul ei. [Cerințe](../requirements/README.md) · [Strategie](../testing/TEST_STRATEGY.md) · [Ediția 0.2.2](../../release/0.2.2/README.md)
+Indexul urmărește lacunele verificabile ale J6. Cerințele stabile apar în documentele owner, iar rezultatele unei ediții rămân în catalogul ei. [Cerințe](../requirements/README.md) · [Strategie](../testing/TEST_STRATEGY.md) · [Ediția 0.3.0](../../release/0.3.0/README.md)
 
 ## Priorități active
 
 | Prioritate | Subiect | Dovada care lipsește |
 |---|---|---|
 | P1 | [J6-REL-01 · Vizibilitate publică](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | Descărcare anonimă completă. Linkul din README a trecut în browserul autentificat. |
-| P1 | [J6-REL-05 · RAG](J6-REL-05-RELEASE-RAG-GOVERNANCE.md) | Detectarea linkurilor și ancorelor dispărute din feedback. |
 | P1 | [J6-AI-02 · Calibrare](J6-AI-02-STRATEGY-CALIBRATION.md) | Evaluare independentă și model de range înainte de promovarea stilului Hard. |
 | P1 | [J6-AI-04 · Ablație shove](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) | Efect repetat cu minimum 20 de seed-uri independente pe configurație. |
 | P1 | [J6-UI-05 · Coach](J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md) | Oracol pentru cele cinci cărți decisive și legătura dintre selectorul de blinduri și sesiunea salvată. |
@@ -22,6 +21,7 @@ Indexul urmărește lacunele verificabile ale J6. Cerințele stabile apar în do
 <details>
 <summary>Constatări închise</summary>
 
+- [Contextul RAG și integritatea referințelor din feedback](J6-REL-05-RELEASE-RAG-GOVERNANCE.md)
 - [Guvernanța README](J6-REL-02-README-VERSION-GOVERNANCE.md) și [oracolul Extent](J6-REL-04-EXTENT-SUITE-COVERAGE.md)
 - [Poziția târzie](J6-AI-01-LATE-POSITION.md) și [argumentul cohortelor](J6-AI-03-COHORT-ARGUMENT.md)
 - [Masa interactivă](J6-UI-01-INTERACTIVE-TABLE.md), [matricea compactă](J6-UI-02-TABLE-COVERAGE.md) și [sanity-ul de turneu](J6-UI-03-TOURNAMENT-SANITY.md)

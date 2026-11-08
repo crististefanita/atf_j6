@@ -10,7 +10,7 @@ J6 afișează actorul și primește cărțile proprii și board-ul public. Adver
 
 ## Situația implementării în codul live
 
-- **Implementat:** cărți adverse ca spate în timpul mâinii; cărți distribuite afișate după `Street.COMPLETE`, inclusiv pentru locurile foldate; recapitulare cu nume, Fold/Out și cărțile ultimei mâini pe rezultatul turneului.
+- **Implementat:** locurile adverse afișează cărțile distribuite după `Street.COMPLETE`, inclusiv pentru locurile foldate. Rezultatul turneului păstrează recapitularea cu nume, Fold/Out și cărțile ultimei mâini.
 - **Implementat:** etichetă centrală cu numele actorului, categorie de mână formată din cele două cărți proprii și board-ul vizibil, marcaj Fold pe locul retras și selector de blinduri 1/2/3/5 minute, implicit 1. Nivelul se schimbă la începutul mâinii următoare după expirare.
 - **Implementat:** hint-ul rulează în fundal, nu aplică acțiunea și afișează acțiunea, equity, pot odds, pragul, versiunea politicii, eșantioanele și eroarea standard disponibile.
 - **Implementat limitat:** butonul lasă AI-ul să termine mâna locală curentă și blochează comenzile manuale cât timp rulează; nu pornește automat următoarea mână sau întregul turneu.
@@ -18,8 +18,7 @@ J6 afișează actorul și primește cărțile proprii și board-ul public. Adver
 
 ### Testare curentă
 
-- Calificarea curentă: 80/80 teste Maven, inclusiv patru teste de guvernanță Extent; componentele Android JVM au trecut 27/27, iar lint Release nu are avertismente.
-- Sanity Android API 28: turneu complet și eliminare 42/42 aserțiuni, cinci capturi; instalarea APK-ului Release 7/7, două capturi. Rapoartele native Extent încorporează capturile și sunt inspectate cu profilul de raportare. Aceste probe nu închid lacunele dedicate de evaluator, confidențialitate și configurare enumerate mai sus.
+Calificarea 0.3.0 a trecut 108 teste Maven, 58 teste Android JVM și lint Release fără avertismente. Pe API 28, turneul a trecut 76 de aserțiuni, iar instalarea APK-ului Release a trecut șapte. Lacunele dedicate evaluatorului, confidențialității și configurării rămân în lista de acceptanță. [Rapoarte 0.3.0](../../release/0.3.0/reports/README.md)
 
 Ținta este o masă care explică ce se întâmplă, ce combinație are jucătorul acum și ce decizie sugerează AI-ul, fără a-i arăta informații pe care politica nu le-ar avea în mod legitim.
 

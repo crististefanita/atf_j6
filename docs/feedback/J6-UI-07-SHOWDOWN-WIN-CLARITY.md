@@ -44,5 +44,5 @@ Un singur traseu sanity vizual pornește o mână locală, verifică un showdown
 ## Delimitări
 
 - `J6-UI-05` rămâne ownerul pentru confidențialitatea cărților, coach și recapitularea după joc. Acest feedback completează recapitularea cu selecția exactă a mâinii și egalitatea de dimensiune.
-- `J6-UI-06` rămâne ownerul pentru pacing și reluare. Comportamentul curent de colectare după 1,5 secunde nu mai este acceptabil pentru recapitularea unei mâini care așteaptă `New hand`; păstrarea până la input este contractul nou de aici. Premiul se animă spre beneficiarii returnați de `PotSettlement`; nu se reutilizează semantica de levată sau destinația potului pentru această mișcare.
+- `J6-UI-06` deține pacing-ul și reluarea. Masa terminală rămâne afișată până la `New hand`, iar markerul premiului pornește din pot către beneficiarii decontării. Proba nativă rămasă trebuie să confirme destinația markerului. [Continuarea decontării](J6-UI-06-RESUMABLE-TURNS-AND-SETTLEMENT.md)
 - `J6-UI-04` deține semantica separării `potWon` și `returned`. Interfața expune acum `Won` și `Returned` ca valori distincte; testele UI trebuie să confirme că markerul de premiu folosește numai `potWon`.

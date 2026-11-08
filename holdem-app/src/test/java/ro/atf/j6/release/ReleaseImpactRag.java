@@ -170,7 +170,10 @@ public final class ReleaseImpactRag {
             row.put("inventorySha256", suiteInventoryDigest);
             row.put("indexedCommit", head);
         });
-        ReleaseDocumentReview.appendFindings(result.putArray("documentFindings"), snapshot.claims(), head, ReleaseImpactRag::redact);
+        ArrayNode findings = result.putArray("documentFindings");
+        ReleaseDocumentReview.appendFindings(findings, snapshot.claims(), head, ReleaseImpactRag::redact);
+        Set<String> tracked = new HashSet<>(Arrays.asList(git(root, "ls-files", "-z").split("\0")));
+        ReleaseFeedbackLinks.appendFindings(findings, root, tracked, snapshot.feedback(), head, ReleaseImpactRag::redact);
         result.put("corpusSha256", corpusDigest(corpus));
         Files.createDirectories(target.getParent());
         JSON.writerWithDefaultPrettyPrinter().writeValue(target.toFile(), result);
@@ -199,6 +202,7 @@ public final class ReleaseImpactRag {
         List<Path> uniqueFiles = files.stream().distinct().sorted().toList();
         List<SourceChunk> chunks = new ArrayList<>();
         List<ReleaseDocumentReview.Claim> claims = new ArrayList<>();
+        List<ReleaseFeedbackLinks.Feedback> feedback = new ArrayList<>();
         for (Path file : uniqueFiles) {
             byte[] bytes = read(file);
             if (bytes.length > MAX_DOCUMENT_BYTES) continue;
@@ -208,8 +212,11 @@ public final class ReleaseImpactRag {
             String state = feedbackState(content);
             chunks.addAll(split(relative, sourceDigest, content, state));
             claims.addAll(ReleaseDocumentReview.readClaims(relative, sourceDigest, content, state));
+            if (relative.startsWith("docs/feedback/") && relative.endsWith(".md")) {
+                feedback.add(new ReleaseFeedbackLinks.Feedback(relative, sourceDigest, content));
+            }
         }
-        return new Corpus(List.copyOf(chunks), List.copyOf(claims));
+        return new Corpus(List.copyOf(chunks), List.copyOf(claims), List.copyOf(feedback));
     }
 
     private static List<SourceChunk> split(String path, String fileDigest, String content, String feedbackState) throws Exception {
@@ -350,11 +357,12 @@ public final class ReleaseImpactRag {
     }
 
     private static byte[] read(Path path) throws IOException { return Files.readAllBytes(path); }
-    private static String digest(byte[] bytes) throws Exception {
+    static String digest(byte[] bytes) throws Exception {
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     }
 
-    private record Corpus(List<SourceChunk> chunks, List<ReleaseDocumentReview.Claim> claims) { }
+    private record Corpus(List<SourceChunk> chunks, List<ReleaseDocumentReview.Claim> claims,
+                          List<ReleaseFeedbackLinks.Feedback> feedback) { }
     private record SourceChunk(String path, String heading, int startLine, int endLine, String sourceSha256,
                                String chunkSha256, String text, String feedbackState, Set<String> terms) { }
     private record RankedChunk(SourceChunk chunk, int score, int priority) { }

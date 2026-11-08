@@ -9,6 +9,10 @@ Android folosește aspectul Whist și Rentz pentru meniu, limbă, profil și mas
 
 Adversarii de antrenament dau check sau call în ambele moduri.
 
+## Candidatul curent 0.1.0
+
+APK-ul Release semnat trece calificarea locală, inclusiv sanity Android API 28. Identitatea, selecțiile și rapoartele Extent sunt în [dosarul 0.1.0](../release/0.1.0/README.md). GitHub a primit release-ul și ambele assets; ultima probă anonimă înregistrată (`2026-11-07T22:16:42Z`) a primit `404` la profil, repo, pagina Release și APK, astfel că starea rămâne `PREPARED`. Vezi [diagnosticul urmărit](../docs/feedback/J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md).
+
 | Comun J4/J5 | Personalizare J6 |
 |---|---|
 | Tema, widgeturile, selectorul de limbă, editorul de nume și numele adversarilor | Rutele, textele EN/RO și persistența profilului Hold’em |
@@ -47,13 +51,17 @@ Runnerul rezervă emulatorul `127.0.0.1:5555`, refuză să înlocuiască o insta
 
 Pentru dezvoltare locală, build-ul Debug simplu rămâne util; el nu califică și nu înlocuiește APK-ul Release. [Procesul complet](../docs/release/ATF_Release.md) include semnarea, integritatea, upload-ul și testul anonim al descărcării.
 
-Prima calificare a trecut cu 33 de teste Maven, 5 componente Android JVM și 78 de comparații pe emulatorul API 28. Traseul nativ a verificat un raise respins, un raise acceptat, străzile și conservarea jetoanelor după decontare.
+## Calificări UI istorice
+
+Aceste două rulări preced calificarea release 0.1.0. Pentru numărul actual de teste și hash-urile APK-ului, manifestul versionat este sursa de adevăr.
+
+Prima calificare UI a trecut cu 33 de teste Maven, 5 componente Android JVM și 78 de comparații pe emulatorul API 28. Traseul nativ a verificat un raise respins, un raise acceptat, străzile și conservarea jetoanelor după decontare.
 
 Calificarea compactă a trecut cu 36 de teste Maven, 7 componente Android JVM și 88 de comparații pe API 28 la font 2,0. A verificat încadrarea la șase locuri, dialogul cu tastatura deschisă și ordinea heads-up înainte și după mutarea dealerului.
 
-## APK local 0.1.0
+## Starea APK-ului 0.1.0
 
-Starea și cerințele APK-ului sunt în [catalogul release](../release/0.1.0/README.md). Cât timp ediția este `DRAFT`, build-urile Debug rămân doar în TMP; nu există încă un APK de distribuție sau un link public.
+Ediția 0.1.0 nu mai este `DRAFT`: APK-ul există și release-ul GitHub are asset-urile încărcate. Catalogul rămâne `PREPARED` până când testul anonim verifică descărcarea completă. Build-urile Debug și fișierele intermediare rămân doar în TMP; nu le folosiți ca APK de distribuție.
 
 Build-urile, APK-urile intermediare și capturile brute rămân în TMP. Pentru un candidat, copiați doar APK-ul Release, checksum-ul, validarea și rapoartele Extent relevante în `release/<versiune>/`; capturile UI rămân încorporate în raport.
 

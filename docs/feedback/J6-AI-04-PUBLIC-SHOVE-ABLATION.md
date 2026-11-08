@@ -1,5 +1,9 @@
 # J6-AI-04 — Izolarea citirii publice a shove-urilor
 
+**Prioritate:** P1
+
+**Stare:** Deschis — exploratoriu, sub pragul de acceptare
+
 ## Obiectiv
 
 Validarea trebuie să distingă contribuția istoricului public de celelalte reguli ale politicii. Fiecare actor primește numai observația legală proprie și acțiunile publice încheiate; auditorul verifică separat desfășurarea completă a mâinii.

@@ -69,8 +69,8 @@
       },
       {
         "path": "README.md",
-        "bytes": 1830,
-        "sha256": "1bdae0fcaa3133e6f3a6b756f081732ffbc3f70ae08a44179005692e5ab711e8"
+        "bytes": 2089,
+        "sha256": "4d58443c7d726f5eff3431db93d49e0aacb30b370afa63e88a943152eca9364f"
       },
       {
         "path": "release-notes.md",
@@ -124,6 +124,15 @@
     "sha256": "646a6d5814534986923eff68a0d4172a38462166e4e64ff45ae9cacfed55a03f",
     "credentialMode": "authenticated API request; no credential or signed URL stored",
     "completedUtc": "2026-11-07T22:13:47.6685038Z"
+  },
+  "authenticatedBrowserDownload": {
+    "verified": true,
+    "source": "GitHub Release page and APK asset opened in the signed-in browser",
+    "downloadEventCompleted": true,
+    "credentialMode": "authenticated browser session; no credential or local path stored",
+    "bytes": 722172,
+    "sha256": "646a6d5814534986923eff68a0d4172a38462166e4e64ff45ae9cacfed55a03f",
+    "completedUtc": "2026-11-08T06:38:01Z"
   },
   "publicDownloadAttempt": {
     "verified": false,

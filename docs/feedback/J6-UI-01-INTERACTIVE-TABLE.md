@@ -1,7 +1,8 @@
 # J6-UI-01 · O mână locală interactivă
 
-**Prioritate** P1  
-**Stare** Rezolvat pentru mâna locală de antrenament
+**Prioritate:** P1
+
+**Stare:** Rezolvat pentru mâna locală de antrenament
 
 Motorul furnizează o vedere stabilă pentru jucătorul uman, iar sesiunea validează mâna și revizia înainte de fiecare comandă. La decontare, cărțile adverse rămân ascunse și se afișează numai board-ul, cărțile proprii și jetoanele primite.
 

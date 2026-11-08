@@ -44,15 +44,18 @@ class ReleaseGovernanceTest {
                         + check.expected() + " actual " + check.actual()).toList().toString());
     }
 
-    @Test void publicDownloadIsGatedByPublicationAndMustMatchTheCurrentVersion() throws Exception {
+    @Test void downloadRoutesAreStateGatedAndMatchTheCurrentVersion() throws Exception {
         Path root = projectRoot();
         var checks = new ArrayList<AtfAssertion>();
         String page = "https://github.com/crististefanita/atf_j6/releases/tag/v0.1.0";
         String apk = "https://github.com/crististefanita/atf_j6/releases/download/v0.1.0/HoldemLab-0.1.0.apk";
         String publishedGuide = "## Android\n- [Release](" + page + ")\n- [APK](" + apk + ")\n";
+        String authenticatedGuide = "## Android\nAutentificare GitHub necesară.\n- [Release](" + page + ")\n- [APK](" + apk + ")\n";
         recordRoute(checks, "DRAFT has no public download route", "DRAFT", "## Android", "0.1.0", false);
-        recordRoute(checks, "PREPARED remains local", "PREPARED",
+        recordRoute(checks, "PREPARED without browser proof remains local", "PREPARED",
                 "## Android\n- [Candidate](release/0.1.0/README.md)", "0.1.0", false);
+        recordRoute(checks, "PREPARED allows verified account download", "PREPARED", authenticatedGuide, "0.1.0", true);
+        recordRoute(checks, "PREPARED direct links require an account notice", "PREPARED", publishedGuide, "0.1.0", false);
         recordRoute(checks, "Exact current release and APK are accepted", "PUBLISHED", publishedGuide, "0.1.0", true);
         recordRoute(checks, "DRAFT cannot expose an APK", "DRAFT", publishedGuide, "0.1.0", false);
         recordRoute(checks, "An older version is rejected", "PUBLISHED",
@@ -73,7 +76,41 @@ class ReleaseGovernanceTest {
                         && downloader.contains("$signature[0] -ne 0x50") ? "complete APK integrity gate" : "integrity gate incomplete");
         add(checks, "Download runner rejects DRAFT", "PREPARED/PUBLISHED only",
                 downloader.contains("@('PREPARED','PUBLISHED')") ? "PREPARED/PUBLISHED only" : "unqualified state accepted");
-        publish(root, "J6ReleaseDownloadRouteGovernance", "Current version and anonymous download contract", checks);
+        publish(root, "J6ReleaseDownloadRouteGovernance", "Current version and authenticated/anonymous download contract", checks);
+        assertTrue(!checks.isEmpty() && checks.stream().allMatch(AtfAssertion::passed),
+                () -> checks.stream().filter(check -> !check.passed()).map(check -> check.name() + " expected "
+                        + check.expected() + " actual " + check.actual()).toList().toString());
+    }
+
+    @Test void mainReadmeOmitsChecksumAndPinsTheCurrentReleaseFolder() throws Exception {
+        Path root = projectRoot();
+        var checks = new ArrayList<AtfAssertion>();
+        JsonNode index = JSON.readTree(root.resolve("release/index.json").toFile());
+        String version = index.path("currentVersion").asText();
+        String mainReadme = Files.readString(root.resolve("README.md"));
+        add(checks, "Main README omits checksum labels and digests", "no checksum disclosure",
+                containsChecksumDisclosure(mainReadme) ? "checksum disclosure present" : "no checksum disclosure");
+        add(checks, "Main README links the current version dossier", "current version and exact dossier",
+                referencesVersionedDossier(mainReadme, version) ? "current version and exact dossier" : "version/dossier drift");
+        String staleVersion = version.equals("0.0.1") ? "0.0.2" : "0.0.1";
+        add(checks, "Governance rejects a stale dossier path", "blocked",
+                !referencesVersionedDossier("`" + version + "` [Ediție](release/" + staleVersion + "/README.md)", version)
+                        ? "blocked" : "accepted");
+        add(checks, "Governance rejects a stale README version", "blocked",
+                !referencesVersionedDossier("`" + staleVersion + "` [Ediție](release/" + version + "/README.md)", version)
+                        ? "blocked" : "accepted");
+
+        String digest = "a".repeat(64);
+        add(checks, "Governance detects a SHA label", "blocked",
+                containsChecksumDisclosure("SHA-256: " + digest) ? "blocked" : "not blocked");
+        add(checks, "Governance detects a checksum label", "blocked",
+                containsChecksumDisclosure("Checksum: " + digest) ? "blocked" : "not blocked");
+        add(checks, "Governance detects a bare digest", "blocked",
+                containsChecksumDisclosure(digest) ? "blocked" : "not blocked");
+        add(checks, "Governance accepts ordinary release navigation", "allowed",
+                !containsChecksumDisclosure("Release 0.1.0 · dosarul ediției și rapoarte") ? "allowed" : "rejected");
+
+        publish(root, "J6MainReadmeGovernance", "No checksum in the project README; current release dossier is linked", checks);
         assertTrue(!checks.isEmpty() && checks.stream().allMatch(AtfAssertion::passed),
                 () -> checks.stream().filter(check -> !check.passed()).map(check -> check.name() + " expected "
                         + check.expected() + " actual " + check.actual()).toList().toString());
@@ -100,6 +137,10 @@ class ReleaseGovernanceTest {
         add(checks, "Allowed release lifecycle state", allowedState ? "allowed " + state : "unknown",
                 allowedState ? "allowed " + state : "unknown");
         add(checks, "Index and validation state", state, publication.path("state").asText());
+        add(checks, "Main README identifies the indexed version and evidence", version,
+                referencesVersionedDossier(mainReadme, version) ? version : "missing or stale version dossier");
+        add(checks, "Main README contains no checksum material", "no checksum disclosure",
+                containsChecksumDisclosure(mainReadme) ? "checksum disclosure present" : "no checksum disclosure");
         add(checks, "APK filename follows the product version", packageName, identity.path("apkName").asText());
         add(checks, "Android Gradle version matches the release", version,
                 gradleVersion(Files.readString(root.resolve("holdem-android/app/build.gradle"))));
@@ -128,12 +169,25 @@ class ReleaseGovernanceTest {
         add(checks, "Release root avoids Raw and folder downloads", "no raw or source-folder URL",
                 mainReadme.contains("raw.githubusercontent.com") || mainReadme.contains("release/" + version + "/" + packageName)
                         ? "unqualified route present" : "no raw or source-folder URL");
-        add(checks, "README has current release page", published ? releaseUrl : "no public route",
-                published && mainReadme.contains(releaseUrl) ? releaseUrl
-                        : !published && !mainReadme.contains("github.com/crististefanita/atf_j6/releases/") ? "no public route" : "wrong route");
-        add(checks, "README has direct APK only after publication", published ? apkUrl : "no public APK link",
-                published && mainReadme.contains(apkUrl) ? apkUrl
-                        : !published && !mainReadme.contains("releases/download/") ? "no public APK link" : "wrong route");
+        boolean browserReceiptMatches = validation.path("authenticatedBrowserDownload").path("verified").asBoolean()
+                && validation.path("authenticatedBrowserDownload").path("bytes").asLong() == identity.path("apkBytes").asLong()
+                && validation.path("authenticatedBrowserDownload").path("sha256").asText().equals(identity.path("sha256").asText());
+        boolean authenticatedPreparedDownload = state.equals("PREPARED") && browserReceiptMatches;
+        boolean accountNotice = mainReadme.toLowerCase(java.util.Locale.ROOT).contains("autentificare github");
+        if (state.equals("PREPARED") && (mainReadme.contains(releaseUrl) || mainReadme.contains(apkUrl))) {
+            add(checks, "PREPARED links have a complete authenticated browser receipt", "verified bytes and digest",
+                    browserReceiptMatches ? "verified bytes and digest" : "missing or mismatched browser receipt");
+            add(checks, "PREPARED links disclose the authentication requirement", "GitHub account required",
+                    accountNotice ? "GitHub account required" : "account requirement missing");
+        }
+        add(checks, "README has the current release page", published || authenticatedPreparedDownload ? releaseUrl : "no release route",
+                (published || authenticatedPreparedDownload) && mainReadme.contains(releaseUrl) ? releaseUrl
+                        : !published && !authenticatedPreparedDownload && !mainReadme.contains("github.com/crististefanita/atf_j6/releases/")
+                                ? "no release route" : "wrong route");
+        add(checks, "README has the current direct APK route", published || authenticatedPreparedDownload ? apkUrl : "no APK route",
+                (published || authenticatedPreparedDownload) && mainReadme.contains(apkUrl) ? apkUrl
+                        : !published && !authenticatedPreparedDownload && !mainReadme.contains("releases/download/")
+                                ? "no APK route" : "wrong route");
         add(checks, "Git preserves release bytes", "release/** -text",
                 Files.readString(root.resolve(".gitattributes")).contains("/release/** -text") ? "release/** -text" : "missing");
         String ignore = Files.readString(root.resolve(".gitignore"));
@@ -195,6 +249,16 @@ class ReleaseGovernanceTest {
         assertTrue(inspection.isCompliant(), () -> inspection.violations().toString());
     }
 
+    private static boolean referencesVersionedDossier(String readme, String version) {
+        return readme.contains("`" + version + "`")
+                && readme.contains("(release/" + version + "/README.md)");
+    }
+
+    private static boolean containsChecksumDisclosure(String text) {
+        return java.util.regex.Pattern.compile("(?i)(?:\\bsha\\s*-?\\s*256\\b|\\bchecksum\\b|\\b[0-9a-f]{64}\\b)")
+                .matcher(text).find();
+    }
+
     private static void add(List<AtfAssertion> checks, String name, String expected, String actual) {
         checks.add(new AtfAssertion(name, expected, actual, expected.equals(actual)));
     }
@@ -216,10 +280,12 @@ class ReleaseGovernanceTest {
         String page = prefix + "tag/v" + version;
         String apk = prefix + "download/v" + version + "/HoldemLab-" + version + ".apk";
         long releaseLinks = readme.lines().filter(line -> line.contains(prefix)).count();
-        if (!state.equals("PUBLISHED")) return false;
-        return releaseLinks == 2 && readme.lines().filter(line -> line.contains(page)).count() == 1
+        boolean exactCurrentLinks = releaseLinks == 2 && readme.lines().filter(line -> line.contains(page)).count() == 1
                 && readme.lines().filter(line -> line.contains(apk)).count() == 1
                 && !readme.contains("raw.githubusercontent.com") && !readme.contains("/releases/latest");
+        if (state.equals("PUBLISHED")) return exactCurrentLinks;
+        return state.equals("PREPARED") && exactCurrentLinks
+                && readme.toLowerCase(java.util.Locale.ROOT).contains("autentificare github");
     }
 
     private static Path projectRoot() {

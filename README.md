@@ -4,7 +4,9 @@ ATF J6 este laboratorul JVM pentru un sistem local de No-Limit Texas Hold'em: mo
 
 Nucleul se antrenează și se evaluează local. Adaptorul online vizează numai arene care autorizează explicit boții, precum Open Poker. Android oferă o mână de antrenament sau un turneu offline cu eliminări, pe componentele comune Whist și Rentz. [Interfața Android](holdem-android/README.md)
 
-Catalogul Android este în [`release/`](release/README.md). Ediția `0.1.0` este `PREPARED`: APK-ul semnat, testele și asset-urile GitHub sunt verificate prin API. Descărcarea fără autentificare răspunde HTTP 404, inclusiv pe profilul și repo-ul proprietarului; `PUBLISHED` așteaptă remedierea vizibilității publice și repetarea testului complet.
+## Release Android curent
+
+`0.1.0` este `PREPARED`: asset-urile GitHub sunt complete, iar ultima probă anonimă (`2026-11-07T22:16:42Z`) a primit HTTP 404. Descărcarea din browserul conectat la contul GitHub a fost verificată. **Linkurile necesită autentificare GitHub.** [Pagina Release](https://github.com/crististefanita/atf_j6/releases/tag/v0.1.0) · [Descarcă APK-ul](https://github.com/crististefanita/atf_j6/releases/download/v0.1.0/HoldemLab-0.1.0.apk). [Dosarul ediției și rapoartele](release/0.1.0/README.md) păstrează calificarea; [J6-REL-01](docs/feedback/J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) urmărește accesul anonim.
 
 ## Obiectivul primei faze
 

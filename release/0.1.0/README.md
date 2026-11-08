@@ -22,9 +22,9 @@ Prima ediție Android pentru No-Limit Texas Hold’em offline.
 
 Release-ul `v0.1.0` a fost creat (`437875854`), iar APK-ul și checksum-ul au fost încărcate. API-ul autentificat confirmă că repo-ul este `public`, Release-ul nu este draft, iar asset-ul APK se descarcă complet din API-ul Releases cu status API `302` → CDN `200`, `722172` bytes și SHA-256 identic.
 
-Testul fără cookies, Authorization sau credentiale implicite a primit HTTP `404` pentru profilul proprietarului, repo, pagina Release, API-ul anonim al Release-ului și endpointul APK. Asset-ul este stocat corect, dar GitHub nu-l expune momentan prin ruta publică; nu marcăm ediția `PUBLISHED` și nu publicăm un link în README până când acea probă nu trece.
+Testul fără cookies, Authorization sau credentiale implicite a primit HTTP `404` pentru profilul proprietarului, repo, pagina Release, API-ul anonim al Release-ului și endpointul APK. Descărcarea APK-ului din pagina Release a reușit în browserul autentificat la `2026-11-08T06:38:01Z`; fișierul primit are 722.172 bytes și identitatea din manifest. README-ul principal oferă acum pagina Release și asset-ul direct cu avertismentul de autentificare. Ediția rămâne `PREPARED` până când trece și proba anonimă.
 
-Verificarea s-a făcut la `2026-11-07T22:16:42Z`. Diagnostic și asset identity sunt în [manifest](release-validation.json). Pentru procesul de remediere, vezi [ATF_Release.md](../../docs/release/ATF_Release.md).
+Verificarea s-a făcut la `2026-11-07T22:16:42Z`. Diagnostic și asset identity sunt în [manifest](release-validation.json). Blocajul extern este urmărit în [J6-REL-01](../../docs/feedback/J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md); procesul de remediere este în [ATF_Release.md](../../docs/release/ATF_Release.md).
 
 ## Dovezi
 

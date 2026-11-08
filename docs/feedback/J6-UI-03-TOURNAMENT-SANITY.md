@@ -1,5 +1,9 @@
 # J6-UI-03 · Turneu local până la rezultat
 
+**Prioritate:** P1
+
+**Stare:** Rezolvat pentru turneul Android offline 0.1.0
+
 Mâna de antrenament reconstruia stivele la fiecare deal. Un all-in putea încheia mâna, dar nu exista un parcurs care să păstreze eliminările și să arate câștigătorul.
 
 ## Contract

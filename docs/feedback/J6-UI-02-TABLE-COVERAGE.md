@@ -1,7 +1,8 @@
 # J6-UI-02 · Masa pe ferestre compacte și heads-up
 
-**Prioritate** P2  
-**Stare** Rezolvat
+**Prioritate:** P2
+
+**Stare:** Rezolvat
 
 J6 folosește ancorele comune pentru mesele cu 4–6 locuri și așază adversarul heads-up deasupra potului. Adaptorul compact scurtează antetul, afișează separat cărțile proprii și ține butoanele aliniate la marginea superioară a rândului. Dialogul de raise păstrează intervalul, suma, eroarea și cele două acțiuni vizibile cu tastatura deschisă în profilul calificat.
 

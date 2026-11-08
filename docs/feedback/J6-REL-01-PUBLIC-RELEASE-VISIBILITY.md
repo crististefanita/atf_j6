@@ -19,6 +19,10 @@ Diagnostic detaliat: [manifestul 0.1.0](../../release/0.1.0/release-validation.j
 
 GitHub confirmă release-ul publicat și ambele fișiere încărcate. Clientul autentificat a verificat integral APK-ul și checksum-ul. Scriptul de acceptanță și clientul anonim fără proxy au primit HTTP 404 pentru APK. Clientul fără proxy a primit 404 și pentru profil, repo, API-ul release-ului și checksum, iar repo-ul public folosit drept control a răspuns cu HTTP 200. Aceste observații confirmă efectul asupra accesului anonim. Cauza exactă necesită verificare la GitHub. [Manifestul ediției](../../release/0.2.0/release-validation.json)
 
+### Ediția 0.2.1
+
+GitHub confirmă publicarea și ambele fișiere atașate. Descărcarea autentificată a APK-ului și checksum-ului a trecut verificarea integrală. Clientul anonim a primit HTTP 404 pentru profil, repo, release și ambele fișiere, în timp ce repo-ul public de control a răspuns cu HTTP 200. [Manifestul ediției](../../release/0.2.1/release-validation.json)
+
 ## Remediere
 
 Titularul contului GitHub poate cere revizuirea vizibilității publice pentru `crististefanita/atf_j6`. După revizuire, repetați verificarea anonimă pe rutele canonice ale ediției. Dosarul ediției consemnează între timp rezultatele autentificate și anonime.

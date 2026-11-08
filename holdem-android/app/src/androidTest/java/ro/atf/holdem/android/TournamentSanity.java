@@ -14,7 +14,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.Choreographer;
+import android.view.InputDevice;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -23,6 +25,8 @@ import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import ro.atf.holdem.core.HoldemTableViewState;
+import ro.atf.holdem.core.Street;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
@@ -473,14 +477,11 @@ public final class TournamentSanity extends Instrumentation {
             see("Six-seat hand reaches preflop", "Mâna 1 · Preflop");
             inspectSeatFacts(activity, false);
             focusSeatMetrics(activity);
-            // The external TalkBack speech overlay updates after the accessibility focus event.
-            SystemClock.sleep(2000);
             capture("01-compact-seat-metrics");
             tap(revealTaggedControl(activity, "ALL_IN"));
-            see("Hand settles after the opening all-in", "Mâna 1 · Încheiată");
+            var settled = awaitSeatSettlement();
+            check("Hand settles after the opening all-in", "COMPLETE", settled == null ? "checkpoint unavailable" : settled.street().name());
             inspectSeatFacts(activity, true);
-            var settled = new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir()))
-                    .load().resumed().game().view();
             int winner = 0;
             for (int seat = 1; seat < settled.seats().size(); seat++)
                 if (settled.seats().get(seat).potWon() > settled.seats().get(winner).potWon()) winner = seat;
@@ -491,6 +492,22 @@ public final class TournamentSanity extends Instrumentation {
         } finally {
             runOnMainSync(activity::finish);
         }
+    }
+
+    private HoldemTableViewState awaitSeatSettlement() {
+        var sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir()));
+        long deadline = SystemClock.uptimeMillis() + 8000;
+        HoldemTableViewState frame = null;
+        do {
+            var saved = sessions.load().resumed();
+            if (saved != null) {
+                frame = saved.game().view();
+                if (frame.street() == Street.COMPLETE) break;
+            }
+            SystemClock.sleep(80);
+        } while (SystemClock.uptimeMillis() < deadline);
+        waitForIdleSync();
+        return frame;
     }
 
     private void selectTableSize(String size) throws Exception {
@@ -572,16 +589,62 @@ public final class TournamentSanity extends Instrumentation {
         int actor = frame.actor();
         runOnMainSync(() -> reveal(seatFrame(activity.getWindow().getDecorView(), actor)));
         waitForIdleSync();
+        var service = ui.getServiceInfo();
+        service.flags |= AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
+        ui.setServiceInfo(service);
         var seats = collect(node -> node.isFocusable() && value(node.getContentDescription()).contains(", La rând")
                 && value(node.getContentDescription()).contains(", Jetoane ") && value(node.getContentDescription()).contains(", În pot "));
         check("Active seat exposes one full accessibility description", "one node with name, chips, contribution and turn",
                 seats.size() == 1 ? "one node with name, chips, contribution and turn" : "matching nodes: " + seats.size());
         var target = seats.get(0);
-        boolean dispatched = target.performAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
+        String description = value(target.getContentDescription());
+        var bounds = new Rect();
+        target.getBoundsInScreen(bounds);
+        tapForTalkBack(bounds.centerX(), bounds.centerY());
+        boolean focused = awaitSeatFocus(description, 1500);
+        if (!focused) {
+            target.performAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
+            focused = awaitSeatFocus(description, 3000);
+        }
+        if (!focused) capture("01a-seat-focus-failure");
+        check("Active seat accepts Android accessibility focus", description,
+                focused ? description : "focus unavailable after Android action and TalkBack touch");
+        actions.put("Confirm accessibility focus on the active seat");
+    }
+
+    private boolean hasAccessibilityFocus(String description) {
         var focused = ui.findFocus(AccessibilityNodeInfo.FOCUS_ACCESSIBILITY);
-        check("Active seat accepts Android accessibility focus", value(target.getContentDescription()),
-                dispatched && focused != null ? value(focused.getContentDescription()) : "focus unavailable");
-        actions.put("Move accessibility focus to the active seat");
+        if (focused != null && description.equals(value(focused.getContentDescription()))) return true;
+        return collect(node -> node.isAccessibilityFocused() && description.equals(value(node.getContentDescription()))).size() == 1;
+    }
+
+    private boolean awaitSeatFocus(String description, long timeoutMs) {
+        long deadline = SystemClock.uptimeMillis() + timeoutMs;
+        long since = -1;
+        do {
+            if (hasAccessibilityFocus(description)) {
+                if (since < 0) since = SystemClock.uptimeMillis();
+                if (SystemClock.uptimeMillis() - since >= 350) return true;
+            } else {
+                since = -1;
+            }
+            SystemClock.sleep(75);
+        } while (SystemClock.uptimeMillis() < deadline);
+        return false;
+    }
+
+    private void tapForTalkBack(int x, int y) throws Exception {
+        long downTime = SystemClock.uptimeMillis();
+        for (int action : new int[]{MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP}) {
+            var event = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), action, x, y, 0);
+            try {
+                event.setSource(InputDevice.SOURCE_TOUCHSCREEN);
+                if (!ui.injectInputEvent(event, true)) throw new AssertionError("Cannot deliver TalkBack touch exploration");
+            } finally {
+                event.recycle();
+            }
+        }
+        actions.put("Explore the active seat with a single TalkBack touch");
     }
 
     private static LinearLayout seatFrame(View root, int seat) {

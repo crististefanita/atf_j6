@@ -156,22 +156,22 @@ public final class TournamentSanity extends Instrumentation {
             see("Winner sees congratulations", "Congratulations, you won!");
             see("Winner summary reflects all three hands and 8000 chips", "Hands played · 3\nFinal stack · 8000");
             seeContains("Tournament result includes cumulative standings", "Tournament leaderboard points");
-            seeContains("Human winner receives the first-place tournament points", "#1 · You · 100 points");
+            seeContains("Human winner receives the first-place tournament points", "#1 · You · Points 100");
             capture("04-tournament-won");
             tap("Play again");
             see("Play again leads to tournament setup", "Tournament setup");
             tap("Main menu");
             tap("Tournament leaderboard");
             see("Leaderboard screen explains cumulative tournament points", "Cumulative tournament points");
-            seeContains("Leaderboard retains the completed tournament result", "#1 · You · 100 points");
-            seeContains("Completed tournament is counted once", "100 points · 1 tournaments");
+            seeContains("Leaderboard retains the completed tournament result", "#1 · You · Points 100");
+            seeContains("Completed tournament is counted once", "Points 100 · Tournaments 1");
             runOnMainSync(activity::finish);
             activity = startActivitySync(new Intent(getTargetContext(), HoldemActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             see("Fresh activity returns to the home menu", "Hold’em Lab");
             tap("Tournament leaderboard");
             see("Leaderboard reloads from app-private storage", "Cumulative tournament points");
-            seeContains("Reopening the activity does not duplicate the tournament", "100 points · 1 tournaments");
+            seeContains("Reopening the activity does not duplicate the tournament", "Points 100 · Tournaments 1");
         } finally {
             runOnMainSync(activity::finish);
         }
@@ -195,7 +195,7 @@ public final class TournamentSanity extends Instrumentation {
 
     private void assertTournamentStandingsHavePlayerNames() throws Exception {
         var rows = collect(node -> value(node.getText()).startsWith("#")
-                && value(node.getText()).contains(" points"));
+                && value(node.getText()).contains(" · Points "));
         var observed = new ArrayList<String>(rows.size());
         for (var row : rows) observed.add(value(row.getText()));
         boolean named = observed.size() == 4 && observed.stream().allMatch(row -> {

@@ -58,8 +58,7 @@ final class LocalHoldemGame {
             if (rounds.isEmpty() || (!tournament && rounds.size() != 1)
                     || rounds.size() != roundStartElapsedSeconds.size()
                     || elapsedSeconds < 0 || !BLIND_LEVEL_MINUTES.contains(blindLevelMinutes)
-                    || tournament != (tournamentId != null && !tournamentId.isBlank())
-                    || humanPlayerId == null || humanPlayerId.isBlank()) {
+                    || tournament != hasParticipantId(tournamentId) || !hasParticipantId(humanPlayerId)) {
                 throw new IllegalArgumentException("Invalid saved rounds");
             }
             long previous = -1;
@@ -141,7 +140,7 @@ final class LocalHoldemGame {
         this.seed = seed;
         this.humanPlayerId = Objects.requireNonNull(humanPlayerId, "humanPlayerId");
         this.tournamentId = Objects.requireNonNull(tournamentId, "tournamentId");
-        if (humanPlayerId.isBlank() || tournamentMode != !tournamentId.isBlank())
+        if (!hasParticipantId(humanPlayerId) || tournamentMode != hasParticipantId(tournamentId))
             throw new IllegalArgumentException("Invalid tournament participant identity");
         this.blindLevelMinutes = blindLevelMinutes;
         this.monotonicNanos = Objects.requireNonNull(monotonicNanos, "monotonicNanos");
@@ -189,6 +188,10 @@ final class LocalHoldemGame {
     synchronized boolean isTournament() { return tournament != null; }
 
     synchronized long displayNameSeed() { return seed; }
+
+    private static boolean hasParticipantId(String id) {
+        return id != null && id.codePoints().anyMatch(codePoint -> !Character.isWhitespace(codePoint));
+    }
 
     synchronized String tournamentId() { return tournamentId; }
 

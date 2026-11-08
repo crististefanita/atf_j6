@@ -66,7 +66,7 @@ final class TournamentLeaderboard {
     private TournamentLeaderboard() { }
 
     static int rankAt(List<Entry> sorted, int index) {
-        if (index < 0 || index >= sorted.size()) throw new IndexOutOfBoundsException(index);
+        if (index < 0 || index >= sorted.size()) throw new IndexOutOfBoundsException("Leaderboard index " + index);
         long points = sorted.get(index).points();
         while (index > 0 && sorted.get(index - 1).points() == points) index--;
         return index + 1;

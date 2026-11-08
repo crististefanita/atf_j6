@@ -9,7 +9,7 @@ Indexul urmărește lacunele verificabile ale J6. Cerințele stabile apar în do
 | Prioritate | Subiect | Dovada care lipsește |
 |---|---|---|
 | P1 | [J6-REL-01 · Vizibilitate publică](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | Descărcare anonimă completă. Linkul din README a trecut în browserul autentificat. |
-| P1 | [J6-REL-05 · RAG](J6-REL-05-RELEASE-RAG-GOVERNANCE.md) | Probe pentru contradicții și feedback depășit, cu dovezi citate. |
+| P1 | [J6-REL-05 · RAG](J6-REL-05-RELEASE-RAG-GOVERNANCE.md) | Detectarea linkurilor și ancorelor dispărute din feedback. |
 | P1 | [J6-AI-02 · Calibrare](J6-AI-02-STRATEGY-CALIBRATION.md) | Evaluare independentă și model de range înainte de promovarea stilului Hard. |
 | P1 | [J6-AI-04 · Ablație shove](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) | Efect repetat cu minimum 20 de seed-uri independente pe configurație. |
 | P1 | [J6-UI-05 · Coach](J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md) | Oracol pentru cele cinci cărți decisive și legătura dintre selectorul de blinduri și sesiunea salvată. |

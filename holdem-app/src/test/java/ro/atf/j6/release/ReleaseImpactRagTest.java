@@ -11,6 +11,8 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.util.HexFormat;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -144,6 +146,110 @@ class ReleaseImpactRagTest {
         String androidCandidate = commit(root, "change Android dependency");
         JsonNode androidReview = ReleaseImpactRag.review(root, mavenCandidate, androidCandidate, "0.3.0", temp.resolve("android.json"));
         assertProvenanceRanking(androidReview, android, maven);
+    }
+
+    @Test
+    void citesConflictingAndroidPacingClaimsWithoutChangingTheReleaseGate(@TempDir Path temp) throws Exception {
+        Path root = project(temp, "0.3.0", "holdem-android", "ro.atf.holdem.android.LocalHoldemGameTest");
+        String guide = "holdem-android/README.md";
+        String strategy = "docs/testing/TEST_STRATEGY.md";
+        String key = "android.turn-pacing";
+        write(root, guide, "# Android\nTurnPacing uses `550 ms` <!-- rag:contract android.turn-pacing -->.\n");
+        write(root, strategy, """
+                # Strategy
+                TurnPacing is checked at `550 MS` <!-- rag:contract android.turn-pacing -->.
+
+                ~~~markdown
+                Example only: `400 ms` <!-- rag:contract android.turn-pacing -->.
+                ~~~
+                """);
+        write(root, "release/0.2.2/release-notes.md",
+                "# Historical\nTurnPacing used `700 ms` <!-- rag:contract android.turn-pacing -->.\n");
+        String base = commit(root, "aligned pacing contract");
+        assertTrue(ReleaseImpactRag.review(root, base, base, "0.3.0", temp.resolve("aligned.json"))
+                .path("documentFindings").isEmpty());
+
+        write(root, strategy, Files.readString(root.resolve(strategy)).replace("550 MS", "600 ms"));
+        String candidate = commit(root, "conflicting pacing documentation");
+        String releaseIndex = Files.readString(root.resolve("release/index.json"));
+        JsonNode review = ReleaseImpactRag.review(root, base, candidate, "0.3.0", temp.resolve("conflict.json"));
+
+        JsonNode findings = review.path("documentFindings");
+        assertEquals(1, findings.size());
+        JsonNode finding = findings.get(0);
+        assertEquals("DOCUMENT_CONTRADICTION", finding.path("kind").asText());
+        assertEquals(key, finding.path("key").asText());
+        JsonNode citations = finding.path("citations");
+        assertEquals(2, citations.size());
+        assertCitation(root, citations.get(0), strategy, 2, "600 ms", candidate);
+        assertCitation(root, citations.get(1), guide, 2, "550 ms", candidate);
+        assertAdvisory(review);
+        assertEquals(releaseIndex, Files.readString(root.resolve("release/index.json")));
+        assertTrue(git(root, "status", "--porcelain").isBlank());
+    }
+
+    @Test
+    void citesStaleViewportFeedbackOnlyWhenCurrentContractsAgree(@TempDir Path temp) throws Exception {
+        Path root = project(temp, "0.3.0", "holdem-android", "ro.atf.holdem.android.LocalHoldemGameTest");
+        String strategy = "docs/testing/TEST_STRATEGY.md";
+        String guide = "holdem-android/README.md";
+        String feedback = "docs/feedback/J6-UI-09-SEAT-METRIC-HIERARCHY.md";
+        String claim = " <!-- rag:contract android.seat-metrics.viewport-width -->";
+        String observation = " <!-- rag:observed android.seat-metrics.viewport-width -->";
+        write(root, strategy, "# Strategy\nRun seat-metrics at `360 dp`" + claim + ".\n");
+        write(root, guide, "# Android\nThe compact profile uses `360 dp`" + claim + ".\n");
+        write(root, feedback, "# Seat metrics\n**Stare:** Deschis\nObserved `360 dp`" + observation + " password=fixture-private\n");
+        write(root, "docs/feedback/J6-UI-02-TABLE-COVERAGE.md",
+                "# Historical coverage\n**Stare:** Rezolvat\nObserved `360 dp`" + observation + ".\n");
+        String base = commit(root, "feedback and contract use the same viewport");
+        assertTrue(ReleaseImpactRag.review(root, base, base, "0.3.0", temp.resolve("aligned.json"))
+                .path("documentFindings").isEmpty());
+
+        write(root, strategy, "# Strategy\nRun seat-metrics at `320 dp`" + claim + ".\n");
+        String disagreement = commit(root, "one document moves to 320 dp");
+        JsonNode unresolved = ReleaseImpactRag.review(root, base, disagreement, "0.3.0", temp.resolve("unresolved.json"));
+        assertEquals(1, unresolved.path("documentFindings").size());
+        assertEquals("DOCUMENT_CONTRADICTION", unresolved.path("documentFindings").get(0).path("kind").asText());
+
+        write(root, guide, "# Android\nThe compact profile uses `320 dp`" + claim + ".\n");
+        String candidate = commit(root, "both contracts move to 320 dp");
+        Path context = temp.resolve("stale.json");
+        JsonNode review = ReleaseImpactRag.review(root, base, candidate, "0.3.0", context);
+
+        JsonNode findings = review.path("documentFindings");
+        assertEquals(1, findings.size());
+        JsonNode finding = findings.get(0);
+        assertEquals("STALE_FEEDBACK", finding.path("kind").asText());
+        assertEquals("android.seat-metrics.viewport-width", finding.path("key").asText());
+        JsonNode citations = finding.path("citations");
+        assertEquals(2, citations.size());
+        assertCitation(root, citations.get(0), feedback, 3, "360 dp", candidate);
+        assertCitation(root, citations.get(1), strategy, 2, "320 dp", candidate);
+        assertEquals("observed", citations.get(0).path("role").asText());
+        assertEquals("contract", citations.get(1).path("role").asText());
+        assertFalse(Files.readString(context).contains("fixture-private"));
+        assertAdvisory(review);
+    }
+
+    private static void assertCitation(Path root, JsonNode citation, String path, int line, String value, String commit)
+            throws Exception {
+        assertEquals(path, citation.path("path").asText());
+        assertEquals(line, citation.path("startLine").asInt());
+        assertEquals(line, citation.path("endLine").asInt());
+        assertEquals(value, citation.path("value").asText());
+        assertEquals(commit, citation.path("indexedCommit").asText());
+        byte[] bytes = Files.readAllBytes(root.resolve(path));
+        assertEquals(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)),
+                citation.path("sourceSha256").asText());
+        assertTrue(citation.path("excerpt").asText().contains(value));
+    }
+
+    private static void assertAdvisory(JsonNode review) {
+        assertTrue(review.path("advisoryOnly").asBoolean());
+        assertEquals("NONE", review.path("gateEffect").asText());
+        assertFalse(review.path("canChangeReleaseIndex").asBoolean(true));
+        assertFalse(review.path("canDeclareTestPass").asBoolean(true));
+        assertEquals("NOT_EVALUATED", review.path("testReceiptState").asText());
     }
 
     @Test

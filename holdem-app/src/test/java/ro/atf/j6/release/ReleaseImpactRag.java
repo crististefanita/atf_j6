@@ -56,9 +56,9 @@ public final class ReleaseImpactRag {
                 "Expected: <project-root> <base-version> <base-commit> <candidate-commit> <draft-version> <output.json>");
         Path output = Path.of(args[5]);
         ObjectNode result = review(Path.of(args[0]), args[1], args[2], args[3], args[4], output);
-        System.out.printf("Release impact context: %s citations=%d suggestedSuites=%d output=%s%n",
+        System.out.printf("Release impact context: %s citations=%d suggestedSuites=%d documentFindings=%d output=%s%n",
                 result.path("contextState").asText(), result.path("retrievedSources").size(),
-                result.path("suggestedTestSuites").size(), output.toAbsolutePath());
+                result.path("suggestedTestSuites").size(), result.path("documentFindings").size(), output.toAbsolutePath());
     }
 
     public static ObjectNode review(Path sourceRoot, String baseCommit, String candidateCommit,
@@ -96,7 +96,8 @@ public final class ReleaseImpactRag {
             changeSignals.addAll(tokens(line.substring(1)));
         }
 
-        List<SourceChunk> corpus = corpus(root);
+        Corpus snapshot = corpus(root);
+        List<SourceChunk> corpus = snapshot.chunks();
         Map<String, Integer> documentFrequency = new HashMap<>();
         for (SourceChunk chunk : corpus) for (String term : chunk.terms()) documentFrequency.merge(term, 1, Integer::sum);
         List<RankedChunk> lexicalMatches = corpus.stream()
@@ -169,13 +170,14 @@ public final class ReleaseImpactRag {
             row.put("inventorySha256", suiteInventoryDigest);
             row.put("indexedCommit", head);
         });
+        ReleaseDocumentReview.appendFindings(result.putArray("documentFindings"), snapshot.claims(), head, ReleaseImpactRag::redact);
         result.put("corpusSha256", corpusDigest(corpus));
         Files.createDirectories(target.getParent());
         JSON.writerWithDefaultPrettyPrinter().writeValue(target.toFile(), result);
         return result;
     }
 
-    private static List<SourceChunk> corpus(Path root) throws Exception {
+    private static Corpus corpus(Path root) throws Exception {
         var files = new ArrayList<Path>();
         for (String directory : List.of("docs/feedback", "docs/requirements", "docs/testing", "docs/release", "docs/architecture")) {
             Path path = root.resolve(directory);
@@ -196,21 +198,24 @@ public final class ReleaseImpactRag {
         }
         List<Path> uniqueFiles = files.stream().distinct().sorted().toList();
         List<SourceChunk> chunks = new ArrayList<>();
+        List<ReleaseDocumentReview.Claim> claims = new ArrayList<>();
         for (Path file : uniqueFiles) {
             byte[] bytes = read(file);
             if (bytes.length > MAX_DOCUMENT_BYTES) continue;
             String content = new String(bytes, StandardCharsets.UTF_8);
             String relative = root.relativize(file).toString().replace('\\', '/');
-            chunks.addAll(split(relative, digest(bytes), content));
+            String sourceDigest = digest(bytes);
+            String state = feedbackState(content);
+            chunks.addAll(split(relative, sourceDigest, content, state));
+            claims.addAll(ReleaseDocumentReview.readClaims(relative, sourceDigest, content, state));
         }
-        return List.copyOf(chunks);
+        return new Corpus(List.copyOf(chunks), List.copyOf(claims));
     }
 
-    private static List<SourceChunk> split(String path, String fileDigest, String content) throws Exception {
+    private static List<SourceChunk> split(String path, String fileDigest, String content, String feedbackState) throws Exception {
         String[] lines = content.split("\\R", -1);
         List<SourceChunk> chunks = new ArrayList<>();
         String heading = "Document";
-        String feedbackState = feedbackState(content);
         int start = 1;
         StringBuilder text = new StringBuilder();
         for (int i = 0; i < lines.length; i++) {
@@ -349,6 +354,7 @@ public final class ReleaseImpactRag {
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     }
 
+    private record Corpus(List<SourceChunk> chunks, List<ReleaseDocumentReview.Claim> claims) { }
     private record SourceChunk(String path, String heading, int startLine, int endLine, String sourceSha256,
                                String chunkSha256, String text, String feedbackState, Set<String> terms) { }
     private record RankedChunk(SourceChunk chunk, int score, int priority) { }

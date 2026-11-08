@@ -1,7 +1,7 @@
 # J6-REL-05 — Context de impact release cu proveniență și guvernanță
 
 **Prioritate:** P1  
-**Stare:** Prioritizarea este verificată pe diff-ul calificat pentru 0.3.0. Detectarea conflictelor semantice rămâne deschisă.
+**Stare:** Prioritizarea este verificată pe diff-ul 0.3.0. Contradicțiile între contracte explicite și feedbackul depășit au probe cu citări.
 
 ## Constatare și rezultat
 
@@ -21,9 +21,23 @@ Fiecare fragment returnat poartă cale, titlu/heading, linii, hash-ul fișierulu
 - Candidatul declară `previousVersion`, `changeClass` și o justificare de cel mult 300 de caractere. `PATCH_FIX` crește patch-ul; `REFACTOR_ONLY` și `COMPATIBLE_FEATURE` cresc minorul; `BREAKING_CHANGE` crește majorul. Runnerul cere ca versiunea precedentă să fie ultima ediție imuabilă și leagă baza de commit-ul din manifestul ei.
 - RAG-ul și politica de versiuni au teste componente negative pentru context insuficient, cale de output în repository, versiune inconsistentă, clasă necunoscută și redactarea datelor sensibile. Ele sunt rulate în suita Maven și raportate în Extent-ul componentă.
 
+## Contradicții și feedback depășit
+
+În documentele de contract, adăugați markerul imediat după valoarea vizibilă în cod inline. Același identificator leagă aceeași regulă, cu aceeași unitate și același domeniu. În feedbackul activ, marcați observația pe care se sprijină analiza.
+
+~~~markdown
+Temporizarea este `550 ms` <!-- rag:contract android.turn-pacing -->.
+Proba de feedback a folosit `320 dp` <!-- rag:observed android.seat-metrics.viewport-width -->.
+~~~
+
+- `DOCUMENT_CONTRADICTION` listează declarațiile de contract cu valori diferite pentru aceeași cheie. Reviewerul stabilește care document trebuie corectat.
+- `STALE_FEEDBACK` compară observația activă cu un contract coerent și citează ambele valori. Dacă documentele de contract diferă pentru aceeași cheie, RAG raportează contradicția și lasă vechimea observației în evaluare.
+- Citările din `documentFindings` includ calea, linia, fragmentul redactat, SHA-256 al fișierului și commitul. Exemplele din blocuri de cod, dosarele istorice de release și feedbackul marcat ca închis sunt în afara comparației.
+- Probele folosesc un dezacord de temporizare de 550 față de 600 ms și o observație de 360 dp rămasă după actualizarea contractului la 320 dp. Valorile concordante produc o listă goală. Rezultatul rămâne consultativ. [Teste](../../holdem-app/src/test/java/ro/atf/j6/release/ReleaseImpactRagTest.java)
+
 ## Limite rămase
 
-Testele actuale demonstrează citări, proveniență, redactare și abținerea la context slab, dar nu verifică încă un caz cu documente contradictorii, feedback depășit față de cerințe sau link/ancoră eliminată. Clasarea lexicală nu poate decide care sursă are autoritate semantică; reviewer-ul trebuie să verifice citările. Corpusul nu indexează raportul Extent sau receipt-urile, care rămân probe evaluate separat de porțile deterministe.
+Comparația folosește valorile marcate explicit și normalizează spațiile și majusculele. Reviewerul interpretează diferențele de unitate și verifică autoritatea documentelor. Detectarea linkurilor sau ancorelor dispărute rămâne de acoperit. Rapoartele Extent și receipt-urile sunt evaluate separat de porțile deterministe.
 
 Runnerul a exercitat integrarea pe candidatul curat 0.2.2. Manifestul păstrează digestul contextului de impact separat de
 rezultatele testelor. [Manifestul de calificare](../../release/0.2.2/qualification.json) · [Contextul RAG](../../release/0.2.2/release-impact-context.json)

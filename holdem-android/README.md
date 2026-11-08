@@ -40,7 +40,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 
 ## Prezentarea mesei
 
-- `TurnPacing` programează câte o acțiune automată la 550 ms după primul cadru vizibil și verifică din nou tokenul turei înainte de aplicare.
+- `TurnPacing` programează câte o acțiune automată la `550 ms` <!-- rag:contract android.turn-pacing --> după primul cadru vizibil și verifică din nou tokenul turei înainte de aplicare.
 - `PlayerSeatFrame` marchează actorul. După decontare, masa păstrează cărțile vizibile până la următoarea comandă. Cele folosite în combinația câștigătoare sunt evidențiate, iar marcajul premiului se deplasează spre locurile care au câștigat din pot.
 - Pe ferestre înguste sau cu font mărit, locurile se rearanjează în jurul potului și al board-ului; conținutul dialogului de raise derulează separat de acțiuni.
 - Masa compactă măsoară fereastra cu istoricul pliat și reduce proporțional fețele cărților doar când conținutul depășește spațiul disponibil. Dacă dimensiunea minimă încă depășește fereastra, derularea păstrează comenzile accesibile. Istoricul deschis are propria listă derulabilă.

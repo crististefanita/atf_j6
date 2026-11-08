@@ -8,7 +8,7 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 
 ## Ordinea curentă
 
-1. **J6-REL-01 · P1 · Blocat extern:** proprietarul contului trebuie să obțină de la GitHub restabilirea vizibilității publice. Ultima probă anonimă înregistrată a primit `404`; catalogul rămâne `PREPARED`.
+1. **J6-REL-01 · P1 · Blocat extern:** pentru `v0.1.1`, downloadul API autentificat a trecut complet; cererile anonime directe au expirat fără status HTTP, deci nu există receipt public și catalogul rămâne `PREPARED`.
 2. **J6-AI-02 · P1 · Deschis:** politicile sunt încă euristice, iar modelul de range și evaluarea independentă nu justifică eticheta `Hard`.
 3. **J6-AI-04 · P1 · Deschis, exploratoriu:** ablația pereche are 16 seed-uri independente, sub pragul de 20 pentru fiecare mărime de masă; efectul nu justifică o pondere generală.
 4. **J6-UI-05 · P1 · 27/27 JVM, sanity API 28 trecut; acceptanță parțială:** Fold, reveal, coach, preluare locală și selectorul de blinduri există. Rămân evaluatorul kicker/board-play, invariabilitatea față de cărți ascunse, wiring-ul intervalului și verificările dedicate de accesibilitate/layout.
@@ -19,7 +19,7 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 
 | ID | Prioritate | Stare | Subiect |
 |---|---|---|---|
-| [J6-REL-01](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | P1 | Blocat extern | Repo-ul și asset-ul sunt publice în API-ul autentificat, dar profilul, repo-ul și Release-ul întorc `404` anonim. |
+| [J6-REL-01](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | P1 | Blocat extern; `v0.1.1` anonim neconcludent | API-ul autentificat descarcă assetul complet; cererile anonime pentru pagina Release și APK au expirat fără status HTTP. |
 | [J6-REL-02](J6-REL-02-README-VERSION-GOVERNANCE.md) | P2 | Rezolvat | Bloc comun cu două linkuri ordonate, sincronizat cu indexul; catalog/proces legate și stări `PREPARED`/`PUBLISHED` guvernate; fără checksum în README. |
 | [J6-REL-03](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) | P1 | Corectat; tournament și release-smoke trecute pe API 28 | Recomandarea AI folosea două metode Java de colecții indisponibile pe API-ul minim. |
 | [J6-AI-01](J6-AI-01-LATE-POSITION.md) | P2 | Rezolvat | Fereastra de poziție omitea butonul și nu se adapta meselor scurtate. |

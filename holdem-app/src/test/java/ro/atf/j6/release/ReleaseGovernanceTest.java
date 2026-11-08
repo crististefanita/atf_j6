@@ -53,11 +53,11 @@ class ReleaseGovernanceTest {
         String apk = "https://github.com/crististefanita/atf_j6/releases/download/v" + version + "/HoldemLab-" + version + ".apk";
         String publishedGuide = "## Android\n- [Release](" + page + ")\n- [APK](" + apk + ")\n";
         recordRoute(checks, "DRAFT has no public download route", "DRAFT", "## Android", version, false, false);
-        recordRoute(checks, "PREPARED without browser proof remains local", "PREPARED",
+        recordRoute(checks, "PREPARED without authenticated download proof remains local", "PREPARED",
                 "## Android\n- [Candidate](release/" + version + "/README.md)", version, false, false);
-        recordRoute(checks, "PREPARED allows minimal links after authenticated download proof", "PREPARED",
+        recordRoute(checks, "PREPARED allows minimal links after authenticated asset proof", "PREPARED",
                 publishedGuide, version, true, true);
-        recordRoute(checks, "PREPARED without browser proof blocks direct links", "PREPARED",
+        recordRoute(checks, "PREPARED without authenticated proof blocks direct links", "PREPARED",
                 publishedGuide, version, false, false);
         recordRoute(checks, "Exact current release and APK are accepted", "PUBLISHED", publishedGuide, version, false, true);
         recordRoute(checks, "DRAFT cannot expose an APK", "DRAFT", publishedGuide, version, false, false);
@@ -237,13 +237,13 @@ class ReleaseGovernanceTest {
         add(checks, "Release root avoids Raw and folder downloads", "no raw or source-folder URL",
                 mainReadme.contains("raw.githubusercontent.com") || mainReadme.contains("release/" + version + "/" + packageName)
                         ? "unqualified route present" : "no raw or source-folder URL");
-        boolean browserReceiptMatches = validation.path("authenticatedBrowserDownload").path("verified").asBoolean()
-                && validation.path("authenticatedBrowserDownload").path("bytes").asLong() == identity.path("apkBytes").asLong()
-                && validation.path("authenticatedBrowserDownload").path("sha256").asText().equals(identity.path("sha256").asText());
-        boolean authenticatedPreparedDownload = state.equals("PREPARED") && browserReceiptMatches;
+        boolean browserReceiptMatches = matchesAuthenticatedDownload(validation.path("authenticatedBrowserDownload"), identity);
+        boolean assetReceiptMatches = matchesAuthenticatedDownload(validation.path("authenticatedAssetDownload"), identity);
+        boolean authenticatedDownloadMatches = browserReceiptMatches || assetReceiptMatches;
+        boolean authenticatedPreparedDownload = state.equals("PREPARED") && authenticatedDownloadMatches;
         if (state.equals("PREPARED") && (mainReadme.contains(releaseUrl) || mainReadme.contains(apkUrl))) {
-            add(checks, "PREPARED links have a complete authenticated browser receipt", "verified bytes and digest",
-                    browserReceiptMatches ? "verified bytes and digest" : "missing or mismatched browser receipt");
+            add(checks, "PREPARED links have a complete authenticated download receipt", "verified bytes and digest",
+                    authenticatedDownloadMatches ? "verified bytes and digest" : "missing or mismatched authenticated receipt");
         }
         add(checks, "README has the current release page", published || authenticatedPreparedDownload ? releaseUrl : "no release route",
                 (published || authenticatedPreparedDownload) && mainReadme.contains(releaseUrl) ? releaseUrl
@@ -333,6 +333,12 @@ class ReleaseGovernanceTest {
         List<String> content = section.lines().map(String::strip).filter(line -> !line.isEmpty()).toList();
         return content.equals(List.of("## Jocul", releaseLine, apkLine))
                 && countOccurrences(section, githubReleases) == 2;
+    }
+
+    private static boolean matchesAuthenticatedDownload(JsonNode receipt, JsonNode identity) {
+        return receipt.path("verified").asBoolean()
+                && receipt.path("bytes").asLong(-1) == identity.path("apkBytes").asLong(-2)
+                && receipt.path("sha256").asText().equals(identity.path("sha256").asText());
     }
 
     private static String androidRuntimeCollectionApiPolicy(Path root) throws Exception {

@@ -9,6 +9,10 @@ Release-ul `v0.1.0` există (ID `437875854`), iar APK-ul și checksum-ul sunt `u
 
 Clientul fără cookies, `Authorization` sau credentiale implicite a primit `404` pentru profilul `crististefanita`, repo, pagina Release, API-ul public al Release-ului și URL-ul direct APK. Ulterior, pagina Release și APK-ul s-au deschis și s-au descărcat complet în browserul autentificat; dimensiunea și identitatea fișierului coincid cu manifestul. Accesul contului nu confirmă accesul anonim; ediția rămâne `PREPARED`.
 
+### Ediția 0.1.1
+
+Release-ul `v0.1.1` a fost publicat cu APK-ul și checksum-ul încărcate. API-ul autentificat a descărcat assetul APK cu `HTTP 200`; fișierul complet corespunde binarului calificat. În această sesiune nu exista o fereastră de browser autentificată. Cererile anonime directe pentru pagina Release și APK au expirat după 20 de secunde, fără status HTTP; scriptul de acceptanță nu a produs receipt. Rezultatul anonim este **neconcludent**, nu `404`, deci starea rămâne `PREPARED`.
+
 Diagnostic detaliat: [manifestul 0.1.0](../../release/0.1.0/release-validation.json) și [procesul de release](../release/ATF_Release.md#diagnostic-http-404-pentru-github-release). GitHub documentează că unele restricții pot ascunde URL-ul profilului și vizibilitatea în căutare ([troubleshooting](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/preventing-unauthorized-access#troubleshooting)); cererea de revizuire urmează procedura [Appeal and Reinstatement](https://docs.github.com/en/site-policy/acceptable-use-policies/github-appeal-and-reinstatement).
 
 ## Owner și pas următor
@@ -18,5 +22,5 @@ Owner: titularul contului GitHub. Cereți revizuirea vizibilității publice pen
 ## Criterii de închidere
 
 - Profilul, repo-ul și pagina Release sunt accesibile anonim.
-- `Test-PublishedHoldemDownload.ps1` primește HTTP 200, descarcă exact 722.172 bytes și confirmă SHA-256-ul calificat fără cookies, Authorization sau credentiale implicite.
-- Receipt-ul anonim fără secrete este păstrat în `release/0.1.0/`; indexul trece la `PUBLISHED` și README-ul principal păstrează pagina Release și asset-ul exact fără mențiunea că autentificarea este necesară.
+- `Test-PublishedHoldemDownload.ps1` primește HTTP 200, descarcă APK-ul curent integral și confirmă identitatea din manifest fără cookies, Authorization sau credentiale implicite.
+- Receipt-ul anonim fără secrete este păstrat în dosarul versiunii curente; numai atunci indexul trece la `PUBLISHED`. README-ul principal păstrează numai pagina Release și assetul direct.

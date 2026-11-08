@@ -2,7 +2,7 @@
 
 ## Pe scurt
 
-Ediție patch Android pentru jocul local No-Limit Texas Hold’em. Acest dosar va păstra APK-ul calificat, notele ediției și probele Extent aferente. În etapa curentă, ediția este `DRAFT`.
+Ediție patch Android pentru jocul local No-Limit Texas Hold’em. APK-ul semnat și calificarea sunt legate de commitul sursă și de probele Extent păstrate aici. Starea `PREPARED` reflectă descărcarea completă autentificată; verificarea anonimă a expirat fără status HTTP și nu este considerată trecută.
 
 ## Schimbări
 
@@ -19,10 +19,10 @@ Ediție patch Android pentru jocul local No-Limit Texas Hold’em. Acest dosar v
 | Pachet | `ro.atf.holdem.android` |
 | Android | API 26 minim · target SDK 36 |
 | Semnare | Identitate release J6 · `debuggable=false` |
-| Sursă calificată | Se fixează după commitul candidatului |
-| Stare | `DRAFT` · calificarea release nu a fost încheiată |
+| Sursă calificată | [`ee1003e`](https://github.com/crististefanita/atf_j6/commit/ee1003e4a83fafd38ffcb24b92eb352e406799f6) |
+| Stare | `PREPARED` · APK semnat, instalat și descărcat integral prin API autentificat |
 
 ## Calificare și descărcare
 
-[Indexul rapoartelor](reports/README.md) va enumera numai dovezile Extent relevante acestei ediții. [Manifestul de validare](release-validation.json) va lega APK-ul, commitul, calificarea și integritatea. [Procesul de release](../../docs/release/ATF_Release.md) definește porțile de build, instalare și descărcare.
+[Indexul rapoartelor](reports/README.md) enumeră cele șapte rapoarte Extent relevante acestei ediții, cu capturile native încorporate. [Manifestul de validare](release-validation.json) leagă APK-ul, commitul sursă, calificarea, asseturile GitHub și dovada descărcării complete. [Procesul de release](../../docs/release/ATF_Release.md) definește porțile de build, instalare și descărcare.
 

@@ -5,7 +5,7 @@
   "previousVersion": "0.2.2",
   "changeClass": "COMPATIBLE_FEATURE",
   "changeRationale": "Adaugă estimarea opțională a șansei de câștig în turneu, rafinează acțiunile mesei și repară revenirea la Call după editorul Raise.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.3.0"

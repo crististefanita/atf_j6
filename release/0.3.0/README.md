@@ -1,7 +1,8 @@
 # Hold’em Lab 0.3.0
 
-Ediție minoră pentru deciziile de la masă și afișarea opțională a șansei de câștig în turneu.
+Ediție minoră pentru acțiunile la masă și estimarea opțională a șansei de câștig în turneu. Tagul indică sursa calificată 013c731.
 
-- [Modificări față de 0.2.2](release-notes.md)
-- [Dovezi de calificare](reports/README.md)
-- [Manifestul ediției](release-validation.json)
+- Descărcați HoldemLab-0.3.0.apk din secțiunea Assets. [Release GitHub](https://github.com/crististefanita/atf_j6/releases/tag/v0.3.0)
+- API-ul GitHub autentificat a verificat integral APK-ul și checksum-ul. Ruta anonimă din README răspunde HTTP 404. Catalogul rămâne PREPARED. [Manifestul ediției](release-validation.json)
+
+[Note de versiune](release-notes.md) · [Calificare](qualification.json) · [Rapoarte Extent](reports/README.md) · [Context RAG](release-impact-context.json)

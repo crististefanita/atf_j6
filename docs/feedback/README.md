@@ -8,7 +8,7 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 
 ## Ordinea curentă
 
-1. **J6-REL-01 · P1 · Blocat extern.** Pentru `v0.2.0`, ambele fișiere au trecut verificarea prin API autentificat. APK-ul și checksum-ul răspund anonim cu HTTP 404, iar catalogul rămâne `PREPARED`.
+1. **J6-REL-01 · P1 · Blocat extern.** Pentru `v0.2.1`, ambele fișiere au trecut verificarea prin API autentificat. APK-ul și checksum-ul răspund anonim cu HTTP 404, iar catalogul rămâne `PREPARED`.
 2. **J6-REL-04 · P1 · Verificat în calificarea 0.2.0.** Dosarul ediției conține Extent pentru componente și cele două trasee Android native.
 3. **J6-REL-05 · P1 · Verificat în calificare:** retrieval-ul lexical și politica de versiuni au rulat pe candidatul curat 0.2.0. Conflictele semantice și feedback-ul învechit rămân de detectat.
 4. **J6-AI-02 · P1 · Deschis:** politicile sunt încă euristice, iar modelul de range și evaluarea independentă nu justifică eticheta `Hard`.
@@ -25,7 +25,7 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 
 | ID | Prioritate | Stare | Subiect |
 |---|---|---|---|
-| [J6-REL-01](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | P1 | Blocat extern, `v0.2.0` anonim HTTP 404 | API-ul autentificat descarcă integral APK-ul și checksum-ul. |
+| [J6-REL-01](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | P1 | Blocat extern, `v0.2.1` anonim HTTP 404 | API-ul autentificat descarcă integral APK-ul și checksum-ul. |
 | [J6-REL-02](J6-REL-02-README-VERSION-GOVERNANCE.md) | P2 | Rezolvat | Bloc comun cu două linkuri ordonate, sincronizat cu indexul; catalog/proces legate și stări `PREPARED`/`PUBLISHED` guvernate; fără checksum în README. |
 | [J6-REL-03](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) | P1 | Corectat; tournament și release-smoke trecute pe API 28 | Recomandarea AI folosea două metode Java de colecții indisponibile pe API-ul minim. |
 | [J6-REL-04](J6-REL-04-EXTENT-SUITE-COVERAGE.md) | P1 | Verificat la calificarea 0.2.0 | Rapoartele componentă și E2E sunt separate și identificate prin hash. |

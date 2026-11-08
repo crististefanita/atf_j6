@@ -98,6 +98,13 @@ class PublishTournamentExtent {
             case "leaderboard-profile-restart" -> new Journey("LeaderboardProfileRestartSanity", "Rename the ranked player and restart the Android process",
                     "The current name is visible once with the original ID and points", PROFILE_RESTART_ASSERTIONS,
                     List.of("01-profile-renamed.png", "02-profile-after-restart.png"));
+            case "seat-metrics" -> new Journey("CompactSeatMetricsSanity", "Read six player seats at enlarged Android font scale",
+                    "Each seat preserves its visible and accessible amounts", List.of("Compact viewport uses enlarged text",
+                            "Google TalkBack service is enabled",
+                            "Live seat amounts match the engine and fit", "Narrow seat facts use the stacked layout",
+                            "Active seat exposes one full accessibility description", "Active seat accepts Android accessibility focus",
+                            "Settled seat amounts match the engine and fit"),
+                    List.of("01-compact-seat-metrics.png", "02-settled-seat-metrics.png"));
             default -> throw new IllegalArgumentException("Unknown native journey " + journey);
         };
         var checks = nativeChecks(receipt, contract.assertions());
@@ -139,17 +146,22 @@ class PublishTournamentExtent {
                 if (!name.matches("0[1-5][a-z]?-[a-z-]+\\.png")) throw new IllegalArgumentException("Unexpected capture name " + name);
                 var image = ImageIO.read(evidence.resolve(name).toFile());
                 boolean decodes = image != null && image.getWidth() > 0 && image.getHeight() > 0;
-                passed &= decodes;
                 String dimensions = decodes ? image.getWidth() + " × " + image.getHeight() : "unreadable";
+                boolean seatMetrics = journey.equals("seat-metrics");
+                boolean usable = decodes && (!seatMetrics || hasImageDetail(image));
+                passed &= usable;
+                String checkName = seatMetrics ? "Native screenshot shows a rendered frame" : "Native screenshot decodes";
+                String expected = seatMetrics ? "non-uniform raster" : "positive raster dimensions";
+                String observed = decodes && !usable ? "uniform raster · " + dimensions : dimensions;
                 var keyword = captureIndex++ == 0 ? AtfGherkinKeyword.GIVEN : AtfGherkinKeyword.AND;
                 phase.step(keyword, name,
                         "Android native UI", Base64.getEncoder().encodeToString(Files.readAllBytes(evidence.resolve(name))),
-                        List.of(new AtfAssertion("Native screenshot decodes", "positive raster dimensions", dimensions, decodes)),
-                        List.of(), ReportScreenshotPolicy.CapturePoint.CHECKPOINT, status(decodes));
+                        List.of(new AtfAssertion(checkName, expected, observed, usable)),
+                        List.of(), ReportScreenshotPolicy.CapturePoint.CHECKPOINT, status(usable));
                 String checkpoint = keyword.name() + " " + name;
                 checkpointEvidence.add(nestedValidation(checkpoint,
                         new ReportArtifactProfile.Assertions("UI validation", List.of(
-                                new ReportArtifactProfile.Comparison("Native screenshot decodes", decodes))), status(decodes)));
+                                new ReportArtifactProfile.Comparison(checkName, usable))), status(usable)));
             }
             String conclusion = contract.conclusion();
             phase.step(AtfGherkinKeyword.THEN, conclusion,
@@ -163,6 +175,16 @@ class PublishTournamentExtent {
         }
         return new ReportArtifactProfile.Scenario(scenario, description, result,
                 List.of(new ReportArtifactProfile.Phase("TEST BODY", result, checkpointEvidence)));
+    }
+
+    private static boolean hasImageDetail(java.awt.image.BufferedImage image) {
+        int first = image.getRGB(0, 0);
+        for (int y = 1; y < 8; y++) {
+            for (int x = 1; x < 8; x++) {
+                if (image.getRGB(x * (image.getWidth() - 1) / 8, y * (image.getHeight() - 1) / 8) != first) return true;
+            }
+        }
+        return false;
     }
 
     private static List<AtfAssertion> nativeChecks(JsonNode receipt, List<String> requiredAssertions) {

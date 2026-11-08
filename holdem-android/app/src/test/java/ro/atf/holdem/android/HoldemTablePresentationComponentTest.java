@@ -99,8 +99,48 @@ public final class HoldemTablePresentationComponentTest {
                         style.labelColor(), style.valueColor());
                 assertEquals(8, style.labelSp());
                 assertEquals(compact ? 9 : 10, style.valueSp());
+                // Card Table 0.1.7 uses android.graphics.Color.rgb, which is unavailable in this JVM suite.
+                int fill = active ? 0xfff1e6c8 : 0xff1f5743;
+                double captionContrast = contrast(fill, style.labelColor());
+                assertTrue("Small captions meet 4.5:1 against their seat fill", captionContrast >= 4.5);
+                assertTrue("The amount keeps the stronger contrast", contrast(fill, style.valueColor()) > captionContrast);
             }
         }
+    }
+
+    @Test public void onlyFactsThatExceedTheMeasuredWidthStack() {
+        assertFalse(HoldemTablePresentation.stackSeatFact(100, 54, 42, 4));
+        assertTrue(HoldemTablePresentation.stackSeatFact(99, 54, 42, 4));
+        assertFalse(HoldemTablePresentation.stackSeatFact(100, 40, 48, 4));
+        assertTrue(HoldemTablePresentation.stackSeatFact(100, 59, 48, 4));
+    }
+
+    @Test public void committedChipsAndUncalledReturnsStaySeparateFromPotAwards() {
+        var seat = new HoldemTableViewState.Seat(12000, 500, false, 450, 300, 150, true, List.of(), null);
+        assertEquals(List.of(metric("STACK", 12000), metric("COMMITTED", 500)),
+                HoldemTablePresentation.seatMetrics(seat, false));
+        assertEquals(List.of(metric("STACK", 12000), metric("WON", 300), metric("RETURNED", 150)),
+                HoldemTablePresentation.seatMetrics(seat, true));
+        var noReturn = new HoldemTableViewState.Seat(8000, 400, true, 0, 0, 0, true, List.of(), null);
+        assertEquals(List.of(metric("STACK", 8000), metric("WON", 0)), HoldemTablePresentation.seatMetrics(noReturn, true));
+    }
+
+    private static HoldemTablePresentation.SeatMetric metric(String kind, int amount) {
+        return new HoldemTablePresentation.SeatMetric(HoldemTablePresentation.SeatMetricKind.valueOf(kind), amount);
+    }
+
+    private static double contrast(int first, int second) {
+        double a = luminance(first), b = luminance(second);
+        return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+    }
+
+    private static double luminance(int color) {
+        return .2126 * linearChannel(color >> 16) + .7152 * linearChannel(color >> 8) + .0722 * linearChannel(color);
+    }
+
+    private static double linearChannel(int color) {
+        double srgb = (color & 255) / 255.0;
+        return srgb <= .04045 ? srgb / 12.92 : Math.pow((srgb + .055) / 1.055, 2.4);
     }
 
     @Test public void eachPhysicalSeatKeepsItsOwnLatestActionAndTheTableHistoryKeepsOrder() {

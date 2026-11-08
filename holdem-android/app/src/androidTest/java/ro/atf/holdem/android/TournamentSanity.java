@@ -3,6 +3,8 @@ package ro.atf.holdem.android;
 import android.app.Activity;
 import android.app.Instrumentation;
 import android.app.UiAutomation;
+import android.accessibilityservice.AccessibilityServiceInfo;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -13,7 +15,11 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.Choreographer;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -54,7 +60,8 @@ public final class TournamentSanity extends Instrumentation {
         String journey = arguments.getString("mode", "tournament");
         try {
             apkHash = installedApkHash();
-            ui = getUiAutomation();
+            ui = journey.equals("seat-metrics") ? getUiAutomation(UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES)
+                    : getUiAutomation();
             if (journey.equals("tournament")) {
                 winAcrossThreeHands();
                 loseOnTheOpeningAllIn();
@@ -72,6 +79,8 @@ public final class TournamentSanity extends Instrumentation {
                     case "restart" -> verifyRankedProfileAfterRestart();
                     default -> throw new IllegalArgumentException("Expected rename or restart phase");
                 }
+            } else if (journey.equals("seat-metrics")) {
+                inspectCompactSeatMetrics();
             } else {
                 throw new IllegalArgumentException("Unknown Android sanity mode: " + journey);
             }
@@ -443,6 +452,158 @@ public final class TournamentSanity extends Instrumentation {
         var rows = collect(node -> value(node.getText()).contains(" · " + RENAMED_PROFILE + " · Points "));
         check(assertion, RENAMED_LEADERBOARD_ROW, rows.size() == 1 ? value(rows.get(0).getText()) : "visible rows: " + rows.size());
         check("Old profile name absent from the leaderboard", "absent", find(ORIGINAL_LEADERBOARD_ROW) == null ? "absent" : "present");
+    }
+
+    private void inspectCompactSeatMetrics() throws Exception {
+        var config = getTargetContext().getResources().getConfiguration();
+        check("Compact viewport uses enlarged text", "width ≤ 320 dp and font scale 2.0",
+                config.screenWidthDp + " dp / " + config.fontScale, config.screenWidthDp <= 320 && config.fontScale == 2f);
+        var manager = getTargetContext().getSystemService(AccessibilityManager.class);
+        boolean talkBack = manager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK).stream()
+                .anyMatch(service -> service.getId().toLowerCase(Locale.ROOT).contains("talkback"));
+        check("Google TalkBack service is enabled", "enabled", talkBack ? "enabled" : "unavailable");
+        actions.put("Inspect the Android accessibility nodes with Google TalkBack enabled");
+        var profile = getTargetContext().getSharedPreferences("holdem-profile", Context.MODE_PRIVATE);
+        if (!profile.edit().putBoolean("language", true).commit()) throw new AssertionError("Cannot select the Romanian test locale");
+        var activity = launchHoldem();
+        try {
+            tap("Joacă un turneu");
+            selectTableSize("6");
+            tap("Împarte cărțile");
+            see("Six-seat hand reaches preflop", "Mâna 1 · Preflop");
+            inspectSeatFacts(activity, false);
+            focusSeatMetrics(activity);
+            // The external TalkBack speech overlay updates after the accessibility focus event.
+            SystemClock.sleep(2000);
+            capture("01-compact-seat-metrics");
+            tap(revealTaggedControl(activity, "ALL_IN"));
+            see("Hand settles after the opening all-in", "Mâna 1 · Încheiată");
+            inspectSeatFacts(activity, true);
+            var settled = new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir()))
+                    .load().resumed().game().view();
+            int winner = 0;
+            for (int seat = 1; seat < settled.seats().size(); seat++)
+                if (settled.seats().get(seat).potWon() > settled.seats().get(winner).potWon()) winner = seat;
+            int winningSeat = winner;
+            runOnMainSync(() -> reveal(seatFrame(activity.getWindow().getDecorView(), winningSeat)));
+            actions.put("Reveal the winning seat after settlement");
+            capture("02-settled-seat-metrics");
+        } finally {
+            runOnMainSync(activity::finish);
+        }
+    }
+
+    private void selectTableSize(String size) throws Exception {
+        var current = await("4");
+        while (current != null && !current.isClickable()) current = current.getParent();
+        check("Open the table size selector", "click dispatched",
+                current != null && current.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                        ? "click dispatched" : "selector unavailable");
+        actions.put("Open the table size selector");
+        var option = await(size);
+        while (option != null && !option.isClickable()) option = option.getParent();
+        check("Select six seats", "click dispatched",
+                option != null && option.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                        ? "click dispatched" : "option unavailable");
+        actions.put("Select " + size + " seats");
+        waitForIdleSync();
+    }
+
+    private void inspectSeatFacts(Activity activity, boolean settled) throws Exception {
+        var files = getTargetContext().getFilesDir();
+        var frame = new HoldemSessionRepository(new FileHoldemSessionStorage(files)).load().resumed().game().view();
+        var invalid = new ArrayList<String>();
+        int[] stacked = {0};
+        runOnMainSync(() -> {
+            var root = activity.getWindow().getDecorView();
+            for (int seat = 0; seat < 6; seat++) {
+                var box = seatFrame(root, seat);
+                var player = frame.seats().get(seat);
+                var labels = new ArrayList<>(List.of("Jetoane", settled ? "Câștig" : "În pot"));
+                var amounts = new ArrayList<>(List.of(player.stack(), settled ? player.potWon() : player.contributed()));
+                if (settled && player.returned() > 0) {
+                    labels.add("Restituit");
+                    amounts.add(player.returned());
+                }
+                if (box == null) {
+                    invalid.add("seat " + seat + " missing");
+                    continue;
+                }
+                int fact = 0;
+                for (int child = 0; child < box.getChildCount(); child++) {
+                    if (!(box.getChildAt(child) instanceof SeatFactRow row)) continue;
+                    var label = (TextView) row.getChildAt(0);
+                    var value = (TextView) row.getChildAt(1);
+                    boolean vertical = row.getOrientation() == LinearLayout.VERTICAL;
+                    if (vertical) stacked[0]++;
+                    boolean separate = vertical ? label.getBottom() <= value.getTop()
+                            : label.getRight() <= value.getLeft();
+                    if (fact >= labels.size() || !labels.get(fact).contentEquals(label.getText())
+                            || !Integer.toString(amounts.get(fact)).contentEquals(value.getText())
+                            || !value(box.getContentDescription()).contains(", " + label.getText() + " " + value.getText())
+                            || !fits(label) || !fits(value) || value.getLineCount() != 1 || !separate
+                            || row.getBottom() > box.getHeight()) invalid.add("seat " + seat + " fact " + fact);
+                    fact++;
+                }
+                if (fact != labels.size() || !box.isFocusable()
+                        || (seat == frame.actor()) != value(box.getContentDescription()).contains(", La rând"))
+                    invalid.add("seat " + seat + " fact count or accessibility");
+            }
+        });
+        if (!invalid.isEmpty()) capture("01a-seat-layout-failure");
+        check(settled ? "Settled seat amounts match the engine and fit" : "Live seat amounts match the engine and fit",
+                "six readable seat frames", invalid.isEmpty() ? "six readable seat frames" : String.join(", ", invalid));
+        if (!settled) check("Narrow seat facts use the stacked layout", "at least one stacked fact", stacked[0] + " stacked facts", stacked[0] > 0);
+    }
+
+    private static boolean fits(TextView view) {
+        var layout = view.getLayout();
+        if (layout == null || layout.getLineCount() == 0
+                || layout.getLineEnd(layout.getLineCount() - 1) != view.getText().length()
+                || layout.getHeight() + view.getTotalPaddingTop() + view.getTotalPaddingBottom() > view.getHeight()) return false;
+        for (int line = 0; line < layout.getLineCount(); line++)
+            if (layout.getEllipsisCount(line) != 0 || layout.getLineMax(line) > layout.getWidth() + 1f) return false;
+        return true;
+    }
+
+    private void focusSeatMetrics(Activity activity) throws Exception {
+        var frame = new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir()))
+                .load().resumed().game().view();
+        int actor = frame.actor();
+        runOnMainSync(() -> reveal(seatFrame(activity.getWindow().getDecorView(), actor)));
+        waitForIdleSync();
+        var seats = collect(node -> node.isFocusable() && value(node.getContentDescription()).contains(", La rând")
+                && value(node.getContentDescription()).contains(", Jetoane ") && value(node.getContentDescription()).contains(", În pot "));
+        check("Active seat exposes one full accessibility description", "one node with name, chips, contribution and turn",
+                seats.size() == 1 ? "one node with name, chips, contribution and turn" : "matching nodes: " + seats.size());
+        var target = seats.get(0);
+        boolean dispatched = target.performAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
+        var focused = ui.findFocus(AccessibilityNodeInfo.FOCUS_ACCESSIBILITY);
+        check("Active seat accepts Android accessibility focus", value(target.getContentDescription()),
+                dispatched && focused != null ? value(focused.getContentDescription()) : "focus unavailable");
+        actions.put("Move accessibility focus to the active seat");
+    }
+
+    private static LinearLayout seatFrame(View root, int seat) {
+        var name = root.findViewWithTag("seat-name:" + seat);
+        return name != null && name.getParent() instanceof LinearLayout frame ? frame : null;
+    }
+
+    private static void reveal(View control) {
+        if (control != null) control.requestRectangleOnScreen(new Rect(0, 0, control.getWidth(), control.getHeight()), true);
+    }
+
+    private String revealTaggedControl(Activity activity, String tag) throws Exception {
+        String[] label = {null};
+        runOnMainSync(() -> {
+            var control = activity.getWindow().getDecorView().findViewWithTag(tag);
+            if (control == null) return;
+            reveal(control);
+            label[0] = control instanceof TextView text ? text.getText().toString() : "";
+        });
+        waitForIdleSync();
+        check("Reach " + tag + " in the compact viewport", "control present", label[0] == null ? "missing" : "control present");
+        return label[0];
     }
 
     private TournamentLeaderboard.State loadLeaderboard() throws Exception {

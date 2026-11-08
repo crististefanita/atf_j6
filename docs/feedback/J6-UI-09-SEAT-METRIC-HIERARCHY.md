@@ -1,30 +1,9 @@
-# J6-UI-09 · Ierarhia etichetelor de stivă și plată
+# J6-UI-09 · Lizibilitatea sumelor din chenare
 
-**Prioritate:** P2  
-**Stare:** Implementare parțială — semantica premiului/restituirii și stilul local cu etichetă mică și valoare lizibilă sunt conectate; acceptanța vizuală și TalkBack rămân restante  
-**Domeniu:** faptele afișate în chenarele jucătorilor
+Cazul compact cu șase locuri a fost verificat pe Android API 28, la 320 dp și font 2,0, în română.
 
-## Problema observată în cod
+- Eticheta și suma rămân pe aceeași linie când măsurătorile o permit. La lățime insuficientă, eticheta rămâne întreagă deasupra sumei. Contrastul etichetelor mici este de cel puțin 4,5:1 pe fundalurile active și inactive. Starea `Fold` / `Elim.` rămâne explicită, iar textul păstrează opacitatea.
+- Testele JVM separă stiva, contribuția, premiul și restituirea. Proba nativă compară cele șase chenare cu motorul înainte și după decontare, măsoară textul și verifică focalizarea actorului cu TalkBack activ.
+- Afișajul de dezvoltator TalkBack a redat anunțul complet al actorului, inclusiv cele două sume și starea de tură. Validarea audio și parcurgerea tuturor locurilor prin gesturi rămân probe manuale separate.
 
-Fiecare loc primește faptele `Stack` și `Committed`, iar la final `Stack`, `Won` și, dacă este cazul, `Returned`. Proiecția distinge premiul potului de restituirea mizei neacoperite. Eticheta este mai mică și mai estompată decât valoarea, iar cadrul păstrează descrierea accesibilă completă.
-
-Reducerea vizibilității etichetelor nu trebuie să șteargă sensul sau să transforme restituirea în câștig afișat. `Won` și `Returned` folosesc valori separate din motor.
-
-## Contractul cerut
-
-- Folosiți o ierarhie compactă și discretă: etichetă secundară mai mică și cu contrast moderat, valoare numerică clară și aliniată. Evitați chenare suplimentare, pictograme fără text sau decor care concurează cu actorul și cărțile.
-- Localizați etichetele și păstrați sensurile distincte: stiva curentă, contribuția în mâna activă, premiul potului și miza neacoperită returnată. Numele final al valorii de decontare depinde de rezolvarea `J6-UI-04`.
-- Descrierea accesibilă a locului include numele, rolul, valoarea completă și eticheta semantică; stilul discret nu reduce informația pentru TalkBack și nu se bazează numai pe culoare.
-- Inspirația vizuală poate folosi prezentarea compactă a faptelor din componentele comune J4/J5, dar adaptarea păstrează vocabularul și regulile de decontare Hold’em.
-
-## Teste de componentă necesare
-
-- Proiecția fiecărui loc asociază valoarea corectă cu faptul corect înainte și după decontare; `Won` și `Returned` nu se contopesc.
-- Layout-ul rămâne lizibil la 2/4/5/6 locuri, mod compact și normal, română și engleză și font mărit. Testele detectează text trunchiat, etichete suprapuse, valori mutate la alt jucător și contrast insuficient.
-- Testul de componentă verifică ierarhia de dimensiune/culoare a valorii față de etichetă pentru locurile active și inactive în ambele moduri.
-- Descrierea accesibilă conține toate valorile și etichetele complete, chiar dacă vizual textul secundar este mai mic. Actorul curent rămâne identificabil fără culoare.
-- Inspecția de snapshot componentă compară densitatea și ierarhia cu stilul existent al mesei; nu verifică pixel-perfect un model de dispozitiv anume.
-
-## Dependențe
-
-- Păstrați actorul și marcajele `Fold`/`Out` definite de `J6-UI-01` și `J6-UI-05`.
+Pentru revalidare, folosiți `-Mode seat-metrics`. [Strategia Android](../testing/TEST_STRATEGY.md#interfața-android-locală) · [Cerințele produsului](../requirements/PRODUCT_REQUIREMENTS.md#ierarhia-informației-de-la-loc)

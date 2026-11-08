@@ -115,13 +115,14 @@ final class HoldemTableView {
             int seat = frame.physicalSeat(display);
             var player = frame.seats().get(seat);
             boolean eliminated = game.eliminated(seat);
-            var chips = new SeatContent.Fact(text.get(complete ? R.string.won : R.string.committed),
-                    Integer.toString(complete ? player.potWon() : player.contributed()));
-            var facts = new ArrayList<SeatContent.Fact>(3);
-            facts.add(new SeatContent.Fact(text.get(R.string.stack), Integer.toString(player.stack())));
-            facts.add(chips);
-            if (complete && player.returned() > 0)
-                facts.add(new SeatContent.Fact(text.get(R.string.returned), Integer.toString(player.returned())));
+            var facts = HoldemTablePresentation.seatMetrics(player, complete).stream()
+                    .map(metric -> new SeatContent.Fact(text.get(switch (metric.kind()) {
+                        case STACK -> R.string.stack;
+                        case COMMITTED -> R.string.committed;
+                        case WON -> R.string.won;
+                        case RETURNED -> R.string.returned;
+                    }), Integer.toString(metric.amount())))
+                    .collect(java.util.stream.Collectors.toList());
             String name = names.get(display);
             var shortRoles = new StringJoiner("/");
             var roles = new StringJoiner(", ");
@@ -153,9 +154,12 @@ final class HoldemTableView {
             addSeatFacts(seatView, facts, active, compact);
             addSeatAction(seatView, latestForSeat,
                     latestForSeat != null && latestForSeat.ordinal() == latestActionOrdinal, active, compact);
-            if (player.folded() || eliminated) seatView.setAlpha(.65f);
-            View framedSeat = compact ? seatView
-                    : new PlayerSeatView(activity, seatView, text.get(R.string.actor), active, seat, false);
+            View framedSeat = seatView;
+            if (!compact) {
+                framedSeat = new PlayerSeatView(activity, seatView, text.get(R.string.actor), active, seat, false);
+                framedSeat.findViewWithTag("seat-turn-badge:" + seat)
+                        .setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            }
             View withCards = withOpponentCards(framedSeat, player, compact, seat == frame.viewer(), seat,
                     complete, frame);
             withCards.setTag("settlement-target:seat:" + seat);
@@ -222,21 +226,9 @@ final class HoldemTableView {
     private void addSeatFacts(LinearLayout seat, List<SeatContent.Fact> facts, boolean active, boolean compact) {
         var style = HoldemTablePresentation.seatFactStyle(active, compact);
         for (var fact : facts) {
-            var row = new LinearLayout(views.activity());
-            row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setPadding(0, 0, 0, 0);
             var label = views.text(fact.label(), style.labelSp(), style.labelColor(), false);
-            label.setSingleLine(true);
-            label.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            label.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             var value = views.text(fact.value(), style.valueSp(), style.valueColor(), true);
-            value.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-            value.setSingleLine(true);
-            value.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-            row.addView(label, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-            row.addView(value, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT));
-            seat.addView(row, views.matchWrap());
+            seat.addView(new SeatFactRow(label, value, views.dp(4)), views.matchWrap());
         }
     }
 

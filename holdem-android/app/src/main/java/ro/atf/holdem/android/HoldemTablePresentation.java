@@ -25,6 +25,8 @@ final class HoldemTablePresentation {
     record ActionRow(int ordinal, int physicalSeat, String player, Street street, BettingAction.Kind kind,
                      int amount, int totalContribution) { }
     record SeatFactStyle(int labelSp, int valueSp, int labelColor, int valueColor) { }
+    enum SeatMetricKind { STACK, COMMITTED, WON, RETURNED }
+    record SeatMetric(SeatMetricKind kind, int amount) { }
     record LedgerStyle(int textSp, int textColor, int borderColor) { }
     record SeatActionStyle(int textSp, int textColor, int backgroundColor, int borderColor) { }
 
@@ -67,8 +69,20 @@ final class HoldemTablePresentation {
 
     static SeatFactStyle seatFactStyle(boolean active, boolean compact) {
         return new SeatFactStyle(8, compact ? 9 : 10,
-                active ? 0xff788274 : 0xff9fc0ad,
+                active ? 0xff5d675b : 0xffa9ccb8,
                 active ? 0xff29362e : 0xffd3efe2);
+    }
+
+    static List<SeatMetric> seatMetrics(HoldemTableViewState.Seat seat, boolean settled) {
+        var stack = new SeatMetric(SeatMetricKind.STACK, seat.stack());
+        if (!settled) return List.of(stack, new SeatMetric(SeatMetricKind.COMMITTED, seat.contributed()));
+        var won = new SeatMetric(SeatMetricKind.WON, seat.potWon());
+        return seat.returned() > 0 ? List.of(stack, won, new SeatMetric(SeatMetricKind.RETURNED, seat.returned()))
+                : List.of(stack, won);
+    }
+
+    static boolean stackSeatFact(int widthPx, int labelPx, int valuePx, int gapPx) {
+        return labelPx + gapPx + valuePx > widthPx;
     }
 
     static SeatActionStyle seatActionStyle(boolean compact, boolean latest, boolean active) {

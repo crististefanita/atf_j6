@@ -98,6 +98,20 @@ class NativeTournamentExtentPublisherTest {
         assertAuditedFailure(publish(temp, receipt), "Missing: [Android process restarted");
     }
 
+    @Test
+    void seatMetricsRejectAUniformScreenshotEvenWithCompleteAssertions(@TempDir Path temp) throws Exception {
+        var receipt = smokeReceipt().put("journey", "seat-metrics");
+        receipt.putArray("captures").add("01-compact-seat-metrics.png").add("02-settled-seat-metrics.png");
+        var assertions = receipt.putArray("assertions");
+        for (String name : List.of("Compact viewport uses enlarged text", "Google TalkBack service is enabled",
+                "Live seat amounts match the engine and fit", "Narrow seat facts use the stacked layout",
+                "Active seat exposes one full accessibility description", "Active seat accepts Android accessibility focus",
+                "Settled seat amounts match the engine and fit")) {
+            assertions.add(assertion(name, true));
+        }
+        assertAuditedFailure(publish(temp, receipt, "01-compact-seat-metrics.png"), "uniform raster");
+    }
+
     private static ObjectNode smokeReceipt() {
         var receipt = JSON.createObjectNode().put("journey", "release-smoke").put("status", "PASS")
                 .put("error", "").put("api", 28).put("window", "392 × 626 dp").put("density", 320).put("fontScale", 1);
@@ -118,13 +132,17 @@ class NativeTournamentExtentPublisherTest {
     }
 
     private static Result publish(Path temp, ObjectNode receipt) throws Exception {
+        return publish(temp, receipt, "");
+    }
+
+    private static Result publish(Path temp, ObjectNode receipt, String blankCapture) throws Exception {
         Path apk = Files.writeString(temp.resolve("fixture.apk"), "native APK identity fixture");
         receipt.put("apkSha256", HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(apk))));
         Path evidence = Files.createDirectory(temp.resolve("evidence"));
         int color = 0xff123400;
         for (var capture : receipt.withArray("captures")) {
             var image = new BufferedImage(3, 3, BufferedImage.TYPE_INT_ARGB);
-            image.setRGB(1, 1, ++color);
+            if (!capture.asText().equals(blankCapture)) image.setRGB(1, 1, ++color);
             assertTrue(ImageIO.write(image, "png", evidence.resolve(capture.asText()).toFile()));
         }
         JSON.writeValue(evidence.resolve("native.json").toFile(), receipt);

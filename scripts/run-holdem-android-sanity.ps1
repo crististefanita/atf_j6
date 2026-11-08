@@ -1,7 +1,7 @@
 #requires -Version 7.0
 param(
     [Parameter(Mandatory)][string]$RunRoot,
-    [ValidateSet('tournament','release-smoke','settlement-resume','leaderboard-settlement','leaderboard-profile-restart')][string]$Mode = 'tournament',
+    [ValidateSet('tournament','release-smoke','settlement-resume','leaderboard-settlement','leaderboard-profile-restart','seat-metrics')][string]$Mode = 'tournament',
     [string]$Serial = '127.0.0.1:5555',
     [string]$Sdk = 'C:\tools\whist-android-sdk'
 )
@@ -24,6 +24,8 @@ if (!(Test-Path -LiteralPath $appApk) -or !(Test-Path -LiteralPath $testApk)) { 
 $token = [guid]::NewGuid().ToString('N')
 $lease = [ordered]@{ active=$true; leaseId=$token; serial=$Serial; owner="J6 $Mode"; run=$evidenceRoot; acquiredUtc=[datetime]::UtcNow.ToString('o') }
 $installed = [Collections.Generic.List[string]]::new()
+$originalDisplay = $null
+$originalAccessibility = $null
 function UpdateLease([bool]$acquire) {
     $stream = [IO.File]::Open($leaseFile, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     try {
@@ -65,6 +67,13 @@ function WriteFailureDiagnostics() {
         $diagnostic | Set-Content -LiteralPath (Join-Path $evidenceRoot 'failure-diagnostics.txt') -Encoding utf8NoBOM
     } catch {
         $_.ToString() | Set-Content -LiteralPath (Join-Path $evidenceRoot 'failure-diagnostics.txt') -Encoding utf8NoBOM
+    }
+}
+function RestoreSetting([string]$Namespace, [string]$Key, [string]$Value) {
+    if ($Value -eq 'null') {
+        InvokeAdb @('shell','settings','delete',$Namespace,$Key) | Out-Null
+    } else {
+        InvokeAdb @('shell','settings','put',$Namespace,$Key,$Value) | Out-Null
     }
 }
 function Invoke-NativePhase([string]$Phase, [System.Collections.IDictionary]$Device) {
@@ -120,6 +129,33 @@ try {
     if ($devicePackages -match ('(?m)^package:' + [regex]::Escape($appId) + '(?:\.test)?\s*$')) {
         throw "Preserved existing app installation; refusing to replace user data: $appId"
     }
+    if ($Mode -eq 'seat-metrics') {
+        $talkBack = 'com.google.android.marvin.talkback/.TalkBackService'
+        $services = InvokeAdb @('shell','cmd','package','query-services','--brief','-a','android.accessibilityservice.AccessibilityService')
+        if (!$services.Contains($talkBack)) { throw 'Install Android Accessibility Suite from Google Play before running seat-metrics.' }
+        $size = InvokeAdb @('shell','wm','size')
+        $density = InvokeAdb @('shell','wm','density')
+        $physicalWidth = [regex]::Match($size, '(?m)^Physical size:\s*(\d+)x\d+')
+        if (!$physicalWidth.Success) { throw "Cannot read physical emulator size: $size" }
+        $originalDisplay = @{
+            size = [regex]::Match($size, '(?m)^Override size:\s*(\d+x\d+)').Groups[1].Value
+            density = [regex]::Match($density, '(?m)^Override density:\s*(\d+)').Groups[1].Value
+            fontScale = (InvokeAdb @('shell','settings','get','system','font_scale')).Trim()
+        }
+        if ($originalDisplay.size) { InvokeAdb @('shell','wm','size','reset') | Out-Null }
+        # Keep the capture at physical resolution; the API 28 compositor can crop screenshots under wm size overrides.
+        $compactDensity = [int][Math]::Ceiling([int]$physicalWidth.Groups[1].Value / 2.0)
+        InvokeAdb @('shell','wm','density',"$compactDensity") | Out-Null
+        InvokeAdb @('shell','settings','put','system','font_scale','2.0') | Out-Null
+        $originalAccessibility = @{
+            services = (InvokeAdb @('shell','settings','get','secure','enabled_accessibility_services')).Trim()
+            enabled = (InvokeAdb @('shell','settings','get','secure','accessibility_enabled')).Trim()
+        }
+        $enabledServices = @($originalAccessibility.services -split ':' | Where-Object { $_ -and $_ -ne 'null' })
+        if (!$enabledServices.Contains($talkBack)) { $enabledServices += $talkBack }
+        InvokeAdb @('shell','settings','put','secure','enabled_accessibility_services',($enabledServices -join ':')) | Out-Null
+        InvokeAdb @('shell','settings','put','secure','accessibility_enabled','1') | Out-Null
+    }
     $device = [ordered]@{
         api = (InvokeAdb @('shell','getprop','ro.build.version.sdk')).Trim()
         size = InvokeAdb @('shell','wm','size')
@@ -171,5 +207,25 @@ finally {
         }
         $cleanup | Set-Content -LiteralPath (Join-Path $evidenceRoot 'cleanup.txt')
         if (@($cleanup | Where-Object { $_ -ne 'Success' }).Count) { throw ($cleanup -join ' ') }
-    } finally { UpdateLease $false }
+    } finally {
+        try {
+            if ($null -ne $originalDisplay) {
+                try {
+                    $restoreDensity = if ($originalDisplay.density) { $originalDisplay.density } else { 'reset' }
+                    InvokeAdb @('shell','wm','density',$restoreDensity) | Out-Null
+                } finally {
+                    try {
+                        if ($originalDisplay.size) { InvokeAdb @('shell','wm','size',$originalDisplay.size) | Out-Null }
+                    } finally { RestoreSetting 'system' 'font_scale' $originalDisplay.fontScale }
+                }
+            }
+        } finally {
+            try {
+                if ($null -ne $originalAccessibility) {
+                    try { RestoreSetting 'secure' 'enabled_accessibility_services' $originalAccessibility.services }
+                    finally { RestoreSetting 'secure' 'accessibility_enabled' $originalAccessibility.enabled }
+                }
+            } finally { UpdateLease $false }
+        }
+    }
 }

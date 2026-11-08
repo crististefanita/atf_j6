@@ -188,8 +188,8 @@
       },
       {
         "path": "README.md",
-        "bytes": 634,
-        "sha256": "85e66ee9db40d5cebbe59bdde6570aedeaa139c69d8e95dff4e9eb7fd667dc03"
+        "bytes": 718,
+        "sha256": "786408dba70aab72d2b9a931a1a176ec9cd0056c0c45d5e8d4d564d0272730cd"
       },
       {
         "path": "release-notes.md",
@@ -232,5 +232,16 @@
         "sha256": "daeae63c15b79220fa8912a9e9f29a28f7b26c9c4eeaad73fdbf846ab50adc96"
       }
     ]
+  },
+  "authenticatedBrowserDownload": {
+    "verified": true,
+    "source": "Main README direct APK link in authenticated GitHub browser",
+    "readmeUrl": "https://github.com/crististefanita/atf_j6#jocul",
+    "readmeCommit": "87453b3ceb3bc9be87272e69381061333884cf0f",
+    "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.2.2/HoldemLab-0.2.2.apk",
+    "bytes": 790008,
+    "sha256": "3c8359325fc2c175d5c9175558302050400d6f636cffb8541a0fb56e5a91239f",
+    "credentialMode": "authenticated GitHub browser",
+    "completedUtc": "2026-11-08T18:55:40.2751589Z"
   }
 }

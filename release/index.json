@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.2.1",
-  "previousVersion": "0.2.0",
+  "currentVersion": "0.2.2",
+  "previousVersion": "0.2.1",
   "changeClass": "PATCH_FIX",
-  "changeRationale": "Rafinarea mesei existente: afișarea cărților în funcție de fază, butoane mai discrete și ajustare la înălțimea ferestrei.",
-  "state": "PREPARED",
+  "changeRationale": "Corectează lizibilitatea sumelor în chenare, păstrarea numelui curent în clasament și reluarea comenzilor deja acceptate la decontare.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.2.1"
+    "0.2.2"
   ]
 }

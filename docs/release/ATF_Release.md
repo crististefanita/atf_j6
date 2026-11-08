@@ -45,6 +45,8 @@ Runnerul fixează commit-ul, confruntă hash-urile snapshot-ului, rulează `mvn 
 
 Runnerul publică rapoarte Extent separate pentru componentele Maven, componentele Android JVM, turneul pe APK-ul sanity și proba de instalare pe APK-ul Release. `ReportArtifactInspector` verifică inventarul și structura fiecărui raport. Un caz lipsă, duplicat, sărit sau eșuat blochează calificarea. Dosarul ediției leagă rapoartele selectate de manifest, iar copia externă păstrează XML-urile și capturile originale. [Catalogul edițiilor](../../release/README.md)
 
+Pentru o ediție care schimbă lizibilitatea chenarelor, adăugați `-IncludeSeatMetrics` la runner. Acesta cere Android Accessibility Suite pe emulator și include dovada Extent pentru viewport-ul compact și TalkBack în aceeași calificare. [Strategia de testare Android](../testing/TEST_STRATEGY.md#interfața-android-locală)
+
 Output-ul `qualification.json` și rapoartele din `$run\reports` sunt sursa pentru dosarul ediției. Guvernanța offline din `ReleaseGovernanceTest` verifică numele, starea, forma README-ului principal, legăturile documentației, rutele, integritatea pachetului, politica Git și compatibilitatea API-urilor Java folosite de codul inclus în APK cu `minSdk`. Testele de guvernanță publică rapoarte Extent și le inspectează cu profilul declarat; păstrați numai rapoartele relevante ediției. Sanity-ul nativ este necesar pentru API-urile runtime care nu sunt semnalate de compilator sau Lint. Guvernanța de descărcare se execută separat numai după publicare; nu se maschează cu un rezultat local.
 
 ## Promovare și descărcare

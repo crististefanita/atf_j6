@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory)][string]$MavenRepository,
     [string]$DataRoot = 'C:\work\holdem_back',
     [string]$JavaHome = 'C:\tools\Java21\jdk-21.0.12.1+1',
-    [string]$Sdk = 'C:\tools\whist-android-sdk'
+    [string]$Sdk = 'C:\tools\whist-android-sdk',
+    [switch]$IncludeSeatMetrics
 )
 $ErrorActionPreference = 'Stop'
 $sourceRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
@@ -209,6 +210,20 @@ try {
         $tournament.apkSha256 -ne $sanityHash -or $releaseSmoke.apkSha256 -ne $apkHash) {
         throw 'Native receipts do not prove the exact release APK and the tournament flow.'
     }
+    $seatMetrics = $null
+    if ($IncludeSeatMetrics) {
+        & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') -RunRoot $RunRoot -Mode seat-metrics -Sdk $Sdk *> (Join-Path $RunRoot 'android-seat-metrics.log')
+        $seatEvidence = Join-Path $RunRoot 'android-seat-metrics'
+        $seatReceipt = Get-Content -Raw -LiteralPath (Join-Path $seatEvidence 'native.json') | ConvertFrom-Json
+        & $java -cp $classPath $publisher (Join-Path $reports 'android-seat-metrics-extent.html') $seatEvidence $sanityApk
+        if ($LASTEXITCODE -ne 0 -or $seatReceipt.status -ne 'PASS' -or $seatReceipt.apkSha256 -ne $sanityHash) {
+            throw 'Compact seat metrics Extent or installed APK identity failed.'
+        }
+        $seatMetrics = [ordered]@{
+            status=$seatReceipt.status; api=$seatReceipt.api; window=$seatReceipt.window; fontScale=$seatReceipt.fontScale
+            assertions=$seatReceipt.assertions.Count; screenshots=$seatReceipt.captures.Count; apkSha256=$seatReceipt.apkSha256
+        }
+    }
     $afterManifest = Get-SourceManifest $sourceRoot
     if ((ConvertTo-Json -InputObject $sourceManifest -Compress) -cne (ConvertTo-Json -InputObject $afterManifest -Compress)) {
         throw 'Source changed while qualification was running.'
@@ -233,6 +248,7 @@ try {
         reports=@(Get-ChildItem -LiteralPath $reports -File -Filter '*.html' | ForEach-Object { [ordered]@{path=$_.Name;bytes=$_.Length;sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()} })
         runRoot=$RunRoot; completedUtc=[datetime]::UtcNow.ToString('o')
     }
+    if ($IncludeSeatMetrics) { $result.qualification.seatMetrics = $seatMetrics }
     $result | ConvertTo-Json -Depth 9 | Set-Content -LiteralPath (Join-Path $RunRoot 'qualification.json') -Encoding utf8NoBOM
     $exitCode = 0
 }

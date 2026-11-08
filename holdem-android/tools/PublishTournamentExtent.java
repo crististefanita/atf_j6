@@ -13,24 +13,21 @@ import atf.reporting.model.ReportObservation;
 import atf.reporting.ui.UiExtentReportSession;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.w3c.dom.Element;
 
 import javax.imageio.ImageIO;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 
-/** Publishes observed JVM and Android results using the admitted J0 Reporting JAR. */
+/** Publishes observed native Android E2E results using the admitted J0 Reporting JAR. */
 class PublishTournamentExtent {
     public static void main(String[] args) throws Exception {
-        if (args.length < 3) throw new IllegalArgumentException("Expected report, native evidence directory and app APK; JUnit XML(s) are optional");
+        if (args.length != 3) throw new IllegalArgumentException("Expected report, native evidence directory and app APK");
         Path reportPath = Path.of(args[0]);
         Instant startedAt = Instant.now();
         Path evidence = Path.of(args[1]);
@@ -40,16 +37,10 @@ class PublishTournamentExtent {
         for (var capture : receipt.required("captures")) screenshots.add(evidence.resolve(capture.asText()));
         boolean passed = true;
         try (var report = new ExtentReportSession(reportPath, new ReportingSettings(240, 0))) {
-            for (String xml : Arrays.copyOfRange(args, 3, args.length)) {
-                var component = component(report, Path.of(xml));
-                scenarios.add(component);
-                passed &= component.status() == AtfReportStatus.PASS;
-            }
             var nativeScenario = nativeUi(report, evidence, receipt, Path.of(args[2]));
             scenarios.add(nativeScenario);
             passed &= nativeScenario.status() == AtfReportStatus.PASS;
         }
-        if (!passed) throw new IllegalStateException("Report contains a failed or incomplete scenario");
         String html = Files.readString(reportPath);
         for (Path screenshot : screenshots) {
             String payload = Base64.getEncoder().encodeToString(Files.readAllBytes(screenshot));
@@ -63,48 +54,14 @@ class PublishTournamentExtent {
             throw new IllegalStateException("Published Extent HTML is not autonomous and structurally compliant: "
                     + inspection.violations());
         }
-    }
-
-    private static ReportArtifactProfile.Scenario component(ExtentReportSession report, Path path) throws Exception {
-        var factory = DocumentBuilderFactory.newInstance();
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        var xml = factory.newDocumentBuilder().parse(path.toFile());
-        var tests = xml.getElementsByTagName("testcase");
-        var checks = new ArrayList<AtfAssertion>();
-        for (int index = 0; index < tests.getLength(); index++) {
-            var result = (Element) tests.item(index);
-            String actual = "JUnit passed";
-            for (String type : List.of("failure", "error", "skipped")) {
-                var details = result.getElementsByTagName(type);
-                if (details.getLength() > 0) {
-                    actual = "JUnit " + type + " · " + ((Element) details.item(0)).getAttribute("message");
-                    break;
-                }
-            }
-            checks.add(new AtfAssertion(result.getAttribute("name"), "JUnit passed", actual, actual.equals("JUnit passed")));
-        }
-        boolean passed = !checks.isEmpty() && checks.stream().allMatch(AtfAssertion::passed);
-        var result = status(passed);
-        try (var test = report.startScenario(xml.getDocumentElement().getAttribute("name"), "Android JVM component suite",
-                List.of("component", "jvm"));
-             var phase = test.startPhase("TEST BODY")) {
-            AssertionAuditReport.publishStep(phase, "Recorded JUnit outcomes", checks, AtfReportStatus.INFO);
-            phase.complete(result);
-            test.complete(result);
-        }
-        var rows = checks.stream().map(check -> new ReportArtifactProfile.Comparison(check.name(), check.passed())).toList();
-        var assertions = new ReportArtifactProfile.Assertions("Recorded JUnit outcomes", rows);
-        return new ReportArtifactProfile.Scenario(xml.getDocumentElement().getAttribute("name"),
-                "Android JVM component suite", result,
-                List.of(new ReportArtifactProfile.Phase("TEST BODY", result,
-                        List.of(assertions))));
+        if (!passed) throw new IllegalStateException("A failure Extent report was created and structurally audited; native scenario status is FAIL.");
     }
 
     private static ReportArtifactProfile.Scenario nativeUi(ExtentReportSession report, Path evidence, JsonNode receipt, Path apk) throws Exception {
         String journey = receipt.path("journey").asText("tournament");
         boolean releaseSmoke = journey.equals("release-smoke");
         if (!releaseSmoke && !journey.equals("tournament")) throw new IllegalArgumentException("Unknown native journey " + journey);
-        int expectedCaptures = releaseSmoke ? 2 : 5;
+        int expectedCaptures = releaseSmoke ? 2 : 8;
         var checks = new ArrayList<AtfAssertion>();
         for (var entry : receipt.required("assertions")) {
             checks.add(new AtfAssertion(entry.required("name").asText(), entry.required("expected").asText(),
@@ -142,7 +99,7 @@ class PublishTournamentExtent {
             int captureIndex = 0;
             for (var entry : receipt.required("captures")) {
                 String name = entry.asText();
-                if (!name.matches("0[1-5]-[a-z-]+\\.png")) throw new IllegalArgumentException("Unexpected capture name " + name);
+                if (!name.matches("0[1-5][a-z]?-[a-z-]+\\.png")) throw new IllegalArgumentException("Unexpected capture name " + name);
                 var image = ImageIO.read(evidence.resolve(name).toFile());
                 boolean decodes = image != null && image.getWidth() > 0 && image.getHeight() > 0;
                 passed &= decodes;

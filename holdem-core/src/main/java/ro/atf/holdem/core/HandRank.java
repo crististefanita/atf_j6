@@ -23,25 +23,41 @@ public final class HandRank {
 
     /** Higher scores win. Suits never break ties. */
     public static int bestOf(List<Card> cards) {
+        return evaluateBestOf(cards).score();
+    }
+
+    /**
+     * Evaluates five to seven distinct cards and returns a deterministic five-card witness.
+     * Equal-ranked witnesses keep the first combination in input order; that presentation
+     * choice never changes the rank or introduces a suit tie-break.
+     */
+    public static HandEvaluation evaluateBestOf(List<Card> cards) {
         if (cards.size() < 5 || cards.size() > 7 || new HashSet<>(cards).size() != cards.size())
             throw new IllegalArgumentException("Expected five to seven distinct cards");
-        int best = 0;
+        int best = -1;
+        List<Card> bestFive = List.of();
         int limit = 1 << cards.size();
         for (int mask = 0; mask < limit; mask++) {
             if (Integer.bitCount(mask) != 5) continue;
             int[] counts = new int[15];
             Card.Suit suit = null;
             boolean flush = true;
+            var selected = new ArrayList<Card>(5);
             for (int i = 0; i < cards.size(); i++) {
                 if ((mask & (1 << i)) == 0) continue;
                 Card card = cards.get(i);
+                selected.add(card);
                 counts[card.rank().value()]++;
                 if (suit == null) suit = card.suit();
                 else if (suit != card.suit()) flush = false;
             }
-            best = Math.max(best, five(counts, flush));
+            int candidate = five(counts, flush);
+            if (candidate > best) {
+                best = candidate;
+                bestFive = List.copyOf(selected);
+            }
         }
-        return best;
+        return new HandEvaluation(best, categoryOfScore(best), bestFive);
     }
 
     private static int five(int[] counts, boolean flush) {

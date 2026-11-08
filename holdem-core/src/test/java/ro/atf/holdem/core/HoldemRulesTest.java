@@ -26,6 +26,88 @@ class HoldemRulesTest {
         assertEquals(before, hand.observeActor());
     }
 
+    @Test void publicBettingLedgerShowsEveryActionAmountAndRunningHandContribution() {
+        var hand = hand(100, 100);
+
+        var opening = hand.viewFor(0).bettingActions();
+        assertEquals(List.of(BettingAction.Kind.SMALL_BLIND, BettingAction.Kind.BIG_BLIND),
+                opening.stream().map(BettingAction::kind).toList());
+        assertEquals(List.of(5, 10), opening.stream().map(BettingAction::amount).toList());
+        assertEquals(List.of(5, 10), opening.stream().map(BettingAction::totalContribution).toList());
+        assertTrue(opening.stream().allMatch(action -> action.street() == Street.PREFLOP));
+
+        hand.act(0, CALL, 5);
+        hand.act(1, CHECK, 0);
+        var ledger = hand.viewFor(0).bettingActions();
+        assertEquals(List.of(BettingAction.Kind.SMALL_BLIND, BettingAction.Kind.BIG_BLIND,
+                        BettingAction.Kind.CALL, BettingAction.Kind.CHECK),
+                ledger.stream().map(BettingAction::kind).toList());
+        assertEquals(List.of(5, 10, 5, 0), ledger.stream().map(BettingAction::amount).toList());
+        assertEquals(List.of(5, 10, 10, 10), ledger.stream().map(BettingAction::totalContribution).toList());
+        assertEquals(List.of(0, 1, 0, 1), ledger.stream().map(BettingAction::seat).toList());
+        assertEquals(List.of(1, 2, 3, 4), ledger.stream().map(BettingAction::ordinal).toList());
+        assertThrows(UnsupportedOperationException.class, () -> ledger.add(ledger.get(0)));
+    }
+
+    @Test void publicBettingLedgerDistinguishesRaiseCallAndAllInByStreet() {
+        var hand = hand(100, 100, 100, 100);
+        hand.act(3, RAISE, 20);
+        hand.act(0, CALL, 20);
+        hand.act(1, FOLD, 0);
+        hand.act(2, CALL, 10);
+
+        var ledger = hand.viewFor(0).bettingActions();
+        assertEquals(List.of(BettingAction.Kind.RAISE, BettingAction.Kind.CALL,
+                        BettingAction.Kind.FOLD, BettingAction.Kind.CALL),
+                ledger.subList(2, ledger.size()).stream().map(BettingAction::kind).toList());
+        assertEquals(List.of(Street.PREFLOP, Street.PREFLOP, Street.PREFLOP, Street.PREFLOP),
+                ledger.subList(2, ledger.size()).stream().map(BettingAction::street).toList());
+        assertEquals(List.of(5, 10, 20, 20, 5, 20),
+                ledger.stream().map(BettingAction::totalContribution).toList());
+    }
+
+    @Test void rejectedBetDoesNotAppearInThePublicActionLedger() {
+        var hand = hand(100, 100);
+        var before = hand.viewFor(0).bettingActions();
+        assertThrows(IllegalArgumentException.class, () -> hand.act(0, RAISE, 100));
+        assertEquals(before, hand.viewFor(0).bettingActions());
+    }
+
+    @Test void eliminatedPhysicalSeatCanObserveTheHandWithoutPrivateCardsOrActions() {
+        var hand = new HoldemHand(2, List.of(0, 100, 100), 1, BLINDS, HoldemHand.shuffledDeck(43));
+        var spectator = hand.viewFor(0);
+        assertEquals(0, spectator.viewer());
+        assertTrue(spectator.ownCards().isEmpty());
+        assertTrue(spectator.legalActions().isEmpty());
+        assertEquals(0, spectator.seats().get(1).shownCards().size());
+        assertEquals(0, spectator.seats().get(2).shownCards().size());
+        assertEquals(2, spectator.seats().stream().filter(HoldemTableViewState.Seat::dealtCards).count());
+    }
+
+    @Test void publicLedgerTracksShortAllInAndStreetTransitionsWithoutClearingEarlierActions() {
+        var hand = hand(100, 100, 15);
+        hand.act(0, CALL, 10);
+        hand.act(1, CALL, 5);
+        hand.act(2, CHECK, 0);
+        hand.act(1, CHECK, 0);
+        hand.act(2, ALL_IN, 5);
+        hand.act(0, CALL, 5);
+        hand.act(1, CALL, 5);
+
+        var ledger = hand.viewFor(0).bettingActions();
+        var shove = ledger.stream().filter(action -> action.kind() == BettingAction.Kind.ALL_IN)
+                .findFirst().orElseThrow();
+        assertEquals(Street.FLOP, shove.street());
+        assertEquals(5, shove.amount());
+        assertEquals(15, shove.totalContribution());
+        assertTrue(ledger.stream().anyMatch(action -> action.street() == Street.PREFLOP));
+        assertTrue(ledger.stream().anyMatch(action -> action.street() == Street.FLOP));
+        assertTrue(ledger.stream().map(BettingAction::ordinal).reduce((left, right) -> {
+            assertTrue(right > left);
+            return right;
+        }).isPresent());
+    }
+
     @Test void headsUpRolesAndDealingOrderFollowEitherDealer() {
         var deck = HoldemHand.shuffledDeck(42);
         for (int dealer : new int[]{0, 1}) {
@@ -94,7 +176,25 @@ class HoldemRulesTest {
         var settled = hand.viewFor(0);
         assertEquals(Street.COMPLETE, settled.street());
         assertTrue(settled.seats().stream().allMatch(seat -> seat.shownCards().size() == 2));
+        assertTrue(settled.seats().stream().allMatch(seat -> seat.handEvaluation() != null
+                && seat.handEvaluation().bestFive().size() == 5));
         assertEquals(settled.ownCards(), settled.seats().get(0).shownCards());
+    }
+
+    @Test void foldWinDoesNotInventAShowdownCombinationAndSeparatesPotFromReturnedChips() {
+        var hand = hand(100, 100, 100);
+        hand.act(0, FOLD, 0);
+        hand.act(1, FOLD, 0);
+
+        var result = hand.viewFor(2);
+
+        assertEquals(Street.COMPLETE, result.street());
+        assertEquals(0, result.board().size());
+        assertNull(result.seats().get(2).handEvaluation());
+        assertTrue(result.seats().get(2).potWon() > 0);
+        assertTrue(result.seats().get(2).returned() > 0);
+        assertEquals(result.seats().get(2).received(), result.seats().get(2).potWon()
+                + result.seats().get(2).returned());
     }
 
     @Test void policyObservationSchemaHasNoSeedDeckOrOpponentHoleCardField() {
@@ -245,8 +345,10 @@ class HoldemRulesTest {
     }
 
     @Test void sidePotsExcludeFoldedChipsAndReturnAnUncalledOverage() {
-        assertArrayEquals(new int[]{75, 30, 20, 0},
-                PotSettlement.settle(new int[]{20, 35, 55, 15}, new int[]{9, 8, 7, -1}, 2).awards());
+        var settlement = PotSettlement.settle(new int[]{20, 35, 55, 15}, new int[]{9, 8, 7, -1}, 2);
+        assertArrayEquals(new int[]{75, 30, 20, 0}, settlement.awards());
+        assertArrayEquals(new int[]{75, 30, 0, 0}, settlement.potWon());
+        assertArrayEquals(new int[]{0, 0, 20, 0}, settlement.returned());
         assertArrayEquals(new int[]{2, 0, 1},
                 PotSettlement.settle(new int[]{1, 1, 1}, new int[]{10, -1, 10}, 2).awards());
     }
@@ -301,6 +403,24 @@ class HoldemRulesTest {
         assertThrows(IllegalArgumentException.class, () -> HandRank.bestOf(cards("Ac Ac 3s 4d 5c")));
     }
 
+    @Test void evaluatorReturnsTheExactDeterministicFiveCardsWithoutUsingSuitAsARankTieBreaker() {
+        var royalBoard = cards("As Ks Qs Js Ts 2c 3d");
+        var royal = HandRank.evaluateBestOf(royalBoard);
+        assertEquals(HandRank.Category.STRAIGHT_FLUSH, royal.category());
+        assertEquals(HandRank.bestOf(royalBoard), royal.score());
+        assertEquals(royalBoard.subList(0, 5), royal.bestFive());
+        assertThrows(UnsupportedOperationException.class, () -> royal.bestFive().add(cards("4c").get(0)));
+
+        var doubleTrips = cards("As Ah Ad Ks Kh Kd 2c");
+        var fullHouse = HandRank.evaluateBestOf(doubleTrips);
+        assertEquals(HandRank.Category.FULL_HOUSE, fullHouse.category());
+        assertEquals(cards("As Ah Ad Ks Kh"), fullHouse.bestFive());
+
+        var wheel = HandRank.evaluateBestOf(cards("Ac 2h 3s 4d 5c 9h Kd"));
+        assertEquals(HandRank.Category.STRAIGHT, wheel.category());
+        assertEquals(cards("Ac 2h 3s 4d 5c"), wheel.bestFive());
+    }
+
     @Test void handCategoryNamesCoverEveryPackedRankClass() {
         assertEquals(HandRank.Category.HIGH_CARD, HandRank.categoryOf(cards("Ac 9d 7h 4s 2c")));
         assertEquals(HandRank.Category.ONE_PAIR, HandRank.categoryOf(cards("Ac Ad 9h 4s 2c")));
@@ -347,5 +467,30 @@ class HoldemRulesTest {
             }
         }
         fail("Expected a deterministic split showdown");
+    }
+
+    @Test void tournamentRanksSimultaneousKnockoutsTiedAndKeepsOneChampion() {
+        var levels = List.of(new BlindLevel(5, 10, 10));
+        Tournament tournament = null;
+        HoldemHand actual = null;
+        for (long seed = 0; seed < 100; seed++) {
+            tournament = new Tournament(new Tournament.Rules(4, 100, 60, levels), 0);
+            actual = tournament.startHand(0, seed).hand();
+            while (actual.actor() >= 0) actual.act(actual.actor(), ALL_IN, actual.observeActor().heroStack());
+            if (actual.stacks().stream().filter(stack -> stack > 0).count() == 1) break;
+            tournament = null;
+        }
+        assertNotNull(tournament, "A deterministic all-in hand must produce a unique champion");
+        assertNotNull(actual);
+        Tournament completed = tournament;
+        completed.finish();
+        var ranks = completed.finishingRanks();
+        int champion = actual.stacks().indexOf(400);
+        assertTrue(champion >= 0);
+        assertEquals(1, ranks.get(champion));
+        assertEquals(3, ranks.stream().filter(rank -> rank == 2).count());
+        assertEquals(0, ranks.stream().filter(rank -> rank == 0).count());
+        assertDoesNotThrow(completed::finish, "Finalizing a completed tournament is idempotent");
+        assertThrows(IllegalStateException.class, () -> completed.startHand(60, 20));
     }
 }

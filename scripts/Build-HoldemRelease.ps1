@@ -29,6 +29,14 @@ if ($LASTEXITCODE -ne 0) { throw 'Cannot identify the release source commit.' }
 $index = Get-Content -Raw -LiteralPath (Join-Path $sourceRoot 'release/index.json') | ConvertFrom-Json
 $version = $index.currentVersion
 if ($index.state -ne 'DRAFT' -or $version -notmatch '^\d+\.\d+\.\d+$') { throw 'A clean semantic-version DRAFT is required.' }
+$previousVersion = [string]$index.previousVersion
+$changeClass = [string]$index.changeClass
+$changeRationale = [string]$index.changeRationale
+if ($previousVersion -notmatch '^\d+\.\d+\.\d+$' -or
+    $changeClass -notin @('PATCH_FIX','REFACTOR_ONLY','COMPATIBLE_FEATURE','BREAKING_CHANGE') -or
+    [string]::IsNullOrWhiteSpace($changeRationale) -or $changeRationale.Length -gt 300) {
+    throw 'DRAFT must declare previousVersion, a supported changeClass, and a concise changeRationale.'
+}
 $signingDirectory = Join-Path $dataRoot 'infrastructure/signing'
 $identityPath = Join-Path $signingDirectory 'identity.json'
 if (!(Test-Path -LiteralPath $identityPath)) { throw 'Run Initialize-HoldemSigning.ps1 before release qualification.' }
@@ -69,16 +77,63 @@ try {
     $securePassword = (Get-Content -Raw -LiteralPath $identity.credential).Trim() | ConvertTo-SecureString
     $env:HOLDEM_STORE_FILE = $identity.store
     $env:HOLDEM_STORE_PASSWORD = [Net.NetworkCredential]::new('holdem',$securePassword).Password
+    $java = Join-Path $JavaHome 'bin/java.exe'
+    $suiteContract = Join-Path $stage 'config/release-test-suites.json'
+    $suiteInventory = Get-Content -Raw -LiteralPath $suiteContract | ConvertFrom-Json
+    $mavenSuiteCount = @($suiteInventory.maven).Count
+    $androidSuiteCount = @($suiteInventory.android).Count
     Push-Location $stage
     try {
-        & mvn -B -ntp "-Dmaven.repo.local=$MavenRepository" "-Datf.test.reportDirectory=$reports/maven" clean test *> (Join-Path $RunRoot 'maven.log')
-        if ($LASTEXITCODE -ne 0) { throw 'Maven regression failed; see maven.log.' }
+        & mvn -B -ntp -fae "-Dmaven.repo.local=$MavenRepository" "-Datf.test.reportDirectory=$reports/maven" clean test *> (Join-Path $RunRoot 'maven.log')
+        $mavenExitCode = $LASTEXITCODE
     } finally { Pop-Location }
     $mavenXml = @(Get-ChildItem -LiteralPath $stage -Recurse -File -Filter 'TEST-*.xml' | Where-Object FullName -match '[\\/]target[\\/]surefire-reports[\\/]')
     $mavenSuites = @($mavenXml | ForEach-Object { [xml](Get-Content -Raw -LiteralPath $_.FullName) })
     $mavenTests = ($mavenSuites | ForEach-Object { [int]$_.testsuite.tests } | Measure-Object -Sum).Sum
     $mavenFailures = ($mavenSuites | ForEach-Object { [int]$_.testsuite.failures + [int]$_.testsuite.errors + [int]$_.testsuite.skipped } | Measure-Object -Sum).Sum
-    if (!$mavenTests -or $mavenFailures) { throw 'Maven XML population contains no tests or a failing/skipped test.' }
+    $platformXml = Get-ChildItem (Join-Path $stage 'holdem-app/target/surefire-reports') -File -Filter 'TEST-ro.atf.j6.libraries.PlatformLibraryAdoptionTest.xml' -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (!$platformXml) { throw 'Maven did not produce the Reporting consumer test classpath; retain maven.log and Surefire XML diagnostics.' }
+    [xml]$platformReport = Get-Content -Raw -LiteralPath $platformXml.FullName
+    $classPath = ($platformReport.testsuite.properties.property | Where-Object name -eq 'java.class.path').value
+    if ([string]::IsNullOrWhiteSpace($classPath)) { throw 'Maven test classpath is unavailable for ATF component Extent publication.' }
+    $componentPublisher = 'ro.atf.j6.reporting.ComponentSuiteExtentPublisher'
+    $mavenExtentArgs = @('maven', $suiteContract, $stage, (Join-Path $reports 'maven-component-suites-extent.html')) + @($mavenXml | ForEach-Object { $_.FullName })
+    & $java -cp $classPath $componentPublisher @mavenExtentArgs *> (Join-Path $RunRoot 'maven-extent.log')
+    $mavenExtentExitCode = $LASTEXITCODE
+    $mavenComponentReport = Join-Path $reports 'maven-component-suites-extent.html'
+    if (!(Test-Path -LiteralPath $mavenComponentReport)) {
+        throw 'Maven component Extent report was not created; inspect maven-extent.log.'
+    }
+    if ($mavenExtentExitCode -ne 0 -and ($mavenExitCode -ne 0 -or !$mavenTests -or $mavenFailures)) {
+        throw 'Maven regression failed; its audit Extent, XML and maven.log are retained in the external run.'
+    }
+    if ($mavenExtentExitCode -ne 0) {
+        throw 'Maven suite coverage did not reconcile to the release inventory; inspect the failing Extent and maven-extent.log.'
+    }
+    $previousRelease = Get-ChildItem -LiteralPath (Join-Path $sourceRoot 'release') -Directory |
+        Where-Object { $_.Name -match '^\d+\.\d+\.\d+$' -and [version]($_.Name) -lt [version]($version) } |
+        Sort-Object { [version]($_.Name) } -Descending | Select-Object -First 1
+    if (!$previousRelease -or $previousRelease.Name -ne $previousVersion) { throw 'DRAFT previousVersion must be the latest immutable prior dossier.' }
+    $previousValidationPath = Join-Path $previousRelease.FullName 'release-validation.json'
+    if (!(Test-Path -LiteralPath $previousValidationPath)) { throw 'Previous release has no validation manifest for RAG provenance.' }
+    $previousValidation = Get-Content -Raw -LiteralPath $previousValidationPath | ConvertFrom-Json
+    $baseCommit = [string]$previousValidation.publication.sourceCommit
+    if ($baseCommit -notmatch '^[0-9a-fA-F]{40}$') { throw 'Previous release source commit is missing or malformed.' }
+    & $java -cp $classPath 'ro.atf.j6.release.ReleaseVersionPolicy' $previousVersion $changeClass $version *> (Join-Path $RunRoot 'release-version-policy.log')
+    if ($LASTEXITCODE -ne 0) { throw 'Release version does not follow the declared change class; inspect release-version-policy.log.' }
+    $impactContextPath = Join-Path $RunRoot 'release-impact-context.json'
+    & $java -cp $classPath 'ro.atf.j6.release.ReleaseImpactRag' $sourceRoot $previousRelease.Name $baseCommit $sourceCommit $version $impactContextPath *> (Join-Path $RunRoot 'release-impact-context.log')
+    if ($LASTEXITCODE -ne 0 -or !(Test-Path -LiteralPath $impactContextPath)) { throw 'Offline release impact context failed; inspect release-impact-context.log.' }
+    $impactContext = Get-Content -Raw -LiteralPath $impactContextPath | ConvertFrom-Json
+    if ($impactContext.candidateCommit -ne $sourceCommit -or $impactContext.baseReleaseVersion -ne $previousRelease.Name -or
+        $impactContext.candidateVersion -ne $version -or $impactContext.declaredChangeClass -ne $changeClass -or !$impactContext.advisoryOnly -or
+        $impactContext.gateEffect -ne 'NONE' -or $impactContext.canDeclareTestPass -or
+        $impactContext.testReceiptState -ne 'NOT_EVALUATED') {
+        throw 'Release impact context identity or advisory-only contract is invalid.'
+    }
+    if ($mavenExitCode -ne 0 -or !$mavenTests -or $mavenFailures) {
+        throw 'Maven regression failed; the component Extent and JUnit XML diagnostics are retained in the external run.'
+    }
 
     $appRoot = Join-Path $stage 'holdem-android'
     Set-Content -LiteralPath (Join-Path $appRoot 'local.properties') -Value ('sdk.dir=' + $Sdk.Replace('\','/').Replace(':','\:')) -Encoding ascii
@@ -87,13 +142,25 @@ try {
         & .\gradlew.bat --offline --no-daemon --max-workers=2 :app:testSanityUnitTest :app:lintRelease `
             :app:assembleSanity :app:assembleSanityAndroidTest :app:assembleRelease `
             *> (Join-Path $RunRoot 'gradle.log')
-        if ($LASTEXITCODE -ne 0) { throw 'Android JVM, lint, or APK build failed; see gradle.log.' }
+        $gradleExitCode = $LASTEXITCODE
     } finally { Pop-Location }
-    $unitXml = @(Get-ChildItem -LiteralPath (Join-Path $appRoot 'app/build/test-results/testSanityUnitTest') -File -Filter 'TEST-*.xml')
+    $unitXml = @(Get-ChildItem -LiteralPath (Join-Path $appRoot 'app/build/test-results/testSanityUnitTest') -File -Filter 'TEST-*.xml' -ErrorAction SilentlyContinue)
     $androidSuites = @($unitXml | ForEach-Object { [xml](Get-Content -Raw -LiteralPath $_.FullName) })
     $androidTests = ($androidSuites | ForEach-Object { [int]$_.testsuite.tests } | Measure-Object -Sum).Sum
     $androidFailures = ($androidSuites | ForEach-Object { [int]$_.testsuite.failures + [int]$_.testsuite.errors + [int]$_.testsuite.skipped } | Measure-Object -Sum).Sum
-    if (!$androidTests -or $androidFailures) { throw 'Android JVM XML population contains no tests or a failing/skipped test.' }
+    $androidExtentArgs = @('android', $suiteContract, $stage, (Join-Path $reports 'android-component-suites-extent.html')) + @($unitXml | ForEach-Object { $_.FullName })
+    & $java -cp $classPath $componentPublisher @androidExtentArgs *> (Join-Path $RunRoot 'android-components-extent.log')
+    $androidExtentExitCode = $LASTEXITCODE
+    $androidComponentReport = Join-Path $reports 'android-component-suites-extent.html'
+    if (!(Test-Path -LiteralPath $androidComponentReport)) {
+        throw 'Android component Extent report was not created; inspect android-components-extent.log and gradle.log.'
+    }
+    if ($gradleExitCode -ne 0) {
+        throw 'Android Gradle build or test task failed; inspect gradle.log and the partial component Extent in the external run.'
+    }
+    if ($androidExtentExitCode -ne 0 -or !$androidTests -or $androidFailures) {
+        throw 'Android JVM tests or suite coverage failed; inspect the audit Extent and android-components-extent.log.'
+    }
 
     $releaseApk = Join-Path $appRoot 'app/build/outputs/apk/release/app-release.apk'
     $sanityApk = Join-Path $appRoot 'app/build/outputs/apk/sanity/app-sanity.apk'
@@ -122,14 +189,10 @@ try {
     & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') -RunRoot $RunRoot -Mode tournament -Sdk $Sdk *> (Join-Path $RunRoot 'android-tournament.log')
     & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') -RunRoot $RunRoot -Mode release-smoke -Sdk $Sdk *> (Join-Path $RunRoot 'android-release-smoke.log')
 
-    $platformXml = Get-ChildItem (Join-Path $stage 'holdem-app/target/surefire-reports') -File -Filter 'TEST-ro.atf.j6.libraries.PlatformLibraryAdoptionTest.xml' | Select-Object -First 1
-    [xml]$platformReport = Get-Content -Raw -LiteralPath $platformXml.FullName
-    $classPath = ($platformReport.testsuite.properties.property | Where-Object name -eq 'java.class.path').value
-    $java = Join-Path $JavaHome 'bin/java.exe'
     $publisher = Join-Path $appRoot 'tools/PublishTournamentExtent.java'
     $tournamentEvidence = Join-Path $RunRoot 'android-tournament-sanity'
     $releaseEvidence = Join-Path $RunRoot 'android-release-smoke'
-    & $java -cp $classPath $publisher (Join-Path $reports 'android-tournament-extent.html') $tournamentEvidence $sanityApk @($unitXml.FullName)
+    & $java -cp $classPath $publisher (Join-Path $reports 'android-tournament-extent.html') $tournamentEvidence $sanityApk
     if ($LASTEXITCODE -ne 0) { throw 'Tournament Extent publication failed.' }
     & $java -cp $classPath $publisher (Join-Path $reports 'android-release-smoke-extent.html') $releaseEvidence $releaseApk
     if ($LASTEXITCODE -ne 0) { throw 'Release smoke Extent publication failed.' }
@@ -158,7 +221,11 @@ try {
         apkBytes=$apkBytes; sha256=$apkHash; certificateSha256=$certificate; debuggable=$false; targetSdk=36; minSdk=26
         qualification=[ordered]@{
             maven=[ordered]@{suites=$mavenSuites.Count;tests=$mavenTests;failures=0;errors=0;skipped=0}
+            mavenComponentExtent=[ordered]@{path='maven-component-suites-extent.html';suites=$mavenSuiteCount;tests=$mavenTests}
             androidJvm=[ordered]@{suites=$androidSuites.Count;tests=$androidTests;failures=0;errors=0;skipped=0}
+            androidComponentExtent=[ordered]@{path='android-component-suites-extent.html';suites=$androidSuiteCount;tests=$androidTests}
+            releaseImpactContext=[ordered]@{path='release-impact-context.json';contextState=$impactContext.contextState;advisoryOnly=$true;sha256=(Get-FileHash -LiteralPath $impactContextPath -Algorithm SHA256).Hash.ToLowerInvariant()}
+            versionPolicy=[ordered]@{previousVersion=$previousVersion;changeClass=$changeClass;candidateVersion=$version;rationale=$changeRationale}
             lint=[ordered]@{status='PASS';warnings=$lintWarnings}
             tournamentSanity=[ordered]@{status=$tournament.status;api=$tournament.api;assertions=$tournament.assertions.Count;screenshots=$tournament.captures.Count;apkSha256=$tournament.apkSha256}
             releaseInstallSmoke=[ordered]@{status=$releaseSmoke.status;api=$releaseSmoke.api;assertions=$releaseSmoke.assertions.Count;screenshots=$releaseSmoke.captures.Count;apkSha256=$releaseSmoke.apkSha256}

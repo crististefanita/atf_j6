@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "maven": [
+    { "module": "holdem-core", "testClass": "ro.atf.holdem.core.HoldemRulesTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.ContextualEquityPolicyTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.DeterministicBluffPolicyTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.MonteCarloEquityEstimatorTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.PolicyStyleTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.ShortStackShovePolicyTest" },
+    { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.CashTableArenaTest" },
+    { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.ControlledChallengeTest" },
+    { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.PositionRotationExperimentTest" },
+    { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.TournamentArenaTest" },
+    { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.TournamentStrategyArenaTest" },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.libraries.PlatformLibraryAdoptionTest" },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseGovernanceTest" },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.ComponentSuiteExtentPublisherTest" },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseImpactRagTest" },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseVersionPolicyTest" }
+  ],
+  "android": [
+    { "module": "holdem-android", "testClass": "ro.atf.holdem.android.HoldemSessionRepositoryComponentTest" },
+    { "module": "holdem-android", "testClass": "ro.atf.holdem.android.HoldemTablePresentationComponentTest" },
+    { "module": "holdem-android", "testClass": "ro.atf.holdem.android.LocalHoldemGameTest" },
+    { "module": "holdem-android", "testClass": "ro.atf.holdem.android.LocalHoldemTournamentTest" },
+    { "module": "holdem-android", "testClass": "ro.atf.holdem.android.TournamentLeaderboardTest" }
+  ]
+}

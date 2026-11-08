@@ -107,12 +107,19 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private void winAcrossThreeHands() throws Exception {
-        var activity = openTournament();
+        Activity activity = openTournament();
         try {
             see("Opening hand", "Hand 1 · Preflop");
             tap("Call · 20");
             see("First hand reaches the flop", "Hand 1 · Flop");
+            capture("01-call-ledger-visible");
+            seeLatestAction("Latest action names the most recent player, move and running hand total",
+                    "Check", 0, "hand total 20");
+            scrollBackUntilVisible("#3 · You · Call +20");
+            capture("01-betting-ledger-history");
             tap("Check");
+            seeLatestAction("Check iteration identifies a player and its zero chip delta",
+                    "Check", 0, "hand total 20");
             see("First hand reaches the turn", "Hand 1 · Turn");
             tap("Check");
             see("First hand reaches the river", "Hand 1 · River");
@@ -120,6 +127,11 @@ public final class TournamentSanity extends Instrumentation {
             see("First hand settles before offering another deal", "Hand 1 · Settled");
             see("First hand pot is paid", "Pot paid · 80");
             capture("01-hand-one-settled");
+            SystemClock.sleep(1800);
+            countDescriptions("All three opponents' cards remain after the payout effect", "Player cards ·", 6);
+            checkTerminalCardSizes();
+            seeContains("Concise best-hand label remains on the table", "Best ·");
+            capture("01a-settlement-retained");
             tap("New hand");
             see("Stakes carry into hand two", "Hand 2 · Preflop");
             see("Second hand all-in excludes the big blind already posted", "All-in · 1960");
@@ -140,9 +152,23 @@ public final class TournamentSanity extends Instrumentation {
             tap("Tournament result");
             see("Winner sees congratulations", "Congratulations, you won!");
             see("Winner summary reflects all three hands and 8000 chips", "Hands played · 3\nFinal stack · 8000");
+            seeContains("Tournament result includes cumulative standings", "Tournament leaderboard points");
+            seeContains("Human winner receives the first-place tournament points", "#1 · You · 100 points");
             capture("04-tournament-won");
             tap("Play again");
             see("Play again leads to tournament setup", "Tournament setup");
+            tap("Main menu");
+            tap("Tournament leaderboard");
+            see("Leaderboard screen explains cumulative tournament points", "Cumulative tournament points");
+            seeContains("Leaderboard retains the completed tournament result", "#1 · You · 100 points");
+            seeContains("Completed tournament is counted once", "100 points · 1 tournaments");
+            runOnMainSync(activity::finish);
+            activity = startActivitySync(new Intent(getTargetContext(), HoldemActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            see("Fresh activity returns to the home menu", "Hold’em Lab");
+            tap("Tournament leaderboard");
+            see("Leaderboard reloads from app-private storage", "Cumulative tournament points");
+            seeContains("Reopening the activity does not duplicate the tournament", "100 points · 1 tournaments");
         } finally {
             runOnMainSync(activity::finish);
         }
@@ -153,7 +179,7 @@ public final class TournamentSanity extends Instrumentation {
         try {
             tap("All-in · 2000");
             see("Opening all-in settles before elimination is asserted", "Hand 1 · Settled");
-            countDescriptions("Human seat is eliminated after the opening all-in", "You, Stack 0, Received 0, Eliminated", 1);
+            countDescriptions("Human seat is eliminated after the opening all-in", "You, Stack 0, Won 0, Eliminated", 1);
             tap("Tournament result");
             see("Losing player sees the elimination result", "You were eliminated");
             see("Defeat summary reflects one hand and no chips", "Hands played · 1\nFinal stack · 0");
@@ -190,6 +216,85 @@ public final class TournamentSanity extends Instrumentation {
         check(name, Integer.toString(expected), Integer.toString(matches.size()));
     }
 
+    private void seeContains(String name, String fragment) throws Exception {
+        var matches = collect(node -> value(node.getText()).contains(fragment)
+                || value(node.getContentDescription()).contains(fragment));
+        String actual = matches.isEmpty() ? "not visible"
+                : value(matches.get(0).getContentDescription()).isBlank()
+                ? value(matches.get(0).getText()) : value(matches.get(0).getContentDescription());
+        check(name, "visible text containing " + fragment, actual, !matches.isEmpty());
+    }
+
+    private void seeLatestAction(String name, String action, int amount, String total) throws Exception {
+        long deadline = SystemClock.uptimeMillis() + 2500;
+        List<AccessibilityNodeInfo> matches;
+        do {
+            matches = collect(node -> value(node.getContentDescription()).startsWith("Action #")
+                    || value(node.getText()).startsWith("Action #"));
+            if (!matches.isEmpty()) break;
+            SystemClock.sleep(80);
+        } while (SystemClock.uptimeMillis() < deadline);
+        if (matches.isEmpty()) {
+            var candidates = collect(node -> value(node.getContentDescription()).contains("Action")
+                    || value(node.getText()).contains("Action")
+                    || value(node.getContentDescription()).contains("hand total")
+                    || value(node.getText()).contains("hand total"));
+            String observed = candidates.stream().limit(8)
+                    .map(node -> value(node.getContentDescription()).isBlank()
+                            ? value(node.getText()) : value(node.getContentDescription()))
+                    .filter(value -> !value.isBlank()).toList().toString();
+            check(name, "accessible latest action with player, move and total",
+                    observed.isBlank() ? "latest action node absent; no matching visible accessibility text" : observed,
+                    false);
+            return;
+        }
+        var node = matches.get(matches.size() - 1);
+        String actual = value(node.getContentDescription()).startsWith("Action #")
+                ? value(node.getContentDescription()) : value(node.getText());
+        String actionMarker = " · " + action + " +" + amount;
+        int actionOffset = actual.indexOf(actionMarker);
+        int playerStart = actual.indexOf(" · ");
+        String player = playerStart >= 0 && actionOffset > playerStart
+                ? actual.substring(playerStart + 3, actionOffset).trim() : "";
+        boolean hasPlayer = actual.startsWith("Action #") && !player.isBlank();
+        boolean hasTotal = actual.contains(total);
+        check(name, "accessible latest action includes player, " + action + " +" + amount + " and " + total,
+                actual, hasPlayer && hasTotal);
+    }
+
+    private void scrollBackUntilVisible(String fragment) throws Exception {
+        for (int attempt = 0; attempt < 8; attempt++) {
+            if (!collect(node -> value(node.getText()).contains(fragment)
+                    || value(node.getContentDescription()).contains(fragment)).isEmpty()) return;
+            boolean scrolled = false;
+            for (var node : collect(AccessibilityNodeInfo::isScrollable)) {
+                if (node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)) {
+                    waitForIdleSync();
+                    scrolled = true;
+                    break;
+                }
+            }
+            if (!scrolled) break;
+        }
+        seeContains("Scrollable betting ledger retains earlier player actions", fragment);
+    }
+
+    private void checkTerminalCardSizes() throws Exception {
+        var cards = collect(node -> value(node.getContentDescription()).contains("Your hand ·")
+                || value(node.getContentDescription()).contains("Player cards ·"));
+        var sizes = new ArrayList<String>();
+        for (var card : cards) {
+            var bounds = new android.graphics.Rect();
+            card.getBoundsInScreen(bounds);
+            sizes.add(bounds.width() + "x" + bounds.height());
+        }
+        var distinct = new java.util.HashSet<>(sizes);
+        check("Hero and exposed opponent cards use equal terminal dimensions",
+                "one shared size across at least four cards", distinct.size() == 1 && sizes.size() >= 4
+                        ? "one shared size across " + sizes.size() + " cards" : distinct + " across " + sizes.size() + " cards",
+                distinct.size() == 1 && sizes.size() >= 4);
+    }
+
     private AccessibilityNodeInfo await(String label) {
         long deadline = SystemClock.uptimeMillis() + 4000;
         do {
@@ -223,7 +328,10 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private void check(String name, String expected, String actual) throws Exception {
-        boolean passed = expected.equals(actual);
+        check(name, expected, actual, expected.equals(actual));
+    }
+
+    private void check(String name, String expected, String actual, boolean passed) throws Exception {
         assertions.put(new JSONObject().put("name", name).put("expected", expected).put("actual", actual).put("passed", passed));
         if (!passed) throw new AssertionError(name + " expected " + expected + ", observed " + actual);
     }

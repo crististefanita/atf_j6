@@ -50,6 +50,30 @@ Masa locală arată cărțile proprii, cărțile comunitare, potul, jetoanele, c
 
 Turneul local pornește la 4–6 locuri. La creare, jucătorul alege blindurile să crească la fiecare 1, 2, 3 sau 5 minute; implicit este 1 minut. Nivelul se aplică de la următoarea mână după expirarea intervalului. Eliminarea unui loc continuă să avanseze nivelul conform regulilor turneului. La fiecare plată, stivele decid cine continuă și ce locuri sunt eliminate. Locul uman rămâne fix când se schimbă dealerul sau masa ajunge heads-up. Ecranul terminal păstrează dezvăluirea ultimei mâini și arată rezultatul turneului. [Criteriile turneului](../feedback/J6-UI-03-TOURNAMENT-SANITY.md)
 
+### Claritatea rezultatului mâinii
+
+- La dezvăluirea terminală, toate cărțile proprii afișate au aceeași dimensiune ca mâna utilizatorului în același viewport; layout-ul se adaptează fără micșorarea selectivă a cărților adverse.
+- Când o mână s-a încheiat și este disponibil `New hand`, păstrați cărțile proprii, board-ul, cărțile dezvăluite și evidențierea combinației pe masă până la apăsarea explicită. Nu le ascundeți după un timer și nu avansați automat; resume-ul trebuie să restaureze aceeași recapitulare.
+- Pentru showdown, recapitularea identifică cele mai bune cinci cărți ale fiecărui jucător eligibil și evidențiază discret combinația aleasă. O victorie prin fold este etichetată drept uncontested și nu primește o combinație de cărți inventată.
+- Semnalul vizual al premiului ajunge la fiecare loc beneficiar conform decontării motorului, inclusiv split și poturi secundare. Mișcarea premiului este separată de colectarea cărților.
+- Captionul combinației este scurt și discret; `Hand complete` nu se repetă în centrul unei mese deja închise. Cărțile terminale rămân vizibile până la acțiunea explicită `New hand` sau rezultatul de turneu.
+- [Criteriile de showdown și animare](../feedback/J6-UI-07-SHOWDOWN-WIN-CLARITY.md)
+
+### Clasamentul turneelor
+
+- Aplicația oferă un clasament local, cumulativ, al punctelor obținute în turnee. Totalurile se grupează după un ID stabil al participantului, nu după aliasul afișat la masă.
+- Fiecare rezultat terminal intră o singură dată în registrul local, după ID-ul stabil al participantului. Topul arată punctele cumulate, turneele jucate și cea mai bună clasare; egalitățile de puncte împart același rang. Tabela este derulabilă și nu pretinde sincronizare online.
+- Regula inițială propusă normalizează plasările la o scară de 0–100 și împarte egal locurile ocupate la eliminări simultane. Formula exactă și criteriile complete rămân în [feedback-ul clasamentului](../feedback/J6-UI-08-TOURNAMENT-LEADERBOARD.md) până la calificare.
+
+### Istoricul pariurilor
+
+- În timpul și după o mână, utilizatorul vede sumarul ultimei acțiuni și poate inspecta jurnalul ordonat: cine a făcut `bet`, `raise`, `call`, `check`, `fold` sau `all-in`, suma adăugată și contribuția cumulată după mutare. [Criteriile jurnalului](../feedback/J6-UI-10-BETTING-ACTION-LEDGER.md)
+
+### Ierarhia informației de la loc
+
+- Stiva și sumele decontării folosesc etichete secundare discrete, cu valori lizibile și descrieri accesibile complete. Premiile și restituirile rămân semantic distincte.
+- [Criteriile etichetelor de loc](../feedback/J6-UI-09-SEAT-METRIC-HIERARCHY.md)
+
 ## P2 — îmbunătățire AI
 
 - range-uri ponderate;

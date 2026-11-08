@@ -14,10 +14,13 @@ public final class HoldemHand {
     private final List<Integer> seats;
     private final List<Card> board = new ArrayList<>(5);
     private final List<String> history = new ArrayList<>();
+    private final List<BettingAction> bettingActions = new ArrayList<>();
     private final int[] stacks, paid, streetPaid, actedAt;
     private final boolean[] folded;
     private int cursor, actor, price, increment;
     private int[] awards;
+    private int[] potWon, returned;
+    private HandEvaluation[] evaluations;
     private Street street = Street.PREFLOP;
 
     public HoldemHand(int number, List<Integer> initial, int button, BlindLevel level, List<Card> deck) {
@@ -107,15 +110,17 @@ public final class HoldemHand {
     }
 
     public HoldemTableViewState viewFor(int viewer) {
-        if (!seats.contains(viewer)) throw new IllegalArgumentException("Viewer did not enter this hand");
+        if (viewer < 0 || viewer >= stacks.length) throw new IllegalArgumentException("Viewer is outside the table");
         var visibleSeats = new ArrayList<HoldemTableViewState.Seat>(stacks.length);
         for (int seat = 0; seat < stacks.length; seat++) {
             visibleSeats.add(new HoldemTableViewState.Seat(stacks[seat], paid[seat], folded[seat],
-                    awards == null ? 0 : awards[seat], hole.get(seat).size() == 2,
-                    street == Street.COMPLETE ? hole.get(seat) : List.of()));
+                    awards == null ? 0 : awards[seat], potWon == null ? 0 : potWon[seat],
+                    returned == null ? 0 : returned[seat], hole.get(seat).size() == 2,
+                    street == Street.COMPLETE ? hole.get(seat) : List.of(),
+                    evaluations == null ? null : evaluations[seat]));
         }
         return new HoldemTableViewState(viewer, actor, button, smallBlindSeat, bigBlindSeat, street, Arrays.stream(paid).sum(),
-                hole.get(viewer), board, visibleSeats, viewer == actor ? legal() : List.of());
+                hole.get(viewer), board, visibleSeats, viewer == actor ? legal() : List.of(), bettingActions);
     }
 
     public List<LegalAction> legal() {
@@ -152,6 +157,8 @@ public final class HoldemHand {
         }
         actedAt[seat] = price;
         history.add(street + " " + seat + " " + action + " " + amount);
+        bettingActions.add(new BettingAction(bettingActions.size() + 1, street, seat,
+                BettingAction.Kind.valueOf(action.name()), amount, paid[seat]));
         advance(seat);
     }
 
@@ -159,6 +166,8 @@ public final class HoldemHand {
         int amount = Math.min(stacks[seat], nominal);
         moveChips(seat, amount);
         history.add(blind + " " + seat + " " + amount);
+        var kind = "SB".equals(blind) ? BettingAction.Kind.SMALL_BLIND : BettingAction.Kind.BIG_BLIND;
+        bettingActions.add(new BettingAction(bettingActions.size() + 1, street, seat, kind, amount, paid[seat]));
     }
 
     private void moveChips(int seat, int amount) {
@@ -208,18 +217,22 @@ public final class HoldemHand {
     private void settle(boolean showdown) {
         int[] ranks = new int[stacks.length];
         Arrays.fill(ranks, -1);
+        evaluations = new HandEvaluation[stacks.length];
         for (int i : seats) {
             if (folded[i]) continue;
             if (showdown) {
                 var cards = new ArrayList<>(board);
                 cards.addAll(hole.get(i));
-                ranks[i] = HandRank.bestOf(cards);
+                evaluations[i] = HandRank.evaluateBestOf(cards);
+                ranks[i] = evaluations[i].score();
             } else {
                 ranks[i] = 0;
             }
         }
         var settlement = PotSettlement.settle(paid, ranks, button);
         awards = settlement.awards();
+        potWon = settlement.potWon();
+        returned = settlement.returned();
         for (int i = 0; i < stacks.length; i++) stacks[i] += awards[i];
         history.addAll(settlement.journal());
         history.add((showdown ? "SHOWDOWN " : "FOLD_WIN ") + Arrays.toString(awards));

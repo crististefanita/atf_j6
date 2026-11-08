@@ -42,7 +42,14 @@ final class LocalHoldemGame {
     }
     record AiSuggestion(Move move, String policyVersion, String explanation) {}
     record Saved(int seats, int dealer, long seed, boolean tournament, int blindLevelMinutes,
-                 long elapsedSeconds, List<Long> roundStartElapsedSeconds, List<List<Action>> rounds) {
+                 long elapsedSeconds, List<Long> roundStartElapsedSeconds, List<List<Action>> rounds,
+                 String tournamentId, String humanPlayerId) {
+        Saved(int seats, int dealer, long seed, boolean tournament, int blindLevelMinutes,
+              long elapsedSeconds, List<Long> roundStartElapsedSeconds, List<List<Action>> rounds) {
+            this(seats, dealer, seed, tournament, blindLevelMinutes, elapsedSeconds, roundStartElapsedSeconds, rounds,
+                    tournament ? UUID.nameUUIDFromBytes(("legacy-tournament:" + seed)
+                            .getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString() : "", "legacy-human");
+        }
         Saved {
             var copy = new ArrayList<List<Action>>(rounds.size());
             for (var round : rounds) copy.add(List.copyOf(round));
@@ -50,7 +57,9 @@ final class LocalHoldemGame {
             roundStartElapsedSeconds = List.copyOf(roundStartElapsedSeconds);
             if (rounds.isEmpty() || (!tournament && rounds.size() != 1)
                     || rounds.size() != roundStartElapsedSeconds.size()
-                    || elapsedSeconds < 0 || !BLIND_LEVEL_MINUTES.contains(blindLevelMinutes)) {
+                    || elapsedSeconds < 0 || !BLIND_LEVEL_MINUTES.contains(blindLevelMinutes)
+                    || tournament != (tournamentId != null && !tournamentId.isBlank())
+                    || humanPlayerId == null || humanPlayerId.isBlank()) {
                 throw new IllegalArgumentException("Invalid saved rounds");
             }
             long previous = -1;
@@ -70,6 +79,8 @@ final class LocalHoldemGame {
     private final int seats;
     private final int initialDealer;
     private final long seed;
+    private final String tournamentId;
+    private final String humanPlayerId;
     private final int blindLevelMinutes;
     private final LongSupplier monotonicNanos;
     private final Tournament tournament;
@@ -107,8 +118,19 @@ final class LocalHoldemGame {
         return new LocalHoldemGame(seats, 0, seed, true, blindLevelMinutes, monotonicNanos);
     }
 
+    static LocalHoldemGame tournament(int seats, long seed, int blindLevelMinutes, String humanPlayerId) {
+        return new LocalHoldemGame(seats, 0, seed, true, blindLevelMinutes, System::nanoTime,
+                humanPlayerId, UUID.randomUUID().toString());
+    }
+
     private LocalHoldemGame(int seats, int dealer, long seed, boolean tournamentMode, int blindLevelMinutes,
                             LongSupplier monotonicNanos) {
+        this(seats, dealer, seed, tournamentMode, blindLevelMinutes, monotonicNanos,
+                "local-human", tournamentMode ? UUID.randomUUID().toString() : "");
+    }
+
+    private LocalHoldemGame(int seats, int dealer, long seed, boolean tournamentMode, int blindLevelMinutes,
+                            LongSupplier monotonicNanos, String humanPlayerId, String tournamentId) {
         if (!(tournamentMode ? TOURNAMENT_SIZES : TABLE_SIZES).contains(seats)) {
             throw new IllegalArgumentException("Unsupported training table size: " + seats);
         }
@@ -117,6 +139,10 @@ final class LocalHoldemGame {
         this.seats = seats;
         initialDealer = dealer;
         this.seed = seed;
+        this.humanPlayerId = Objects.requireNonNull(humanPlayerId, "humanPlayerId");
+        this.tournamentId = Objects.requireNonNull(tournamentId, "tournamentId");
+        if (humanPlayerId.isBlank() || tournamentMode != !tournamentId.isBlank())
+            throw new IllegalArgumentException("Invalid tournament participant identity");
         this.blindLevelMinutes = blindLevelMinutes;
         this.monotonicNanos = Objects.requireNonNull(monotonicNanos, "monotonicNanos");
         dealSeeds = new Random(seed);
@@ -162,6 +188,17 @@ final class LocalHoldemGame {
 
     synchronized boolean isTournament() { return tournament != null; }
 
+    synchronized String tournamentId() { return tournamentId; }
+
+    synchronized String playerId(int physicalSeat) {
+        if (physicalSeat < 0 || physicalSeat >= seats) throw new IllegalArgumentException("Invalid physical seat");
+        return physicalSeat == human ? humanPlayerId : "builtin-ai-seat-" + physicalSeat;
+    }
+
+    synchronized List<Integer> finishingRanks() {
+        return tournament == null ? List.of() : tournament.finishingRanks();
+    }
+
     synchronized int handNumber() { return rounds.size(); }
 
     synchronized int blindLevelNumber() { return currentLevelIndex + 1; }
@@ -195,8 +232,9 @@ final class LocalHoldemGame {
 
     synchronized Outcome outcome() {
         if (!isTournament() || hand.street() != Street.COMPLETE) return null;
-        if (eliminated(human)) return Outcome.LOST;
-        return hand.stacks().stream().filter(stack -> stack > 0).count() == 1 ? Outcome.WON : null;
+        if (hand.stacks().stream().filter(stack -> stack > 0).count() != 1) return null;
+        tournament.finish();
+        return tournament.finishingRanks().get(human) == 1 ? Outcome.WON : Outcome.LOST;
     }
 
     synchronized void nextHand() {
@@ -282,7 +320,7 @@ final class LocalHoldemGame {
 
     synchronized Saved save() {
         return new Saved(seats, initialDealer, seed, isTournament(), blindLevelMinutes,
-                elapsedTournamentSeconds(), roundStartElapsedSeconds, rounds);
+                elapsedTournamentSeconds(), roundStartElapsedSeconds, rounds, tournamentId, humanPlayerId);
     }
 
     static LocalHoldemGame restore(Saved saved) {
@@ -291,7 +329,7 @@ final class LocalHoldemGame {
 
     static LocalHoldemGame restore(Saved saved, LongSupplier monotonicNanos) {
         var game = new LocalHoldemGame(saved.seats(), saved.dealer(), saved.seed(), saved.tournament(),
-                saved.blindLevelMinutes(), monotonicNanos);
+                saved.blindLevelMinutes(), monotonicNanos, saved.humanPlayerId(), saved.tournamentId());
         for (int index = 0; index < saved.rounds().size(); index++) {
             if (index > 0) game.nextHandAtElapsedSeconds(saved.roundStartElapsedSeconds().get(index));
             var round = saved.rounds().get(index);

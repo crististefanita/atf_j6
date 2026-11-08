@@ -154,19 +154,45 @@ class ReleaseGovernanceTest {
                         + check.expected() + " actual " + check.actual()).toList().toString());
     }
 
-    @Test void androidMinSdkGovernanceRejectsUnsupportedCollectionMethods() throws Exception {
+    @Test void androidMinSdkGovernanceRejectsUnsupportedRuntimeApis() throws Exception {
         Path root = projectRoot();
         var checks = new ArrayList<AtfAssertion>();
         add(checks, "Governance rejects Stream.toList in packaged runtime code", "blocked",
-                unsupportedCollectionApi("seats.stream().map(this::project).toList()") ? "blocked" : "allowed");
+                unsupportedAndroidRuntimeApi("seats.stream().map(this::project).toList()") ? "blocked" : "allowed");
         add(checks, "Governance rejects Collection.toArray(IntFunction) in packaged runtime code", "blocked",
-                unsupportedCollectionApi("deck.toArray(Card[]::new)") ? "blocked" : "allowed");
-        add(checks, "Governance accepts Android-compatible collectors and array conversion", "allowed",
-                !unsupportedCollectionApi("seats.stream().map(this::project).collect(Collectors.toList()); "
-                        + "deck.toArray(new Card[deck.size()])") ? "allowed" : "blocked");
-        add(checks, "Current Android runtime sources satisfy minSdk 26 collection policy",
-                "no unsupported collection API in packaged Java", androidRuntimeCollectionApiPolicy(root));
-        publish(root, "J6AndroidRuntimeApiGovernance", "Android minSdk collection API compatibility", checks);
+                unsupportedAndroidRuntimeApi("deck.toArray(Card[]::new)") ? "blocked" : "allowed");
+        add(checks, "Governance rejects HexFormat missing from Android runtime", "blocked",
+                unsupportedAndroidRuntimeApi("import java.util.HexFormat; HexFormat.of().formatHex(bytes)")
+                        ? "blocked" : "allowed");
+        add(checks, "Governance rejects ByteArrayOutputStream.toString(Charset) missing from minSdk", "blocked",
+                unsupportedAndroidRuntimeApi("bytes.toString(StandardCharsets.UTF_8)") ? "blocked" : "allowed");
+        add(checks, "Governance accepts Android-compatible collectors, arrays and digest formatting", "allowed",
+                !unsupportedAndroidRuntimeApi("seats.stream().map(this::project).collect(Collectors.toList()); "
+                        + "deck.toArray(new Card[deck.size()]); digits[value >>> 4]; "
+                        + "new String(bytes.toByteArray(), StandardCharsets.UTF_8)") ? "allowed" : "blocked");
+        add(checks, "Current Android runtime sources satisfy minSdk 26 API policy",
+                "no unsupported runtime API in packaged Java", androidRuntimeApiPolicy(root));
+        publish(root, "J6AndroidRuntimeApiGovernance", "Android minSdk runtime API compatibility", checks);
+        assertTrue(!checks.isEmpty() && checks.stream().allMatch(AtfAssertion::passed),
+                () -> checks.stream().filter(check -> !check.passed()).map(check -> check.name() + " expected "
+                        + check.expected() + " actual " + check.actual()).toList().toString());
+    }
+
+    @Test void releaseRunnerKeepsComponentAndNativeE2eExtentReportsSeparate() throws Exception {
+        Path root = projectRoot();
+        String runner = Files.readString(root.resolve("scripts/Build-HoldemRelease.ps1"));
+        String nativePublisher = Files.readString(root.resolve("holdem-android/tools/PublishTournamentExtent.java"));
+        var checks = new ArrayList<AtfAssertion>();
+        add(checks, "Runner consumes the versioned suite inventory", "config/release-test-suites.json",
+                runner.contains("config/release-test-suites.json") ? "config/release-test-suites.json" : "missing");
+        add(checks, "Maven component Extent is published separately", "maven-component-suites-extent.html",
+                runner.contains("maven-component-suites-extent.html") ? "maven-component-suites-extent.html" : "missing");
+        add(checks, "Android component Extent is published separately", "android-component-suites-extent.html",
+                runner.contains("android-component-suites-extent.html") ? "android-component-suites-extent.html" : "missing");
+        add(checks, "Native publisher does not ingest JUnit XML", "native Android evidence only",
+                nativePublisher.contains("native Android E2E") && !nativePublisher.contains("JUnit XML")
+                        && !nativePublisher.contains("testsuite") ? "native Android evidence only" : "component XML is mixed into E2E");
+        publish(root, "J6ExtentSuiteGovernance", "Component and native E2E Extent separation", checks);
         assertTrue(!checks.isEmpty() && checks.stream().allMatch(AtfAssertion::passed),
                 () -> checks.stream().filter(check -> !check.passed()).map(check -> check.name() + " expected "
                         + check.expected() + " actual " + check.actual()).toList().toString());
@@ -210,8 +236,8 @@ class ReleaseGovernanceTest {
         add(checks, "APK filename follows the product version", packageName, identity.path("apkName").asText());
         add(checks, "Android Gradle version matches the release", version,
                 gradleVersion(Files.readString(root.resolve("holdem-android/app/build.gradle"))));
-        add(checks, "Android runtime avoids collection APIs missing on minSdk 26",
-                "no unsupported collection API in packaged Java", androidRuntimeCollectionApiPolicy(root));
+        add(checks, "Android runtime avoids APIs missing on minSdk 26",
+                "no unsupported runtime API in packaged Java", androidRuntimeApiPolicy(root));
         String androidBuild = Files.readString(root.resolve("holdem-android/app/build.gradle"));
         add(checks, "Runtime language resources cannot split from the APK", "bundle language split disabled",
                 androidBuild.contains("enableSplit = false") ? "bundle language split disabled" : "language split may be enabled");
@@ -226,10 +252,25 @@ class ReleaseGovernanceTest {
         add(checks, "Native evidence is returned by instrumentation", "receipt and screenshots stream from the test run",
                 androidSanity.contains("result.putString(\"receipt\"") && androidSanity.contains("status.putString(\"pngBase64\"")
                         ? "receipt and screenshots stream from the test run" : "evidence depends on private device storage");
+        String nativeRunner = Files.readString(root.resolve("scripts/run-holdem-android-sanity.ps1"));
+        int captureExtraction = nativeRunner.indexOf("$capturedNames.Add($capture)");
+        int receiptValidation = nativeRunner.indexOf("$receiptMatch =");
+        add(checks, "Native screenshots survive a missing instrumentation receipt", "capture extraction precedes receipt validation",
+                captureExtraction >= 0 && receiptValidation > captureExtraction
+                        ? "capture extraction precedes receipt validation" : "screenshots may be lost on process crash");
+        add(checks, "Native process crashes retain bounded diagnostics and a failure receipt", "failure-diagnostics.txt and FAIL receipt",
+                nativeRunner.contains("WriteFailureDiagnostics") && nativeRunner.contains("failure-diagnostics.txt")
+                        && nativeRunner.contains("receipt missing; instrumentation process crashed")
+                        ? "failure-diagnostics.txt and FAIL receipt" : "process crash has no structured evidence");
         String extentPublisher = Files.readString(root.resolve("holdem-android/tools/PublishTournamentExtent.java"));
         add(checks, "Extent is checked against its declared evidence profile", "fresh Extent profile inspection",
                 extentPublisher.contains("inspectFresh(reportPath, startedAt, profile)")
                         ? "fresh Extent profile inspection" : "generic API-only inspection");
+        int extentInspection = extentPublisher.indexOf("ReportArtifactInspector.inspectFresh(reportPath, startedAt, profile)");
+        int failedOutcomeGate = extentPublisher.indexOf("A failure Extent report was created and structurally audited");
+        add(checks, "A native failure is inspected before the publisher exits", "FAIL report retained and structurally audited",
+                extentInspection >= 0 && failedOutcomeGate > extentInspection
+                        ? "FAIL report retained and structurally audited" : "publisher may discard failure evidence");
         add(checks, "Exact native screenshots are embedded once in Extent", "receipt image bytes embedded exactly once",
                 extentPublisher.contains("occurrences(html, payload) != 1")
                         && extentPublisher.contains("Base64.getEncoder().encodeToString(Files.readAllBytes(screenshot))")
@@ -341,25 +382,28 @@ class ReleaseGovernanceTest {
                 && receipt.path("sha256").asText().equals(identity.path("sha256").asText());
     }
 
-    private static String androidRuntimeCollectionApiPolicy(Path root) throws Exception {
+    private static String androidRuntimeApiPolicy(Path root) throws Exception {
         for (Path directory : List.of(root.resolve("holdem-core/src/main/java"),
                 root.resolve("holdem-ai/src/main/java"), root.resolve("holdem-android/app/src/main/java"))) {
             if (!Files.isDirectory(directory)) continue;
             try (var files = Files.walk(directory)) {
                 for (Path file : files.filter(Files::isRegularFile)
                         .filter(path -> path.toString().endsWith(".java")).toList()) {
-                    if (unsupportedCollectionApi(Files.readString(file))) {
-                        return "unsupported collection API in " + root.relativize(file).toString().replace('\\', '/');
+                    if (unsupportedAndroidRuntimeApi(Files.readString(file))) {
+                        return "unsupported runtime API in " + root.relativize(file).toString().replace('\\', '/');
                     }
                 }
             }
         }
-        return "no unsupported collection API in packaged Java";
+        return "no unsupported runtime API in packaged Java";
     }
 
-    private static boolean unsupportedCollectionApi(String source) {
+    private static boolean unsupportedAndroidRuntimeApi(String source) {
         return java.util.regex.Pattern.compile("(?<!Collectors)\\.toList\\s*\\(").matcher(source).find()
                 || java.util.regex.Pattern.compile("\\bdeck\\.toArray\\s*\\(\\s*Card\\[\\]\\s*::\\s*new\\s*\\)")
+                .matcher(source).find()
+                || java.util.regex.Pattern.compile("(?:java\\.util\\.)?HexFormat\\b").matcher(source).find()
+                || java.util.regex.Pattern.compile("\\b\\w+\\.toString\\s*\\(\\s*(?:StandardCharsets\\.|Charset\\b)")
                 .matcher(source).find();
     }
 

@@ -3,12 +3,24 @@ package ro.atf.holdem.core;
 import java.util.*;
 
 final class PotSettlement {
-    record Result(int[] awards, List<String> journal) {}
+    record Result(int[] awards, int[] potWon, int[] returned, List<String> journal) {
+        Result {
+            awards = awards.clone();
+            potWon = potWon.clone();
+            returned = returned.clone();
+            journal = List.copyOf(journal);
+        }
+        @Override public int[] awards() { return awards.clone(); }
+        @Override public int[] potWon() { return potWon.clone(); }
+        @Override public int[] returned() { return returned.clone(); }
+    }
 
     private PotSettlement() {}
 
     static Result settle(int[] paid, int[] rank, int button) {
         int[] awards = new int[paid.length];
+        int[] potWon = new int[paid.length];
+        int[] returned = new int[paid.length];
         var journal = new ArrayList<String>();
         int previous = 0;
         for (int cap : Arrays.stream(paid).filter(n -> n > 0).distinct().sorted().toArray()) {
@@ -31,16 +43,19 @@ final class PotSettlement {
             int layer = (cap - previous) * contributors;
             if (contributors == 1) {
                 awards[lastContributor] += layer;
+                returned[lastContributor] += layer;
                 journal.add("RETURN seat=" + lastContributor + " amount=" + layer);
             } else {
                 if (winners.isEmpty()) throw new IllegalStateException("Pot has no eligible seat");
                 for (int i = 0; i < winners.size(); i++) {
-                    awards[winners.get(i)] += layer / winners.size() + (i < layer % winners.size() ? 1 : 0);
+                    int share = layer / winners.size() + (i < layer % winners.size() ? 1 : 0);
+                    awards[winners.get(i)] += share;
+                    potWon[winners.get(i)] += share;
                 }
                 journal.add("POT cap=" + cap + " amount=" + layer + " eligible=" + eligible + " winners=" + winners);
             }
             previous = cap;
         }
-        return new Result(awards, List.copyOf(journal));
+        return new Result(awards, potWon, returned, journal);
     }
 }

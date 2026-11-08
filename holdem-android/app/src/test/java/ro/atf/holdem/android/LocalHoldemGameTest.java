@@ -141,6 +141,8 @@ public class LocalHoldemGameTest {
         play(original, ActionType.BET, 40);
         var restored = LocalHoldemGame.restore(original.save());
         assertEquals(original.view(), restored.view());
+        assertEquals("Accepted and forced actions replay into the same public ledger",
+                original.view().bettingActions(), restored.view().bettingActions());
         assertEquals(original.hasPassiveTurn(), restored.hasPassiveTurn());
         assertThrows(IllegalArgumentException.class,
                 () -> restored.play(original.turn(), new LocalHoldemGame.Move(ActionType.CHECK, 0)));

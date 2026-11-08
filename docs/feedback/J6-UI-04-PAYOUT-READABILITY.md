@@ -2,9 +2,9 @@
 
 **Prioritate:** P2
 
-**Stare:** Deschis — afișarea actuală confundă premiul cu returnarea mizei
+**Stare:** Implementare parțială — motorul și modelul locului separă premiul de restituire; E2E și acceptanța vizuală sunt restante
 
-În finala sanity-ului, jucătorul are 7.920 de jetoane, iar adversarul 80. După all-in, masa afișează `Pot paid · 8000` și `Received 8000`. Totalul este corect contabil, dar jucătorul a câștigat un pot de 160 și a primit înapoi 7.840 de jetoane din miza neacoperită. Stiva a crescut cu 80.
+În vechea prezentare, `Received` însuma premiul și restituirea mizei neacoperite. Modelul curent expune `potWon` și `returned` separat, iar cadrul locului afișează `Won` și `Returned`. Totalul contabil rămâne disponibil în decontarea motorului; markerul animat folosește numai premiul potului.
 
 ## Criterii
 

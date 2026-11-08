@@ -28,6 +28,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -36,10 +37,12 @@ import java.util.stream.Collectors;
 public final class HoldemActivity extends Activity {
     private static final String NAME = "player-name";
     private static final String LANGUAGE = "language";
+    private static final String PLAYER_ID = "player-id";
     static final String DEBUG_DEAL_SEED = "ro.atf.holdem.android.DEBUG_DEAL_SEED";
     private SharedPreferences profile;
     private ScreenViews views;
     private HoldemSessionRepository sessions;
+    private TournamentLeaderboardRepository leaderboard;
     private LocalHoldemGame game;
     private LocalHoldemGame resumableGame;
     private boolean romanian;
@@ -65,6 +68,8 @@ public final class HoldemActivity extends Activity {
         super.onCreate(state);
         profile = getSharedPreferences("holdem-profile", MODE_PRIVATE);
         sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(getFilesDir()));
+        leaderboard = new TournamentLeaderboardRepository(new AtomicFileTournamentLeaderboardStorage(getFilesDir()));
+        stablePlayerId();
         romanian = profile.getBoolean(LANGUAGE, false);
         views = new ScreenViews(this, tag -> tag, HoldemActivity::protect);
         if (Build.VERSION.SDK_INT >= 33) {
@@ -177,6 +182,8 @@ public final class HoldemActivity extends Activity {
         if (resumableGame != null)
             views.addButton(page, text(R.string.continue_game), "continue-game", true, this::resumeGame, true);
         views.addButton(page, text(R.string.play_tournament), "play-tournament", true, () -> setup(true), true);
+        views.addButton(page, text(R.string.tournament_leaderboard), "tournament-leaderboard", true,
+                this::showLeaderboard, false);
         views.addButton(page, text(R.string.play_hand), "play-hand", true, () -> setup(false), false);
         views.addText(page, text(R.string.training_summary), 14, ScreenViews.MUTED, false, 10, 0);
     }
@@ -237,7 +244,7 @@ public final class HoldemActivity extends Activity {
         if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
             seed = getIntent().getLongExtra(DEBUG_DEAL_SEED, seed);
         }
-        game = tournament ? LocalHoldemGame.tournament(size, seed, blindLevelMinutes)
+        game = tournament ? LocalHoldemGame.tournament(size, seed, blindLevelMinutes, stablePlayerId())
                 : new LocalHoldemGame(size, dealer, seed);
         configuring = false;
         showingResult = false;
@@ -481,20 +488,16 @@ public final class HoldemActivity extends Activity {
                         || !current.turn().equals(turn) || !settlementPending) return;
                 settlementPending = false;
                 stopSettlement = () -> { };
-                if (current.outcome() != null) showResult(current);
-                else {
-                    Runnable deferred = deferredSettlementAction;
-                    deferredSettlementAction = null;
-                    if (deferred != null) deferred.run();
-                }
+                Runnable deferred = deferredSettlementAction;
+                deferredSettlementAction = null;
+                if (deferred != null) deferred.run();
             };
             var animation = table.animateSettlement(ro.cardtable.ui.animation.TrickCollectionMotion.DISPLAY_MILLIS, finish);
             stopSettlement = () -> {
                 animation.cancel().run();
                 mainHandler.removeCallbacks(finish);
             };
-            if (!animation.started())
-                mainHandler.postDelayed(finish, ro.cardtable.ui.animation.TrickCollectionMotion.DISPLAY_MILLIS);
+            if (!animation.started()) mainHandler.post(finish);
         });
     }
 
@@ -509,11 +512,26 @@ public final class HoldemActivity extends Activity {
         views.applyStandardWindowChrome();
         boolean won = current.outcome() == LocalHoldemGame.Outcome.WON;
         var page = views.page(null, text(won ? R.string.tournament_won : R.string.tournament_lost));
+        TournamentLeaderboard.State leaderboardState = null;
+        if (current.isTournament()) {
+            try {
+                var ranks = current.finishingRanks();
+                var placements = new ArrayList<TournamentLeaderboard.Placement>(ranks.size());
+                for (int seat = 0; seat < ranks.size(); seat++)
+                    placements.add(new TournamentLeaderboard.Placement(current.playerId(seat),
+                            leaderboardName(current, seat), ranks.get(seat)));
+                leaderboardState = leaderboard.record(current.tournamentId(), placements).state();
+            } catch (java.io.IOException | RuntimeException failure) {
+                android.util.Log.e("HoldemLab", "Tournament result could not be recorded", failure);
+                Toast.makeText(this, text(R.string.leaderboard_error), Toast.LENGTH_LONG).show();
+            }
+        }
         var table = current.view();
         views.addText(page, text(R.string.tournament_summary, current.handNumber(), table.seats().get(table.viewer()).stack()),
                 16, ScreenViews.MUTED, false, 10, 0);
         var names = PlayerNames.forMatch(Math.max(3, table.seats().size()), displayName(), table.seats().size())
                 .subList(0, table.seats().size());
+        if (leaderboardState != null) addTournamentStandings(page, current, leaderboardState);
         new HoldemTableView(views, this::text).addPostGameReview(page, table, names, current);
         views.addButton(page, text(R.string.play_again), "play-again", true, () -> {
             game = null;
@@ -521,6 +539,54 @@ public final class HoldemActivity extends Activity {
             setup(true);
         }, true);
         views.addQuietButton(page, text(R.string.home), this::home);
+    }
+
+    private void showLeaderboard() {
+        var page = views.page(null, text(R.string.tournament_leaderboard));
+        try {
+            var top = leaderboard.load().top();
+            if (top.isEmpty()) {
+                views.addText(page, text(R.string.leaderboard_empty), 14, ScreenViews.MUTED, false, 10, 0);
+            } else {
+                views.addText(page, text(R.string.leaderboard_title), 14, ScreenViews.MUTED, true, 8, 2);
+                for (int index = 0; index < top.size(); index++) {
+                    var entry = top.get(index);
+                    views.addText(page, text(R.string.leaderboard_entry, TournamentLeaderboard.rankAt(top, index), entry.displayName(),
+                            entry.points(), entry.tournaments(), entry.bestRank()), 14, ScreenViews.INK, false, 4, 0);
+                }
+            }
+        } catch (java.io.IOException | RuntimeException failure) {
+            android.util.Log.e("HoldemLab", "Tournament leaderboard could not be loaded", failure);
+            views.addText(page, text(R.string.leaderboard_error), 14, ScreenViews.MUTED, false, 10, 0);
+        }
+        views.addQuietButton(page, text(R.string.home), this::home);
+    }
+
+    private void addTournamentStandings(android.widget.LinearLayout page, LocalHoldemGame current,
+                                        TournamentLeaderboard.State leaderboardState) {
+        views.addText(page, text(R.string.tournament_points), 14, ScreenViews.MUTED, true, 8, 2);
+        var ranks = current.finishingRanks();
+        for (int seat = 0; seat < ranks.size(); seat++) {
+            String id = current.playerId(seat);
+            var entry = leaderboardState.entries().stream().filter(candidate -> candidate.playerId().equals(id))
+                    .findFirst().orElse(null);
+            if (entry != null) views.addText(page, text(R.string.tournament_standing, ranks.get(seat),
+                    leaderboardName(current, seat), entry.points()), 13, ScreenViews.INK, false, 3, 0);
+        }
+    }
+
+    private String leaderboardName(LocalHoldemGame current, int physicalSeat) {
+        return current.playerId(physicalSeat).equals(stablePlayerId())
+                ? displayName() : text(R.string.leaderboard_ai_name, physicalSeat + 1);
+    }
+
+    private String stablePlayerId() {
+        String id = profile.getString(PLAYER_ID, null);
+        if (id != null && !id.isBlank()) return id;
+        id = UUID.randomUUID().toString();
+        if (!profile.edit().putString(PLAYER_ID, id).commit())
+            throw new IllegalStateException("Could not persist the local player identity");
+        return id;
     }
 
     private void editName() {

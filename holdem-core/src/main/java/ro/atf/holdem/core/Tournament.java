@@ -1,6 +1,7 @@
 package ro.atf.holdem.core;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class Tournament {
     public record Rules(int seats, int startingStack, long levelSeconds, List<BlindLevel> levels) {
@@ -22,25 +23,35 @@ public final class Tournament {
 
     private final Rules rules;
     private List<Integer> stacks;
+    private final int[] finishingRanks;
     private int hands, button, previousBigBlind;
     private long elapsed;
     private HoldemHand current;
+    private boolean finalized;
 
     public Tournament(Rules rules, int initialButton) {
         this.rules = Objects.requireNonNull(rules);
         if (initialButton < 0 || initialButton >= rules.seats()) throw new IllegalArgumentException("Invalid button");
         button = initialButton;
         stacks = Collections.nCopies(rules.seats(), rules.startingStack());
+        finishingRanks = new int[rules.seats()];
     }
 
     public List<Integer> stacks() { return current == null ? stacks : current.stacks(); }
+    public List<Integer> finishingRanks() {
+        return List.copyOf(Arrays.stream(finishingRanks).boxed().collect(Collectors.toList()));
+    }
 
     public Round startHand(long elapsedSeconds, long dealSeed) {
         if (current != null && current.street() != Street.COMPLETE) throw new IllegalStateException("Hand still in progress");
         if (elapsedSeconds < elapsed) throw new IllegalArgumentException("Tournament time cannot go backwards");
         List<Integer> settled = stacks();
+        if (hands > 0) recordEliminations(settled);
         int alive = (int) settled.stream().filter(n -> n > 0).count();
-        if (alive < 2) throw new IllegalStateException("Tournament finished");
+        if (alive < 2) {
+            if (alive == 1) markChampion(settled);
+            throw new IllegalStateException("Tournament finished");
+        }
         if (hands > 0) {
             if (alive == 2) {
                 int nextBigBlind = nextFunded(settled, previousBigBlind);
@@ -58,6 +69,44 @@ public final class Tournament {
         current = new HoldemHand(++hands, stacks, button, rules.levels().get(index), HoldemHand.shuffledDeck(dealSeed));
         previousBigBlind = current.bigBlindSeat();
         return new Round(hands, elapsed, eliminated, index, current);
+    }
+
+    /** Finalizes placements after the last hand; calling it again is safe. */
+    public void finish() {
+        if (current == null || current.street() != Street.COMPLETE)
+            throw new IllegalStateException("The current hand must be settled before the tournament can finish");
+        if (finalized) return;
+        List<Integer> settled = current.stacks();
+        recordEliminations(settled);
+        if (settled.stream().filter(stack -> stack > 0).count() != 1)
+            throw new IllegalStateException("A tournament ends with exactly one funded player");
+        markChampion(settled);
+    }
+
+    private void recordEliminations(List<Integer> settled) {
+        int aliveAtStart = 0;
+        int newlyEliminated = 0;
+        for (int seat = 0; seat < stacks.size(); seat++) {
+            if (stacks.get(seat) > 0) {
+                aliveAtStart++;
+                if (settled.get(seat) == 0) newlyEliminated++;
+            }
+        }
+        if (newlyEliminated == 0) return;
+        int rank = aliveAtStart - newlyEliminated + 1;
+        for (int seat = 0; seat < stacks.size(); seat++)
+            if (stacks.get(seat) > 0 && settled.get(seat) == 0) finishingRanks[seat] = rank;
+    }
+
+    private void markChampion(List<Integer> settled) {
+        for (int seat = 0; seat < settled.size(); seat++) {
+            if (settled.get(seat) > 0) {
+                finishingRanks[seat] = 1;
+                finalized = true;
+                return;
+            }
+        }
+        throw new IllegalStateException("Tournament has no champion");
     }
 
     private static int nextFunded(List<Integer> stacks, int after) {

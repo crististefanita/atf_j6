@@ -14,7 +14,7 @@ import java.util.List;
 /** Versioned, bounded checkpoint encoding; engine replay remains the final integrity check. */
 final class HoldemSessionCodec {
     private static final int MAGIC = 0x484C534A;
-    private static final int SCHEMA = 1;
+    private static final int SCHEMA = 2;
     private static final int MAX_ENCODED_CHARS = 4_000_000;
     private static final int MAX_ROUNDS = 20_000;
     private static final int MAX_ACTIONS_PER_ROUND = 2_000;
@@ -39,6 +39,8 @@ final class HoldemSessionCodec {
                 output.writeBoolean(saved.tournament());
                 output.writeInt(saved.blindLevelMinutes());
                 output.writeLong(saved.elapsedSeconds());
+                output.writeUTF(saved.tournamentId());
+                output.writeUTF(saved.humanPlayerId());
                 output.writeInt(saved.rounds().size());
                 for (int round = 0; round < saved.rounds().size(); round++) {
                     output.writeLong(saved.roundStartElapsedSeconds().get(round));
@@ -66,7 +68,8 @@ final class HoldemSessionCodec {
             byte[] bytes = Base64.getUrlDecoder().decode(encoded);
             try (var input = new DataInputStream(new ByteArrayInputStream(bytes))) {
                 if (input.readInt() != MAGIC) throw new IllegalArgumentException("Checkpoint signature mismatch");
-                if (input.readInt() != SCHEMA) throw new IllegalArgumentException("Unsupported checkpoint version");
+                int schema = input.readInt();
+                if (schema < 1 || schema > SCHEMA) throw new IllegalArgumentException("Unsupported checkpoint version");
                 boolean showingResult = input.readBoolean();
                 int seats = input.readInt();
                 int dealer = input.readInt();
@@ -74,6 +77,10 @@ final class HoldemSessionCodec {
                 boolean tournament = input.readBoolean();
                 int blindLevelMinutes = input.readInt();
                 long elapsedSeconds = input.readLong();
+                String tournamentId = schema >= 2 ? input.readUTF() : null;
+                String humanPlayerId = schema >= 2 ? input.readUTF() : null;
+                if (schema >= 2 && (tournamentId.length() > 128 || humanPlayerId.isBlank() || humanPlayerId.length() > 128))
+                    throw new IllegalArgumentException("Invalid checkpoint participant identity");
                 int roundCount = input.readInt();
                 if (roundCount < 1 || roundCount > MAX_ROUNDS) throw new IllegalArgumentException("Invalid checkpoint round count");
                 var startTimes = new ArrayList<Long>(roundCount);
@@ -98,8 +105,12 @@ final class HoldemSessionCodec {
                     rounds.add(List.copyOf(actions));
                 }
                 if (input.available() != 0) throw new IllegalArgumentException("Checkpoint has trailing bytes");
-                return new Checkpoint(new LocalHoldemGame.Saved(seats, dealer, seed, tournament, blindLevelMinutes,
-                        elapsedSeconds, startTimes, rounds), showingResult);
+                var saved = schema >= 2
+                        ? new LocalHoldemGame.Saved(seats, dealer, seed, tournament, blindLevelMinutes,
+                        elapsedSeconds, startTimes, rounds, tournamentId, humanPlayerId)
+                        : new LocalHoldemGame.Saved(seats, dealer, seed, tournament, blindLevelMinutes,
+                        elapsedSeconds, startTimes, rounds);
+                return new Checkpoint(saved, showingResult);
             }
         } catch (IllegalArgumentException invalid) {
             throw invalid;

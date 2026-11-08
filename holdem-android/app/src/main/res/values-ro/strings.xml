@@ -114,7 +114,7 @@
     <string name="show_win_chance">Arată șansa mea de câștig</string>
     <string name="win_chance_pending">Se estimează…</string>
     <string name="win_chance">~%1$d%% câștig</string>
-    <string name="win_chance_description">Șansa estimată de a câștiga singur mâna: %1$d la sută, contra mâinilor necunoscute</string>
+    <string name="win_chance_description">Șansa estimată de a câștiga singur mâna: %1$d%% (mâini necunoscute)</string>
     <string name="win_chance_unavailable">Șansă —</string>
     <string name="win_chance_unavailable_description">Șansă de câștig indisponibilă</string>
 </resources>

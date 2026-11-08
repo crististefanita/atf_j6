@@ -28,6 +28,12 @@ Testele actuale demonstrează citări, proveniență, redactare și abținerea l
 Runnerul a exercitat integrarea pe candidatul curat 0.2.2. Manifestul păstrează digestul contextului de impact separat de
 rezultatele testelor. [Manifestul de calificare](../../release/0.2.2/qualification.json) · [Contextul RAG](../../release/0.2.2/release-impact-context.json)
 
+### Reproducere pe candidatul 0.3.0
+
+În contextul pentru commitul `24e1770`, primele două fragmente provin din `library-provenance.json`, deși fișierul și dependențele nu s-au schimbat. `holdem-android/README.md`, care deține comportamentul nou, lipsește din allowlist. `LocalHoldemGameTest`, care verifică estimarea și vizibilitatea, lipsește dintre cele opt suite sugerate. Porțile independente au rulat suita completă.
+
+Adăugați o probă lexicală cu diff limitat la UI și checkpoint. Ea trebuie să recupereze ghidul Android și suita proprie între primele rezultate. Fragmentele de proveniență trebuie să urce în clasament când diff-ul schimbă o bibliotecă. Păstrați citările și contractul consultativ pentru ambele probe.
+
 ## Referințe
 
 - [Retrieval context read-only](../../holdem-app/src/test/java/ro/atf/j6/release/ReleaseImpactRag.java)

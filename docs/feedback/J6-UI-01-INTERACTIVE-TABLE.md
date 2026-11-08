@@ -17,4 +17,4 @@ Motorul furnizează o vedere stabilă pentru jucătorul uman, iar sesiunea valid
 
 Componentele au verificat mesele cu 4–6 locuri, inclusiv fold, all-in, restaurare și comenzi expirate. Sanity-ul de 4 locuri a trecut pe Android API 28 cu 78 de comparații. Raise-ul de 39 a fost respins la minimul de 40, raise-ul de 60 a fost acceptat, iar potul de 240 a fost plătit. Mesajul de validare rămâne sub câmp și lasă butoanele accesibile.
 
-[Contractul și build-ul Android](../../holdem-android/README.md) · [Matricea de afișaj rămasă](J6-UI-02-TABLE-COVERAGE.md)
+[Contractul și build-ul Android](../../holdem-android/README.md) · [Matricea compactă verificată](J6-UI-02-TABLE-COVERAGE.md)

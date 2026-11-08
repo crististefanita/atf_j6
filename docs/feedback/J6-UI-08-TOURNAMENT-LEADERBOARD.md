@@ -1,6 +1,6 @@
 # J6-UI-08 · Clasament local după finalizare și redenumire
 
-Închis pe ramura locală `release/holdem-0.2.1`.
+Închis. Corecția este inclusă în ediția 0.2.2. [Dosarul ediției](../../release/0.2.2/README.md)
 
 Turneul intră o singură dată în registru după salvarea checkpoint-ului terminal. O partidă nouă poate înlocui checkpoint-ul după reconcilierea rezultatului. La afișarea clasamentului, numele curent din profil se aplică doar intrării cu ID-ul stabil al jucătorului. Rangul, punctele, contorul și aliasurile celorlalți participanți se păstrează.
 

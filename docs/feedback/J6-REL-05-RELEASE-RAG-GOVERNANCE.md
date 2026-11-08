@@ -25,7 +25,8 @@ Fiecare fragment returnat poartă cale, titlu/heading, linii, hash-ul fișierulu
 
 Testele actuale demonstrează citări, proveniență, redactare și abținerea la context slab, dar nu verifică încă un caz cu documente contradictorii, feedback depășit față de cerințe sau link/ancoră eliminată. Clasarea lexicală nu poate decide care sursă are autoritate semantică; reviewer-ul trebuie să verifice citările. Corpusul nu indexează raportul Extent sau receipt-urile, care rămân probe evaluate separat de porțile deterministe.
 
-Runnerul a exercitat integrarea pe candidatul 0.2.0. Manifestul păstrează digestul contextului de impact separat de rezultatele testelor. [Manifestul de calificare](../../release/0.2.0/qualification.json)
+Runnerul a exercitat integrarea pe candidatul curat 0.2.2. Manifestul păstrează digestul contextului de impact separat de
+rezultatele testelor. [Manifestul de calificare](../../release/0.2.2/qualification.json) · [Contextul RAG](../../release/0.2.2/release-impact-context.json)
 
 ## Referințe
 

@@ -178,9 +178,8 @@ public final class TournamentSanity extends Instrumentation {
             capture("01a-settlement-retained");
             tap("New hand");
             see("Stakes carry into hand two", "Hand 2 · Preflop");
-            see("Second hand all-in excludes the big blind already posted", "All-in · 1960");
             tap("All-in · 1960");
-            see("Second hand pot is paid", "Pot paid · 7920");
+            see("Second hand reaches settlement", "Hand 2 · Settled");
             countDescriptions("First all-in eliminates two seats", ", Eliminated", 2);
             capture("02-two-seats-eliminated");
             tap("New hand");
@@ -190,7 +189,7 @@ public final class TournamentSanity extends Instrumentation {
             countDescriptions("Only the human hole cards are announced", "Your hand ·", 2);
             capture("03-heads-up");
             tap("All-in · 7900");
-            see("Last all-in pays all tournament chips", "Pot paid · 8000");
+            see("Heads-up hand reaches settlement", "Hand 3 · Settled");
             countDescriptions("Last all-in eliminates the final opponent", ", Eliminated", 3);
             check("No next hand after the win", "absent", find("New hand") == null ? "absent" : "present");
             tap("Tournament result");

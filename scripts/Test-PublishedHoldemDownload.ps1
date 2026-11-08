@@ -33,7 +33,15 @@ if ($repository -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$' -or $assetName -ne
     $expectedHash -notmatch '^[0-9a-f]{64}$' -or $expectedBytes -le 0 -or $validation.publication.tag -ne $tag) {
     throw 'Release identity, APK integrity, repository, or tag is incomplete.'
 }
-$url = "https://github.com/$repository/releases/download/$tag/$assetName"
+$canonicalUrl = "https://github.com/$repository/releases/download/$tag/$assetName"
+$readme = Get-Content -Raw -LiteralPath (Join-Path $ProjectRoot 'README.md')
+$gameSections = [regex]::Matches($readme, '(?ms)^## Jocul[^\S\r\n]*\r?\n(.*?)(?=^## |\z)')
+if ($gameSections.Count -ne 1) { throw 'README must contain one Jocul section.' }
+$routes = [regex]::Matches($gameSections[0].Groups[1].Value, '\]\((https://[^\s)]+/releases/download/[^\s)]+)\)')
+if ($routes.Count -ne 1 -or $routes[0].Groups[1].Value -cne $canonicalUrl) {
+    throw 'README must link once to the canonical APK for the current version.'
+}
+$url = $routes[0].Groups[1].Value
 if ($validation.publication.state -eq 'PUBLISHED' -and $validation.publicDownload.assetUrl -ne $url) {
     throw 'Published catalog does not point to the canonical versioned GitHub asset.'
 }
@@ -86,7 +94,8 @@ try {
         }
         $receipt = [ordered]@{
             schemaVersion=1; verified=$true; version=$version; tag=$tag; repository=$repository
-            assetUrl=$url; finalHost=$finalUri.Host; httpStatus=200; credentialMode='anonymous; no cookies, authorization header, or default credentials'
+            readme='README.md#jocul'; assetUrl=$url; finalHost=$finalUri.Host; httpStatus=200
+            credentialMode='anonymous; no cookies, authorization header, or default credentials'
             bytes=$count; sha256=$hash; apk=$assetName; completedUtc=[datetime]::UtcNow.ToString('o')
         }
         $receiptPath = Join-Path $OutputDirectory 'download-receipt.json'

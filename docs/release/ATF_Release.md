@@ -51,6 +51,8 @@ Output-ul `qualification.json` și rapoartele din `$run\reports` sunt sursa pent
 
 ## Promovare și descărcare
 
+`ReleaseGovernanceTest` verifică legăturile locale din dosarul ediției și octeții inventarului de dovezi. Proba anonimă citește URL-ul din secțiunea `Jocul` a README-ului și îl compară cu ruta canonică a versiunii înainte de GET.
+
 1. Copiați APK-ul semnat și `.sha256` din `$run` în `release/<versiune>/`; selectați rapoartele Extent relevante și încorporați capturile, fără copii PNG redundante.
 2. Completați `release-validation.json` cu APK bytes/SHA/certificat, commit-ul sursă, calificarea și hash-urile documentelor. Marcați `PREPARED` numai după reverificarea fișierului copiat.
 3. Commit-ul sursă și tag-ul `v<versiune>` identifică exact binarul. Commit-ul ulterior al dovezilor poate actualiza catalogul și linkurile, dar nu mută tag-ul.

@@ -48,6 +48,8 @@ Raportul anterior cu 58 de aserțiuni valida un sumar central și nu califică a
 
 ## Acceptanță UI rămasă
 
+În proba API 28, după închiderea editorului de raise, controlul Call a rămas prezent în arborele view-urilor, dar activarea prin arborele accesibil a eșuat de două ori. Proba dialogului rămâne izolată. Verificați recuperarea focusului și efectuarea unui Call prin UI după închiderea dialogului înainte de a combina traseele.
+
 1. Verifică viewport-uri joase și nume lungi în română și engleză; textul vizibil nu trebuie să se suprapună cu stiva, acțiunile sau cărțile.
 2. Verifică TalkBack: fiecare indicator este anunțat o singură dată cu locul, mutarea și totalul cumulativ; deschiderea istoricului este anunțată ca acțiune disponibilă.
 3. Păstrează separat testul unui `Bet → Raise → Call` UI real; verificările curente de componentă acoperă tipurile și proiecția, nu înlocuiesc traseul UI.

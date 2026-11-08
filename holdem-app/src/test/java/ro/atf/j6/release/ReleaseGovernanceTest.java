@@ -17,15 +17,33 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Offline release governance: version identity, state transitions, and byte-preserving evidence. */
 @AtfComponentTest
 class ReleaseGovernanceTest {
     private static final ObjectMapper JSON = new ObjectMapper();
+
+    @Test void editionEvidenceRejectsMissingChangedAndOutOfScopeFiles(@TempDir Path dossier) throws Exception {
+        var file = Files.writeString(dossier.resolve("report.html"), "observed");
+        var evidence = JSON.createObjectNode().put("path", "report.html").put("bytes", Files.size(file))
+                .put("sha256", sha256(file));
+        var checks = new ArrayList<AtfAssertion>();
+        add(checks, "Unchanged artifact accepted", "true", Boolean.toString(matchesEditionEvidence(dossier, evidence)));
+        Files.writeString(file, "modified");
+        add(checks, "Same-size changed artifact rejected", "false", Boolean.toString(matchesEditionEvidence(dossier, evidence)));
+        add(checks, "Missing artifact rejected", "false",
+                Boolean.toString(matchesEditionEvidence(dossier, evidence.deepCopy().put("path", "missing.html"))));
+        add(checks, "Path outside edition rejected", "false",
+                Boolean.toString(matchesEditionEvidence(dossier, evidence.deepCopy().put("path", "../report.html"))));
+        publish(projectRoot(), "J6EditionEvidenceMutationGovernance", "Versioned evidence integrity", checks);
+        assertTrue(checks.stream().allMatch(AtfAssertion::passed), () -> checks.toString());
+    }
 
     @Test void currentReleaseStateMatchesSourceBinaryPolicyAndMainNavigation() throws Exception {
         Path root = projectRoot();
@@ -79,6 +97,10 @@ class ReleaseGovernanceTest {
                         && downloader.contains("$signature[0] -ne 0x50") ? "complete APK integrity gate" : "integrity gate incomplete");
         add(checks, "Download runner rejects DRAFT", "PREPARED/PUBLISHED only",
                 downloader.contains("@('PREPARED','PUBLISHED')") ? "PREPARED/PUBLISHED only" : "unqualified state accepted");
+        add(checks, "Download starts at the exact current README asset link", "Jocul to canonical asset",
+                downloader.contains("Join-Path $ProjectRoot 'README.md'") && downloader.contains("-cne $canonicalUrl")
+                        && downloader.contains("$url = $routes[0].Groups[1].Value")
+                        ? "Jocul to canonical asset" : "README route bypassed");
         publish(root, "J6ReleaseDownloadRouteGovernance", "Current version and authenticated/anonymous download contract", checks);
         assertTrue(!checks.isEmpty() && checks.stream().allMatch(AtfAssertion::passed),
                 () -> checks.stream().filter(check -> !check.passed()).map(check -> check.name() + " expected "
@@ -304,6 +326,14 @@ class ReleaseGovernanceTest {
             add(checks, "Version folder contains " + required, "file exists",
                     Files.isRegularFile(folder.resolve(required)) ? "file exists" : "file missing");
         }
+        verifyEditionLinks(root, folder.resolve("README.md"), checks);
+        var reportLinks = verifyEditionLinks(root, folder.resolve("reports/README.md"), checks);
+        String strategy = Files.readString(root.resolve("docs/testing/TEST_STRATEGY.md"));
+        String androidGuide = Files.readString(root.resolve("holdem-android/README.md"));
+        add(checks, "Testing strategy links to Android verification commands", "Android owner section",
+                strategy.contains("(../../holdem-android/README.md#verificare-locală)")
+                        && !markdownSection(androidGuide, "## Verificare locală").isBlank()
+                        ? "Android owner section" : "missing owner link or section");
 
         Path apk = folder.resolve(packageName);
         if (state.equals("DRAFT")) {
@@ -322,6 +352,19 @@ class ReleaseGovernanceTest {
             add(checks, "Release APK is not debuggable", "false", identity.path("debuggable").asText());
             String sum = Files.readString(folder.resolve(packageName + ".sha256")).trim();
             add(checks, "Checksum file identifies this APK", digest + "  " + packageName, sum);
+            var seen = new HashSet<String>();
+            for (var entry : validation.path("integrity").path("files")) {
+                String relative = entry.path("path").asText();
+                add(checks, "Edition evidence " + relative, "unique file with recorded bytes and digest",
+                        seen.add(relative) && matchesEditionEvidence(folder, entry)
+                                ? "unique file with recorded bytes and digest" : "missing, duplicate or modified evidence");
+            }
+            add(checks, "Edition evidence covers the qualification and report index", "both recorded",
+                    seen.containsAll(List.of("qualification.json", "reports/README.md")) ? "both recorded" : "incomplete");
+            boolean reportsRecorded = reportLinks.stream().filter(path -> path.getFileName().toString().endsWith(".html"))
+                    .allMatch(path -> seen.contains(folder.relativize(path).toString().replace('\\', '/')));
+            add(checks, "Linked Extent reports appear in the evidence inventory", "all recorded",
+                    reportsRecorded ? "all recorded" : "missing integrity record");
         }
         if (published) {
             JsonNode download = validation.path("publicDownload");
@@ -331,6 +374,32 @@ class ReleaseGovernanceTest {
                             && download.path("bytes").asLong() == identity.path("apkBytes").asLong()
                             ? "200 and exact APK identity" : "unverified or mismatched download");
         }
+    }
+
+    private static List<Path> verifyEditionLinks(Path root, Path document, List<AtfAssertion> checks) throws Exception {
+        var targets = new ArrayList<Path>();
+        var links = java.util.regex.Pattern.compile("\\]\\(([^\\s)]+)\\)").matcher(Files.readString(document));
+        while (links.find()) {
+            String destination = links.group(1);
+            if (destination.startsWith("#") || destination.contains("://")) continue;
+            var target = document.getParent().resolve(destination.split("#", 2)[0]).normalize();
+            targets.add(target);
+            add(checks, "Edition link " + root.relativize(document) + " → " + destination, "existing file in J6",
+                    target.startsWith(root) && Files.isRegularFile(target) ? "existing file in J6" : "missing or outside J6");
+        }
+        return targets;
+    }
+
+    private static boolean matchesEditionEvidence(Path folder, JsonNode entry) throws Exception {
+        String relative = entry.path("path").asText();
+        var path = folder.resolve(relative).normalize();
+        return !relative.isBlank() && !Path.of(relative).isAbsolute() && path.startsWith(folder)
+                && Files.isRegularFile(path) && Files.size(path) == entry.path("bytes").asLong(-1)
+                && sha256(path).equals(entry.path("sha256").asText());
+    }
+
+    private static String sha256(Path file) throws Exception {
+        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(file)));
     }
 
     private void publish(Path root, String testClass, String scenario, List<AtfAssertion> checks) throws Exception {

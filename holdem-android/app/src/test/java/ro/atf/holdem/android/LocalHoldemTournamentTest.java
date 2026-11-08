@@ -20,11 +20,13 @@ public class LocalHoldemTournamentTest {
         play(game, CHECK);
         play(game, CHECK);
         assertEquals(List.of(1980, 1980, 2060, 1980), stacks(game));
+        assertEquals(80, totalPayout(game));
         assertNull(game.outcome());
 
         game.nextHand();
         assertEquals(1, game.view().dealer());
-        play(game, ALL_IN);
+        playAllIn(game, 1960);
+        assertEquals(7920, totalPayout(game));
         assertEquals(List.of(0, 0, 80, 7920), stacks(game));
         assertTrue(game.eliminated(0));
         assertTrue(game.eliminated(1));
@@ -45,9 +47,9 @@ public class LocalHoldemTournamentTest {
         assertEquals(20, game.blindLevel().smallBlind());
         assertEquals(40, game.blindLevel().bigBlind());
         assertEquals(List.of(0, 0, 40, 20), headsUp.seats().stream().map(seat -> seat.contributed()).collect(Collectors.toList()));
-        play(game, ALL_IN);
+        playAllIn(game, 7900);
         assertEquals(List.of(0, 0, 0, 8000), stacks(game));
-        assertEquals(8000, game.view().seats().stream().mapToInt(seat -> seat.received()).sum());
+        assertEquals(8000, totalPayout(game));
         assertEquals(5, game.view().board().size());
         assertEquals(2, game.view().ownCards().size());
         assertEquals(LocalHoldemGame.Outcome.WON, game.outcome());
@@ -195,6 +197,17 @@ public class LocalHoldemTournamentTest {
 
     private static List<Integer> stacks(LocalHoldemGame game) {
         return game.view().seats().stream().map(seat -> seat.stack()).collect(Collectors.toList());
+    }
+
+    private static int totalPayout(LocalHoldemGame game) {
+        return game.view().seats().stream().mapToInt(seat -> seat.received()).sum();
+    }
+
+    private static void playAllIn(LocalHoldemGame game, int expectedAmount) {
+        advancePassiveTurns(game);
+        var option = game.view().legalActions().stream().filter(action -> action.type() == ALL_IN).findFirst().orElseThrow();
+        assertEquals(expectedAmount, option.amount());
+        play(game, ALL_IN);
     }
 
     private static void play(LocalHoldemGame game, ActionType action) {

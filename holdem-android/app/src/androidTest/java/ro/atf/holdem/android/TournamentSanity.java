@@ -152,6 +152,7 @@ public final class TournamentSanity extends Instrumentation {
         var activity = openTournament();
         try {
             tap("All-in · 2000");
+            see("Opening all-in settles before elimination is asserted", "Hand 1 · Settled");
             countDescriptions("Human seat is eliminated after the opening all-in", "You, Stack 0, Received 0, Eliminated", 1);
             tap("Tournament result");
             see("Losing player sees the elimination result", "You were eliminated");

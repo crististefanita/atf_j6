@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "release": {
+    "versionName": "0.1.1",
+    "versionCode": 4,
+    "applicationId": "ro.atf.holdem.android",
+    "minSdk": 26,
+    "targetSdk": 36,
+    "apkName": "HoldemLab-0.1.1.apk",
+    "apkBytes": null,
+    "sha256": null,
+    "certificateSha256": null,
+    "debuggable": false
+  },
+  "publication": {
+    "state": "DRAFT",
+    "sourceCommit": null,
+    "evidenceCommit": null,
+    "tag": "v0.1.1",
+    "releaseId": null,
+    "publishedAt": null,
+    "githubReleaseUrl": "https://github.com/crististefanita/atf_j6/releases/tag/v0.1.1",
+    "githubState": "not-created",
+    "assets": []
+  },
+  "qualification": {
+    "status": "DRAFT",
+    "tests": null,
+    "failures": null,
+    "errors": null,
+    "skipped": null,
+    "details": {}
+  },
+  "integrity": {
+    "files": []
+  }
+}

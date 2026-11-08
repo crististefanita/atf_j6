@@ -7,7 +7,7 @@ Kit oferă adnotări, comparații evaluate și lifecycle neutru. JAR-ul nu porne
 | Nevoie | API și limită |
 |---|---|
 | Nivelul testului | @AtfUnitTest, @AtfComponentTest, @AtfIntegrationTest, @AtfE2eTest; clasificare, fără lansare automată. |
-| Comparații auditabile | RecordedAssertions; verdictul JUnit precede preview-ul implicit 240. |
+| Comparații auditabile | RecordedAssertions; verdictul JUnit precede preview-ul 240, care păstrează perechile Unicode complete. |
 | Aserțiuni JUnit existente | AuditedAssertions în scope-ul adaptorului; diagnostic lazy, identitate și cauză originale. Apelurile JUnit directe nu devin automat auditabile. |
 | Valori integrale | AssertionValueDisplay poate primi un observer Projection cu rol expected/actual și text redactat, înainte de preview; consumerul deține retenția. |
 | Faze și cleanup | ComponentAuditExtension / ComponentAuditAdapter, TestRunInitialization, FailureAwareCleanup. |

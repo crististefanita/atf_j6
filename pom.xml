@@ -25,7 +25,7 @@
         <atf.reporting.version>1.0.0-j23</atf.reporting.version>
         <atf.console.version>1.0.0-c2</atf.console.version>
         <atf.mock.version>1.0.0-m2</atf.mock.version>
-        <atf.testkit.version>1.0.0-k1</atf.testkit.version>
+        <atf.testkit.version>1.0.0-k2</atf.testkit.version>
         <junit.version>5.11.0</junit.version>
     </properties>
 

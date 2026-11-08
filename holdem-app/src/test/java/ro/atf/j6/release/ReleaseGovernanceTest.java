@@ -46,27 +46,29 @@ class ReleaseGovernanceTest {
 
     @Test void downloadRoutesAreStateGatedAndMatchTheCurrentVersion() throws Exception {
         Path root = projectRoot();
+        String version = JSON.readTree(root.resolve("release/index.json").toFile()).path("currentVersion").asText();
+        String staleVersion = version.equals("0.1.0") ? "0.0.9" : "0.1.0";
         var checks = new ArrayList<AtfAssertion>();
-        String page = "https://github.com/crististefanita/atf_j6/releases/tag/v0.1.0";
-        String apk = "https://github.com/crististefanita/atf_j6/releases/download/v0.1.0/HoldemLab-0.1.0.apk";
+        String page = "https://github.com/crististefanita/atf_j6/releases/tag/v" + version;
+        String apk = "https://github.com/crististefanita/atf_j6/releases/download/v" + version + "/HoldemLab-" + version + ".apk";
         String publishedGuide = "## Android\n- [Release](" + page + ")\n- [APK](" + apk + ")\n";
-        recordRoute(checks, "DRAFT has no public download route", "DRAFT", "## Android", "0.1.0", false, false);
+        recordRoute(checks, "DRAFT has no public download route", "DRAFT", "## Android", version, false, false);
         recordRoute(checks, "PREPARED without browser proof remains local", "PREPARED",
-                "## Android\n- [Candidate](release/0.1.0/README.md)", "0.1.0", false, false);
+                "## Android\n- [Candidate](release/" + version + "/README.md)", version, false, false);
         recordRoute(checks, "PREPARED allows minimal links after authenticated download proof", "PREPARED",
-                publishedGuide, "0.1.0", true, true);
+                publishedGuide, version, true, true);
         recordRoute(checks, "PREPARED without browser proof blocks direct links", "PREPARED",
-                publishedGuide, "0.1.0", false, false);
-        recordRoute(checks, "Exact current release and APK are accepted", "PUBLISHED", publishedGuide, "0.1.0", false, true);
-        recordRoute(checks, "DRAFT cannot expose an APK", "DRAFT", publishedGuide, "0.1.0", false, false);
+                publishedGuide, version, false, false);
+        recordRoute(checks, "Exact current release and APK are accepted", "PUBLISHED", publishedGuide, version, false, true);
+        recordRoute(checks, "DRAFT cannot expose an APK", "DRAFT", publishedGuide, version, false, false);
         recordRoute(checks, "An older version is rejected", "PUBLISHED",
-                publishedGuide.replace("0.1.0", "0.0.9"), "0.1.0", false, false);
+                publishedGuide.replace(version, staleVersion), version, false, false);
         recordRoute(checks, "Duplicate direct asset links are rejected", "PUBLISHED",
-                publishedGuide + "- [Again](" + apk + ")", "0.1.0", false, false);
-        String rawAsset = "https://raw.githubusercontent.com/crististefanita/atf_j6/main/release/0.1.0/HoldemLab-0.1.0.apk";
-        recordRoute(checks, "Raw source links are rejected", "PUBLISHED", publishedGuide.replace(apk, rawAsset), "0.1.0", false, false);
-        String folderAsset = "release/0.1.0/HoldemLab-0.1.0.apk";
-        recordRoute(checks, "Catalog folder is not a public asset", "PUBLISHED", publishedGuide.replace(apk, folderAsset), "0.1.0", false, false);
+                publishedGuide + "- [Again](" + apk + ")", version, false, false);
+        String rawAsset = "https://raw.githubusercontent.com/crististefanita/atf_j6/main/release/" + version + "/HoldemLab-" + version + ".apk";
+        recordRoute(checks, "Raw source links are rejected", "PUBLISHED", publishedGuide.replace(apk, rawAsset), version, false, false);
+        String folderAsset = "release/" + version + "/HoldemLab-" + version + ".apk";
+        recordRoute(checks, "Catalog folder is not a public asset", "PUBLISHED", publishedGuide.replace(apk, folderAsset), version, false, false);
         String downloader = Files.readString(root.resolve("scripts/Test-PublishedHoldemDownload.ps1"));
         add(checks, "Anonymous download runner disables credentials and cookies", "credentialless HTTP client",
                 downloader.contains("UseCookies = $false") && downloader.contains("$handler.Credentials = $null")
@@ -92,8 +94,9 @@ class ReleaseGovernanceTest {
         String mainReadme = Files.readString(root.resolve("README.md"));
         add(checks, "Main README omits checksum labels and digests", "no checksum disclosure",
                 containsChecksumDisclosure(mainReadme) ? "checksum disclosure present" : "no checksum disclosure");
-        add(checks, "Main README release links identify the indexed version", "two current version labels",
-                hasCurrentReleaseLabels(mainReadme, version) ? "two current version labels" : "version labels drift");
+        String labelContract = state.equals("DRAFT") ? "one dossier version label" : "two release and APK version labels";
+        add(checks, "Main README release links identify the indexed version", labelContract,
+                hasCurrentReleaseLabels(mainReadme, version, state) ? labelContract : "version labels drift");
         add(checks, "Main README release block contains only the two intended links", "minimal ordered release and APK links",
                 hasMainReleaseGuide(mainReadme, version, state) ? "minimal ordered release and APK links" : "extra detail, link, or route drift");
         add(checks, "Main README links the technical catalog and release process", "both documentation links",
@@ -190,8 +193,9 @@ class ReleaseGovernanceTest {
         add(checks, "Allowed release lifecycle state", allowedState ? "allowed " + state : "unknown",
                 allowedState ? "allowed " + state : "unknown");
         add(checks, "Index and validation state", state, publication.path("state").asText());
-        add(checks, "Main README release labels use the indexed version", "two current version labels",
-                hasCurrentReleaseLabels(mainReadme, version) ? "two current version labels" : "version labels drift");
+        String labelContract = state.equals("DRAFT") ? "one dossier version label" : "two release and APK version labels";
+        add(checks, "Main README release labels use the indexed version", labelContract,
+                hasCurrentReleaseLabels(mainReadme, version, state) ? labelContract : "version labels drift");
         add(checks, "Main README keeps the shared release block in sync", "ordered state-valid release links",
                 hasMainReleaseGuide(mainReadme, version, state) ? "ordered state-valid release links" : "format, version, or state drift");
         add(checks, "Main README links the release catalog and process", "both documentation links",
@@ -353,8 +357,9 @@ class ReleaseGovernanceTest {
                 .matcher(source).find();
     }
 
-    private static boolean hasCurrentReleaseLabels(String readme, String version) {
-        return countOccurrences(markdownSection(readme, "## Jocul"), "Hold'em Lab " + version) == 2;
+    private static boolean hasCurrentReleaseLabels(String readme, String version, String state) {
+        int expected = state.equals("DRAFT") ? 1 : List.of("PREPARED", "PUBLISHED").contains(state) ? 2 : 0;
+        return expected > 0 && countOccurrences(markdownSection(readme, "## Jocul"), "Hold'em Lab " + version) == expected;
     }
 
     private static boolean hasReleaseDocumentationLinks(String readme) {

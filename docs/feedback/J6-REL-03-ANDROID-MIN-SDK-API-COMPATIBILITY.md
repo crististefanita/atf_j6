@@ -2,7 +2,7 @@
 
 **Prioritate:** P1
 
-**Stare:** Corectat în sursa curentă; revalidarea nativă API 28 este în curs
+**Stare:** Corectat și verificat pe API 28; poartă inclusă în calificarea următoarei ediții
 
 ## Constatare
 
@@ -17,7 +17,7 @@
 
 ## Verificare
 
-Primele două rulări Android API 28 au identificat incompatibilități consecutive, fiecare înainte de receipt. După corecții trebuie rerulate regresia componentă, guvernanța Extent și ambele sanity-uri native (`tournament`, apoi `release-smoke`). Până la trecerea probelor native nu se marchează ediția nouă `PREPARED`.
+Primele două rulări Android API 28 au identificat incompatibilități consecutive, fiecare înainte de receipt. După corecții, regresia Maven a trecut 80/80, inclusiv patru teste de guvernanță Extent; suita Android JVM a trecut 27/27, iar lint nu a raportat avertismente. Turneul nativ a trecut 42 de aserțiuni cu cinci capturi; instalarea APK-ului `release` a trecut șapte aserțiuni cu două capturi. Ambele receipts sunt legate de hash-ul APK-ului instalat și publicate în Extent cu capturile încorporate.
 
 ## Lecție pentru release
 

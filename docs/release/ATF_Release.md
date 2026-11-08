@@ -12,7 +12,7 @@ APK-urile intermediare, build-urile, cache-urile, logurile și capturile brute r
 
 ## README principal și catalog
 
-README-ul principal are un bloc `## Jocul` cu exact două bullets în ordine fixă: documentația paginii Release cu numele și versiunea curentă, apoi descărcarea directă a APK-ului cu aceeași identitate. Acesta este un bloc de navigare, fără starea lifecycle-ului, cerințe de autentificare, mărimea fișierului, hash-uri sau linkuri către dosare locale. Guvernanța respinge orice linie suplimentară ori text explicativ în acest bloc. Pentru `PREPARED`, ambele rute apar numai după ce manifestul confirmă descărcarea completă autentificată; starea și limitarea accesului rămân în documentația versiunii. Pentru `PUBLISHED`, accesul anonim trebuie să fie verificat separat. În `DRAFT` nu apare un APK descărcabil.
+În `DRAFT`, blocul `## Jocul` din README-ul principal indică numai dosarul ediției; nu publică o rută de APK. După calificare, blocul conține exact două bullets, în ordine fixă: pagina Release, apoi descărcarea directă a APK-ului pentru aceeași versiune. Acesta rămâne navigare simplă, fără stare, cerințe de autentificare, mărime, hash-uri ori explicații tehnice. Guvernanța respinge orice linie suplimentară sau text explicativ. `PREPARED` cere receipt de descărcare completă autentificată; starea și limitările rămân în dosarul ediției. `PUBLISHED` cere separat descărcarea anonimă completă.
 
 Dosarul ediției păstrează calificarea, raportarea și receipt-urile. [Catalogul](../../release/README.md) este indexul tehnic, iar acest document este procesul; ambele sunt legate din secțiunea de documentație a README-ului principal. README-ul principal nu conține SHA-256 sau checksum: aceștia apar numai în dosarul versiunii și în probele de integritate.
 
@@ -35,7 +35,8 @@ Cheia PKCS#12 și parola protejată cu DPAPI stau în `C:\work\holdem_back\infra
 Promovați doar dintr-un commit curat. Pregătiți un dosar extern nou și un repository Maven extern:
 
 ```powershell
-$run = 'C:\work\holdem_back\release-runs\j6-0.1.0-<id-unic>'
+$version = (Get-Content -Raw .\release\index.json | ConvertFrom-Json).currentVersion
+$run = "C:\work\holdem_back\release-runs\j6-$version-<id-unic>"
 $maven = 'C:\work\holdem_back\infrastructure\cache\maven'
 .\scripts\Build-HoldemRelease.ps1 -RunRoot $run -MavenRepository $maven
 ```

@@ -1,6 +1,9 @@
 target/
 build-check/
 .check/
+.locks/
+.meta/
+/org/
 .env
 *.log
 *.replay.json

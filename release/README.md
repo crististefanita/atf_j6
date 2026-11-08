@@ -8,6 +8,7 @@ Acest director indexează edițiile Android. Dosarul unei versiuni deține ident
 
 | Versiune | Documentație | Identitatea pachetului |
 |---|---|---|
+| 0.1.1 | [Dosarul ediției](0.1.1/README.md) · `DRAFT` | [Manifestul de validare](0.1.1/release-validation.json) |
 | 0.1.0 | [Dosarul ediției](0.1.0/README.md) | [Manifestul de validare](0.1.0/release-validation.json) |
 
 [`index.json`](index.json) selectează versiunea curentă și starea ei. Nu duplicați în acest index numărul testelor, hash-urile sau rezultatele unei verificări.
@@ -19,7 +20,7 @@ Acest director indexează edițiile Android. Dosarul unei versiuni deține ident
 | `PREPARED` | APK-ul semnat și verificările locale sunt în dosarul ediției; descărcarea anonimă nu este încă acceptată. |
 | `PUBLISHED` | APK-ul poate fi descărcat complet fără autentificare, iar identitatea binarului corespunde manifestului. |
 
-README-ul principal al proiectului păstrează două legături ordonate: pagina Release, apoi APK-ul. Limitările de acces și detaliile de verificare aparțin dosarului versiunii.
+În `DRAFT`, README-ul principal indică doar dosarul ediției. După calificare, păstrează două legături ordonate: pagina Release, apoi APK-ul. Limitările de acces și detaliile de verificare aparțin dosarului versiunii.
 
 ## Conținutul fiecărei ediții
 

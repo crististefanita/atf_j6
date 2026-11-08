@@ -11,8 +11,8 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 1. **J6-REL-01 · P1 · Blocat extern:** proprietarul contului trebuie să obțină de la GitHub restabilirea vizibilității publice. Ultima probă anonimă înregistrată a primit `404`; catalogul rămâne `PREPARED`.
 2. **J6-AI-02 · P1 · Deschis:** politicile sunt încă euristice, iar modelul de range și evaluarea independentă nu justifică eticheta `Hard`.
 3. **J6-AI-04 · P1 · Deschis, exploratoriu:** ablația pereche are 16 seed-uri independente, sub pragul de 20 pentru fiecare mărime de masă; efectul nu justifică o pondere generală.
-4. **J6-UI-05 · P1 · Implementat parțial; calificare JVM raportată:** Fold, reveal, coach, preluare locală și selectorul de blinduri există. Rămân detaliile kicker/board-play, testul de confidențialitate, testarea wiring-ului intervalului și layout-ul accesibil; receipt-ul UI-05 rămâne de consolidat.
-5. **J6-UI-06 · P1 · 27/27 JVM; receipt legat; sanity Android rămas:** checkpoint, replay, lifecycle foreground/background, pacing și colectarea cărților sunt calificate pe componente; animația și culoarea se confirmă pe dispozitiv.
+4. **J6-UI-05 · P1 · 27/27 JVM, sanity API 28 trecut; acceptanță parțială:** Fold, reveal, coach, preluare locală și selectorul de blinduri există. Rămân evaluatorul kicker/board-play, invariabilitatea față de cărți ascunse, wiring-ul intervalului și verificările dedicate de accesibilitate/layout.
+5. **J6-UI-06 · P1 · 27/27 JVM și sanity API 28 trecut:** Reluarea, pacing-ul, colectarea și cele două trasee native au capturi Extent validate. Tapping-ul „New hand” în timpul colectării este acum reținut o singură dată; inspecția cadru-cu-cadru și API 26 rămân neacoperite.
 6. **J6-UI-04 · P2 · Deschis:** separați premiul potului de restituirea mizei neacoperite în prezentarea decontării.
 
 `J6-REL-01` cere acțiunea proprietarului contului și nu se rezolvă prin redenumirea asset-ului sau schimbarea rutelor. Celelalte priorități sunt lucru de produs și cod.
@@ -21,7 +21,7 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 |---|---|---|---|
 | [J6-REL-01](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | P1 | Blocat extern | Repo-ul și asset-ul sunt publice în API-ul autentificat, dar profilul, repo-ul și Release-ul întorc `404` anonim. |
 | [J6-REL-02](J6-REL-02-README-VERSION-GOVERNANCE.md) | P2 | Rezolvat | Bloc comun cu două linkuri ordonate, sincronizat cu indexul; catalog/proces legate și stări `PREPARED`/`PUBLISHED` guvernate; fără checksum în README. |
-| [J6-REL-03](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) | P1 | Corectat; revalidare Android API 28 în curs | Recomandarea AI folosea două metode Java de colecții indisponibile pe API-ul minim. |
+| [J6-REL-03](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) | P1 | Corectat; tournament și release-smoke trecute pe API 28 | Recomandarea AI folosea două metode Java de colecții indisponibile pe API-ul minim. |
 | [J6-AI-01](J6-AI-01-LATE-POSITION.md) | P2 | Rezolvat | Fereastra de poziție omitea butonul și nu se adapta meselor scurtate. |
 | [J6-AI-02](J6-AI-02-STRATEGY-CALIBRATION.md) | P1 | Deschis | Stilurile sunt euristici; comparațiile mici nu justifică promovarea unei strategii Hard. |
 | [J6-AI-04](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) | P1 | Deschis | Ablație pereche pentru istoricul public; rezultatele rămân exploratorii și sub pragul de acceptare. |
@@ -30,5 +30,5 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 | [J6-UI-02](J6-UI-02-TABLE-COVERAGE.md) | P2 | Rezolvat | Masă compactă la font 2,0, dialog de raise cu tastatura deschisă și rotație heads-up. |
 | [J6-UI-03](J6-UI-03-TOURNAMENT-SANITY.md) | P1 | Rezolvat | Stive între mâini, eliminări, rezultat de turneu și sanity Android reproductibil. |
 | [J6-UI-04](J6-UI-04-PAYOUT-READABILITY.md) | P2 | Deschis | Decontarea însumează potul câștigat și restituirea contribuției neacoperite în aceeași valoare `Received`. |
-| [J6-UI-05](J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md) | P1 | Implementat parțial; calificare raportată | Lipsesc kicker/board-play, invariabilitatea față de cărți ascunse, testarea spinnerului și layout-ului; receipt-ul UI-05 trebuie consolidat. |
-| [J6-UI-06](J6-UI-06-RESUMABLE-TURNS-AND-SETTLEMENT.md) | P1 | 27/27 JVM; receipt legat; sanity Android rămas | Checkpoint/replay, lifecycle foreground/background, temporizare comună, chenar actor și colectare spre pot; mai lipsește confirmarea nativă vizuală. |
+| [J6-UI-05](J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md) | P1 | 27/27 JVM; sanity API 28 trecut; acceptanță parțială | Mai lipsesc oracolul kicker/board-play, testul de confidențialitate, testarea spinnerului și verificările dedicate de accesibilitate/layout. |
+| [J6-UI-06](J6-UI-06-RESUMABLE-TURNS-AND-SETTLEMENT.md) | P1 | 27/27 JVM; două trasee native API 28 trecute | Persistența, reluarea, acțiunile temporizate și colectarea au probe. Rămân inspecția cadru-cu-cadru și runtime-ul API 26. |

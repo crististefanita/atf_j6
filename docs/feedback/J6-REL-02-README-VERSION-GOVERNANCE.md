@@ -10,8 +10,8 @@ Constatarea inițială: blocul README principal repeta starea `PREPARED`, cerin�
 
 ## Criterii
 
-- README-ul principal folosește `## Jocul` cu exact două bullets: documentația paginii Release, apoi APK-ul direct. Numele și URL-urile folosesc `currentVersion`; blocul nu conține stare, notă de autentificare, dimensiune, checksum/hash, dosar local sau alte linkuri. Catalogul și procesul rămân în secțiunea de documentație.
-- `DRAFT` nu oferă APK. `PREPARED` expune cele două linkuri numai când dosarul are dovada descărcării autentificate complete; condiția nu se repetă în README-ul principal. `PUBLISHED` cere separat descărcare anonimă completă. Dosarul versiunii și `release-validation.json` trebuie să aibă aceeași identitate.
+- În `DRAFT`, `## Jocul` indică numai dosarul ediției; nu expune un APK. După calificare, README-ul principal are exact două bullets: pagina Release, apoi APK-ul direct. Numele și URL-urile folosesc `currentVersion`; blocul nu conține stare, notă de autentificare, dimensiune, checksum/hash, link la folder sau alte explicații. Catalogul și procesul rămân în secțiunea de documentație.
+- `PREPARED` expune cele două linkuri numai când dosarul are dovada descărcării autentificate complete; condiția nu se repetă în README-ul principal. `PUBLISHED` cere separat descărcare anonimă completă. Dosarul versiunii și `release-validation.json` trebuie să aibă aceeași identitate.
 - Guvernanța respinge versiunea veche, ordinea greșită, al treilea link, o a treia destinație, mărimea fișierului, textul lifecycle/autentificare, destinația greșită, checksum/hash, linkurile documentației lipsă și rutele premature.
 - Orice RAG ulterior este consultativ și read-only; doar catalogul și receipt-urile pot susține starea porților. Recuperarea de text nu poate deduce `PASS` sau promova release-ul.
 - Controlul rămâne local și deterministic; nu face cereri de rețea. Descărcarea anonimă completă rămâne poarta separată.

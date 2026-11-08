@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "sourceCommit": "828b46172387bff025678b2f29b9ade266119a85",
+  "versionName": "0.2.1",
+  "apkName": "HoldemLab-0.2.1.apk",
+  "apkBytes": 788392,
+  "sha256": "a78aac153a3f39a58677b887e43fd724bd29200f954b46d57d430ac6fbd12307",
+  "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
+  "debuggable": false,
+  "targetSdk": 36,
+  "minSdk": 26,
+  "qualification": {
+    "maven": {
+      "suites": 16,
+      "tests": 97.0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mavenComponentExtent": {
+      "path": "maven-component-suites-extent.html",
+      "suites": 16,
+      "tests": 97.0
+    },
+    "androidJvm": {
+      "suites": 5,
+      "tests": 45.0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "androidComponentExtent": {
+      "path": "android-component-suites-extent.html",
+      "suites": 5,
+      "tests": 45.0
+    },
+    "releaseImpactContext": {
+      "path": "release-impact-context.json",
+      "contextState": "CONTEXT_READY",
+      "advisoryOnly": true,
+      "sha256": "40608a25222a5968d81f30312d69b68f3fadfeea4f0e557a9741687d3484589e"
+    },
+    "versionPolicy": {
+      "previousVersion": "0.2.0",
+      "changeClass": "PATCH_FIX",
+      "candidateVersion": "0.2.1",
+      "rationale": "Rafinarea mesei existente: afișarea cărților în funcție de fază, butoane mai discrete și ajustare la înălțimea ferestrei."
+    },
+    "lint": {
+      "status": "PASS",
+      "warnings": []
+    },
+    "tournamentSanity": {
+      "status": "PASS",
+      "api": 28,
+      "assertions": 76,
+      "screenshots": 9,
+      "apkSha256": "581197a54dd938b6abdf1e19db43a8120366654cb2b4f85dc8890fd8077db6dc"
+    },
+    "releaseInstallSmoke": {
+      "status": "PASS",
+      "api": 28,
+      "assertions": 7,
+      "screenshots": 2,
+      "apkSha256": "a78aac153a3f39a58677b887e43fd724bd29200f954b46d57d430ac6fbd12307"
+    }
+  },
+  "reports": [
+    {
+      "path": "android-component-suites-extent.html",
+      "bytes": 2466737,
+      "sha256": "3246a3feeb88d5164d473c93a413b0e41c3ffce12ffbcb62010bf3de3c889d84"
+    },
+    {
+      "path": "android-release-smoke-extent.html",
+      "bytes": 2596597,
+      "sha256": "3495bdb42363507e811fc636295a1ae1dd2a989776ab67ee49f6558255722e6b"
+    },
+    {
+      "path": "android-tournament-extent.html",
+      "bytes": 4139156,
+      "sha256": "d1728e3ab898349c9990122aa137b1ed07757424a18852a14782c85ec4ef12f9"
+    },
+    {
+      "path": "j6-library-component-1794155212561.html",
+      "bytes": 2411344,
+      "sha256": "72282e0a49ecf5ffebfbfbd9d3f4e0d4dbab906feb015b144c6a2186a4e9d393"
+    },
+    {
+      "path": "J6AndroidRuntimeApiGovernance-1794155223171.html",
+      "bytes": 2411442,
+      "sha256": "e9fe05f1fd6210936ee6e3e8f8d489dd8746805f657511d78edd5f1746ebef5c"
+    },
+    {
+      "path": "J6ExtentSuiteGovernance-1794155226476.html",
+      "bytes": 2411200,
+      "sha256": "e88940622273250e5885f1a2a1bc5375a185fcf1c6bc2b485312f1cba08eef91"
+    },
+    {
+      "path": "J6MainReadmeGovernance-1794155221268.html",
+      "bytes": 2412756,
+      "sha256": "f43790e73074b16ed24bf65bcd1eca7043cff6a145b54ee35a1619fa484c46d4"
+    },
+    {
+      "path": "J6ReleaseDownloadRouteGovernance-1794155218484.html",
+      "bytes": 2412226,
+      "sha256": "b8211843a05432c66387f3a49b479e27a2bbe5d2a4ba1f7f0e4adb6c6fad54f5"
+    },
+    {
+      "path": "J6ReleaseGovernance-1794155224946.html",
+      "bytes": 2414989,
+      "sha256": "a2e0310e575a89d112d450489738638d0d32570753f3520247b72bc90e6beeea"
+    },
+    {
+      "path": "maven-component-suites-extent.html",
+      "bytes": 2573086,
+      "sha256": "a6fccca6af8f4fe4156f1c4d3458ed8290d26642d25653c5cda9b7bbef2e704f"
+    }
+  ],
+  "runRoot": "C:/work/holdem_back/release-runs/j6-0.2.1-20261108-828b461",
+  "completedUtc": "2026-11-08T16:34:30.2318745Z"
+}

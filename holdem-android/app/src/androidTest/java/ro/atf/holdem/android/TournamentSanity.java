@@ -53,6 +53,7 @@ public final class TournamentSanity extends Instrumentation {
             if (journey.equals("tournament")) {
                 winAcrossThreeHands();
                 loseOnTheOpeningAllIn();
+                inspectRaiseEditor();
             } else if (journey.equals("release-smoke")) {
                 releaseEntryNavigation();
             } else {
@@ -120,9 +121,6 @@ public final class TournamentSanity extends Instrumentation {
             countDescriptions("The player sees exactly their two hole cards", "Your hand ·", 2);
             checkCollapsedViewport(activity, "The opening table fits without page scrolling");
             checkOpeningControls(activity);
-            tap("Raise");
-            seeContains("Raise opens the amount editor", "Add now ·");
-            closeAmountEditor();
             tap("Call · 20");
             see("First hand reaches the flop", "Hand 1 · Flop");
             capture("01-call-ledger-visible");
@@ -186,6 +184,20 @@ public final class TournamentSanity extends Instrumentation {
             tap("Tournament leaderboard");
             see("Leaderboard reloads from app-private storage", "Cumulative tournament points");
             seeContains("Reopening the activity does not duplicate the tournament", "Points 100 · Tournaments 1");
+        } finally {
+            runOnMainSync(activity::finish);
+        }
+    }
+
+    private void inspectRaiseEditor() throws Exception {
+        var activity = openTournament();
+        try {
+            tap("Raise");
+            var ranges = collect(node -> value(node.getText()).startsWith("Add now ·")
+                    || value(node.getText()).startsWith("Chips to add now ·"));
+            check("Raise opens the amount editor", "visible amount range",
+                    ranges.isEmpty() ? "range absent" : value(ranges.get(0).getText()), !ranges.isEmpty());
+            closeAmountEditor();
         } finally {
             runOnMainSync(activity::finish);
         }

@@ -11,7 +11,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 
 ## Ce vede și poate face jucătorul
 
-- În timpul mâinii, jucătorul vede cele două cărți proprii, board-ul public și starea mesei; cărțile adverse sunt ascunse.
+- În timpul mâinii, jucătorul vede cele două cărți proprii, board-ul public și starea locurilor. Locurile adverse afișează cărți numai la decontare.
 - După decontare, recapitularea dezvăluie mâinile distribuite, inclusiv cele ale jucătorilor care au făcut fold. Eticheta `Fold` rămâne până la următoarea distribuire.
 - Masa indică actorul curent și combinația proprie calculată din cărțile vizibile. Sub fiecare jucător apar ultima mutare și jetoanele adăugate prin acea mutare.
 - `Istoric pariuri` deschide lista cronologică a mâinii, cu strada și contribuția cumulată pentru fiecare mutare. Istoricul poate fi consultat și după decontare, până la următoarea distribuire.
@@ -39,6 +39,8 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 - `TurnPacing` programează câte o acțiune automată la 550 ms după primul cadru vizibil și verifică din nou tokenul turei înainte de aplicare.
 - `PlayerSeatFrame` marchează actorul. După decontare, masa păstrează cărțile vizibile până la următoarea comandă. Cele folosite în combinația câștigătoare sunt evidențiate, iar marcajul premiului se deplasează spre locurile care au câștigat din pot.
 - Pe ferestre înguste sau cu font mărit, locurile se rearanjează în jurul potului și al board-ului; conținutul dialogului de raise derulează separat de acțiuni.
+- Masa compactă măsoară fereastra cu istoricul pliat și reduce proporțional fețele cărților doar când conținutul depășește spațiul disponibil. Dacă dimensiunea minimă încă depășește fereastra, derularea păstrează comenzile accesibile. Istoricul deschis are propria listă derulabilă.
+- Fundalurile butoanelor de pariere au 75% din înălțimea controlului. Butoanele păstrează ținta tactilă de minimum 48 dp.
 - Heads-up: dealerul postează small blind și acționează primul preflop; big blind-ul acționează primul după flop. [Poker TDA, regula 36-C](https://www.pokertda.com/view-poker-tda-rules/)
 
 ## Verificare locală

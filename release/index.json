@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.2.0",
-  "previousVersion": "0.1.1",
-  "changeClass": "COMPATIBLE_FEATURE",
-  "changeRationale": "Istoric de pariuri la cerere, acțiuni vizibile la fiecare loc și clasament cumulativ în turneele locale.",
-  "state": "PREPARED",
+  "currentVersion": "0.2.1",
+  "previousVersion": "0.2.0",
+  "changeClass": "PATCH_FIX",
+  "changeRationale": "Rafinarea mesei existente: afișarea cărților în funcție de fază, butoane mai discrete și ajustare la înălțimea ferestrei.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.2.0"
+    "0.2.1"
   ]
 }

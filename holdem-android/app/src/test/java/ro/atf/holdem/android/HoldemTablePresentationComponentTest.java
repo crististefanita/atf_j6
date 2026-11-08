@@ -13,6 +13,30 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 public final class HoldemTablePresentationComponentTest {
+    @Test public void measuredViewportFitsCardsAtTheLargestScaleSupportedByTheBudget() {
+        assertEquals(100, HoldemTablePresentation.fitCardScale(626, 570, 510));
+        assertEquals(100, HoldemTablePresentation.fitCardScale(570, 570, 510));
+        assertEquals(95, HoldemTablePresentation.fitCardScale(560, 570, 510));
+        assertEquals(85, HoldemTablePresentation.fitCardScale(540, 570, 510));
+        assertEquals(70, HoldemTablePresentation.fitCardScale(510, 570, 510));
+        assertEquals(70, HoldemTablePresentation.fitCardScale(480, 570, 510));
+        assertEquals(70, HoldemTablePresentation.fitCardScale(480, 550, 550));
+    }
+
+    @Test public void opponentCardsAreShownOnlyForADealtSeatAtSettlement() {
+        var cards = List.of(new Card(Card.Rank.ACE, Card.Suit.SPADES),
+                new Card(Card.Rank.KING, Card.Suit.HEARTS));
+        var active = new HoldemTableViewState.Seat(100, 20, false, 0, true, List.of());
+        var revealed = new HoldemTableViewState.Seat(100, 20, true, 0, true, cards);
+        var out = new HoldemTableViewState.Seat(0, 0, false, 0, false, List.of());
+
+        assertFalse(HoldemTablePresentation.showOpponentCards(false, false, active));
+        assertFalse(HoldemTablePresentation.showOpponentCards(false, false, revealed));
+        assertFalse(HoldemTablePresentation.showOpponentCards(true, true, revealed));
+        assertFalse(HoldemTablePresentation.showOpponentCards(true, false, out));
+        assertTrue(HoldemTablePresentation.showOpponentCards(true, false, revealed));
+    }
+
     @Test public void seededAiNamesStayStableWithinAMatchAndVaryAcrossMatchSeeds() {
         for (int seats : List.of(2, 4, 5, 6)) {
             var first = HoldemTablePresentation.playerNames(seats, "You", 0x1a2b3c4dL);

@@ -61,7 +61,7 @@ class PublishTournamentExtent {
         String journey = receipt.path("journey").asText("tournament");
         boolean releaseSmoke = journey.equals("release-smoke");
         if (!releaseSmoke && !journey.equals("tournament")) throw new IllegalArgumentException("Unknown native journey " + journey);
-        int expectedCaptures = releaseSmoke ? 2 : 8;
+        int expectedCaptures = releaseSmoke ? 2 : 9;
         var checks = new ArrayList<AtfAssertion>();
         for (var entry : receipt.required("assertions")) {
             checks.add(new AtfAssertion(entry.required("name").asText(), entry.required("expected").asText(),

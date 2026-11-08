@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.animation.ValueAnimator;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.graphics.drawable.InsetDrawable;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
@@ -45,12 +46,14 @@ import java.util.function.Predicate;
 final class HoldemTableView {
     // BoardLayout gives this center the full measured width. Its width hint only has to fit that region.
     private static final int FULL_WIDTH_CENTER_HINT_DP = 1;
+    private static final float DECISION_BACKGROUND_VERTICAL_INSET = .125f;
     private record BoardView(View root, TextView turnStatus) {}
     interface Text { String get(int resource, Object... arguments); }
 
     private final ScreenViews views;
     private final Text text;
     private ViewGroup contentRoot;
+    private HoldemViewport compactViewport;
     private HoldemTableViewState settlementFrame;
     private ValueAnimator settlementAnimator;
 
@@ -71,8 +74,8 @@ final class HoldemTableView {
         var policy = new TableViewportPolicy(viewport.screenHeightDp, viewport.fontScale);
         boolean compact = policy.isCompact() || viewport.screenWidthDp < 340 || names.size() == 2;
         LinearLayout root = views.gamePage();
-        var scroll = new ScrollView(activity);
-        scroll.setFillViewport(true);
+        var scroll = new HoldemViewport(views);
+        compactViewport = compact ? scroll : null;
         root.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT));
         var content = new LinearLayout(activity);
@@ -280,8 +283,10 @@ final class HoldemTableView {
         String required = metric(suggestion.explanation(), "required=");
         String uncertainty = metric(suggestion.explanation(), "se=");
         String samples = metric(suggestion.explanation(), "samples=");
-        target.setText(text.get(R.string.ai_hint, action, equity, price, required,
-                suggestion.policyVersion(), samples, uncertainty));
+        target.setText(compactViewport == null
+                ? text.get(R.string.ai_hint, action, equity, price, required,
+                        suggestion.policyVersion(), samples, uncertainty)
+                : text.get(R.string.ai_hint_compact, action, equity, price));
         target.setContentDescription(text.get(R.string.ai_hint_description, action, equity, price, required,
                 suggestion.policyVersion(), samples, uncertainty));
     }
@@ -366,40 +371,23 @@ final class HoldemTableView {
 
     private View withOpponentCards(View seatView, HoldemTableViewState.Seat seat, boolean compact, boolean human,
                                    int physicalSeat, boolean complete, HoldemTableViewState frame) {
-        if (human || !seat.dealtCards()) return seatView;
+        if (!HoldemTablePresentation.showOpponentCards(complete, human, seat)) return seatView;
         var group = new LinearLayout(views.activity());
         group.setOrientation(LinearLayout.VERTICAL);
         group.setGravity(Gravity.CENTER_HORIZONTAL);
         group.addView(seatView, views.matchWrap());
         var cards = new LinearLayout(views.activity());
         cards.setGravity(Gravity.CENTER);
-        int height = complete ? HoldemTablePresentation.terminalCardHeightDp(compact) : compact ? 24 : 32;
-        if (seat.shownCards().size() == 2) {
-            for (int index = 0; index < seat.shownCards().size(); index++) {
-                Card card = seat.shownCards().get(index);
-                TextView view = addCard(cards, card, height, R.string.opponent_cards,
-                        HoldemTablePresentation.opponentCardTag(physicalSeat, index));
-                if (HoldemTablePresentation.isWinningCard(frame, physicalSeat, card))
-                    highlightWinningCard(view, card, height);
-            }
-        } else {
-            addCardBack(cards, height);
-            addCardBack(cards, height);
+        int height = HoldemTablePresentation.terminalCardHeightDp(compact);
+        for (int index = 0; index < seat.shownCards().size(); index++) {
+            Card card = seat.shownCards().get(index);
+            TextView view = addCard(cards, card, height, R.string.opponent_cards,
+                    HoldemTablePresentation.opponentCardTag(physicalSeat, index));
+            if (HoldemTablePresentation.isWinningCard(frame, physicalSeat, card))
+                highlightWinningCard(view, card, height);
         }
         group.addView(cards, views.matchWrap());
         return group;
-    }
-
-    private void addCardBack(LinearLayout row, int height) {
-        var back = views.text("✦", 11, Color.WHITE, true);
-        back.setGravity(Gravity.CENTER);
-        back.setIncludeFontPadding(false);
-        back.setBackground(views.roundedBackground(0xff365f91, 0xffd5dfed, 5));
-        back.setContentDescription(text.get(R.string.hidden_player_card));
-        var metrics = CardFaceMetrics.atHeight(height);
-        var box = new LinearLayout.LayoutParams(views.dp(metrics.widthDp()), views.dp(metrics.heightDp()));
-        box.setMargins(views.dp(1), views.dp(1), views.dp(1), views.dp(1));
-        row.addView(back, box);
     }
 
     private View sharedTable(List<View> seats, View center, TableViewportPolicy policy) {
@@ -596,6 +584,7 @@ final class HoldemTableView {
         var box = new LinearLayout.LayoutParams(views.dp(metrics.widthDp()), views.dp(metrics.heightDp()));
         box.setMargins(views.dp(2), views.dp(4), views.dp(2), views.dp(2));
         row.addView(cell, box);
+        if (compactViewport != null) compactViewport.fitCard(cell, height);
         return cell;
     }
 
@@ -702,6 +691,14 @@ final class HoldemTableView {
                 if (sized) requestAmount(title, option, compact, submit);
                 else submit.test(new LocalHoldemGame.Move(option.type(), option.amount()));
             }, primary, 14);
+            // Inset the background while the shared Button keeps its full touch bounds.
+            int left = button.getPaddingLeft();
+            int top = button.getPaddingTop();
+            int right = button.getPaddingRight();
+            int bottom = button.getPaddingBottom();
+            button.setBackground(new InsetDrawable(button.getBackground(), 0f,
+                    DECISION_BACKGROUND_VERTICAL_INSET, 0f, DECISION_BACKGROUND_VERTICAL_INSET));
+            button.setPadding(left, top, right, bottom);
             if (compact) {
                 button.setPadding(views.dp(4), 0, views.dp(4), 0);
                 button.setIncludeFontPadding(false);

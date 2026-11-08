@@ -102,11 +102,11 @@
     <string name="hand_straight_flush">Chintă de culoare</string>
     <string name="ai_thinking">Coach-ul AI evaluează decizia…</string>
     <string name="ai_hint">AI %5$s sugerează %1$s · echitate %2$s · preț pot %3$s · prag %4$s · n=%6$s · ±%7$s</string>
+    <string name="ai_hint_compact">AI · %1$s · echitate %2$s · preț pot %3$s</string>
     <string name="ai_hint_description">Politica %5$s sugerează %1$s. Echitate estimată %2$s. Preț pot %3$s. Echitate necesară %4$s. Eșantioane %6$s. Eroare standard %7$s.</string>
     <string name="ai_finish_hand">Lasă AI-ul să termine mâna</string>
     <string name="ai_playing">AI-ul joacă această mână…</string>
     <string name="ai_action_error">AI-ul nu a putut termina mâna. Poți continua jocul curent.</string>
-    <string name="hidden_player_card">Carte a jucătorului, cu fața în jos</string>
     <string name="opponent_cards">Cărțile jucătorului</string>
     <string name="post_game_review">Cărțile din ultima mână · recapitulare</string>
     <string name="no_cards_in_last_hand">Nu a primit cărți în această mână</string>

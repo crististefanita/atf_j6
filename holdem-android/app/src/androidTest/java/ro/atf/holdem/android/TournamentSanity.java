@@ -5,6 +5,8 @@ import android.app.Instrumentation;
 import android.app.UiAutomation;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
+import android.graphics.drawable.InsetDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -110,6 +112,16 @@ public final class TournamentSanity extends Instrumentation {
         Activity activity = openTournament();
         try {
             see("Opening hand", "Hand 1 · Preflop");
+            see("The first preflop decision is available", "Call · 20");
+            capture("01b-opening-preflop");
+            countDescriptions("The opening shows neither opponent card backs nor opponent faces",
+                    "Face-down player card", 0);
+            countDescriptions("Opponent faces are hidden before settlement", "Player cards ·", 0);
+            countDescriptions("The player sees exactly their two hole cards", "Your hand ·", 2);
+            checkCollapsedViewport(activity, "The opening table fits without page scrolling");
+            checkOpeningControls(activity);
+            tap("Raise");
+            tap("Close");
             tap("Call · 20");
             see("First hand reaches the flop", "Hand 1 · Flop");
             capture("01-call-ledger-visible");
@@ -130,6 +142,7 @@ public final class TournamentSanity extends Instrumentation {
             see("First hand settles before offering another deal", "Hand 1 · Settled");
             see("First hand pot is paid", "Pot paid · 80");
             capture("01-hand-one-settled");
+            checkCollapsedViewport(activity, "The settled table fits without page scrolling");
             SystemClock.sleep(1800);
             countDescriptions("All three opponents' cards remain after the payout effect", "Player cards ·", 6);
             checkTerminalCardSizes();
@@ -175,6 +188,45 @@ public final class TournamentSanity extends Instrumentation {
         } finally {
             runOnMainSync(activity::finish);
         }
+    }
+
+    private void checkOpeningControls(Activity activity) throws Exception {
+        var sizes = new ArrayList<String>();
+        var invalid = new ArrayList<String>();
+        runOnMainSync(() -> {
+            var root = activity.getWindow().getDecorView();
+            int minimum = Math.round(48 * activity.getResources().getDisplayMetrics().density);
+            for (String tag : List.of("FOLD", "CALL", "RAISE", "ALL_IN")) {
+                var view = root.findViewWithTag(tag);
+                if (view == null || !(view.getBackground() instanceof InsetDrawable inset)) {
+                    invalid.add(tag + " missing compact background");
+                    continue;
+                }
+                int height = view.getHeight();
+                int visible = inset.getDrawable().getBounds().height();
+                sizes.add(tag + " " + visible + "/" + height + " px");
+                var visibleBounds = new Rect();
+                if (!view.isClickable() || !view.getGlobalVisibleRect(visibleBounds)
+                        || visibleBounds.width() < minimum || visibleBounds.height() < minimum
+                        || Math.abs(visible - height * .75) > 2) invalid.add(tag);
+            }
+        });
+        check("Opening action buttons retain their tap bounds with shorter backgrounds",
+                "Fold, Call, Raise and All-in have at least 48 dp touch bounds and 75% visual height",
+                String.join(", ", sizes) + (invalid.isEmpty() ? "" : " · invalid " + invalid), invalid.isEmpty());
+    }
+
+    private void checkCollapsedViewport(Activity activity, String name) throws Exception {
+        boolean[] fits = {false};
+        runOnMainSync(() -> {
+            var root = activity.getWindow().getDecorView();
+            var viewport = root.findViewWithTag("holdem-game-viewport");
+            var history = root.findViewWithTag("betting-history-list");
+            fits[0] = viewport != null && history != null && !history.isShown()
+                    && !viewport.canScrollVertically(-1) && !viewport.canScrollVertically(1);
+        });
+        check(name, "collapsed history and no vertical scroll range",
+                fits[0] ? "collapsed history and no vertical scroll range" : "table has overflow or history is open");
     }
 
     private void loseOnTheOpeningAllIn() throws Exception {

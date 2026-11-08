@@ -19,6 +19,9 @@ import java.util.stream.Collectors;
 final class HoldemTablePresentation {
     private HoldemTablePresentation() { }
 
+    static final int FULL_CARD_SCALE = 100;
+    static final int MIN_CARD_SCALE = 70;
+
     record ActionRow(int ordinal, int physicalSeat, String player, Street street, BettingAction.Kind kind,
                      int amount, int totalContribution) { }
     record SeatFactStyle(int labelSp, int valueSp, int labelColor, int valueColor) { }
@@ -49,6 +52,17 @@ final class HoldemTablePresentation {
 
     static int terminalCardHeightDp(boolean compact) {
         return compact ? 56 : ro.cardtable.ui.hand.HandLayoutMetrics.cardHeightDp();
+    }
+
+    static boolean showOpponentCards(boolean complete, boolean viewer, HoldemTableViewState.Seat seat) {
+        return complete && !viewer && seat.dealtCards() && seat.shownCards().size() == 2;
+    }
+
+    static int fitCardScale(int viewportHeight, int preferredHeight, int minimumHeight) {
+        if (preferredHeight <= viewportHeight) return FULL_CARD_SCALE;
+        if (minimumHeight >= viewportHeight) return MIN_CARD_SCALE;
+        return MIN_CARD_SCALE + (int) ((long) (viewportHeight - minimumHeight)
+                * (FULL_CARD_SCALE - MIN_CARD_SCALE) / (preferredHeight - minimumHeight));
     }
 
     static SeatFactStyle seatFactStyle(boolean active, boolean compact) {

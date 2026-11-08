@@ -142,6 +142,7 @@ class PublishTournamentExtent {
                     List.of("Android API", "Window", "Density (dpi)", "Font scale", "Installed APK SHA-256", "Execution failure"),
                     List.of("Accessibility actions in order")));
             int captureIndex = 0;
+            var unusableCaptures = new ArrayList<String>();
             for (String name : captureNames) {
                 if (!name.matches("0[1-5][a-z]?-[a-z-]+\\.png")) throw new IllegalArgumentException("Unexpected capture name " + name);
                 var image = ImageIO.read(evidence.resolve(name).toFile());
@@ -150,6 +151,7 @@ class PublishTournamentExtent {
                 boolean seatMetrics = journey.equals("seat-metrics");
                 boolean usable = decodes && (!seatMetrics || hasImageDetail(image));
                 passed &= usable;
+                if (!usable) unusableCaptures.add(name);
                 String checkName = seatMetrics ? "Native screenshot shows a rendered frame" : "Native screenshot decodes";
                 String expected = seatMetrics ? "non-uniform raster" : "positive raster dimensions";
                 String observed = decodes && !usable ? "uniform raster · " + dimensions : dimensions;
@@ -163,6 +165,9 @@ class PublishTournamentExtent {
                         new ReportArtifactProfile.Assertions("UI validation", List.of(
                                 new ReportArtifactProfile.Comparison(checkName, usable))), status(usable)));
             }
+            if (!unusableCaptures.isEmpty())
+                checks.add(new AtfAssertion("Every native screenshot is usable", "no unusable captures",
+                        String.join(", ", unusableCaptures), false));
             String conclusion = contract.conclusion();
             phase.step(AtfGherkinKeyword.THEN, conclusion,
                     "Android native UI", null, checks, status(passed));

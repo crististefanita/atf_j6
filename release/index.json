@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.3.0",
-  "previousVersion": "0.2.2",
-  "changeClass": "COMPATIBLE_FEATURE",
-  "changeRationale": "Adaugă estimarea opțională a șansei de câștig în turneu, rafinează acțiunile mesei și repară revenirea la Call după editorul Raise.",
-  "state": "PREPARED",
+  "currentVersion": "0.3.1",
+  "previousVersion": "0.3.0",
+  "changeClass": "PATCH_FIX",
+  "changeRationale": "Corectează verificarea consultativă a referințelor locale din feedback și actualizează documentația pe baza sursei live.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.3.0"
+    "0.3.1"
   ]
 }

@@ -121,7 +121,8 @@ public final class TournamentSanity extends Instrumentation {
             checkCollapsedViewport(activity, "The opening table fits without page scrolling");
             checkOpeningControls(activity);
             tap("Raise");
-            tap("Close");
+            seeContains("Raise opens the amount editor", "Add now ·");
+            closeAmountEditor();
             tap("Call · 20");
             see("First hand reaches the flop", "Hand 1 · Flop");
             capture("01-call-ledger-visible");
@@ -188,6 +189,21 @@ public final class TournamentSanity extends Instrumentation {
         } finally {
             runOnMainSync(activity::finish);
         }
+    }
+
+    private void closeAmountEditor() throws Exception {
+        long deadline = SystemClock.uptimeMillis() + 4000;
+        do {
+            var candidates = collect(node -> node.isClickable() && "Close".equalsIgnoreCase(value(node.getText())));
+            if (!candidates.isEmpty() && candidates.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                check("Dismiss the amount editor", "click dispatched", "click dispatched");
+                actions.put("Close amount editor");
+                waitForIdleSync();
+                return;
+            }
+            SystemClock.sleep(80);
+        } while (SystemClock.uptimeMillis() < deadline);
+        check("Dismiss the amount editor", "click dispatched", "control unavailable");
     }
 
     private void checkOpeningControls(Activity activity) throws Exception {

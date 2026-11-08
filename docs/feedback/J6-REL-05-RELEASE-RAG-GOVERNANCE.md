@@ -1,7 +1,7 @@
 # J6-REL-05 — Context de impact release cu proveniență și guvernanță
 
 **Prioritate:** P1  
-**Stare:** Implementat parțial și testat offline; rularea completă pe un candidat curat `DRAFT` și tratarea conflictelor semantice rămân deschise.
+**Stare:** Verificat pe un candidat curat `DRAFT`. Detectarea conflictelor semantice rămâne deschisă.
 
 ## Constatare și rezultat
 
@@ -25,7 +25,7 @@ Fiecare fragment returnat poartă cale, titlu/heading, linii, hash-ul fișierulu
 
 Testele actuale demonstrează citări, proveniență, redactare și abținerea la context slab, dar nu verifică încă un caz cu documente contradictorii, feedback depășit față de cerințe sau link/ancoră eliminată. Clasarea lexicală nu poate decide care sursă are autoritate semantică; reviewer-ul trebuie să verifice citările. Corpusul nu indexează raportul Extent sau receipt-urile, care rămân probe evaluate separat de porțile deterministe.
 
-Codul de integrare este în runner, însă `Build-HoldemRelease.ps1` nu a fost executat cap-coadă în această rundă: sursa live este modificată și catalogul este `v0.1.1 PREPARED`, nu un candidat curat `DRAFT`. Următoarea ediție trebuie să exercite RAG-ul pe commitul ei real și să salveze contextul JSON plus digest-ul în qualification, fără să îl trateze drept rezultat de test.
+Runnerul a exercitat integrarea pe candidatul 0.2.0. Manifestul păstrează digestul contextului de impact separat de rezultatele testelor. [Manifestul de calificare](../../release/0.2.0/qualification.json)
 
 ## Referințe
 

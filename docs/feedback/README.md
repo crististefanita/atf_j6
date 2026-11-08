@@ -10,7 +10,7 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 
 1. **J6-REL-01 · P1 · Blocat extern:** pentru `v0.1.1`, downloadul API autentificat a trecut complet; cererile anonime directe au expirat fără status HTTP, deci nu există receipt public și catalogul rămâne `PREPARED`.
 2. **J6-REL-04 · P1 · Implementat; calificarea de ediție restantă:** 16/16 suite Maven (97 teste), 5/5 suite Android JVM (43 teste) și tournament E2E API 28 (64 aserțiuni, 8 capturi); rapoartele snapshotului sunt păstrate în TMP, iar calificarea unui `DRAFT` curat rămâne necesară.
-3. **J6-REL-05 · P1 · Implementat parțial:** retrieval-ul lexical cu citări și politica semver au teste, dar runnerul nu a fost încă rulat pentru un candidat curat; conflictele semantice și feedback-ul învechit nu sunt încă detectate automat.
+3. **J6-REL-05 · P1 · Verificat în calificare:** retrieval-ul lexical și politica de versiuni au rulat pe candidatul curat 0.2.0. Conflictele semantice și feedback-ul învechit rămân de detectat.
 4. **J6-AI-02 · P1 · Deschis:** politicile sunt încă euristice, iar modelul de range și evaluarea independentă nu justifică eticheta `Hard`.
 5. **J6-AI-04 · P1 · Deschis, exploratoriu:** ablația pereche are 16 seed-uri independente, sub pragul de 20 pentru fiecare mărime de masă; efectul nu justifică o pondere generală.
 6. **J6-UI-05 · P1 · 27/27 JVM, sanity API 28 trecut; acceptanță parțială:** Fold, reveal, coach, preluare locală și selectorul de blinduri există. Rămân evaluatorul kicker/board-play, invariabilitatea față de cărți ascunse, wiring-ul intervalului și verificările dedicate de accesibilitate/layout.
@@ -29,7 +29,7 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 | [J6-REL-02](J6-REL-02-README-VERSION-GOVERNANCE.md) | P2 | Rezolvat | Bloc comun cu două linkuri ordonate, sincronizat cu indexul; catalog/proces legate și stări `PREPARED`/`PUBLISHED` guvernate; fără checksum în README. |
 | [J6-REL-03](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) | P1 | Corectat; tournament și release-smoke trecute pe API 28 | Recomandarea AI folosea două metode Java de colecții indisponibile pe API-ul minim. |
 | [J6-REL-04](J6-REL-04-EXTENT-SUITE-COVERAGE.md) | P1 | Implementat; calificarea curată și Extent componentă curent restante | Snapshot: Maven 97/97, Android JVM 39/39, tournament API 28 58 aserțiuni / 8 capturi; raportul nativ este inspectat, catalogul rămâne `PREPARED`. |
-| [J6-REL-05](J6-REL-05-RELEASE-RAG-GOVERNANCE.md) | P1 | Implementat parțial; candidat curat și contradicții restante | Retrieval lexical read-only, citări/hash-uri, redactare și politică semver sunt testate; nu decide gate-ul și nu a trecut încă printr-un candidat real. |
+| [J6-REL-05](J6-REL-05-RELEASE-RAG-GOVERNANCE.md) | P1 | Verificat în calificare, contradicții restante | Retrieval-ul lexical consultativ păstrează citările și digestul în manifestul calificării. |
 | [J6-AI-01](J6-AI-01-LATE-POSITION.md) | P2 | Rezolvat | Fereastra de poziție omitea butonul și nu se adapta meselor scurtate. |
 | [J6-AI-02](J6-AI-02-STRATEGY-CALIBRATION.md) | P1 | Deschis | Stilurile sunt euristici; comparațiile mici nu justifică promovarea unei strategii Hard. |
 | [J6-AI-04](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) | P1 | Deschis | Ablație pereche pentru istoricul public; rezultatele rămân exploratorii și sub pragul de acceptare. |

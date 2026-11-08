@@ -228,7 +228,7 @@ final class HoldemTableView {
         for (var fact : facts) {
             var label = views.text(fact.label(), style.labelSp(), style.labelColor(), false);
             var value = views.text(fact.value(), style.valueSp(), style.valueColor(), true);
-            seat.addView(new SeatFactRow(label, value, views.dp(4)), views.matchWrap());
+            seat.addView(SeatFactRow.of(label, value), views.matchWrap());
         }
     }
 

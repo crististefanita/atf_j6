@@ -148,8 +148,8 @@
       },
       {
         "path": "README.md",
-        "bytes": 673,
-        "sha256": "963a62755ed71f5d0c336fa59c50cea107ee08cea073ab1ffbe63ac8c4964ead"
+        "bytes": 757,
+        "sha256": "6b630e025e663fbd4c8577c41114741681da74e3e6b6b1f3f0fed7f1dd21c065"
       },
       {
         "path": "release-notes.md",
@@ -158,8 +158,8 @@
       },
       {
         "path": "reports/README.md",
-        "bytes": 637,
-        "sha256": "e9c1bc5908f749b97db61a084e7627df834652417fdfec671af3d6ff94b6b28a"
+        "bytes": 737,
+        "sha256": "4b596789ffca22ef0bb7543d5f86b6d7e647bea06eb31a03f34fe33ce12d4f71"
       },
       {
         "path": "reports/maven-component-suites-extent.html",
@@ -180,7 +180,23 @@
         "path": "reports/android-release-smoke-extent.html",
         "bytes": 2613569,
         "sha256": "0ecc1fdb9e9a4e7cfca8e6280464f634be7c813559649f74a3a7bf4f7b5da036"
+      },
+      {
+        "path": "reports/J6ReleaseGovernance.html",
+        "bytes": 2419591,
+        "sha256": "522728a7e415629302830b20d28f78dd16264ab150755210c9077d33bc34d7f8"
       }
     ]
+  },
+  "authenticatedBrowserDownload": {
+    "verified": true,
+    "source": "Main README direct APK link in authenticated GitHub browser",
+    "readmeUrl": "https://github.com/crististefanita/atf_j6#jocul",
+    "readmeCommit": "17ce9fcfba68f9fa98e5a4549d6fd2125745f140",
+    "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.3.1/HoldemLab-0.3.1.apk",
+    "bytes": 794136,
+    "sha256": "b0efd3451eeaef5b0c0956b9ca68d76a348406889f892c728b3cd0fd4f0084a9",
+    "credentialMode": "authenticated GitHub browser",
+    "completedUtc": "2026-11-08T21:10:03.4011747Z"
   }
 }

@@ -162,6 +162,9 @@ try {
     if ($androidExtentExitCode -ne 0 -or !$androidTests -or $androidFailures) {
         throw 'Android JVM tests or suite coverage failed; inspect the audit Extent and android-components-extent.log.'
     }
+    $lint = [xml](Get-Content -Raw -LiteralPath (Join-Path $appRoot 'app/build/reports/lint-results-release.xml'))
+    $lintWarnings = @($lint.issues.issue | Where-Object severity -eq 'Warning' | ForEach-Object id)
+    if ($lintWarnings.Count) { throw "Release lint has unresolved warnings: $($lintWarnings -join ', ')" }
 
     $releaseApk = Join-Path $appRoot 'app/build/outputs/apk/release/app-release.apk'
     $sanityApk = Join-Path $appRoot 'app/build/outputs/apk/sanity/app-sanity.apk'
@@ -200,9 +203,6 @@ try {
     Get-ChildItem -LiteralPath (Join-Path $reports 'maven') -File -Filter '*.html' | ForEach-Object {
         Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $reports $_.Name)
     }
-    $lint = [xml](Get-Content -Raw -LiteralPath (Join-Path $appRoot 'app/build/reports/lint-results-release.xml'))
-    $lintWarnings = @($lint.issues.issue | Where-Object severity -eq 'Warning' | ForEach-Object id)
-    if ($lintWarnings.Count) { throw "Release lint has unresolved warnings: $($lintWarnings -join ', ')" }
     $tournament = Get-Content -Raw -LiteralPath (Join-Path $tournamentEvidence 'native.json') | ConvertFrom-Json
     $releaseSmoke = Get-Content -Raw -LiteralPath (Join-Path $releaseEvidence 'native.json') | ConvertFrom-Json
     $sanityHash = (Get-FileHash -LiteralPath $sanityApk -Algorithm SHA256).Hash.ToLowerInvariant()

@@ -1,6 +1,7 @@
 package ro.atf.holdem.android;
 
 import org.junit.Test;
+import ro.atf.holdem.core.ActionType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -131,6 +132,92 @@ public final class TournamentLeaderboardTest {
                         new TournamentLeaderboard.Placement("D", "D", 4))));
     }
 
+    @Test public void terminalCheckpointRecordsBeforeReplacementAndReopeningDoesNotCountAgain() throws Exception {
+        var storage = new MemoryStorage();
+        var sessions = new HoldemSessionRepository(new MemorySession());
+        var board = new TournamentLeaderboardRepository(storage);
+        var progress = new HoldemProgressStore(sessions, board);
+        var game = completedTournament();
+        var next = LocalHoldemGame.tournament(4, 2);
+
+        progress.checkpoint(game, false, "You");
+        assertEquals(java.util.Set.of(game.tournamentId()), board.load().completedTournamentIds());
+        assertFalse(sessions.load().resumed().showingResult());
+        assertEquals(1, storage.writes);
+
+        progress.start(game, next, "You");
+        progress.recordCompleted(game, "You");
+        assertEquals(next.tournamentId(), sessions.load().resumed().game().tournamentId());
+        assertEquals(java.util.Set.of(game.tournamentId()), board.load().completedTournamentIds());
+        assertEquals(100, board.load().top().get(0).points());
+        assertEquals(1, board.load().top().get(0).tournaments());
+        assertEquals(1, storage.writes);
+    }
+
+    @Test public void failedLeaderboardWritePreservesTerminalCheckpointUntilRetryCanReplaceIt() throws Exception {
+        var storage = new MemoryStorage();
+        var sessionStorage = new MemorySession();
+        var sessions = new HoldemSessionRepository(sessionStorage);
+        var board = new TournamentLeaderboardRepository(storage);
+        var progress = new HoldemProgressStore(sessions, board);
+        var game = completedTournament();
+        var next = LocalHoldemGame.tournament(4, 2);
+        storage.failWrites = true;
+
+        assertThrows(IOException.class, () -> progress.checkpoint(game, false, "You"));
+        assertEquals(game.tournamentId(), sessions.load().resumed().game().tournamentId());
+        assertThrows(IOException.class, () -> progress.start(null, next, "You"));
+        assertEquals(game.outcome(), sessions.load().resumed().game().outcome());
+        assertTrue(board.load().completedTournamentIds().isEmpty());
+
+        storage.failWrites = false;
+        var reopened = new HoldemProgressStore(new HoldemSessionRepository(sessionStorage), new TournamentLeaderboardRepository(storage));
+        sessionStorage.failWrites = true;
+        assertThrows(IOException.class, () -> reopened.start(null, next, "You"));
+        assertEquals(game.tournamentId(), sessions.load().resumed().game().tournamentId());
+        sessionStorage.failWrites = false;
+        reopened.start(null, next, "You");
+        assertEquals(next.tournamentId(), sessions.load().resumed().game().tournamentId());
+        assertEquals(java.util.Set.of(game.tournamentId()), board.load().completedTournamentIds());
+        assertEquals(1, storage.writes);
+    }
+
+    private static LocalHoldemGame completedTournament() {
+        var game = LocalHoldemGame.tournament(4, 1);
+        finishTournament(game);
+        return game;
+    }
+
+    @Test public void newGameRetriesTerminalCheckpointThatFailedBeforeScoring() throws Exception {
+        var storage = new MemoryStorage();
+        var sessionStorage = new MemorySession();
+        var sessions = new HoldemSessionRepository(sessionStorage);
+        var board = new TournamentLeaderboardRepository(storage);
+        var progress = new HoldemProgressStore(sessions, board);
+        var game = LocalHoldemGame.tournament(4, 1);
+        sessions.save(game, false);
+        finishTournament(game);
+        sessionStorage.failWrites = true;
+        assertThrows(IOException.class, () -> progress.checkpoint(game, false, "You"));
+        assertNull(sessions.load().resumed().game().outcome());
+        assertEquals(0, storage.writes);
+
+        var next = LocalHoldemGame.tournament(4, 2);
+        sessionStorage.failWrites = false;
+        progress.start(game, next, "You");
+        assertEquals(java.util.Set.of(game.tournamentId()), board.load().completedTournamentIds());
+        assertEquals(1, storage.writes);
+        assertEquals(next.tournamentId(), sessions.load().resumed().game().tournamentId());
+    }
+
+    private static void finishTournament(LocalHoldemGame game) {
+        var allIn = game.view().legalActions().stream()
+                .filter(option -> option.type() == ActionType.ALL_IN).findFirst().orElseThrow();
+        game.play(game.turn(), new LocalHoldemGame.Move(ActionType.ALL_IN, allIn.amount()));
+        for (int action = 0; action < 12 && game.hasPassiveTurn(); action++) game.advancePassiveAction(game.turn());
+        assertEquals(LocalHoldemGame.Outcome.LOST, game.outcome());
+    }
+
     private static List<TournamentLeaderboard.Placement> placements(int players, int... ranks) {
         var result = new ArrayList<TournamentLeaderboard.Placement>();
         for (int seat = 0; seat < players; seat++)
@@ -145,7 +232,22 @@ public final class TournamentLeaderboardTest {
     private static final class MemoryStorage implements TournamentLeaderboardStorage {
         private String content;
         private int writes;
+        private boolean failWrites;
         @Override public String read() { return content; }
-        @Override public void write(String encoded) { content = encoded; writes++; }
+        @Override public void write(String encoded) throws IOException {
+            if (failWrites) throw new IOException("Leaderboard write interrupted");
+            content = encoded;
+            writes++;
+        }
+    }
+
+    private static final class MemorySession implements HoldemSessionStorage {
+        private String content;
+        private boolean failWrites;
+        @Override public String read() { return content; }
+        @Override public void write(String encoded) throws IOException {
+            if (failWrites) throw new IOException("Checkpoint replacement interrupted");
+            content = encoded;
+        }
     }
 }

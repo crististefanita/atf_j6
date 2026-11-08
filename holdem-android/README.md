@@ -29,7 +29,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 
 - Nivelul blindurilor se calculează la început de mână. Un interval expirat și eliminările se aplică mâinii următoare.
 - Stivele se păstrează între mâinile turneului; dealerul și blindurile se mută numai printre locurile eligibile.
-- Clasamentul local acumulează punctele din turneele finalizate. Rezultatul folosește numele afișate la masă, iar redeschiderea lui nu punctează din nou același turneu.
+- Clasamentul local înregistrează turneul după salvarea stării terminale. ID-ul turneului împiedică punctarea repetată. Pornirea unei alte partide verifică întâi că rezultatul anterior a intrat în registru.
 - Fiecare acțiune acceptată se salvează într-un checkpoint privat, cu locul fizic al actorului și ordinea replay-ului.
 - La redeschidere, motorul reconstruiește și revalidează istoricul înainte de afișarea mesei. Se reiau mâna, turneul sau rezultatul confirmat.
 - O comandă acceptată în timpul decontării salvează direct următoarea mână sau rezultatul. Efectul poate amâna afișarea până la final. După pauză ori recreare se afișează destinația deja salvată, cu aceeași identitate de turneu.

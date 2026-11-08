@@ -60,6 +60,8 @@ public final class TournamentSanity extends Instrumentation {
             } else if (journey.equals("settlement-resume")) {
                 resumeNextHandDuringSettlement();
                 resumeResultDuringSettlement();
+            } else if (journey.equals("leaderboard-settlement")) {
+                recordBeforeOpeningResult();
             } else {
                 throw new IllegalArgumentException("Unknown Android sanity mode: " + journey);
             }
@@ -293,10 +295,56 @@ public final class TournamentSanity extends Instrumentation {
 
     private Activity openTournament() throws Exception {
         var activity = launchHoldem();
+        dealTournament();
+        return activity;
+    }
+
+    private void dealTournament() throws Exception {
         tap("Play a tournament");
         see("Setup opens with four seats", "4");
         tap("Deal cards");
-        return activity;
+    }
+
+    private void recordBeforeOpeningResult() throws Exception {
+        var activity = openTournament();
+        String finishedId;
+        var files = getTargetContext().getFilesDir();
+        var sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(files));
+        try {
+            tap("All-in · 2000");
+            see("Terminal table is visible before opening a result", "Hand 1 · Settled");
+            var settled = sessions.load().resumed();
+            check("Result screen has not opened", "terminal table",
+                    settled != null && settled.game().outcome() != null && !settled.showingResult() ? "terminal table" : "unexpected checkpoint");
+            finishedId = settled.game().tournamentId();
+            var board = new TournamentLeaderboardRepository(new AtomicFileTournamentLeaderboardStorage(files)).load();
+            check("Settled tournament is already recorded", "one completed tournament",
+                    board.completedTournamentIds().size() == 1 && board.completedTournamentIds().contains(finishedId)
+                            ? "one completed tournament" : "missing or duplicate tournament");
+            sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
+            actions.put("Back from terminal table without opening result");
+            see("Back leaves the terminal table at the home menu", "Hold’em Lab");
+            dealTournament();
+            see("A new tournament starts at hand one", "Hand 1 · Preflop");
+            var replacement = sessions.load().resumed();
+            check("New tournament replaced the settled checkpoint", "different tournament ID",
+                    replacement != null && !finishedId.equals(replacement.game().tournamentId()) ? "different tournament ID" : "checkpoint unchanged");
+        } finally {
+            runOnMainSync(activity::finish);
+            waitForIdleSync();
+        }
+        var fresh = launchHoldem();
+        try {
+            tap("Tournament leaderboard");
+            seeContains("Leaderboard keeps the unopened result once", "Points 100 · Tournaments 1");
+            var board = new TournamentLeaderboardRepository(new AtomicFileTournamentLeaderboardStorage(files)).load();
+            check("Reopened app keeps the original tournament ID once", "one original completed tournament",
+                    board.completedTournamentIds().size() == 1 && board.completedTournamentIds().contains(finishedId)
+                            ? "one original completed tournament" : "missing or duplicate tournament");
+            capture("01-leaderboard-after-new-game");
+        } finally {
+            runOnMainSync(fresh::finish);
+        }
     }
 
     private Activity launchHoldem() {

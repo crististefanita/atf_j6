@@ -41,6 +41,9 @@ class PublishTournamentExtent {
             "Result tap accepted during settlement", "Result persisted before reopening",
             "Fresh Activity opens the saved result directly", "Repeated result display records one tournament");
     private static final List<String> SETTLEMENT_CAPTURES = List.of("01-next-hand-restored.png", "02-result-restored.png");
+    private static final List<String> LEADERBOARD_ASSERTIONS = List.of(
+            "Result screen has not opened", "Settled tournament is already recorded", "New tournament replaced the settled checkpoint",
+            "Leaderboard keeps the unopened result once", "Reopened app keeps the original tournament ID once");
 
     private record Journey(String scenario, String description, String conclusion,
                            List<String> assertions, List<String> captures) { }
@@ -85,6 +88,8 @@ class PublishTournamentExtent {
                     "The device follows the tournament contract", TOURNAMENT_ASSERTIONS, TOURNAMENT_CAPTURES);
             case "settlement-resume" -> new Journey("SettlementResumeSanity", "Continue from a settled table during Activity interruption",
                     "The accepted continuation survives once", SETTLEMENT_ASSERTIONS, SETTLEMENT_CAPTURES);
+            case "leaderboard-settlement" -> new Journey("LeaderboardSettlementSanity", "Start another tournament from a settled table",
+                    "The unopened result stays in the leaderboard once", LEADERBOARD_ASSERTIONS, List.of("01-leaderboard-after-new-game.png"));
             default -> throw new IllegalArgumentException("Unknown native journey " + journey);
         };
         var checks = nativeChecks(receipt, contract.assertions());

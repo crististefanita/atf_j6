@@ -1,7 +1,8 @@
 # J6-UI-08 · Clasament cumulativ al turneelor
 
 **Prioritate:** P2  
-**Stare:** Implementat; componentele și un turneu nativ pe API 28 verifică sumarul, clasamentul și reîncărcarea activității. Restartul real al procesului și acceptanța vizuală pe alte viewport-uri rămân de calificat.  
+**Stare:** Înregistrarea la finalizare este rezolvată. Redenumirea profilului și restartul de proces rămân de calificat.
+
 **Domeniu:** statistici locale persistente pentru turnee Hold’em
 
 ## Problema observată în cod
@@ -40,4 +41,8 @@ puncte = rotunjire(100 × (N − rang_mediu) / (N − 1))
 
 ## Acceptanță rămasă
 
-Un restart real al procesului trebuie să confirme că rezultatul terminal nu se dublează și că redenumirea profilului păstrează totalul. Testul curent nu pretinde că a omorât și repornit procesul și nu califică toate viewport-urile. Nu se adaugă test online: registrul este local.
+Sanity-ul `leaderboard-settlement` pe API 28 a trecut 16 aserțiuni și o captură Extent. Turneul a intrat în registru pe masa terminală, înainte de deschiderea rezultatului. Proba a început alt turneu, a redeschis Activity și a găsit ID-ul inițial o singură dată, cu 100 de puncte pentru câștigător și contor 1.
+
+Componentele verifică reluarea după eșecul scrierii clasamentului sau al checkpoint-ului. Dacă registrul rămâne indisponibil, checkpoint-ul terminal se păstrează pentru retry înainte de pornirea altei partide.
+
+Rămân verificarea unui restart cu proces nou și actualizarea numelui vizibil după redenumirea profilului, cu același ID și același punctaj. [Strategia de testare](../testing/TEST_STRATEGY.md)

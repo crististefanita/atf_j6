@@ -43,6 +43,7 @@ public final class HoldemActivity extends Activity {
     private ScreenViews views;
     private HoldemSessionRepository sessions;
     private TournamentLeaderboardRepository leaderboard;
+    private HoldemProgressStore progress;
     private LocalHoldemGame game;
     private LocalHoldemGame resumableGame;
     private boolean romanian;
@@ -69,6 +70,7 @@ public final class HoldemActivity extends Activity {
         profile = getSharedPreferences("holdem-profile", MODE_PRIVATE);
         sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(getFilesDir()));
         leaderboard = new TournamentLeaderboardRepository(new AtomicFileTournamentLeaderboardStorage(getFilesDir()));
+        progress = new HoldemProgressStore(sessions, leaderboard);
         stablePlayerId();
         romanian = profile.getBoolean(LANGUAGE, false);
         views = new ScreenViews(this, tag -> tag, HoldemActivity::protect);
@@ -77,6 +79,14 @@ public final class HoldemActivity extends Activity {
                     this::navigateBack);
         }
         var saved = sessions.load();
+        if (saved.hasCheckpoint()) {
+            try {
+                progress.recordCompleted(saved.resumed().game(), displayName());
+            } catch (java.io.IOException | RuntimeException failure) {
+                android.util.Log.e("HoldemLab", "Could not recover the completed tournament", failure);
+                Toast.makeText(this, text(R.string.leaderboard_error), Toast.LENGTH_LONG).show();
+            }
+        }
         var legacy = state == null ? null : state.getBundle("training-hand");
         boolean restoreActive = state != null && (state.getBoolean("resume-active-session") || legacy != null);
         if (restoreActive && saved.hasCheckpoint()) showResumed(saved.resumed());
@@ -254,15 +264,21 @@ public final class HoldemActivity extends Activity {
 
     private void open(int size, int dealer, boolean tournament, int blindLevelMinutes) {
         long seed = newDealSeed();
-        game = tournament ? LocalHoldemGame.tournament(size, seed, blindLevelMinutes, stablePlayerId())
+        var next = tournament ? LocalHoldemGame.tournament(size, seed, blindLevelMinutes, stablePlayerId())
                 : new LocalHoldemGame(size, dealer, seed);
+        try {
+            progress.start(resumableGame, next, displayName());
+        } catch (java.io.IOException | RuntimeException failure) {
+            reportCheckpointFailure(failure);
+            return;
+        }
+        game = next;
         configuring = false;
         showingResult = false;
         aiBusy = false;
         autoFinishingHand = false;
         setupBlindIntervalPicker = null;
         resumableGame = game;
-        saveCheckpoint(game, false);
         showHand();
     }
 
@@ -320,13 +336,18 @@ public final class HoldemActivity extends Activity {
         return moves;
     }
 
-    private void saveCheckpoint(LocalHoldemGame current, boolean result) {
+    private TournamentLeaderboard.State saveCheckpoint(LocalHoldemGame current, boolean result) {
         try {
-            sessions.save(current, result);
+            return progress.checkpoint(current, result, displayName());
         } catch (java.io.IOException | RuntimeException failure) {
-            android.util.Log.e("HoldemLab", "Could not persist the current game checkpoint", failure);
-            Toast.makeText(this, text(R.string.checkpoint_error), Toast.LENGTH_LONG).show();
+            reportCheckpointFailure(failure);
+            return null;
         }
+    }
+
+    private void reportCheckpointFailure(Exception failure) {
+        android.util.Log.e("HoldemLab", "Could not persist game progress", failure);
+        Toast.makeText(this, text(R.string.checkpoint_error), Toast.LENGTH_LONG).show();
     }
 
     private void afterFirstFrame(Runnable action) {
@@ -482,27 +503,13 @@ public final class HoldemActivity extends Activity {
         settlementPending = false;
         showingResult = true;
         resumableGame = current;
-        saveCheckpoint(current, true);
+        var leaderboardState = saveCheckpoint(current, true);
         views.applyStandardWindowChrome();
         boolean won = current.outcome() == LocalHoldemGame.Outcome.WON;
         var page = views.page(null, text(won ? R.string.tournament_won : R.string.tournament_lost));
         var table = current.view();
         var names = displayNames(current);
         var physicalNames = HoldemTablePresentation.physicalSeatNames(table, names);
-        TournamentLeaderboard.State leaderboardState = null;
-        if (current.isTournament()) {
-            try {
-                var ranks = current.finishingRanks();
-                var placements = new ArrayList<TournamentLeaderboard.Placement>(ranks.size());
-                for (int seat = 0; seat < ranks.size(); seat++)
-                    placements.add(new TournamentLeaderboard.Placement(current.playerId(seat),
-                            physicalNames.get(seat), ranks.get(seat)));
-                leaderboardState = leaderboard.record(current.tournamentId(), placements).state();
-            } catch (java.io.IOException | RuntimeException failure) {
-                android.util.Log.e("HoldemLab", "Tournament result could not be recorded", failure);
-                Toast.makeText(this, text(R.string.leaderboard_error), Toast.LENGTH_LONG).show();
-            }
-        }
         views.addText(page, text(R.string.tournament_summary, current.handNumber(), table.seats().get(table.viewer()).stack()),
                 16, ScreenViews.MUTED, false, 10, 0);
         if (leaderboardState != null) addTournamentStandings(page, current, leaderboardState, physicalNames);

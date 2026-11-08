@@ -1,7 +1,7 @@
 #requires -Version 7.0
 param(
     [Parameter(Mandatory)][string]$RunRoot,
-    [ValidateSet('tournament','release-smoke','settlement-resume')][string]$Mode = 'tournament',
+    [ValidateSet('tournament','release-smoke','settlement-resume','leaderboard-settlement')][string]$Mode = 'tournament',
     [string]$Serial = '127.0.0.1:5555',
     [string]$Sdk = 'C:\tools\whist-android-sdk'
 )

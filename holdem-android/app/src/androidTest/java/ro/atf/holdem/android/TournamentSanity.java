@@ -113,13 +113,16 @@ public final class TournamentSanity extends Instrumentation {
             tap("Call · 20");
             see("First hand reaches the flop", "Hand 1 · Flop");
             capture("01-call-ledger-visible");
-            seeLatestAction("Latest action names the most recent player, move and running hand total",
-                    "Check", 0, "hand total 20");
+            checkSeatActionCount("Each player keeps a visible latest action under the seat", 4);
+            seeActionForPlayer("You", "Call", 20);
+            seeLatestAction("Latest seat action names the most recent player, move and running hand total",
+                    "Check", 0, "contribution 20");
+            tap("Hand history");
             scrollBackUntilVisible("#3 · You · Call +20");
             capture("01-betting-ledger-history");
             tap("Check");
             seeLatestAction("Check iteration identifies a player and its zero chip delta",
-                    "Check", 0, "hand total 20");
+                    "Check", 0, "contribution 20");
             see("First hand reaches the turn", "Hand 1 · Turn");
             tap("Check");
             see("First hand reaches the river", "Hand 1 · River");
@@ -183,10 +186,25 @@ public final class TournamentSanity extends Instrumentation {
             tap("Tournament result");
             see("Losing player sees the elimination result", "You were eliminated");
             see("Defeat summary reflects one hand and no chips", "Hands played · 1\nFinal stack · 0");
+            assertTournamentStandingsHavePlayerNames();
             capture("05-tournament-lost");
         } finally {
             runOnMainSync(activity::finish);
         }
+    }
+
+    private void assertTournamentStandingsHavePlayerNames() throws Exception {
+        var rows = collect(node -> value(node.getText()).startsWith("#")
+                && value(node.getText()).contains(" points"));
+        var observed = new ArrayList<String>(rows.size());
+        for (var row : rows) observed.add(value(row.getText()));
+        boolean named = observed.size() == 4 && observed.stream().allMatch(row -> {
+            int first = row.indexOf(" · ");
+            int second = first < 0 ? -1 : row.indexOf(" · ", first + 3);
+            return second > first && !row.substring(first + 3, second).trim().isEmpty();
+        });
+        check("Defeat standings keep a visible name for every physical player",
+                "four placement rows with nonblank player names", String.join("\n", observed), named);
     }
 
     private Activity openTournament() throws Exception {
@@ -225,12 +243,28 @@ public final class TournamentSanity extends Instrumentation {
         check(name, "visible text containing " + fragment, actual, !matches.isEmpty());
     }
 
+    private void checkSeatActionCount(String name, int expected) throws Exception {
+        int visibleBadges = collect(node -> value(node.getText()).matches("^#\\d+ · .+ \\+\\d+$")).size();
+        int accessibleSeats = collect(node -> value(node.getContentDescription()).contains(", Action #")).size();
+        check(name, Integer.toString(expected), Integer.toString(visibleBadges));
+        check("Each player exposes its latest action in the seat description",
+                Integer.toString(expected), Integer.toString(accessibleSeats));
+    }
+
+    private void seeActionForPlayer(String player, String action, int amount) throws Exception {
+        String marker = " · " + player + " · " + action + " +" + amount + " · ";
+        var matches = collect(node -> value(node.getContentDescription()).contains(", Action #")
+                && value(node.getContentDescription()).contains(marker));
+        check("Seat retains " + player + " · " + action + " +" + amount,
+                "one visible action badge for " + player, Integer.toString(matches.size()), matches.size() == 1);
+    }
+
     private void seeLatestAction(String name, String action, int amount, String total) throws Exception {
         long deadline = SystemClock.uptimeMillis() + 2500;
         List<AccessibilityNodeInfo> matches;
         do {
-            matches = collect(node -> value(node.getContentDescription()).startsWith("Action #")
-                    || value(node.getText()).startsWith("Action #"));
+            matches = collect(node -> value(node.getContentDescription()).contains(", Action #")
+                    || value(node.getText()).contains("Action #"));
             if (!matches.isEmpty()) break;
             SystemClock.sleep(80);
         } while (SystemClock.uptimeMillis() < deadline);
@@ -248,15 +282,34 @@ public final class TournamentSanity extends Instrumentation {
                     false);
             return;
         }
-        var node = matches.get(matches.size() - 1);
-        String actual = value(node.getContentDescription()).startsWith("Action #")
-                ? value(node.getContentDescription()) : value(node.getText());
+        AccessibilityNodeInfo node = null;
+        int latestOrdinal = -1;
+        for (var candidate : matches) {
+            String description = value(candidate.getContentDescription());
+            String candidateText = description.contains("Action #") ? description : value(candidate.getText());
+            int hash = candidateText.indexOf('#');
+            int separator = candidateText.indexOf(" · ", hash);
+            if (hash < 0 || separator < 0) continue;
+            try {
+                int ordinal = Integer.parseInt(candidateText.substring(hash + 1, separator));
+                if (ordinal > latestOrdinal) {
+                    latestOrdinal = ordinal;
+                    node = candidate;
+                }
+            } catch (NumberFormatException ignored) {
+                // Ignore non-action labels that happen to use the same prefix.
+            }
+        }
+        if (node == null) throw new AssertionError("Could not identify the latest per-seat action ordinal");
+        String description = value(node.getContentDescription());
+        String actual = description.contains("Action #") ? description : value(node.getText());
+        int detailStart = actual.indexOf("Action #");
         String actionMarker = " · " + action + " +" + amount;
-        int actionOffset = actual.indexOf(actionMarker);
-        int playerStart = actual.indexOf(" · ");
+        int playerStart = detailStart < 0 ? -1 : actual.indexOf(" · ", detailStart);
+        int actionOffset = playerStart < 0 ? -1 : actual.indexOf(actionMarker, playerStart + 3);
         String player = playerStart >= 0 && actionOffset > playerStart
                 ? actual.substring(playerStart + 3, actionOffset).trim() : "";
-        boolean hasPlayer = actual.startsWith("Action #") && !player.isBlank();
+        boolean hasPlayer = detailStart >= 0 && !player.isBlank();
         boolean hasTotal = actual.contains(total);
         check(name, "accessible latest action includes player, " + action + " +" + amount + " and " + total,
                 actual, hasPlayer && hasTotal);
@@ -266,15 +319,10 @@ public final class TournamentSanity extends Instrumentation {
         for (int attempt = 0; attempt < 8; attempt++) {
             if (!collect(node -> value(node.getText()).contains(fragment)
                     || value(node.getContentDescription()).contains(fragment)).isEmpty()) return;
-            boolean scrolled = false;
-            for (var node : collect(AccessibilityNodeInfo::isScrollable)) {
-                if (node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)) {
-                    waitForIdleSync();
-                    scrolled = true;
-                    break;
-                }
-            }
-            if (!scrolled) break;
+            var history = collect(node -> node.isScrollable()
+                    && value(node.getContentDescription()).equals("Hand history list"));
+            if (history.isEmpty() || !history.get(0).performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)) break;
+            waitForIdleSync();
         }
         seeContains("Scrollable betting ledger retains earlier player actions", fragment);
     }

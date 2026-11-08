@@ -105,6 +105,9 @@ final class HoldemTableView {
 
         var seatFrame = new PlayerSeatFrame(activity, compact);
         var seats = new ArrayList<View>(names.size());
+        var latestActions = HoldemTablePresentation.latestActionsByPhysicalSeat(frame, names);
+        int latestActionOrdinal = frame.bettingActions().isEmpty() ? -1
+                : frame.bettingActions().get(frame.bettingActions().size() - 1).ordinal();
         for (int display = 0; display < names.size(); display++) {
             int seat = frame.physicalSeat(display);
             var player = frame.seats().get(seat);
@@ -132,16 +135,21 @@ final class HoldemTableView {
                 roles.add(text.get(R.string.big_blind));
             }
             boolean active = HoldemTablePresentation.activeSeat(frame, seat);
+            var latestForSeat = latestActions.get(seat);
             String description = name + (roles.length() == 0 ? "" : ", " + roles)
                     + facts.stream().map(SeatContent.Fact::inlineText).collect(java.util.stream.Collectors.joining(", ", ", ", ""))
                     + (eliminated ? ", " + text.get(R.string.eliminated) : player.folded() ? ", " + text.get(R.string.folded) : "")
-                    + (active ? ", " + text.get(R.string.actor) : "");
+                    + (active ? ", " + text.get(R.string.actor) : "")
+                    + (latestForSeat == null ? "" : ", " + seatActionDescription(latestForSeat));
             String heading = HoldemTablePresentation.seatHeading(name, shortRoles.toString(), player.folded(),
                     eliminated, text.get(R.string.folded_badge), text.get(R.string.out_badge));
             if (compact && active) heading = "▸ " + heading;
             var seatContent = new SeatContent(seat, heading, List.of(), active, description);
-            var seatView = seatFrame.buildInlineFacts(seatContent, compact ? 1 : policy.seatVerticalPaddingDp());
+            var seatView = seatFrame.buildInlineFacts(seatContent,
+                    compact ? 1 : Math.max(0, policy.seatVerticalPaddingDp() - 1));
             addSeatFacts(seatView, facts, active, compact);
+            addSeatAction(seatView, latestForSeat,
+                    latestForSeat != null && latestForSeat.ordinal() == latestActionOrdinal, active, compact);
             if (player.folded() || eliminated) seatView.setAlpha(.65f);
             View framedSeat = compact ? seatView
                     : new PlayerSeatView(activity, seatView, text.get(R.string.actor), active, seat, false);
@@ -213,7 +221,7 @@ final class HoldemTableView {
         for (var fact : facts) {
             var row = new LinearLayout(views.activity());
             row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setPadding(0, views.dp(compact ? 0 : 1), 0, views.dp(compact ? 0 : 1));
+            row.setPadding(0, 0, 0, 0);
             var label = views.text(fact.label(), style.labelSp(), style.labelColor(), false);
             label.setSingleLine(true);
             label.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -227,6 +235,34 @@ final class HoldemTableView {
                     ViewGroup.LayoutParams.WRAP_CONTENT));
             seat.addView(row, views.matchWrap());
         }
+    }
+
+    private void addSeatAction(LinearLayout seat, HoldemTablePresentation.ActionRow row,
+                              boolean latest, boolean active, boolean compact) {
+        if (row == null) return;
+        var style = HoldemTablePresentation.seatActionStyle(compact, latest, active);
+        String label = text.get(R.string.seat_latest_action, row.ordinal(),
+                text.get(seatActionLabel(row.kind())), row.amount());
+        var badge = views.text(label, style.textSp(), style.textColor(), true);
+        badge.setTag("latest-seat-action:" + row.physicalSeat());
+        badge.setSingleLine(true);
+        badge.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        badge.setGravity(Gravity.CENTER);
+        badge.setPadding(views.dp(3), views.dp(1), views.dp(3), views.dp(1));
+        badge.setContentDescription(null);
+        badge.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        badge.setAccessibilityLiveRegion(latest
+                ? View.ACCESSIBILITY_LIVE_REGION_POLITE : View.ACCESSIBILITY_LIVE_REGION_NONE);
+        badge.setBackground(views.roundedBackground(style.backgroundColor(), style.borderColor(), 4));
+        var params = views.matchWrap();
+        params.topMargin = views.dp(1);
+        seat.addView(badge, params);
+    }
+
+    private String seatActionDescription(HoldemTablePresentation.ActionRow row) {
+        return text.get(R.string.seat_action_description, row.ordinal(), row.player(),
+                text.get(actionLabel(row.kind())), row.amount(), text.get(streetLabel(row.street())),
+                row.totalContribution());
     }
 
     void renderAdvice(TextView target, LocalHoldemGame.AiSuggestion suggestion) {
@@ -252,7 +288,7 @@ final class HoldemTableView {
 
     void addPostGameReview(ViewGroup parent, HoldemTableViewState frame, List<String> names,
                            LocalHoldemGame game) {
-        var title = views.text(text.get(R.string.post_game_review), 16, Color.WHITE, true);
+        var title = views.text(text.get(R.string.post_game_review), 16, ScreenViews.INK, true);
         title.setPadding(views.dp(4), views.dp(10), views.dp(4), views.dp(4));
         parent.addView(title, views.matchWrap());
         for (int display = 0; display < names.size(); display++) {
@@ -264,7 +300,7 @@ final class HoldemTableView {
                     : game.eliminated(physical) ? text.get(R.string.out_badge) : "";
             String name = status.isEmpty() ? names.get(display) : names.get(display) + " · " + status;
             var label = views.text(name, 13, seat.folded() || game.eliminated(physical)
-                    ? ScreenViews.MUTED : Color.WHITE, false);
+                    ? ScreenViews.MUTED : ScreenViews.INK, false);
             entry.addView(label, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
             String result = seat.handEvaluation() == null
                     ? seat.potWon() > 0 ? text.get(R.string.uncontested_win)
@@ -414,21 +450,6 @@ final class HoldemTableView {
         if (frame.actor() < 0) turn.setVisibility(View.GONE);
         turn.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         center.addView(turn, views.matchWrap());
-        var latestAction = HoldemTablePresentation.latestActionRow(frame, names);
-        if (latestAction != null) {
-            String message = text.get(R.string.latest_betting_action, latestAction.ordinal(), latestAction.player(),
-                    text.get(actionLabel(latestAction.kind())), latestAction.amount(),
-                    text.get(streetLabel(latestAction.street())), latestAction.totalContribution());
-            var lastMove = views.text(message, compact ? 11 : 13, 0xfff0d486, true);
-            lastMove.setTag("latest-betting-action");
-            lastMove.setContentDescription(message);
-            lastMove.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
-            lastMove.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-            lastMove.setGravity(Gravity.CENTER);
-            lastMove.setPadding(views.dp(8), views.dp(3), views.dp(8), views.dp(3));
-            lastMove.setBackground(views.roundedBackground(0x332f5277, 0x557ca8d8, 7));
-            center.addView(lastMove, views.matchWrap());
-        }
         var bestHand = views.text(bestHandLabel(frame), compact ? 11 : 13, Color.WHITE, true);
         bestHand.setGravity(Gravity.CENTER);
         center.addView(bestHand, views.matchWrap());
@@ -482,8 +503,13 @@ final class HoldemTableView {
         var section = new LinearLayout(views.activity());
         section.setOrientation(LinearLayout.VERTICAL);
         section.setPadding(views.dp(8), views.dp(2), views.dp(8), views.dp(2));
-        var title = views.text(text.get(R.string.betting_ledger_title), compact ? 10 : 11, ScreenViews.MUTED, true);
+        var title = views.text(text.get(R.string.betting_history_title), compact ? 10 : 11, ScreenViews.MUTED, true);
         title.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+        title.setTag("betting-history-toggle");
+        title.setClickable(true);
+        title.setFocusable(true);
+        title.setPadding(views.dp(4), views.dp(4), views.dp(4), views.dp(4));
+        title.setContentDescription(text.get(R.string.betting_history_show));
         section.addView(title, views.matchWrap());
         var entries = new LinearLayout(views.activity());
         entries.setOrientation(LinearLayout.VERTICAL);
@@ -503,6 +529,8 @@ final class HoldemTableView {
             entries.addView(line, views.matchWrap());
         }
         var history = new ScrollView(views.activity());
+        history.setTag("betting-history-list");
+        history.setContentDescription(text.get(R.string.betting_history_list_description));
         history.setFillViewport(false);
         history.setVerticalScrollBarEnabled(true);
         history.setNestedScrollingEnabled(true);
@@ -510,8 +538,16 @@ final class HoldemTableView {
                 ViewGroup.LayoutParams.WRAP_CONTENT));
         section.addView(history, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 views.dp(compact ? 92 : 116)));
+        history.setVisibility(View.GONE);
+        title.setOnClickListener(ignored -> {
+            boolean expanded = history.getVisibility() != View.VISIBLE;
+            history.setVisibility(expanded ? View.VISIBLE : View.GONE);
+            title.setContentDescription(text.get(expanded
+                    ? R.string.betting_history_hide : R.string.betting_history_show));
+            title.setSelected(expanded);
+            if (expanded) history.post(() -> history.fullScroll(View.FOCUS_DOWN));
+        });
         parent.addView(section, views.matchWrap());
-        history.post(() -> history.fullScroll(View.FOCUS_DOWN));
     }
 
     private int streetLabel(Street street) {
@@ -766,6 +802,14 @@ final class HoldemTableView {
             case BET -> R.string.bet;
             case RAISE -> R.string.raise;
             case ALL_IN -> R.string.all_in;
+        };
+    }
+
+    private static int seatActionLabel(BettingAction.Kind action) {
+        return switch (action) {
+            case SMALL_BLIND -> R.string.small_blind_short;
+            case BIG_BLIND -> R.string.big_blind_short;
+            case FOLD, CHECK, CALL, BET, RAISE, ALL_IN -> actionLabel(action);
         };
     }
 

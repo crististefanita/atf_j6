@@ -71,8 +71,14 @@
     <string name="turn_status">To act · %1$s</string>
     <string name="best_hand_waiting">Best hand · waiting for community cards</string>
     <string name="best_hand">Best · %1$s</string>
-    <string name="betting_ledger_title">Betting · action added / hand total</string>
-    <string name="latest_betting_action">Action #%1$d · %2$s · %3$s +%4$d\n%5$s · hand total %6$d</string>
+    <string name="betting_history_title">Hand history</string>
+    <string name="betting_history_show">Show the full hand betting history</string>
+    <string name="betting_history_hide">Hide the full hand betting history</string>
+    <string name="betting_history_list_description">Hand history list</string>
+    <string name="seat_latest_action">#%1$d · %2$s +%3$d</string>
+    <string name="seat_action_description">Action #%1$d · %2$s · %3$s +%4$d · %5$s · contribution %6$d</string>
+    <string name="small_blind_short">SB</string>
+    <string name="big_blind_short">BB</string>
     <string name="betting_ledger_entry">#%1$d · %2$s · %3$s +%4$d\n%5$s · total %6$d</string>
     <string name="ledger_small_blind">Small blind</string>
     <string name="ledger_big_blind">Big blind</string>

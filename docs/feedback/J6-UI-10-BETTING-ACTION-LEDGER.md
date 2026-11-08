@@ -1,46 +1,53 @@
-# J6-UI-10 · Jurnal lizibil al pariurilor
+# J6-UI-10 · Acțiunea recentă și istoricul pariurilor
 
 **Prioritate:** P1  
-**Stare:** Implementat și verificat pe API 28 pentru `Call`/`Check`; `Bet`/`Raise` au probe de componentă, iar traseul UI dedicat și matricea de viewport rămân de extins  
-**Domeniu:** istoric public al acțiunilor într-o mână locală
+**Stare:** Verificat pe Android API 28: 11/11 probe de componentă și 64/64 aserțiuni E2E trecute; matricea extinsă de viewport și TalkBack rămân de calificat
+**Domeniu:** vizibilitatea mutărilor publice din mâna curentă
 
-## Problema și progresul în cod
+## Problema
 
-Înaintea schimbării, chenarele arătau stiva și contribuția totală, iar motorul păstra acțiunile doar ca șiruri de istoric. Nu se putea urmări cine a făcut `bet`, `raise`, `call`, `check`, `fold` sau `all-in` la fiecare pas.
+Jucătorul trebuie să vadă imediat cine a făcut `bet`, `raise`, `call`, `check`, `fold` sau `all-in`, cât a adăugat și cum evoluează contribuțiile. Un indicator unic lângă masă nu leagă suficient de clar mutarea de locul care a făcut-o și ocupă spațiu util pe ecrane joase.
 
-Motorul expune acum un jurnal public structurat și validat față de contribuțiile fiecărui loc. Masa îl păstrează după decontare și accentuează separat ultima acțiune lângă board, ca să fie ușor de observat după fiecare actualizare. Rămân de verificat lizibilitatea pe viewport-uri compacte și cu TalkBack.
+## Soluția din codul live
 
-Rularea nativă API 28 verifică `Call` și acțiunile ulterioare `Check`: banda evidențiază actorul, tipul mutării, diferența (`+20` sau `+0`) și totalul mâinii, iar jurnalul păstrează ordinea. Probele de componentă acoperă și tipurile `Bet`/`Raise`, dar acestea nu au încă un traseu UI dedicat în sanity.
+Fiecare loc păstrează sub nume și valorile sale un indicator compact pentru cea mai recentă acțiune a acelui jucător. Indicatorul arată numărul mutării, tipul acțiunii și jetoanele adăugate la acea mutare. Accesibilitatea anunță și jucătorul, strada și contribuția cumulată. Cea mai recentă acțiune a mâinii primește un accent discret.
 
-## Contractul cerut
+Istoricul complet rămâne disponibil într-o secțiune derulabilă, ascunsă inițial și deschisă la cerere. Fiecare rând păstrează ordinea motorului, locul fizic, strada, acțiunea, diferența adăugată și contribuția cumulată. Astfel, interfața arată rapid starea fiecărui loc, iar istoricul păstrează traseul complet fără să ocupe permanent zona jocului.
 
-- Fiecare mutare acceptată este o înregistrare structurată și imuabilă cu numărul ordinii, strada (`Preflop`, `Flop`, `Turn`, `River`), locul fizic, tipul acțiunii, jetoanele adăugate prin acea acțiune și contribuția cumulată a acelui loc după mutare.
-- `Small blind` și `Big blind` apar ca postări inițiale. `Check` și `Fold` arată `0` adăugat; `Call`, `Bet`, `Raise` și `All-in` arată exact schimbarea stivei produsă de acțiunea validată, nu suma-țintă interpretată ca diferență.
-- Ordinea este aceeași cu ordinea acceptării de către motor. Acțiunile respinse, rezultatele AI expirate și tap-urile duplicate nu intră în jurnal. Schimbarea străzii nu șterge rândurile mâinii curente.
-- Masa arată un jurnal discret în timpul mâinii și după decontare. Lista completă este derulabilă în interior; cea mai nouă acțiune este adusă la vedere după fiecare mutare.
-- Fiecare rând arată numărul mutării, jucătorul mapat la locul fizic, strada, acțiunea, suma adăugată și totalul cumulativ după acea acțiune. Nu folosiți numai culoare, simbol sau numărul total al potului.
-- Ultima mutare apare și într-un sumar fix lângă masă, cu accent vizual și anunțarea accesibilă a actualizării; lista derulabilă rămâne registrul complet.
-- Jurnalul păstrează ordinea motorului, distinge Fold/Out, este localizat și accesibil. În recapitularea terminală poate fi consultat până la `New hand`.
-- Starea poate fi derivată sau salvată în checkpoint astfel încât replay-ul determinist reconstruiește exact același jurnal. Jurnalul nu expune pachetul, seed-ul ori cărți ascunse în timpul mâinii.
+Chenarele folosesc text mai mic, spațiere verticală redusă și etichete scurte pentru blinduri. În timpul deciziei jucătorului uman, coach-ul rămâne locul pentru recomandare, equity estimată, pot odds, prag, numărul de eșantioane și incertitudine. Interfața nu afișează probabilități individuale inventate pentru adversari: acestea cer range-uri condiționate de acțiuni publice și calibrare, care sunt încă limitări cunoscute ale modelului din [J6-AI-02](J6-AI-02-STRATEGY-CALIBRATION.md).
 
-## Teste de componentă necesare
+Această alegere de interacțiune este o sinteză, nu o regulă impusă de un singur produs: unele interfețe leagă ultima acțiune de jucător, iar istoricul complet este oferit separat. Referințe: [DD Poker — game board](https://static.ddpoker.com/gamehelp/help/gameboard.html), [PokerStars — table appearance](https://www.pokerstars.com/help/articles/table-appearance-feature/232136/) și [ACR — navigarea istoricului la masă](https://faq.acrpoker.eu/gameplay/tables-features/how-to-navigate-the-player-table/).
 
-- Pentru fiecare tip de acțiune, suma din jurnal este egală cu scăderea stivei produsă de motor. `Check`/`Fold` adaugă zero; blindurile sunt rânduri distincte.
-- După fiecare acțiune, `cumulativeContribution` este egală cu contribuția reală a acelui loc și este monotonă pe parcursul mâinii. Suma contribuțiilor reconciliază potul înainte de settlement.
-- Secvențele `bet → raise → call`, raise scurt, all-in, fold și acțiuni pe toate cele patru străzi verifică actorul, ordinea și textul de prezentare. Acțiunile ilegale nu schimbă jurnalul.
-- Replay-ul unei mâini și restaurarea checkpoint-ului produc jurnal byte-for-byte identic. Un rezultat asincron învechit sau o comandă repetată nu adaugă al doilea rând.
-- Numărul ordinii este consecutiv și stabil, iar fiecare rând este imuabil; contribuția per jucător nu scade între acțiuni.
-- Sumarul ultimei mutări selectează exact ultimul eveniment ordonat și arată jucătorul, tipul, suma adăugată, strada și totalul cumulativ; sunt verificate toate tipurile, inclusiv `fold`, `check` și `all-in`.
-- Proiecția leagă fiecare ID fizic de numele vizual corect la 2/4/5/6 locuri. Layout-ul derulabil trece română/engleză, nume lungi, font mărit și TalkBack fără trunchiere ori intersectare.
-- În timpul jocului, rândurile nu conțin cărți private adverse sau informații de rezultat viitor. După settlement, jurnalul rămâne disponibil alături de cărțile dezvăluite până la acțiunea explicită.
+## Contractul comportamental
 
-## E2E minim după trecerea componentelor
+- Jurnalul este o listă imuabilă și ordonată de acțiuni acceptate de motor; fiecare intrare conține ordinea, locul fizic, strada, tipul, suma adăugată și contribuția cumulată.
+- La fiecare loc este vizibilă ultima acțiune proprie, chiar dacă alt jucător a acționat între timp. Un jucător fără acțiune în mâna curentă nu primește un indicator gol sau înșelător.
+- Diferența de jetoane exprimă schimbarea produsă de acea acțiune. `Check` și `Fold` adaugă zero; blindurile sunt mutări distincte; `Call`, `Bet`, `Raise` și `All-in` nu confundă suma țintă cu diferența efectivă.
+- Istoricul extins este localizat, derulabil, ordonat și disponibil până la pornirea mâinii următoare. Deschiderea lui aduce cele mai noi intrări la vedere.
+- Identitatea acțiunii este accesibilă independent de culoare și poziție. Eticheta vizuală rămâne scurtă; descrierea accesibilă include jucătorul, strada și contribuția cumulată.
+- Jurnalul nu dezvăluie cărți adverse, seed-ul sau informații despre rezultate viitoare. După decontare, istoricul poate fi consultat lângă cărțile dezvăluite.
 
-Traseul UI calificat execută `call` și verifică iterațiile `check` produse pe străzile următoare; aserțiunile accesibile confirmă jucătorul, acțiunea, diferența de jetoane și totalul mâinii. Capturile surprind sumarul ultimei mutări și istoricul derulabil. `Bet`/`Raise` și acțiunile fără contribuție sunt acoperite de componente; următoarea extindere UI trebuie să inițieze un `Bet` sau `Raise` real și să confirme `Call`-ul următor.
+## Probe existente
 
-## Rezultatul verificării native
+- Proiecția mapează acțiunile după locul fizic, inclusiv după rotația locurilor afișate.
+- Componenta verifică `small blind`, `big blind`, `call`, `raise`, `fold`, `check`, `bet` și `all-in`, ordinea istorică și suma cumulată.
+- Componenta verifică faptul că fiecare loc păstrează ultima sa mutare și că ultima mutare globală primește stilul accentuat.
+- Componenta verifică ierarhia redusă a textului și valorilor pentru chenarele compacte și obișnuite.
+- Verificarea locală curentă: `HoldemTablePresentationComponentTest` **11/11 PASS**; `compileSanityAndroidTestJavaWithJavac` **PASS**.
 
-- Android API 28, 392 × 626 dp, font scale 1.0: **58/58 aserțiuni PASS**, **8 capturi native**.
-- Traseul a confirmat `Call +20`, `Check +0`, actorul afișat în banda ultimei mutări și păstrarea istoricului. Hash-ul APK-ului testat: `08f1c4a11ace06059fee2e22d0d7d7e19a2e6a81cea962ff0186f8880dc249bc`.
-- Rularea nativă, raportul Extent și capturile sunt păstrate în rădăcina externă de dovezi; sursele și artefactele nu sunt amestecate.
-- Limită: nu reprezintă acceptanță pentru toate dimensiunile ecranului, TalkBack, fonturi mărite sau un traseu UI complet `Bet → Raise → Call`.
+## Rezultatul verificării UI
+
+- Android API 28, fereastră **392 × 626 dp**, font scale 1.0: **64/64 aserțiuni PASS**, **8 capturi native**.
+- E2E-ul confirmă patru indicatoare vizibile, patru descrieri accesibile per loc, acțiunea `Call +20` la locul uman, ultima mutare `Check +0`, extinderea istoricului și derularea până la mutările inițiale.
+- Același traseu continuă până la decontare și parcurge fluxul de turneu; raportul autonom Extent încorporează capturile native inline și a trecut inspecția publisherului.
+- APK sanity: `39353f18940e6d407ffadd4242fbf598fa483b0d892454851c8ca22bf3ddaa7f`.
+- Extent, receipt și PNG-urile sunt în `C:\Users\Cristi\AppData\Local\Temp\j6-live-final6-20261108\`; raportul E2E este `reports\android-tournament-extent.html`. Rularea nu a fost promovată în `release/0.1.1`.
+- Componenta curentă: **11/11 PASS**; compilarea `:app:compileSanityAndroidTestJavaWithJavac` și asamblarea sanity trec.
+
+Raportul anterior cu 58 de aserțiuni valida un sumar central și nu califică aranjamentul per loc. El nu este folosit pentru această acceptanță.
+
+## Acceptanță UI rămasă
+
+1. Verifică viewport-uri joase și nume lungi în română și engleză; textul vizibil nu trebuie să se suprapună cu stiva, acțiunile sau cărțile.
+2. Verifică TalkBack: fiecare indicator este anunțat o singură dată cu locul, mutarea și totalul cumulativ; deschiderea istoricului este anunțată ca acțiune disponibilă.
+3. Păstrează separat testul unui `Bet → Raise → Call` UI real; verificările curente de componentă acoperă tipurile și proiecția, nu înlocuiesc traseul UI.

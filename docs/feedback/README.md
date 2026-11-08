@@ -9,7 +9,7 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 ## Ordinea curentă
 
 1. **J6-REL-01 · P1 · Blocat extern:** pentru `v0.1.1`, downloadul API autentificat a trecut complet; cererile anonime directe au expirat fără status HTTP, deci nu există receipt public și catalogul rămâne `PREPARED`.
-2. **J6-REL-04 · P1 · Implementat; calificarea de ediție restantă:** 16/16 suite Maven (97 teste), 5/5 suite Android JVM (39 teste) și tournament E2E API 28 (58 aserțiuni, 8 capturi); rapoartele componentă pentru snapshotul candidat și un `DRAFT` curat rămân necesare.
+2. **J6-REL-04 · P1 · Implementat; calificarea de ediție restantă:** 16/16 suite Maven (97 teste), 5/5 suite Android JVM (43 teste) și tournament E2E API 28 (64 aserțiuni, 8 capturi); rapoartele snapshotului sunt păstrate în TMP, iar calificarea unui `DRAFT` curat rămâne necesară.
 3. **J6-REL-05 · P1 · Implementat parțial:** retrieval-ul lexical cu citări și politica semver au teste, dar runnerul nu a fost încă rulat pentru un candidat curat; conflictele semantice și feedback-ul învechit nu sunt încă detectate automat.
 4. **J6-AI-02 · P1 · Deschis:** politicile sunt încă euristice, iar modelul de range și evaluarea independentă nu justifică eticheta `Hard`.
 5. **J6-AI-04 · P1 · Deschis, exploratoriu:** ablația pereche are 16 seed-uri independente, sub pragul de 20 pentru fiecare mărime de masă; efectul nu justifică o pondere generală.
@@ -19,7 +19,7 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 9. **J6-UI-04 · P2 · Implementare parțială:** motorul și locurile separă `Won` de `Returned`; mai lipsesc verificarea E2E a cazurilor de decontare și acceptanța vizuală.
 10. **J6-UI-08 · P2 · API 28 verificat parțial:** modelul și repository-ul au probe JVM; sanity-ul nativ verifică sumarul, clasamentul și reîncărcarea activității. Restartul real al procesului și redenumirea profilului rămân neverificate.
 11. **J6-UI-09 · P2 · Implementare parțială:** etichetele `Stack`, `Committed`, `Won` și `Returned` sunt secundare față de valori; mai lipsesc verificarea de viewport și TalkBack.
-12. **J6-UI-10 · P1 · API 28 trecut pentru `Call`/`Check`:** banda accentuează actorul și ultima mutare; jurnalul păstrează acțiunea, diferența de jetoane și contribuția cumulată. `Bet`/`Raise` au probe de componentă; traseul UI dedicat și matricea viewport/A11y rămân de extins.
+12. **J6-UI-10 · P1 · Verificat pe API 28:** fiecare loc arată ultima sa acțiune sub nume, iar istoricul complet este derulabil și ascuns inițial. Componentele trec 11/11; sanity-ul nativ trece 64/64 cu 8 capturi. Viewport-urile joase, TalkBack și traseul UI real `Bet → Raise → Call` rămân de calificat.
 
 `J6-REL-01` cere acțiunea proprietarului contului și nu se rezolvă prin redenumirea asset-ului sau schimbarea rutelor. Celelalte priorități sunt lucru de produs și cod.
 
@@ -43,4 +43,4 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 | [J6-UI-07](J6-UI-07-SHOWDOWN-WIN-CLARITY.md) | P1 | Implementare parțială; acceptanță restantă | Evaluatorul expune cele cinci cărți; dimensiunile sunt comune, iar premiul și restituirea au destinații distincte. |
 | [J6-UI-08](J6-UI-08-TOURNAMENT-LEADERBOARD.md) | P2 | Componente și sanity API 28 trecute; restart de proces restant | Turneul nativ verifică sumarul, clasamentul și reîncărcarea activității; restartul real de proces și redenumirea profilului rămân necalificate. |
 | [J6-UI-09](J6-UI-09-SEAT-METRIC-HIERARCHY.md) | P2 | Implementare parțială; verificare viewport/A11y restantă | Valoarea are accent mai puternic decât eticheta; semantică și descriere completă păstrate. |
-| [J6-UI-10](J6-UI-10-BETTING-ACTION-LEDGER.md) | P1 | API 28 trecut pentru `Call`/`Check`; UI `Bet`/`Raise` și matrice viewport restante | Fiecare rând și sumar arată actorul, acțiunea, jetoanele adăugate și contribuția după mutare; componentele acoperă tipurile, E2E-ul verifică `Call` și `Check`. |
+| [J6-UI-10](J6-UI-10-BETTING-ACTION-LEDGER.md) | P1 | API 28 verificat; 11/11 componente și 63/63 E2E, 8 capturi | Ultima acțiune este afișată sub fiecare loc; istoricul cronologic complet se deschide la cerere. Rămân viewport-urile joase, TalkBack și traseul UI real `Bet → Raise → Call`. |

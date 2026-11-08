@@ -376,7 +376,7 @@ public final class HoldemActivity extends Activity {
         boolean automatedHumanTurn = autoFinishingHand && frame.actor() == frame.viewer() && !completed;
         settlementPending = completed;
         int seats = frame.seats().size();
-        var names = PlayerNames.forMatch(Math.max(3, seats), displayName(), seats).subList(0, seats);
+        var names = displayNames(current);
         int nextDealer = seats == 2 ? frame.bigBlind() : frame.dealer();
         var table = new HoldemTableView(views, this::text);
         TextView advice = table.show(frame, names, current, this::home, () -> {
@@ -512,6 +512,9 @@ public final class HoldemActivity extends Activity {
         views.applyStandardWindowChrome();
         boolean won = current.outcome() == LocalHoldemGame.Outcome.WON;
         var page = views.page(null, text(won ? R.string.tournament_won : R.string.tournament_lost));
+        var table = current.view();
+        var names = displayNames(current);
+        var physicalNames = HoldemTablePresentation.physicalSeatNames(table, names);
         TournamentLeaderboard.State leaderboardState = null;
         if (current.isTournament()) {
             try {
@@ -519,19 +522,16 @@ public final class HoldemActivity extends Activity {
                 var placements = new ArrayList<TournamentLeaderboard.Placement>(ranks.size());
                 for (int seat = 0; seat < ranks.size(); seat++)
                     placements.add(new TournamentLeaderboard.Placement(current.playerId(seat),
-                            leaderboardName(current, seat), ranks.get(seat)));
+                            physicalNames.get(seat), ranks.get(seat)));
                 leaderboardState = leaderboard.record(current.tournamentId(), placements).state();
             } catch (java.io.IOException | RuntimeException failure) {
                 android.util.Log.e("HoldemLab", "Tournament result could not be recorded", failure);
                 Toast.makeText(this, text(R.string.leaderboard_error), Toast.LENGTH_LONG).show();
             }
         }
-        var table = current.view();
         views.addText(page, text(R.string.tournament_summary, current.handNumber(), table.seats().get(table.viewer()).stack()),
                 16, ScreenViews.MUTED, false, 10, 0);
-        var names = PlayerNames.forMatch(Math.max(3, table.seats().size()), displayName(), table.seats().size())
-                .subList(0, table.seats().size());
-        if (leaderboardState != null) addTournamentStandings(page, current, leaderboardState);
+        if (leaderboardState != null) addTournamentStandings(page, current, leaderboardState, physicalNames);
         new HoldemTableView(views, this::text).addPostGameReview(page, table, names, current);
         views.addButton(page, text(R.string.play_again), "play-again", true, () -> {
             game = null;
@@ -563,7 +563,7 @@ public final class HoldemActivity extends Activity {
     }
 
     private void addTournamentStandings(android.widget.LinearLayout page, LocalHoldemGame current,
-                                        TournamentLeaderboard.State leaderboardState) {
+                                        TournamentLeaderboard.State leaderboardState, List<String> physicalNames) {
         views.addText(page, text(R.string.tournament_points), 14, ScreenViews.MUTED, true, 8, 2);
         var ranks = current.finishingRanks();
         for (int seat = 0; seat < ranks.size(); seat++) {
@@ -571,13 +571,13 @@ public final class HoldemActivity extends Activity {
             var entry = leaderboardState.entries().stream().filter(candidate -> candidate.playerId().equals(id))
                     .findFirst().orElse(null);
             if (entry != null) views.addText(page, text(R.string.tournament_standing, ranks.get(seat),
-                    leaderboardName(current, seat), entry.points()), 13, ScreenViews.INK, false, 3, 0);
+                    physicalNames.get(seat), entry.points()), 13, ScreenViews.INK, false, 3, 0);
         }
     }
 
-    private String leaderboardName(LocalHoldemGame current, int physicalSeat) {
-        return current.playerId(physicalSeat).equals(stablePlayerId())
-                ? displayName() : text(R.string.leaderboard_ai_name, physicalSeat + 1);
+    private List<String> displayNames(LocalHoldemGame current) {
+        int seats = current.view().seats().size();
+        return HoldemTablePresentation.playerNames(seats, displayName(), current.displayNameSeed());
     }
 
     private String stablePlayerId() {
@@ -602,7 +602,10 @@ public final class HoldemActivity extends Activity {
     }
 
     private String displayName() {
-        return profile.getString(NAME, text(R.string.you));
+        String name = profile.getString(NAME, null);
+        if (name == null) return text(R.string.you);
+        String trimmed = name.trim();
+        return trimmed.isEmpty() ? text(R.string.you) : trimmed;
     }
 
     // The in-app language picker ships both locales in one APK; the bundle policy below keeps translations together.

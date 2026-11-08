@@ -13,7 +13,8 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 
 - În timpul mâinii, jucătorul vede cele două cărți proprii, board-ul public și starea mesei; cărțile adverse sunt ascunse.
 - După decontare, recapitularea dezvăluie mâinile distribuite, inclusiv cele ale jucătorilor care au făcut fold. Eticheta `Fold` rămâne până la următoarea distribuire.
-- Masa indică permanent actorul curent și combinația proprie calculată din cărțile vizibile.
+- Masa indică actorul curent și combinația proprie calculată din cărțile vizibile. Sub fiecare jucător apar ultima mutare și jetoanele adăugate prin acea mutare.
+- `Istoric pariuri` deschide lista cronologică a mâinii, cu strada și contribuția cumulată pentru fiecare mutare. Istoricul poate fi consultat și după decontare, până la următoarea distribuire.
 - Coach-ul oferă o recomandare locală fără s-o aplice. `Let AI finish this hand` este o acțiune explicită pentru mâna locală și trimite mutări prin validarea motorului.
 - Profilul, limba și o sesiune întreruptă pot fi reluate din meniul principal.
 
@@ -28,6 +29,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 
 - Nivelul blindurilor se calculează la început de mână. Un interval expirat și eliminările se aplică mâinii următoare.
 - Stivele se păstrează între mâinile turneului; dealerul și blindurile se mută numai printre locurile eligibile.
+- Clasamentul local acumulează punctele din turneele finalizate. Rezultatul folosește numele afișate la masă, iar redeschiderea lui nu punctează din nou același turneu.
 - Fiecare acțiune acceptată se salvează într-un checkpoint privat, cu locul fizic al actorului și ordinea replay-ului.
 - La redeschidere, motorul reconstruiește și revalidează istoricul înainte de afișarea mesei. Se reiau mâna, turneul sau rezultatul confirmat.
 - Suspendarea invalidează callback-urile UI și oprește ceasul turneului; revenirea îl continuă din timpul salvat.
@@ -35,7 +37,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 ## Prezentarea mesei
 
 - `TurnPacing` programează câte o acțiune automată la 550 ms după primul cadru vizibil și verifică din nou tokenul turei înainte de aplicare.
-- `PlayerSeatFrame` comun marchează locul actorului fizic; la final, cărțile vizibile se colectează spre pot în 1,5 secunde.
+- `PlayerSeatFrame` marchează actorul. După decontare, masa păstrează cărțile vizibile până la următoarea comandă. Cele folosite în combinația câștigătoare sunt evidențiate, iar marcajul premiului se deplasează spre locurile care au câștigat din pot.
 - Pe ferestre înguste sau cu font mărit, locurile se rearanjează în jurul potului și al board-ului; conținutul dialogului de raise derulează separat de acțiuni.
 - Heads-up: dealerul postează small blind și acționează primul preflop; big blind-ul acționează primul după flop. [Poker TDA, regula 36-C](https://www.pokertda.com/view-poker-tda-rules/)
 

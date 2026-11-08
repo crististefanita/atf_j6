@@ -13,6 +13,31 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 public final class HoldemTablePresentationComponentTest {
+    @Test public void seededAiNamesStayStableWithinAMatchAndVaryAcrossMatchSeeds() {
+        for (int seats : List.of(2, 4, 5, 6)) {
+            var first = HoldemTablePresentation.playerNames(seats, "You", 0x1a2b3c4dL);
+            var replay = HoldemTablePresentation.playerNames(seats, "You", 0x1a2b3c4dL);
+            var otherMatch = HoldemTablePresentation.playerNames(seats, "You", 0x5e6f7081L);
+            assertEquals(seats, first.size());
+            assertEquals("You", first.get(0));
+            assertEquals("A resumed match keeps its aliases", first, replay);
+            assertEquals(seats, first.stream().distinct().count());
+            assertTrue("A new deal seed changes the randomized opponent lineup", !first.equals(otherMatch));
+        }
+    }
+
+    @Test public void displayNamesAreMappedToPhysicalSeatsBeforeLeaderboardRecording() {
+        var frame = frame(4, 2, false);
+        var displayNames = List.of("You", "Radu", "Mara", "Nora");
+        var physicalNames = HoldemTablePresentation.physicalSeatNames(frame, displayNames);
+
+        for (int display = 0; display < displayNames.size(); display++)
+            assertEquals(displayNames.get(display), physicalNames.get(frame.physicalSeat(display)));
+        assertEquals(displayNames.size(), physicalNames.stream().distinct().count());
+        assertThrows(IllegalArgumentException.class,
+                () -> HoldemTablePresentation.physicalSeatNames(frame, List.of("You", "", "Mara", "Nora")));
+    }
+
     @Test public void sharedActiveFrameIsSetOnlyForTheEngineActorInPhysicalSeatOrder() {
         for (int count : List.of(2, 4, 5, 6)) {
             for (int actor = -1; actor < count; actor++) {
@@ -48,10 +73,71 @@ public final class HoldemTablePresentationComponentTest {
                         style.labelSp() < style.valueSp());
                 assertNotEquals("Caption and value must keep a visible contrast hierarchy",
                         style.labelColor(), style.valueColor());
-                assertEquals(compact ? 8 : 9, style.labelSp());
-                assertEquals(compact ? 10 : 11, style.valueSp());
+                assertEquals(8, style.labelSp());
+                assertEquals(compact ? 9 : 10, style.valueSp());
             }
         }
+    }
+
+    @Test public void eachPhysicalSeatKeepsItsOwnLatestActionAndTheTableHistoryKeepsOrder() {
+        var base = frame(4, 1, false);
+        var actions = List.of(
+                new BettingAction(1, Street.PREFLOP, 1, BettingAction.Kind.SMALL_BLIND, 5, 5),
+                new BettingAction(2, Street.PREFLOP, 2, BettingAction.Kind.BIG_BLIND, 10, 10),
+                new BettingAction(3, Street.PREFLOP, 3, BettingAction.Kind.CALL, 10, 10),
+                new BettingAction(4, Street.PREFLOP, 0, BettingAction.Kind.RAISE, 20, 20),
+                new BettingAction(5, Street.PREFLOP, 1, BettingAction.Kind.CALL, 15, 20),
+                new BettingAction(6, Street.PREFLOP, 2, BettingAction.Kind.FOLD, 0, 10),
+                new BettingAction(7, Street.FLOP, 3, BettingAction.Kind.CHECK, 0, 10),
+                new BettingAction(8, Street.FLOP, 0, BettingAction.Kind.BET, 30, 50),
+                new BettingAction(9, Street.TURN, 1, BettingAction.Kind.RAISE, 50, 70),
+                new BettingAction(10, Street.RIVER, 3, BettingAction.Kind.ALL_IN, 90, 100));
+        var seats = new java.util.ArrayList<>(base.seats());
+        int[] contributions = {50, 70, 10, 100};
+        for (int seat = 0; seat < seats.size(); seat++) {
+            var previous = seats.get(seat);
+            seats.set(seat, new HoldemTableViewState.Seat(previous.stack(), contributions[seat], previous.folded(),
+                    0, true, previous.shownCards()));
+        }
+        var state = new HoldemTableViewState(base.viewer(), base.actor(), base.dealer(), base.smallBlind(),
+                base.bigBlind(), base.street(), 230, base.ownCards(), base.board(), seats,
+                base.legalActions(), actions);
+
+        var latestBySeat = HoldemTablePresentation.latestActionsByPhysicalSeat(
+                state, List.of("You", "Mina", "Ion", "Eva"));
+
+        assertEquals(4, latestBySeat.size());
+        assertEquals(BettingAction.Kind.BET, latestBySeat.get(0).kind());
+        assertEquals(8, latestBySeat.get(0).ordinal());
+        assertEquals("You", latestBySeat.get(0).player());
+        assertEquals(BettingAction.Kind.RAISE, latestBySeat.get(1).kind());
+        assertEquals(50, latestBySeat.get(1).amount());
+        assertEquals(70, latestBySeat.get(1).totalContribution());
+        assertEquals(BettingAction.Kind.FOLD, latestBySeat.get(2).kind());
+        assertEquals(BettingAction.Kind.ALL_IN, latestBySeat.get(3).kind());
+        assertEquals(10, latestBySeat.get(3).ordinal());
+        assertEquals("Eva", latestBySeat.get(3).player());
+
+        var rotated = new HoldemTableViewState(2, base.actor(), base.dealer(), base.smallBlind(), base.bigBlind(),
+                base.street(), 230, base.ownCards(), base.board(), seats, base.legalActions(), actions);
+        assertEquals("Mina", HoldemTablePresentation.latestActionsByPhysicalSeat(rotated,
+                List.of("You", "Mina", "Ion", "Eva")).get(3).player());
+        assertEquals(10, HoldemTablePresentation.actionRows(state,
+                List.of("You", "Mina", "Ion", "Eva")).size());
+    }
+
+    @Test public void lastSeatActionIsAccentedAndCompactSeatFactsUseLessSpace() {
+        var regular = HoldemTablePresentation.seatActionStyle(false, false, false);
+        var compact = HoldemTablePresentation.seatActionStyle(true, false, false);
+        var latest = HoldemTablePresentation.seatActionStyle(true, true, false);
+        var active = HoldemTablePresentation.seatActionStyle(true, false, true);
+        assertTrue(compact.textSp() <= regular.textSp());
+        assertNotEquals("The latest move needs a distinct but restrained accent",
+                compact.textColor(), latest.textColor());
+        assertEquals("The active seat uses dark action text on its light frame", 0xff29362e, active.textColor());
+        assertEquals(0xfff0d486, latest.textColor());
+        assertEquals(9, HoldemTablePresentation.seatFactStyle(false, true).valueSp());
+        assertEquals(10, HoldemTablePresentation.seatFactStyle(false, false).valueSp());
     }
 
     @Test public void bettingLedgerKeepsEngineOrderAndMapsPhysicalActorsToTheDisplayedNames() {

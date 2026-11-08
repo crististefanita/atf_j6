@@ -70,8 +70,14 @@
     <string name="turn_status">La rând · %1$s</string>
     <string name="best_hand_waiting">Așteaptă cărțile comune</string>
     <string name="best_hand">Cea mai bună · %1$s</string>
-    <string name="betting_ledger_title">Pariuri · adăugat acum / total în mână</string>
-    <string name="latest_betting_action">Mutarea #%1$d · %2$s · %3$s +%4$d\n%5$s · total mână %6$d</string>
+    <string name="betting_history_title">Istoric pariuri</string>
+    <string name="betting_history_show">Arată tot istoricul pariurilor</string>
+    <string name="betting_history_hide">Ascunde istoricul complet al pariurilor</string>
+    <string name="betting_history_list_description">Lista istoricului pariurilor</string>
+    <string name="seat_latest_action">#%1$d · %2$s +%3$d</string>
+    <string name="seat_action_description">Mutarea #%1$d · %2$s · %3$s +%4$d · %5$s · contribuție %6$d</string>
+    <string name="small_blind_short">SB</string>
+    <string name="big_blind_short">BB</string>
     <string name="betting_ledger_entry">#%1$d · %2$s · %3$s +%4$d\n%5$s · total %6$d</string>
     <string name="ledger_small_blind">Blind mic</string>
     <string name="ledger_big_blind">Blind mare</string>

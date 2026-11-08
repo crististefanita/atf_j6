@@ -1,10 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.1.1",
-  "state": "PREPARED",
+  "currentVersion": "0.2.0",
+  "previousVersion": "0.1.1",
+  "changeClass": "COMPATIBLE_FEATURE",
+  "changeRationale": "Istoric de pariuri la cerere, acțiuni vizibile la fiecare loc și clasament cumulativ în turneele locale.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.1.1"
+    "0.2.0"
   ]
 }

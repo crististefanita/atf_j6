@@ -21,7 +21,7 @@ La integrarea clasamentului, verificarea pe același API a mai descoperit `HexFo
 
 ## Verificare
 
-Rulările API 28 au identificat incompatibilitățile Java una după alta, înainte de emiterea receipt-ului, iar testul de guvernanță a fost extins pentru regresiile observate. Snapshotul actual a trecut **97/97 teste Maven** și **39/39 teste Android JVM**. Tournament sanity pe API 28 a trecut **58/58 aserțiuni**, cu **8 capturi native**; APK-ul testat are SHA-256 `08f1c4a11ace06059fee2e22d0d7d7e19a2e6a81cea962ff0186f8880dc249bc`, iar certificatul de semnare corespunde identității J6 protejate. Raportul Extent și receipt-ul sunt păstrate în rădăcina externă de dovezi.
+Rulările API 28 au identificat incompatibilitățile Java una după alta, înainte de emiterea receipt-ului, iar testul de guvernanță a fost extins pentru regresiile observate. Snapshotul verificat acum a trecut **97/97 teste Maven** și **43/43 teste Android JVM**. Tournament sanity pe API 28 a trecut **64/64 aserțiuni**, cu **8 capturi native**; APK-ul sanity testat are SHA-256 `39353f18940e6d407ffadd4242fbf598fa483b0d892454851c8ca22bf3ddaa7f`, semnat cu identitatea J6 protejată. Receipt-ul și PNG-urile sunt în `C:\Users\Cristi\AppData\Local\Temp\j6-live-final6-20261108\android-tournament-sanity\`, iar Extent-ul verificat este `C:\Users\Cristi\AppData\Local\Temp\j6-live-final6-20261108\reports\android-tournament-extent.html`. Acestea sunt dovezi de snapshot, nu o calificare nouă de release.
 
 ## Lecție pentru release
 

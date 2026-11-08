@@ -188,6 +188,8 @@ final class LocalHoldemGame {
 
     synchronized boolean isTournament() { return tournament != null; }
 
+    synchronized long displayNameSeed() { return seed; }
+
     synchronized String tournamentId() { return tournamentId; }
 
     synchronized String playerId(int physicalSeat) {

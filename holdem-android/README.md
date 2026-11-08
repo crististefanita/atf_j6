@@ -32,6 +32,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 - Clasamentul local acumulează punctele din turneele finalizate. Rezultatul folosește numele afișate la masă, iar redeschiderea lui nu punctează din nou același turneu.
 - Fiecare acțiune acceptată se salvează într-un checkpoint privat, cu locul fizic al actorului și ordinea replay-ului.
 - La redeschidere, motorul reconstruiește și revalidează istoricul înainte de afișarea mesei. Se reiau mâna, turneul sau rezultatul confirmat.
+- O comandă acceptată în timpul decontării salvează direct următoarea mână sau rezultatul. Efectul poate amâna afișarea până la final. După pauză ori recreare se afișează destinația deja salvată, cu aceeași identitate de turneu.
 - Suspendarea invalidează callback-urile UI și oprește ceasul turneului; revenirea îl continuă din timpul salvat.
 
 ## Prezentarea mesei

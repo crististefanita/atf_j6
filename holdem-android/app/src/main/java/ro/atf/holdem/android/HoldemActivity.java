@@ -52,7 +52,7 @@ public final class HoldemActivity extends Activity {
     private boolean aiBusy;
     private boolean autoFinishingHand;
     private boolean settlementPending;
-    private Runnable deferredSettlementAction;
+    private HoldemSessionRepository.Resumed deferredContinuation;
     // The first screen is built in onCreate; its first-frame work runs after Android resumes the Activity.
     private boolean activityResumed = true;
     private boolean hasResumed;
@@ -76,9 +76,12 @@ public final class HoldemActivity extends Activity {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT,
                     this::navigateBack);
         }
-        if (state != null && state.getBundle("training-hand") != null) restore(state.getBundle("training-hand"));
+        var saved = sessions.load();
+        var legacy = state == null ? null : state.getBundle("training-hand");
+        boolean restoreActive = state != null && (state.getBoolean("resume-active-session") || legacy != null);
+        if (restoreActive && saved.hasCheckpoint()) showResumed(saved.resumed());
+        else if (legacy != null && !saved.hasFailure()) restore(legacy);
         else {
-            var saved = sessions.load();
             if (saved.resumed() != null) resumableGame = saved.resumed().game();
             if (state != null && state.getBoolean("configuring")) {
                 setupBlindLevelMinutes = state.getInt("setup-blind-level-minutes", 1);
@@ -91,7 +94,7 @@ public final class HoldemActivity extends Activity {
 
     @Override protected void onSaveInstanceState(Bundle state) {
         super.onSaveInstanceState(state);
-        if (game != null) state.putBundle("training-hand", bundle(game.save()));
+        state.putBoolean("resume-active-session", game != null);
         state.putBoolean("configuring", configuring);
         state.putBoolean("tournament-setup", tournamentSetup);
         if (configuring && setupBlindIntervalPicker != null) {
@@ -114,7 +117,9 @@ public final class HoldemActivity extends Activity {
         boolean returningFromBackground = hasResumed;
         hasResumed = true;
         activityResumed = true;
-        if (game != null) {
+        if (deferredContinuation != null) {
+            showResumed(deferredContinuation);
+        } else if (game != null) {
             game.resumeClock();
             if (returningFromBackground) {
                 if (showingResult) showResult(game);
@@ -127,12 +132,11 @@ public final class HoldemActivity extends Activity {
         activityResumed = false;
         if (game != null) {
             game.pauseClock();
-            saveCheckpoint(game, showingResult);
+            if (deferredContinuation == null) saveCheckpoint(game, showingResult);
         }
         stopSettlement.run();
         stopSettlement = () -> { };
         settlementPending = false;
-        deferredSettlementAction = null;
         mainHandler.removeCallbacksAndMessages(null);
         if (aiTask != null) aiTask.cancel(true);
         aiTask = null;
@@ -161,7 +165,10 @@ public final class HoldemActivity extends Activity {
         aiTask = null;
         aiBusy = false;
         autoFinishingHand = false;
-        if (game != null) {
+        if (deferredContinuation != null) {
+            resumableGame = deferredContinuation.game();
+            deferredContinuation = null;
+        } else if (game != null) {
             resumableGame = game;
             saveCheckpoint(game, showingResult);
         }
@@ -199,9 +206,15 @@ public final class HoldemActivity extends Activity {
             home();
             return;
         }
-        game = saved.resumed().game();
+        showResumed(saved.resumed());
+    }
+
+    private void showResumed(HoldemSessionRepository.Resumed resumed) {
+        deferredContinuation = null;
+        game = resumed.game();
         resumableGame = game;
-        showingResult = saved.resumed().showingResult();
+        game.resumeClock();
+        showingResult = resumed.showingResult();
         if (showingResult) showResult(game);
         else showHand();
     }
@@ -240,10 +253,7 @@ public final class HoldemActivity extends Activity {
     }
 
     private void open(int size, int dealer, boolean tournament, int blindLevelMinutes) {
-        long seed = new SecureRandom().nextLong();
-        if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
-            seed = getIntent().getLongExtra(DEBUG_DEAL_SEED, seed);
-        }
+        long seed = newDealSeed();
         game = tournament ? LocalHoldemGame.tournament(size, seed, blindLevelMinutes, stablePlayerId())
                 : new LocalHoldemGame(size, dealer, seed);
         configuring = false;
@@ -254,6 +264,12 @@ public final class HoldemActivity extends Activity {
         resumableGame = game;
         saveCheckpoint(game, false);
         showHand();
+    }
+
+    private long newDealSeed() {
+        long seed = new SecureRandom().nextLong();
+        return (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0
+                ? getIntent().getLongExtra(DEBUG_DEAL_SEED, seed) : seed;
     }
 
     private void restore(Bundle state) {
@@ -276,7 +292,10 @@ public final class HoldemActivity extends Activity {
             resumableGame = game;
             showingResult = state.getBoolean("showing-result");
             if (showingResult && game.outcome() != null) showResult(game);
-            else showHand();
+            else {
+                saveCheckpoint(game, false);
+                showHand();
+            }
         } catch (IllegalArgumentException invalid) {
             home();
             Toast.makeText(this, text(R.string.restore_error), Toast.LENGTH_LONG).show();
@@ -299,38 +318,6 @@ public final class HoldemActivity extends Activity {
                     new LocalHoldemGame.Move(ActionType.valueOf(actions.get(i)), amounts[i])));
         }
         return moves;
-    }
-
-    private Bundle bundle(LocalHoldemGame.Saved saved) {
-        var state = new Bundle();
-        state.putInt("seats", saved.seats());
-        state.putInt("dealer", saved.dealer());
-        state.putLong("seed", saved.seed());
-        state.putBoolean("tournament", saved.tournament());
-        state.putInt("blind-level-minutes", saved.blindLevelMinutes());
-        state.putLong("elapsed-seconds", saved.elapsedSeconds());
-        state.putLongArray("round-start-times", saved.roundStartElapsedSeconds().stream().mapToLong(Long::longValue).toArray());
-        state.putBoolean("showing-result", showingResult);
-        state.putInt("round-count", saved.rounds().size());
-        for (int i = 0; i < saved.rounds().size(); i++) state.putBundle("round-" + i, writeActions(saved.rounds().get(i)));
-        return state;
-    }
-
-    private static Bundle writeActions(List<LocalHoldemGame.Action> moves) {
-        var state = new Bundle();
-        var actions = new ArrayList<String>(moves.size());
-        var amounts = new int[moves.size()];
-        var actors = new int[moves.size()];
-        for (int i = 0; i < amounts.length; i++) {
-            var action = moves.get(i);
-            actions.add(action.move().action().name());
-            amounts[i] = action.move().amount();
-            actors[i] = action.actor();
-        }
-        state.putStringArrayList("actions", actions);
-        state.putIntArray("amounts", amounts);
-        state.putIntArray("actors", actors);
-        return state;
     }
 
     private void saveCheckpoint(LocalHoldemGame current, boolean result) {
@@ -366,7 +353,6 @@ public final class HoldemActivity extends Activity {
         stopSettlement.run();
         stopSettlement = () -> { };
         settlementPending = false;
-        deferredSettlementAction = null;
         showingResult = false;
         var current = game;
         var frame = current.view();
@@ -375,29 +361,19 @@ public final class HoldemActivity extends Activity {
         if (completed) autoFinishingHand = false;
         boolean automatedHumanTurn = autoFinishingHand && frame.actor() == frame.viewer() && !completed;
         settlementPending = completed;
-        int seats = frame.seats().size();
         var names = displayNames(current);
-        int nextDealer = seats == 2 ? frame.bigBlind() : frame.dealer();
         var table = new HoldemTableView(views, this::text);
         TextView advice = table.show(frame, names, current, this::home, () -> {
-            if (game != current || !current.turn().equals(turn)) return;
-            Runnable advance = () -> {
-                if (game != current || !current.turn().equals(turn)) return;
-                if (current.outcome() != null) {
-                    deferredSettlementAction = null;
-                    showResult(current);
-                }
-                else if (current.isTournament()) {
-                    current.nextHand();
-                    saveCheckpoint(current, false);
-                    showHand();
-                } else open(seats, nextDealer, false);
-            };
-            if (settlementPending) {
-                if (deferredSettlementAction == null) deferredSettlementAction = advance;
-                return;
+            if (!activityResumed || sceneRevision != renderedScene || game != current
+                    || !current.turn().equals(turn) || deferredContinuation != null) return;
+            try {
+                var destination = sessions.continueAfterSettlement(current, turn, this::newDealSeed);
+                if (settlementPending) deferredContinuation = destination;
+                else showResumed(destination);
+            } catch (java.io.IOException | RuntimeException failure) {
+                android.util.Log.e("HoldemLab", "Could not commit the settled hand continuation", failure);
+                Toast.makeText(this, text(R.string.checkpoint_error), Toast.LENGTH_LONG).show();
             }
-            advance.run();
         }, move -> {
             if (game != current) return false;
             try {
@@ -488,9 +464,7 @@ public final class HoldemActivity extends Activity {
                         || !current.turn().equals(turn) || !settlementPending) return;
                 settlementPending = false;
                 stopSettlement = () -> { };
-                Runnable deferred = deferredSettlementAction;
-                deferredSettlementAction = null;
-                if (deferred != null) deferred.run();
+                if (deferredContinuation != null) showResumed(deferredContinuation);
             };
             var animation = table.animateSettlement(ro.cardtable.ui.animation.TrickCollectionMotion.DISPLAY_MILLIS, finish);
             stopSettlement = () -> {

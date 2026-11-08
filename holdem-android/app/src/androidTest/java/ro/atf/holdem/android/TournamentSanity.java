@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.Choreographer;
+import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import org.json.JSONArray;
@@ -56,6 +57,9 @@ public final class TournamentSanity extends Instrumentation {
                 inspectRaiseEditor();
             } else if (journey.equals("release-smoke")) {
                 releaseEntryNavigation();
+            } else if (journey.equals("settlement-resume")) {
+                resumeNextHandDuringSettlement();
+                resumeResultDuringSettlement();
             } else {
                 throw new IllegalArgumentException("Unknown Android sanity mode: " + journey);
             }
@@ -288,13 +292,105 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private Activity openTournament() throws Exception {
-        var intent = new Intent(getTargetContext(), HoldemActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                .putExtra(HoldemActivity.DEBUG_DEAL_SEED, 1L);
-        var activity = startActivitySync(intent);
+        var activity = launchHoldem();
         tap("Play a tournament");
         see("Setup opens with four seats", "4");
         tap("Deal cards");
         return activity;
+    }
+
+    private Activity launchHoldem() {
+        var intent = new Intent(getTargetContext(), HoldemActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                .putExtra(HoldemActivity.DEBUG_DEAL_SEED, 1L);
+        return startActivitySync(intent);
+    }
+
+    private void resumeNextHandDuringSettlement() throws Exception {
+        var activity = openTournament();
+        Activity recreated = null;
+        try {
+            tap("Call · 20");
+            for (int street = 0; street < 3; street++) tap("Check");
+            var monitor = addMonitor(HoldemActivity.class.getName(), null, false);
+            try {
+                tapTwiceAndInterrupt(activity, "new-hand", "Next hand tap accepted during settlement", activity::recreate);
+                recreated = monitor.waitForActivityWithTimeout(5000);
+                check("The settled Activity was recreated", "new Activity",
+                        recreated != null && recreated != activity ? "new Activity" : "recreation missing");
+            } finally {
+                removeMonitor(monitor);
+            }
+            see("Activity recreation opens exactly hand two", "Hand 2 · Preflop");
+            checkCommittedDestination("Next hand persisted once", 2, false);
+            capture("01-next-hand-restored");
+        } finally {
+            Activity active = recreated == null ? activity : recreated;
+            runOnMainSync(active::finish);
+            waitForIdleSync();
+        }
+    }
+
+    private void resumeResultDuringSettlement() throws Exception {
+        var activity = openTournament();
+        try {
+            tap("All-in · 2000");
+            tapTwiceAndInterrupt(activity, "tournament-result", "Result tap accepted during settlement", activity::finish);
+            waitForIdleSync();
+            checkCommittedDestination("Result persisted before reopening", 1, true);
+        } finally {
+            runOnMainSync(activity::finish);
+            waitForIdleSync();
+        }
+        var fresh = launchHoldem();
+        try {
+            tap("Continue saved game");
+            see("Fresh Activity opens the saved result directly", "You were eliminated");
+            see("Result still shows one hand and the settled stack", "Hands played · 1\nFinal stack · 0");
+            capture("02-result-restored");
+            backFromResult();
+            tap("Continue saved game");
+            see("Reopening the result still shows elimination", "You were eliminated");
+            backFromResult();
+            tap("Tournament leaderboard");
+            seeContains("Repeated result display records one tournament", "Points 100 · Tournaments 1");
+        } finally {
+            runOnMainSync(fresh::finish);
+        }
+    }
+
+    private void backFromResult() throws Exception {
+        sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
+        actions.put("Back from tournament result");
+        see("Back from the result returns to the home menu", "Hold’em Lab");
+    }
+
+    private void tapTwiceAndInterrupt(Activity activity, String tag, String assertion, Runnable interrupt) throws Exception {
+        long deadline = SystemClock.uptimeMillis() + 5000;
+        var observed = new String[]{"terminal control unavailable"};
+        do {
+            runOnMainSync(() -> {
+                var root = activity.getWindow().getDecorView();
+                var control = root.findViewWithTag(tag);
+                if (control == null || !control.isShown() || control.getWidth() == 0) return;
+                boolean clicked = control.performClick() && control.performClick();
+                boolean stillSettled = root.findViewWithTag(tag) == control;
+                observed[0] = clicked && stillSettled ? "two taps while settlement is still visible" : "transition already rendered";
+                interrupt.run();
+            });
+            if (!observed[0].equals("terminal control unavailable")) break;
+            SystemClock.sleep(16);
+        } while (SystemClock.uptimeMillis() < deadline);
+        actions.put("Tap " + tag + " twice, then interrupt Activity");
+        check(assertion, "two taps while settlement is still visible", observed[0]);
+    }
+
+    private void checkCommittedDestination(String name, int hand, boolean result) throws Exception {
+        var loaded = new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir())).load();
+        var saved = loaded.resumed();
+        String expected = "hand=" + hand + ", result=" + result;
+        String actual = saved == null ? "checkpoint unavailable"
+                : "hand=" + saved.game().handNumber() + ", result=" + saved.showingResult();
+        check(name, expected, actual);
     }
 
     private void tap(String label) throws Exception {

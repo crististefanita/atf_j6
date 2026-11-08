@@ -1,7 +1,10 @@
 package ro.atf.holdem.android;
 
+import ro.atf.holdem.core.Street;
+
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.LongSupplier;
 
 /** Replays durable actions through Hold'em rules before exposing a resumed game to the UI. */
 final class HoldemSessionRepository {
@@ -31,5 +34,43 @@ final class HoldemSessionRepository {
 
     synchronized void save(LocalHoldemGame game, boolean showingResult) throws IOException {
         storage.write(HoldemSessionCodec.encode(new HoldemSessionCodec.Checkpoint(game.save(), showingResult)));
+    }
+
+    /** Commits the destination before the caller acknowledges a continuation from the settled table. */
+    synchronized Resumed continueAfterSettlement(LocalHoldemGame current, LocalHoldemGame.Turn expected,
+                                                 LongSupplier trainingSeed) throws IOException {
+        var frame = current.view();
+        if (!current.turn().equals(expected) || frame.street() != Street.COMPLETE)
+            throw new IllegalArgumentException("Continuation requires the current settled hand");
+        var source = current.save();
+        String encoded = storage.read();
+        if (encoded == null) throw new IllegalStateException("The settled hand has no committed checkpoint");
+        var checkpoint = HoldemSessionCodec.decode(encoded);
+        if (checkpoint.showingResult() || !samePosition(source, checkpoint.game()))
+            throw new IllegalStateException("The settled checkpoint was replaced");
+
+        boolean result = current.outcome() != null;
+        LocalHoldemGame destination = current;
+        if (!result && current.isTournament()) {
+            destination = LocalHoldemGame.restore(source);
+            destination.pauseClock();
+            destination.nextHandAtElapsedSeconds(source.elapsedSeconds());
+        } else if (!result) {
+            int seats = frame.seats().size();
+            int dealer = seats == 2 ? frame.bigBlind() : frame.dealer();
+            destination = new LocalHoldemGame(seats, dealer, trainingSeed.getAsLong());
+        }
+        save(destination, result);
+        return new Resumed(destination, result);
+    }
+
+    private static boolean samePosition(LocalHoldemGame.Saved expected, LocalHoldemGame.Saved stored) {
+        // Elapsed foreground time can advance between settlement and the player's tap.
+        return expected.seed() == stored.seed() && expected.seats() == stored.seats()
+                && expected.dealer() == stored.dealer() && expected.tournamentId().equals(stored.tournamentId())
+                && expected.humanPlayerId().equals(stored.humanPlayerId())
+                && expected.blindLevelMinutes() == stored.blindLevelMinutes()
+                && expected.roundStartElapsedSeconds().equals(stored.roundStartElapsedSeconds())
+                && expected.rounds().equals(stored.rounds());
     }
 }

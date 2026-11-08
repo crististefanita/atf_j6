@@ -1,7 +1,7 @@
 #requires -Version 7.0
 param(
     [Parameter(Mandatory)][string]$RunRoot,
-    [ValidateSet('tournament','release-smoke')][string]$Mode = 'tournament',
+    [ValidateSet('tournament','release-smoke','settlement-resume')][string]$Mode = 'tournament',
     [string]$Serial = '127.0.0.1:5555',
     [string]$Sdk = 'C:\tools\whist-android-sdk'
 )
@@ -13,7 +13,7 @@ $appId = 'ro.atf.holdem.android'
 $testId = "$appId.test"
 $variant = if ($Mode -eq 'release-smoke') { 'release' } else { 'sanity' }
 $journey = $Mode
-$label = if ($Mode -eq 'release-smoke') { 'android-release-smoke' } else { 'android-tournament-sanity' }
+$label = if ($Mode -eq 'tournament') { 'android-tournament-sanity' } else { "android-$Mode" }
 $evidenceRoot = Join-Path $RunRoot $label
 New-Item -ItemType Directory -Force -Path $evidenceRoot | Out-Null
 $apkRoot = Join-Path $RunRoot "source/holdem-android/app/build/outputs/apk"

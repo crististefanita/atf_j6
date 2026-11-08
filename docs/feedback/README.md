@@ -13,12 +13,11 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 3. **J6-AI-02 · P1 · Deschis:** politicile sunt încă euristice, iar modelul de range și evaluarea independentă nu justifică eticheta `Hard`.
 4. **J6-AI-04 · P1 · Deschis, exploratoriu:** ablația pereche are 16 seed-uri independente, sub pragul de 20 pentru fiecare mărime de masă; efectul nu justifică o pondere generală.
 5. **J6-UI-05 · P1 · 27/27 JVM, sanity API 28 trecut; acceptanță parțială:** Fold, reveal, coach, preluare locală și selectorul de blinduri există. Rămân evaluatorul kicker/board-play, invariabilitatea față de cărți ascunse, wiring-ul intervalului și verificările dedicate de accesibilitate/layout.
-6. **J6-UI-06 · P1 · Cod nou implementat, testare restantă:** masa terminală rămâne până la input, iar premiul se animă spre beneficiari; pacing-ul și reluarea anterioară rămân calificate.
-7. **J6-UI-07 · P1 · Implementare parțială:** evaluatorul, cărțile terminale egale, separarea premiu/rest și animația către beneficiari sunt conectate; lipsesc acceptanța Android și unele cazuri de componentă.
-8. **J6-UI-04 · P2 · Implementare parțială:** motorul și locurile separă `Won` de `Returned`; mai lipsesc verificarea E2E a cazurilor de decontare și acceptanța vizuală.
-9. **J6-UI-08 · P2 · API 28 verificat parțial:** modelul și repository-ul au probe JVM; sanity-ul nativ verifică sumarul, clasamentul și reîncărcarea activității. Restartul real al procesului și redenumirea profilului rămân neverificate.
-10. **J6-UI-09 · P2 · Implementare parțială:** etichetele `Stack`, `Committed`, `Won` și `Returned` sunt secundare față de valori; mai lipsesc verificarea de viewport și TalkBack.
-11. **J6-UI-10 · P1 · Verificat pe API 28:** fiecare loc arată ultima sa acțiune sub nume, iar istoricul complet este derulabil și ascuns inițial. Componentele trec 11/11; sanity-ul nativ trece 64/64 cu 8 capturi. Viewport-urile joase, TalkBack și traseul UI real `Bet → Raise → Call` rămân de calificat.
+6. **J6-UI-07 · P1 · Implementare parțială:** evaluatorul, cărțile terminale egale, separarea premiu/rest și animația către beneficiari sunt conectate; lipsesc acceptanța Android și unele cazuri de componentă.
+7. **J6-UI-04 · P2 · Implementare parțială:** motorul și locurile separă `Won` de `Returned`; mai lipsesc verificarea E2E a cazurilor de decontare și acceptanța vizuală.
+8. **J6-UI-08 · P2 · API 28 verificat parțial:** modelul și repository-ul au probe JVM; sanity-ul nativ verifică sumarul, clasamentul și reîncărcarea activității. Restartul real al procesului și redenumirea profilului rămân neverificate.
+9. **J6-UI-09 · P2 · Implementare parțială:** etichetele `Stack`, `Committed`, `Won` și `Returned` sunt secundare față de valori; mai lipsesc verificarea de viewport și TalkBack.
+10. **J6-UI-10 · P1 · Verificat pe API 28:** fiecare loc arată ultima sa acțiune sub nume, iar istoricul complet este derulabil și ascuns inițial. Componentele trec 11/11; sanity-ul nativ trece 64/64 cu 8 capturi. Viewport-urile joase, TalkBack și traseul UI real `Bet → Raise → Call` rămân de calificat.
 
 `J6-REL-01` cere acțiunea proprietarului contului și nu se rezolvă prin redenumirea asset-ului sau schimbarea rutelor. Celelalte priorități sunt lucru de produs și cod.
 
@@ -38,7 +37,7 @@ Constatările rezolvate rămân marcate explicit până când legătura cu regul
 | [J6-UI-03](J6-UI-03-TOURNAMENT-SANITY.md) | P1 | Rezolvat | Stive între mâini, eliminări, rezultat de turneu și sanity Android reproductibil. |
 | [J6-UI-04](J6-UI-04-PAYOUT-READABILITY.md) | P2 | Implementare parțială; E2E restant | Motorul distinge premiul potului de restituirea contribuției neacoperite; trebuie calificată prezentarea cazurilor reale. |
 | [J6-UI-05](J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md) | P1 | 27/27 JVM; sanity API 28 trecut; acceptanță parțială | Mai lipsesc oracolul kicker/board-play, testul de confidențialitate, testarea spinnerului și verificările dedicate de accesibilitate/layout. |
-| [J6-UI-06](J6-UI-06-RESUMABLE-TURNS-AND-SETTLEMENT.md) | P1 | Cod nou implementat; testare restantă | Tabla terminală așteaptă input, iar markerul premiului merge spre locurile calculate fără să ascundă cărțile. |
+| [J6-UI-06](J6-UI-06-RESUMABLE-TURNS-AND-SETTLEMENT.md) | P1 | Închis pentru continuare | Destinația se salvează la tap și se redeschide o singură dată după întrerupere. |
 | [J6-UI-07](J6-UI-07-SHOWDOWN-WIN-CLARITY.md) | P1 | Implementare parțială; acceptanță restantă | Evaluatorul expune cele cinci cărți; dimensiunile sunt comune, iar premiul și restituirea au destinații distincte. |
 | [J6-UI-08](J6-UI-08-TOURNAMENT-LEADERBOARD.md) | P2 | Componente și sanity API 28 trecute; restart de proces restant | Turneul nativ verifică sumarul, clasamentul și reîncărcarea activității; restartul real de proces și redenumirea profilului rămân necalificate. |
 | [J6-UI-09](J6-UI-09-SEAT-METRIC-HIERARCHY.md) | P2 | Implementare parțială; verificare viewport/A11y restantă | Valoarea are accent mai puternic decât eticheta; semantică și descriere completă păstrate. |

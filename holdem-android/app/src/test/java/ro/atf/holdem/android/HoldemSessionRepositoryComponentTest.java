@@ -2,6 +2,7 @@ package ro.atf.holdem.android;
 
 import org.junit.Test;
 import ro.atf.holdem.core.ActionType;
+import ro.atf.holdem.core.Street;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -118,13 +119,16 @@ public final class HoldemSessionRepositoryComponentTest {
             play(game, ActionType.ALL_IN);
             assertEquals(LocalHoldemGame.Outcome.WON, game.outcome());
 
-            new HoldemSessionRepository(new FileHoldemSessionStorage(directory.toFile())).save(game, true);
+            var repository = new HoldemSessionRepository(new FileHoldemSessionStorage(directory.toFile()));
+            repository.save(game, false);
+            assertTrue(repository.continueAfterSettlement(game, game.turn(), () -> 0).showingResult());
             var reopened = new HoldemSessionRepository(new FileHoldemSessionStorage(directory.toFile())).load();
 
             assertFalse("A terminal saved game is replayable", reopened.hasFailure());
             assertEquals("The final result route survives a process restart", true, reopened.resumed().showingResult());
             assertEquals(LocalHoldemGame.Outcome.WON, reopened.resumed().game().outcome());
             assertEquals(game.view(), reopened.resumed().game().view());
+            assertThrows(IllegalStateException.class, () -> repository.continueAfterSettlement(game, game.turn(), () -> 0));
         } finally {
             try (var files = Files.walk(directory)) {
                 files.sorted(java.util.Comparator.reverseOrder()).forEach(path -> {
@@ -132,6 +136,71 @@ public final class HoldemSessionRepositoryComponentTest {
                 });
             }
         }
+    }
+
+    @Test public void continuationCommitsOneNextHandBeforeTheSettledTableIsReplaced() throws Exception {
+        var storage = new MemoryStorage();
+        var repository = new HoldemSessionRepository(storage);
+        var game = settledTournamentHand();
+        var terminal = game.view();
+        var turn = game.turn();
+        repository.save(game, false);
+
+        var next = repository.continueAfterSettlement(game, turn, () -> { throw new AssertionError("Unneeded training seed"); });
+        var restarted = new HoldemSessionRepository(storage);
+        var restored = restarted.load().resumed();
+        assertEquals("The animation can still render the original settlement", terminal, game.view());
+        assertEquals(game.tournamentId(), restored.game().tournamentId());
+        assertEquals(2, restored.game().handNumber());
+        assertEquals(next.game().view(), restored.game().view());
+        assertFalse(restored.showingResult());
+        assertThrows(IllegalStateException.class, () -> restarted.continueAfterSettlement(game, turn, () -> 0));
+        assertEquals(2, restarted.load().resumed().game().handNumber());
+    }
+
+    @Test public void failedContinuationWriteKeepsTheSettledCheckpointAndCanBeRetried() throws Exception {
+        var storage = new MemoryStorage();
+        var repository = new HoldemSessionRepository(storage);
+        var game = settledTournamentHand();
+        var turn = game.turn();
+        repository.save(game, false);
+        String terminal = storage.value;
+        storage.failWrites = true;
+
+        assertThrows(IOException.class, () -> repository.continueAfterSettlement(game, turn, () -> 0));
+        assertEquals(terminal, storage.value);
+        assertEquals(turn, game.turn());
+        assertEquals(Street.COMPLETE, game.view().street());
+        storage.failWrites = false;
+        assertEquals(2, repository.continueAfterSettlement(game, turn, () -> 0).game().handNumber());
+    }
+
+    @Test public void trainingContinuationKeepsTheDealtCardsAcrossReloadAndRejectsARepeat() throws Exception {
+        var storage = new MemoryStorage();
+        var repository = new HoldemSessionRepository(storage);
+        var game = new LocalHoldemGame(2, 0, 17);
+        play(game, ActionType.FOLD);
+        assertEquals(Street.COMPLETE, game.view().street());
+        repository.save(game, false);
+
+        var next = repository.continueAfterSettlement(game, game.turn(), () -> 31);
+        var restored = new HoldemSessionRepository(storage).load().resumed();
+        assertEquals(31L, restored.game().displayNameSeed());
+        assertEquals(game.view().bigBlind(), restored.game().view().dealer());
+        assertEquals(next.game().view(), restored.game().view());
+        assertThrows(IllegalStateException.class,
+                () -> repository.continueAfterSettlement(game, game.turn(), () -> { throw new AssertionError("Dealt twice"); }));
+    }
+
+    private static LocalHoldemGame settledTournamentHand() {
+        var game = LocalHoldemGame.tournament(4, 1);
+        play(game, ActionType.CALL);
+        play(game, ActionType.CHECK);
+        play(game, ActionType.CHECK);
+        play(game, ActionType.CHECK);
+        assertEquals(Street.COMPLETE, game.view().street());
+        assertNull(game.outcome());
+        return game;
     }
 
     @Test public void interruptedReplacementRecoversTheLastCommittedCheckpoint() throws Exception {

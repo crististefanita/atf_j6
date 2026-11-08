@@ -36,6 +36,14 @@ class PublishTournamentExtent {
             "04-tournament-won.png", "05-tournament-lost.png");
     private static final List<String> RELEASE_SMOKE_CAPTURES = List.of(
             "01-release-hand-setup.png", "02-release-tournament-setup.png");
+    private static final List<String> SETTLEMENT_ASSERTIONS = List.of(
+            "Next hand tap accepted during settlement", "Activity recreation opens exactly hand two", "Next hand persisted once",
+            "Result tap accepted during settlement", "Result persisted before reopening",
+            "Fresh Activity opens the saved result directly", "Repeated result display records one tournament");
+    private static final List<String> SETTLEMENT_CAPTURES = List.of("01-next-hand-restored.png", "02-result-restored.png");
+
+    private record Journey(String scenario, String description, String conclusion,
+                           List<String> assertions, List<String> captures) { }
 
     public static void main(String[] args) throws Exception {
         if (args.length != 3) throw new IllegalArgumentException("Expected report, native evidence directory and app APK");
@@ -70,12 +78,19 @@ class PublishTournamentExtent {
 
     private static ReportArtifactProfile.Scenario nativeUi(ExtentReportSession report, Path evidence, JsonNode receipt, Path apk) throws Exception {
         String journey = receipt.path("journey").asText("tournament");
-        boolean releaseSmoke = journey.equals("release-smoke");
-        if (!releaseSmoke && !journey.equals("tournament")) throw new IllegalArgumentException("Unknown native journey " + journey);
-        var checks = nativeChecks(receipt, releaseSmoke ? RELEASE_SMOKE_ASSERTIONS : TOURNAMENT_ASSERTIONS);
+        var contract = switch (journey) {
+            case "release-smoke" -> new Journey("ReleaseInstallSmoke", "Installable release APK opens and navigates its entry screens",
+                    "The signed release APK opens the expected app flow", RELEASE_SMOKE_ASSERTIONS, RELEASE_SMOKE_CAPTURES);
+            case "tournament" -> new Journey("TournamentSanity", "Three hands to victory and an opening all-in defeat",
+                    "The device follows the tournament contract", TOURNAMENT_ASSERTIONS, TOURNAMENT_CAPTURES);
+            case "settlement-resume" -> new Journey("SettlementResumeSanity", "Continue from a settled table during Activity interruption",
+                    "The accepted continuation survives once", SETTLEMENT_ASSERTIONS, SETTLEMENT_CAPTURES);
+            default -> throw new IllegalArgumentException("Unknown native journey " + journey);
+        };
+        var checks = nativeChecks(receipt, contract.assertions());
         var captureNames = new ArrayList<String>();
         for (var entry : receipt.required("captures")) captureNames.add(entry.asText());
-        var expectedCaptures = releaseSmoke ? RELEASE_SMOKE_CAPTURES : TOURNAMENT_CAPTURES;
+        var expectedCaptures = contract.captures();
         checks.add(new AtfAssertion("Native capture inventory matches the journey", String.join(", ", expectedCaptures),
                 String.join(", ", captureNames), expectedCaptures.equals(captureNames)));
         var actions = new ArrayList<String>();
@@ -88,11 +103,10 @@ class PublishTournamentExtent {
                 && checks.stream().allMatch(AtfAssertion::passed);
         var result = status(passed);
         var checkpointEvidence = new ArrayList<ReportArtifactProfile.Evidence>();
-        String scenario = releaseSmoke ? "ReleaseInstallSmoke" : "TournamentSanity";
-        String description = releaseSmoke ? "Installable release APK opens and navigates its entry screens"
-                : "Three hands to victory and an opening all-in defeat";
+        String scenario = contract.scenario();
+        String description = contract.description();
         try (var test = UiExtentReportSession.adaptScenario(
-                report.startScenario(scenario, description, List.of("e2e", "sanity", "android", releaseSmoke ? "release" : "tournament")),
+                report.startScenario(scenario, description, List.of("e2e", "sanity", "android", journey.equals("release-smoke") ? "release" : journey)),
                 ReportEvidenceProfile.forScreenshotPolicy(ReportScreenshotPolicy.EACH_CHECKPOINT), "Android native PNG");
              var phase = test.startPhase("TEST BODY")) {
             phase.observation(new ReportObservation("Android native evidence", List.of(
@@ -124,7 +138,7 @@ class PublishTournamentExtent {
                         new ReportArtifactProfile.Assertions("UI validation", List.of(
                                 new ReportArtifactProfile.Comparison("Native screenshot decodes", decodes))), status(decodes)));
             }
-            String conclusion = releaseSmoke ? "The signed release APK opens the expected app flow" : "The device follows the tournament contract";
+            String conclusion = contract.conclusion();
             phase.step(AtfGherkinKeyword.THEN, conclusion,
                     "Android native UI", null, checks, status(passed));
             var comparisons = checks.stream().map(check -> new ReportArtifactProfile.Comparison(check.name(), check.passed())).toList();

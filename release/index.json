@@ -5,7 +5,7 @@
   "previousVersion": "0.2.1",
   "changeClass": "PATCH_FIX",
   "changeRationale": "Corectează lizibilitatea sumelor în chenare, păstrarea numelui curent în clasament și reluarea comenzilor deja acceptate la decontare.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.2.2"

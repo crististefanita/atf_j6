@@ -15,9 +15,13 @@ Release-ul `v0.1.1` a fost publicat cu APK-ul și checksum-ul încărcate. API-u
 
 Diagnostic detaliat: [manifestul 0.1.0](../../release/0.1.0/release-validation.json) și [procesul de release](../release/ATF_Release.md#diagnostic-http-404-pentru-github-release). GitHub documentează că unele restricții pot ascunde URL-ul profilului și vizibilitatea în căutare ([troubleshooting](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/preventing-unauthorized-access#troubleshooting)); cererea de revizuire urmează procedura [Appeal and Reinstatement](https://docs.github.com/en/site-policy/acceptable-use-policies/github-appeal-and-reinstatement).
 
-## Owner și pas următor
+### Ediția 0.2.0
 
-Owner: titularul contului GitHub. Cereți revizuirea vizibilității publice pentru contul și repo-ul `crististefanita/atf_j6`, apoi repetați verificarea anonimă. README-ul oferă între timp linkurile Release și APK cu autentificarea explicită. Nu creați un release cu alt nume și nu mutați APK-ul pe o rută Raw: acestea nu repară cauza și ar ocoli poarta de publicare.
+GitHub confirmă release-ul publicat și ambele fișiere încărcate. Clientul autentificat a verificat integral APK-ul și checksum-ul. Scriptul de acceptanță și clientul anonim fără proxy au primit HTTP 404 pentru APK. Clientul fără proxy a primit 404 și pentru profil, repo, API-ul release-ului și checksum, iar repo-ul public folosit drept control a răspuns cu HTTP 200. Aceste observații confirmă efectul asupra accesului anonim. Cauza exactă necesită verificare la GitHub. [Manifestul ediției](../../release/0.2.0/release-validation.json)
+
+## Remediere
+
+Titularul contului GitHub poate cere revizuirea vizibilității publice pentru `crististefanita/atf_j6`. După revizuire, repetați verificarea anonimă pe rutele canonice ale ediției. Dosarul ediției consemnează între timp rezultatele autentificate și anonime.
 
 ## Criterii de închidere
 

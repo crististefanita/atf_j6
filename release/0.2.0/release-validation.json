@@ -7,30 +7,251 @@
     "minSdk": 26,
     "targetSdk": 36,
     "apkName": "HoldemLab-0.2.0.apk",
-    "apkBytes": null,
-    "sha256": null,
-    "certificateSha256": null,
+    "apkBytes": 786916,
+    "sha256": "879cf2ca6adcff6307f9e91b9f915d10da472c037093af21f9eaa5483f5d5697",
+    "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
     "debuggable": false
   },
   "publication": {
-    "state": "DRAFT",
-    "sourceCommit": null,
+    "state": "PREPARED",
+    "sourceCommit": "2f3190a5d2c782d9770aa5de81c61ab0753fc6bc",
     "evidenceCommit": null,
     "tag": "v0.2.0",
-    "releaseId": null,
+    "releaseId": 438343686,
     "publishedAt": null,
-    "githubState": "not-created",
-    "assets": []
+    "githubState": "published",
+    "assets": [
+      {
+        "name": "HoldemLab-0.2.0.apk",
+        "id": 724392058,
+        "state": "uploaded",
+        "bytes": 786916,
+        "sha256": "879cf2ca6adcff6307f9e91b9f915d10da472c037093af21f9eaa5483f5d5697"
+      },
+      {
+        "name": "HoldemLab-0.2.0.apk.sha256",
+        "id": 724392229,
+        "state": "uploaded",
+        "bytes": 86,
+        "sha256": "21262f499b8a34218631327d72825c3486224f098e2d4dc932686ead255ee3c9"
+      }
+    ],
+    "githubPublishedAt": "2026-11-08T15:46:00.0000000+00:00",
+    "githubReleaseUrl": "https://github.com/crististefanita/atf_j6/releases/tag/v0.2.0"
   },
   "qualification": {
-    "status": "DRAFT",
-    "tests": null,
-    "failures": null,
-    "errors": null,
-    "skipped": null,
-    "details": {}
+    "status": "PASS",
+    "tests": 140,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "details": {
+      "maven": {
+        "suites": 16,
+        "tests": 97.0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "mavenComponentExtent": {
+        "path": "maven-component-suites-extent.html",
+        "suites": 16,
+        "tests": 97.0
+      },
+      "androidJvm": {
+        "suites": 5,
+        "tests": 43.0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "androidComponentExtent": {
+        "path": "android-component-suites-extent.html",
+        "suites": 5,
+        "tests": 43.0
+      },
+      "releaseImpactContext": {
+        "path": "release-impact-context.json",
+        "contextState": "CONTEXT_READY",
+        "advisoryOnly": true,
+        "sha256": "051817a0d680607b1205c0a4d8752de65f8b2fe131908cd06b9113bc8eef1cc4"
+      },
+      "versionPolicy": {
+        "previousVersion": "0.1.1",
+        "changeClass": "COMPATIBLE_FEATURE",
+        "candidateVersion": "0.2.0",
+        "rationale": "Istoric de pariuri la cerere, acțiuni vizibile la fiecare loc și clasament cumulativ în turneele locale."
+      },
+      "lint": {
+        "status": "PASS",
+        "warnings": []
+      },
+      "tournamentSanity": {
+        "status": "PASS",
+        "api": 28,
+        "assertions": 63,
+        "screenshots": 8,
+        "apkSha256": "4c5892de8f332285c0c5f7c69f44f6db1180fb11330e6a494b65ea13783baaf5"
+      },
+      "releaseInstallSmoke": {
+        "status": "PASS",
+        "api": 28,
+        "assertions": 7,
+        "screenshots": 2,
+        "apkSha256": "879cf2ca6adcff6307f9e91b9f915d10da472c037093af21f9eaa5483f5d5697"
+      }
+    },
+    "publicationGovernance": {
+      "status": "PASS",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "report": "reports/J6ReleaseGovernance.html"
+    },
+    "releaseImpactReview": {
+      "candidateCommit": "2f3190a5d2c782d9770aa5de81c61ab0753fc6bc",
+      "sourceCitationsVerified": 15,
+      "suggestedSuitesVerified": 8,
+      "advisoryOnly": true
+    }
   },
   "integrity": {
-    "files": []
+    "files": [
+      {
+        "path": "HoldemLab-0.2.0.apk",
+        "bytes": 786916,
+        "sha256": "879cf2ca6adcff6307f9e91b9f915d10da472c037093af21f9eaa5483f5d5697"
+      },
+      {
+        "path": "HoldemLab-0.2.0.apk.sha256",
+        "bytes": 86,
+        "sha256": "21262f499b8a34218631327d72825c3486224f098e2d4dc932686ead255ee3c9"
+      },
+      {
+        "path": "qualification.json",
+        "bytes": 3861,
+        "sha256": "84b9e0e5e163be9e7baf44ab024c95157a99c6ce8e64d582bae7fc891571fe7d"
+      },
+      {
+        "path": "README.md",
+        "bytes": 1217,
+        "sha256": "80e7d090a2cbe7e05fbfb4426d3fdbf4d57c940966b98255c7ac0154ff337b41"
+      },
+      {
+        "path": "release-notes.md",
+        "bytes": 776,
+        "sha256": "33f294762d15ef7d0e0670d06e5e88325bca74b3a1a58a34038cc609a13be1b1"
+      },
+      {
+        "path": "reports/android-component-suites-extent.html",
+        "bytes": 2466369,
+        "sha256": "e36bbe8d554f9e757d1f34156421b544bc4788f1c8203f505e61f0da43e832ab"
+      },
+      {
+        "path": "reports/android-release-smoke-extent.html",
+        "bytes": 2602447,
+        "sha256": "887d293cb0acd31ec4fbcbc5d87be6eeb35760a4edb66b400ba157b03028c4ee"
+      },
+      {
+        "path": "reports/android-tournament-extent.html",
+        "bytes": 4090571,
+        "sha256": "be41632c717331b1289d0b9d999ddf1862695789133c9e709b4d77763195e148"
+      },
+      {
+        "path": "reports/J6ReleaseGovernance.html",
+        "bytes": 2415857,
+        "sha256": "b88ba826e76d56a1f4d53a4b16aed6b862a65d734e09620707f160b7b90f6427"
+      },
+      {
+        "path": "reports/maven-component-suites-extent.html",
+        "bytes": 2573084,
+        "sha256": "d423a7504f02fc68cd59ede8684b50a9e55e4f059592ca2fb975adb23caf9c34"
+      },
+      {
+        "path": "reports/README.md",
+        "bytes": 898,
+        "sha256": "3a59853014b293bfc994c2d00070eaa1588e3788eaeeeba911880fbdd6fd2a90"
+      }
+    ]
+  },
+  "authenticatedAssetDownload": {
+    "verified": true,
+    "source": "GitHub Releases REST asset endpoint",
+    "httpStatus": 200,
+    "finalHost": "release-assets.githubusercontent.com",
+    "bytes": 786916,
+    "sha256": "879cf2ca6adcff6307f9e91b9f915d10da472c037093af21f9eaa5483f5d5697",
+    "credentialMode": "authenticated GitHub REST API",
+    "completedUtc": "2026-11-08T15:46:00.4325187Z"
+  },
+  "authenticatedChecksumDownload": {
+    "name": "HoldemLab-0.2.0.apk.sha256",
+    "id": 724392229,
+    "state": "uploaded",
+    "bytes": 86,
+    "sha256": "21262f499b8a34218631327d72825c3486224f098e2d4dc932686ead255ee3c9",
+    "httpStatus": 200,
+    "finalHost": "release-assets.githubusercontent.com",
+    "verified": true
+  },
+  "publicDownloadAttempt": {
+    "verified": false,
+    "status": "FAILED",
+    "httpStatus": 404,
+    "credentialMode": "anonymous; no cookies, authorization or proxy",
+    "checkedAtUtc": "2026-11-08T15:47:38.8973524Z",
+    "script": "scripts/Test-PublishedHoldemDownload.ps1",
+    "observations": [
+      {
+        "endpoint": "owner",
+        "url": "https://github.com/crististefanita",
+        "httpStatus": 404,
+        "clientExit": 0
+      },
+      {
+        "endpoint": "repo",
+        "url": "https://github.com/crististefanita/atf_j6",
+        "httpStatus": 404,
+        "clientExit": 0
+      },
+      {
+        "endpoint": "repoApi",
+        "url": "https://api.github.com/repos/crististefanita/atf_j6",
+        "httpStatus": 404,
+        "clientExit": 0
+      },
+      {
+        "endpoint": "release",
+        "url": "https://github.com/crististefanita/atf_j6/releases/tag/v0.2.0",
+        "httpStatus": 404,
+        "clientExit": 0
+      },
+      {
+        "endpoint": "releaseApi",
+        "url": "https://api.github.com/repos/crististefanita/atf_j6/releases/tags/v0.2.0",
+        "httpStatus": 404,
+        "clientExit": 0
+      },
+      {
+        "endpoint": "apk",
+        "url": "https://github.com/crististefanita/atf_j6/releases/download/v0.2.0/HoldemLab-0.2.0.apk",
+        "httpStatus": 404,
+        "clientExit": 0
+      },
+      {
+        "endpoint": "checksum",
+        "url": "https://github.com/crististefanita/atf_j6/releases/download/v0.2.0/HoldemLab-0.2.0.apk.sha256",
+        "httpStatus": 404,
+        "clientExit": 0
+      },
+      {
+        "endpoint": "control",
+        "url": "https://api.github.com/repos/git/git",
+        "httpStatus": 200,
+        "clientExit": 0
+      }
+    ],
+    "interpretation": "GitHub confirms publication and authenticated downloads. Anonymous access failed on the owner profile, repository, release and both assets. Cause not established."
   }
 }

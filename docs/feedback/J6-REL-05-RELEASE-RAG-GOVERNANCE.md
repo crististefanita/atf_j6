@@ -1,7 +1,7 @@
 # J6-REL-05 — Context de impact release cu proveniență și guvernanță
 
 **Prioritate:** P1  
-**Stare:** Verificat pe un candidat curat `DRAFT`. Detectarea conflictelor semantice rămâne deschisă.
+**Stare:** Prioritizarea este verificată pe diff-ul calificat pentru 0.3.0. Detectarea conflictelor semantice rămâne deschisă.
 
 ## Constatare și rezultat
 
@@ -11,7 +11,7 @@ Retrieval-ul este intenționat **determinist, lexical și read-only**; nu folose
 
 ## Corpus și proveniență
 
-Corpusul permis este explicit: Markdown din `docs/feedback`, `docs/requirements`, `docs/testing`, `docs/release` și `docs/architecture`; README-ul principal; catalogul și indexul release; inventarul suitelor; proveniența bibliotecilor J6/Card Table; și README-urile/notițele edițiilor. Rapoartele HTML, capturile, APK-urile, receipt-urile brute, cache-urile, build-urile și directoarele TMP nu sunt surse de retrieval.
+Corpusul permis este explicit: Markdown din `docs/feedback`, `docs/requirements`, `docs/testing`, `docs/release` și `docs/architecture`; README-ul principal și ghidul Android; catalogul și indexul release; inventarul suitelor; proveniența bibliotecilor J6/Card Table; și README-urile/notițele edițiilor. Rapoartele HTML, capturile, APK-urile, receipt-urile brute, cache-urile, build-urile și directoarele TMP nu sunt surse de retrieval.
 
 Fiecare fragment returnat poartă cale, titlu/heading, linii, hash-ul fișierului și al fragmentului, commit-ul indexat, versiunea candidatului și starea feedback-ului, când există. Hash-urile sunt calculate din sursa originală; fragmentele redactează secrete și căi locale înainte de afișare. Corpusul are digest propriu, iar contextul este scris doar în directorul extern al rulării.
 
@@ -28,11 +28,14 @@ Testele actuale demonstrează citări, proveniență, redactare și abținerea l
 Runnerul a exercitat integrarea pe candidatul curat 0.2.2. Manifestul păstrează digestul contextului de impact separat de
 rezultatele testelor. [Manifestul de calificare](../../release/0.2.2/qualification.json) · [Contextul RAG](../../release/0.2.2/release-impact-context.json)
 
-### Reproducere pe candidatul 0.3.0
+## Verificare pe diff-ul 0.3.0
 
-În contextul pentru commitul `24e1770`, primele două fragmente provin din `library-provenance.json`, deși fișierul și dependențele nu s-au schimbat. `holdem-android/README.md`, care deține comportamentul nou, lipsește din allowlist. `LocalHoldemGameTest`, care verifică estimarea și vizibilitatea, lipsește dintre cele opt suite sugerate. Porțile independente au rulat suita completă.
+Contextul calificat pentru `cebeb4b` → `013c731` cita de două ori proveniența Maven în frunte. Ghidul Android și `LocalHoldemGameTest` lipseau dintre rezultate. Reluarea pe aceleași commituri pune ghidul și suita pe primul loc. Proveniența bibliotecilor neschimbate nu apare între cele 15 citări. [Contextul original al ediției](../../release/0.3.0/release-impact-context.json)
 
-Adăugați o probă lexicală cu diff limitat la UI și checkpoint. Ea trebuie să recupereze ghidul Android și suita proprie între primele rezultate. Fragmentele de proveniență trebuie să urce în clasament când diff-ul schimbă o bibliotecă. Păstrați citările și contractul consultativ pentru ambele probe.
+- RAG păstrează artefactele de calificare în inventarul diff-ului. Semnalele lexicale provin din fișierele de impact, cu excluderea dovezilor generate din ediții.
+- Un document afectat primește prioritate pentru fragmentul său cel mai relevant. Proveniența urcă atunci când diff-ul atinge manifestul sau fișierele familiei de biblioteci. Fragmentele din manifestele neschimbate rămân context secundar.
+- Suitele al căror test sau a căror clasă omonimă s-a schimbat urcă în clasament. Restul urmează modulul afectat și relevanța lexicală.
+- Testele acoperă schimbări UI și checkpoint împreună cu rapoarte istorice, plus schimbări de bibliotecă Maven și Android. Citările rămân consultative. [Teste](../../holdem-app/src/test/java/ro/atf/j6/release/ReleaseImpactRagTest.java)
 
 ## Referințe
 

@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,6 +40,11 @@ public final class ReleaseImpactRag {
             "despre", "daca", "unde", "sau", "vor", "poate", "trebuie", "fiind", "class", "interface", "package", "public",
             "private", "protected", "static", "final", "void", "string", "return", "import", "null", "true", "false",
             "override", "extends", "implements", "int", "long", "boolean", "new", "test", "source", "path", "signal");
+    private static final String ANDROID_GUIDE = "holdem-android/README.md";
+    private static final String MAVEN_PROVENANCE = "library-provenance.json";
+    private static final String ANDROID_PROVENANCE = "holdem-android/ui-library/provenance.json";
+    private static final Pattern RELEASE_EVIDENCE = Pattern.compile(
+            "^release/\\d+\\.\\d+\\.\\d+/(?!(?:README\\.md|release-notes\\.md|reports/README\\.md)$).+");
     private static final int MAX_DOCUMENT_BYTES = 1_000_000;
     private static final int MAX_HITS = 15;
     private static final int MAX_TEST_SUGGESTIONS = 8;
@@ -78,9 +84,12 @@ public final class ReleaseImpactRag {
         }
 
         List<String> changedFiles = changedFiles(root, base, head);
-        String diff = git(root, "diff", "--no-ext-diff", "--no-color", "--unified=0", base + "..." + head, "--");
+        List<String> impactPaths = changedFiles.stream().filter(path -> !RELEASE_EVIDENCE.matcher(path).matches()).toList();
+        var diffArgs = new ArrayList<>(List.of("diff", "--no-ext-diff", "--no-color", "--unified=0", base + "..." + head, "--"));
+        impactPaths.forEach(path -> diffArgs.add(":(literal)" + path));
+        String diff = impactPaths.isEmpty() ? "" : git(root, diffArgs.toArray(String[]::new));
         Map<String, Integer> query = new HashMap<>();
-        changedFiles.forEach(path -> addTokens(query, path, 3));
+        impactPaths.forEach(path -> addTokens(query, path, 3));
         Set<String> changeSignals = new HashSet<>();
         for (String line : diff.split("\\R")) if (line.startsWith("+") && !line.startsWith("+++")) {
             addTokens(query, line.substring(1), 1);
@@ -90,13 +99,24 @@ public final class ReleaseImpactRag {
         List<SourceChunk> corpus = corpus(root);
         Map<String, Integer> documentFrequency = new HashMap<>();
         for (SourceChunk chunk : corpus) for (String term : chunk.terms()) documentFrequency.merge(term, 1, Integer::sum);
-        List<RankedChunk> hits = corpus.stream().map(chunk -> rank(chunk, query, documentFrequency, corpus.size()))
-                .filter(hit -> hit.score() > 0).sorted(Comparator.comparingInt(RankedChunk::score).reversed()
+        List<RankedChunk> lexicalMatches = corpus.stream()
+                .map(chunk -> rank(chunk, query, documentFrequency, corpus.size(), documentPriority(chunk.path(), impactPaths)))
+                .filter(hit -> hit.score() > 0)
+                .sorted(Comparator.comparingInt(RankedChunk::score).reversed()
                         .thenComparing(hit -> hit.chunk().path()).thenComparing(hit -> hit.chunk().heading()))
-                .limit(MAX_HITS).toList();
+                .toList();
+        // Keep the strongest excerpt from each affected document ahead of the general lexical results.
+        Set<String> promoted = new HashSet<>();
+        List<RankedChunk> ranked = new ArrayList<>();
+        for (RankedChunk hit : lexicalMatches) {
+            boolean alreadyPromoted = hit.priority() > 0 && !promoted.add(hit.chunk().path());
+            ranked.add(alreadyPromoted ? new RankedChunk(hit.chunk(), hit.score(), 0) : hit);
+        }
+        ranked.sort(Comparator.comparingInt(RankedChunk::priority).reversed());
+        List<RankedChunk> hits = ranked.stream().limit(MAX_HITS).toList();
 
         JsonNode suites = JSON.readTree(root.resolve("config/release-test-suites.json").toFile());
-        List<RankedSuite> recommended = rankSuites(suites, query).stream().limit(MAX_TEST_SUGGESTIONS).toList();
+        List<RankedSuite> recommended = rankSuites(suites, query, impactPaths).stream().limit(MAX_TEST_SUGGESTIONS).toList();
         boolean citedChangeSignal = hits.stream().anyMatch(hit -> hit.chunk().terms().stream().anyMatch(changeSignals::contains));
         boolean enoughEvidence = !changedFiles.isEmpty() && citedChangeSignal && !recommended.isEmpty();
         String contextState = enoughEvidence ? "CONTEXT_READY" : "NEEDS_EVIDENCE";
@@ -163,8 +183,8 @@ public final class ReleaseImpactRag {
                 walk.filter(Files::isRegularFile).filter(file -> file.toString().endsWith(".md")).forEach(files::add);
             }
         }
-        for (String path : List.of("README.md", "release/README.md", "release/index.json", "config/release-test-suites.json",
-                "library-provenance.json", "holdem-android/ui-library/provenance.json")) {
+        for (String path : List.of("README.md", ANDROID_GUIDE, "release/README.md", "release/index.json",
+                "config/release-test-suites.json", MAVEN_PROVENANCE, ANDROID_PROVENANCE)) {
             if (Files.isRegularFile(root.resolve(path))) files.add(root.resolve(path));
         }
         Path releaseRoot = root.resolve("release");
@@ -220,8 +240,21 @@ public final class ReleaseImpactRag {
                 digest(value.getBytes(StandardCharsets.UTF_8)), value, state, tokens(value)));
     }
 
+    private static int documentPriority(String path, List<String> changes) {
+        return switch (path) {
+            case MAVEN_PROVENANCE -> changes.contains(path) || under(changes, "lib/") ? 2 : -1;
+            case ANDROID_PROVENANCE -> under(changes, "holdem-android/ui-library/") ? 2 : -1;
+            case ANDROID_GUIDE -> under(changes, "holdem-android/") ? 2 : 0;
+            default -> changes.contains(path) ? 1 : 0;
+        };
+    }
+
+    private static boolean under(List<String> paths, String prefix) {
+        return paths.stream().anyMatch(path -> path.startsWith(prefix));
+    }
+
     private static RankedChunk rank(SourceChunk chunk, Map<String, Integer> query,
-                                    Map<String, Integer> documentFrequency, int corpusSize) {
+                                    Map<String, Integer> documentFrequency, int corpusSize, int priority) {
         int score = 0;
         for (String term : chunk.terms()) {
             int weight = query.getOrDefault(term, 0);
@@ -229,10 +262,10 @@ public final class ReleaseImpactRag {
             int inverseFrequency = 1 + (int) Math.floor(Math.log((corpusSize + 1.0) / (documentFrequency.getOrDefault(term, 1) + 1.0)));
             score += weight * Math.max(1, inverseFrequency);
         }
-        return new RankedChunk(chunk, score);
+        return new RankedChunk(chunk, score, priority);
     }
 
-    private static List<RankedSuite> rankSuites(JsonNode inventory, Map<String, Integer> query) {
+    private static List<RankedSuite> rankSuites(JsonNode inventory, Map<String, Integer> query, List<String> changes) {
         List<RankedSuite> rows = new ArrayList<>();
         for (String scope : List.of("maven", "android")) for (JsonNode suite : inventory.path(scope)) {
             String module = suite.path("module").asText();
@@ -240,15 +273,27 @@ public final class ReleaseImpactRag {
             Map<String, Integer> terms = new HashMap<>();
             addTokens(terms, module + " " + testClass, 1);
             int score = terms.entrySet().stream().mapToInt(entry -> entry.getValue() * query.getOrDefault(entry.getKey(), 0)).sum();
-            if (score > 0) rows.add(new RankedSuite(module, testClass, score));
+            if (score > 0) rows.add(new RankedSuite(module, testClass, score, suitePriority(module, testClass, changes)));
         }
-        rows.sort(Comparator.comparingInt(RankedSuite::score).reversed().thenComparing(RankedSuite::module).thenComparing(RankedSuite::testClass));
+        rows.sort(Comparator.comparingInt(RankedSuite::priority).reversed()
+                .thenComparing(Comparator.comparingInt(RankedSuite::score).reversed())
+                .thenComparing(RankedSuite::module).thenComparing(RankedSuite::testClass));
         return List.copyOf(rows);
     }
 
+    private static int suitePriority(String module, String testClass, List<String> changes) {
+        String testPath = "/" + testClass.replace('.', '/') + ".java";
+        String sourceName = testClass.substring(testClass.lastIndexOf('.') + 1).replaceFirst("(?:Component)?Test$", "");
+        List<String> modulePaths = changes.stream().filter(path -> path.startsWith(module + "/")).toList();
+        boolean changedTest = modulePaths.stream().anyMatch(path -> path.endsWith(testPath));
+        boolean changedSource = modulePaths.stream().anyMatch(path -> path.contains("/src/main/")
+                && path.endsWith("/" + sourceName + ".java"));
+        return (modulePaths.isEmpty() ? 0 : 1) + (changedTest ? 2 : 0) + (changedSource ? 2 : 0);
+    }
+
     private static List<String> changedFiles(Path root, String base, String head) throws Exception {
-        String output = git(root, "diff", "--name-only", "--diff-filter=ACMR", base + "..." + head, "--");
-        return output.lines().map(String::strip).filter(path -> !path.isBlank()).distinct().sorted().toList();
+        String output = git(root, "diff", "--name-only", "-z", "--diff-filter=ACDMR", base + "..." + head, "--");
+        return Arrays.stream(output.split("\0")).filter(path -> !path.isEmpty()).distinct().sorted().toList();
     }
 
     private static String feedbackState(String text) {
@@ -306,6 +351,6 @@ public final class ReleaseImpactRag {
 
     private record SourceChunk(String path, String heading, int startLine, int endLine, String sourceSha256,
                                String chunkSha256, String text, String feedbackState, Set<String> terms) { }
-    private record RankedChunk(SourceChunk chunk, int score) { }
-    private record RankedSuite(String module, String testClass, int score) { }
+    private record RankedChunk(SourceChunk chunk, int score, int priority) { }
+    private record RankedSuite(String module, String testClass, int score, int priority) { }
 }

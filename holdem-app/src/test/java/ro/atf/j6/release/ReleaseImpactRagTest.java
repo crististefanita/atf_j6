@@ -3,6 +3,7 @@ package ro.atf.j6.release;
 import atf.testkit.AtfComponentTest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -86,6 +87,66 @@ class ReleaseImpactRagTest {
     }
 
     @Test
+    void ranksAffectedAndroidGuideAndSuiteAboveUnchangedProvenanceAndHistoricalReports(@TempDir Path temp) throws Exception {
+        String module = "holdem-android";
+        String suite = "ro.atf.holdem.android.LocalHoldemGameTest";
+        Path root = project(temp, "0.3.0", module, suite);
+        addSuite(root, "android", module, "ro.atf.holdem.android.HoldemTablePresentationComponentTest");
+        addSuite(root, "maven", "archive-xylophone", "ro.example.XylophoneArchiveTest");
+        write(root, "holdem-android/README.md", "# Android guide\nLocal Holdem Game estimates the win chance.\n\n## Checkpoint\nAndroid local checkpoint.\n");
+        write(root, "docs/architecture/ARCHITECTURE.md", "# Checkpoint\nAndroid checkpoint stores the Holdem Game.\n");
+        write(root, "library-provenance.json", "{\"feature\":\"Android local Holdem Game win chance checkpoint\"}\n");
+        write(root, "holdem-android/ui-library/provenance.json", "{\"feature\":\"Android local Holdem Game win chance checkpoint\"}\n");
+        String base = commit(root, "base release");
+        write(root, "holdem-android/app/src/main/java/ro/atf/holdem/android/LocalHoldemGame.java", """
+                class LocalHoldemGame {
+                    // Store the Android win chance with the checkpoint.
+                }
+                """);
+        write(root, "holdem-android/app/src/test/java/ro/atf/holdem/android/LocalHoldemGameTest.java",
+                "class LocalHoldemGameTest {}\n");
+        write(root, "docs/architecture/ARCHITECTURE.md",
+                "# Checkpoint\nAndroid checkpoint persists the local Holdem Game and win chance.\n");
+        String archive = "release/0.2.2/reports/xylophone-archive.html";
+        write(root, archive, "<p>xylophone archive holdem arena</p>\n".repeat(100));
+        String candidate = commit(root, "candidate Android change plus historical evidence");
+
+        JsonNode review = ReleaseImpactRag.review(root, "0.2.2", base, candidate, "0.3.0", temp.resolve("context.json"));
+
+        assertEquals("CONTEXT_READY", review.path("contextState").asText());
+        assertTrue(review.path("changedFiles").toString().contains(archive));
+        JsonNode sources = review.path("retrievedSources");
+        assertEquals("holdem-android/README.md", sources.get(0).path("path").asText());
+        assertEquals("docs/architecture/ARCHITECTURE.md", sources.get(1).path("path").asText());
+        JsonNode suggestions = review.path("suggestedTestSuites");
+        assertEquals(suite, suggestions.get(0).path("testClass").asText());
+        assertFalse(suggestions.toString().contains("XylophoneArchiveTest"));
+        assertFalse(sources.toString().contains(archive));
+    }
+
+    @Test
+    void promotesOnlyTheProvenanceForTheChangedLibraryFamily(@TempDir Path temp) throws Exception {
+        Path root = project(temp, "0.3.0", "holdem-android", "ro.atf.holdem.android.LocalHoldemGameTest");
+        String maven = "library-provenance.json";
+        String android = "holdem-android/ui-library/provenance.json";
+        String metadata = "{\"libraries\":[\"cardtable engine android\", \"component coordinate\"]}\n";
+        write(root, maven, metadata);
+        write(root, android, metadata);
+        write(root, "docs/architecture/ARCHITECTURE.md", "# Library layout\nCardtable engine Android component coordinate.\n");
+        String base = commit(root, "base libraries");
+
+        write(root, "lib/cardtable-engine.pom", "<artifactId>cardtable-engine</artifactId>\n");
+        String mavenCandidate = commit(root, "change Maven dependency");
+        JsonNode mavenReview = ReleaseImpactRag.review(root, base, mavenCandidate, "0.3.0", temp.resolve("maven.json"));
+        assertProvenanceRanking(mavenReview, maven, android);
+
+        write(root, "holdem-android/ui-library/cardtable-engine.pom", "<artifactId>cardtable-engine</artifactId>\n");
+        String androidCandidate = commit(root, "change Android dependency");
+        JsonNode androidReview = ReleaseImpactRag.review(root, mavenCandidate, androidCandidate, "0.3.0", temp.resolve("android.json"));
+        assertProvenanceRanking(androidReview, android, maven);
+    }
+
+    @Test
     void insufficientEvidenceIsExplicitAndOutputCannotBeWrittenIntoTheRepository(@TempDir Path temp) throws Exception {
         Path root = project(temp, "0.2.0", "unrelated-module", "ro.unrelated.UnrelatedComponentTest");
         write(root, "docs/feedback/J6-UI-01-INTERACTIVE-TABLE.md", "# Feedback\nA completely different card table topic.\n");
@@ -102,6 +163,14 @@ class ReleaseImpactRagTest {
                 "0.2.0", root.resolve("release/impact-context.json")));
     }
 
+    private static void assertProvenanceRanking(JsonNode review, String affected, String unchanged) {
+        List<String> paths = new java.util.ArrayList<>();
+        review.path("retrievedSources").forEach(source -> paths.add(source.path("path").asText()));
+        assertEquals(affected, paths.getFirst());
+        int architecture = paths.indexOf("docs/architecture/ARCHITECTURE.md");
+        assertTrue(architecture > 0 && paths.indexOf(unchanged) > architecture, paths.toString());
+    }
+
     private static Path project(Path temp, String version, String module, String testClass) throws Exception {
         Path root = temp.resolve("project");
         Files.createDirectories(root);
@@ -113,14 +182,18 @@ class ReleaseImpactRagTest {
         suiteIndex.putArray("maven");
         suiteIndex.putArray("android");
         write(root, "config/release-test-suites.json", JSON.writeValueAsString(suiteIndex));
-        JsonNode contract = JSON.readTree(root.resolve("config/release-test-suites.json").toFile());
-        ((com.fasterxml.jackson.databind.node.ArrayNode) contract.path("android")).add(JSON.createObjectNode()
-                .put("module", module).put("testClass", testClass));
-        JSON.writerWithDefaultPrettyPrinter().writeValue(root.resolve("config/release-test-suites.json").toFile(), contract);
+        addSuite(root, "android", module, testClass);
         git(root, "init", "-b", "main");
         git(root, "config", "user.name", "Release test");
         git(root, "config", "user.email", "release-test@example.invalid");
         return root;
+    }
+
+    private static void addSuite(Path root, String scope, String module, String testClass) throws Exception {
+        Path inventory = root.resolve("config/release-test-suites.json");
+        JsonNode contract = JSON.readTree(inventory.toFile());
+        ((ArrayNode) contract.path(scope)).addObject().put("module", module).put("testClass", testClass);
+        JSON.writerWithDefaultPrettyPrinter().writeValue(inventory.toFile(), contract);
     }
 
     private static String commit(Path root, String message) throws Exception {

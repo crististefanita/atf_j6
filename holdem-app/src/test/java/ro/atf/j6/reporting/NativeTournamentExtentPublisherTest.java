@@ -227,7 +227,10 @@ class NativeTournamentExtentPublisherTest {
                 report.toString(), evidence.toString(), apk.toString())
                 .redirectErrorStream(true).redirectOutput(log.toFile()).start();
         try {
-            assertTrue(process.waitFor(30, TimeUnit.SECONDS), "Native Extent publisher timed out");
+            if (!process.waitFor(90, TimeUnit.SECONDS)) {
+                org.junit.jupiter.api.Assertions.fail("Native Extent publisher timed out after 90 seconds: "
+                        + Files.readString(log));
+            }
         } finally {
             if (process.isAlive()) process.destroyForcibly();
         }

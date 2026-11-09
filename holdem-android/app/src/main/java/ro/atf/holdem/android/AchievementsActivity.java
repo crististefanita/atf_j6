@@ -22,12 +22,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import ro.cardtable.ui.screens.ScreenViews;
-
 public final class AchievementsActivity extends Activity {
     static final String PROFILE_ID = "achievement-profile";
     private static final int SURFACE = 0xff18352e;
     private static final int SELECTED = 0xff306a58;
+    private static final int TEXT = 0xfff1faf5;
+    private static final int SECONDARY = 0xffbad2c7;
+    private static final int ACCENT = 0xffa9e1c7;
 
     private final Button[] tabs = new Button[AchievementCatalog.Tier.values().length];
     private final int[] firstRows = new int[tabs.length];
@@ -35,7 +36,8 @@ public final class AchievementsActivity extends Activity {
     private AchievementCatalog catalog;
     private AchievementProgress progress;
     private AchievementCatalog.Tier tier = AchievementCatalog.Tier.EASY;
-    private List<AchievementCatalog.Entry> entries = Collections.emptyList();
+    private List<AchievementPresentation.Row> rows = Collections.emptyList();
+    private String[] familyLabels;
     private ListView list;
     private TextView summary;
     private BaseAdapter adapter;
@@ -70,12 +72,14 @@ public final class AchievementsActivity extends Activity {
         setContentView(root);
         var back = button(R.string.achievement_back);
         back.setOnClickListener(view -> finish());
-        root.addView(back);
-        TextView heading = label(26, ScreenViews.INK);
+        back.setAllCaps(false);
+        root.addView(back, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView heading = label(26, TEXT);
         if (android.os.Build.VERSION.SDK_INT >= 28) heading.setAccessibilityHeading(true);
         heading.setText(R.string.achievements);
         root.addView(heading);
-        summary = label(14, ScreenViews.MUTED);
+        summary = label(14, SECONDARY);
         root.addView(summary);
 
         try (var asset = getAssets().open("J6-PROD-01-ACHIEVEMENT-CATALOG.csv");
@@ -96,6 +100,7 @@ public final class AchievementsActivity extends Activity {
             }
         }, profileId);
 
+        familyLabels = getResources().getStringArray(R.array.achievement_families);
         var bar = new LinearLayout(this);
         root.addView(bar);
         int[] labels = {R.string.achievement_easy, R.string.achievement_medium, R.string.achievement_hard};
@@ -103,6 +108,10 @@ public final class AchievementsActivity extends Activity {
             int index = difficulty.ordinal();
             var tab = button(labels[index]);
             tab.setAllCaps(false);
+            tab.setTextSize(13);
+            tab.setMinWidth(0);
+            tab.setMinimumWidth(0);
+            tab.setMaxLines(2);
             tab.setPadding(dp(2), 0, dp(2), 0);
             tab.setOnClickListener(view -> {
                 rememberScroll();
@@ -113,34 +122,31 @@ public final class AchievementsActivity extends Activity {
         }
         var playable = new CheckBox(this);
         playable.setText(R.string.achievement_playable);
-        playable.setTextColor(ScreenViews.INK);
+        playable.setTextColor(TEXT);
         onlyPlayable = saved != null && saved.getBoolean("only-playable");
         playable.setChecked(onlyPlayable);
         root.addView(playable);
-        var empty = label(14, ScreenViews.MUTED);
+        var empty = label(14, SECONDARY);
         empty.setText(R.string.achievement_empty);
         root.addView(empty);
         list = new ListView(this);
+        list.setDivider(new android.graphics.drawable.ColorDrawable(0xff29463c));
+        list.setDividerHeight(dp(1));
         list.setEmptyView(empty);
         root.addView(list, new LinearLayout.LayoutParams(-1, 0, 1));
         adapter = new BaseAdapter() {
-            @Override public int getCount() { return entries.size(); }
-            @Override public AchievementCatalog.Entry getItem(int position) { return entries.get(position); }
+            @Override public int getCount() { return rows.size(); }
+            @Override public AchievementPresentation.Row getItem(int position) { return rows.get(position); }
             @Override public long getItemId(int position) { return position; }
 
             @Override public View getView(int position, View recycled, ViewGroup parent) {
-                var row = recycled instanceof TextView existing ? existing : label(16, ScreenViews.INK);
-                row.setPadding(dp(12), dp(12), dp(12), dp(12));
-                var entry = getItem(position);
-                String name = getString(R.string.achievement_row, entry.context(), entry.stage(), status(entry));
-                if (position == 0 || !entry.family().equals(getItem(position - 1).family()))
-                    name = getResources().getStringArray(R.array.achievement_families)[catalog.familyIndex(entry)] + "\n" + name;
-                row.setText(name);
-                return row;
+                var view = recycled instanceof AchievementRowView existing ? existing : new AchievementRowView();
+                view.bind(getItem(position));
+                return view;
             }
         };
         list.setAdapter(adapter);
-        list.setOnItemClickListener((parent, view, position, id) -> showDetails(entries.get(position)));
+        list.setOnItemClickListener((parent, view, position, id) -> showDetails(rows.get(position).entry()));
         if (saved != null) {
             tier = AchievementCatalog.Tier.valueOf(saved.getString("tier", tier.name()));
             var savedRows = saved.getIntArray("first-rows");
@@ -177,39 +183,77 @@ public final class AchievementsActivity extends Activity {
 
     private void render(AchievementCatalog.Tier difficulty) {
         tier = difficulty;
-        var all = catalog.entries(tier);
-        long done = all.stream().filter(entry -> progress.completed(entry, progress.state(entry))).count();
-        summary.setText(getString(R.string.achievement_summary, done, all.size()));
-        entries = onlyPlayable ? all.stream().filter(entry -> progress.available(entry)
-                && !progress.completed(entry, progress.state(entry))).collect(java.util.stream.Collectors.toList()) : all;
+        var tabState = AchievementPresentation.tab(catalog, progress, tier, onlyPlayable);
+        summary.setText(getString(R.string.achievement_summary, tabState.unlocked(), tabState.total()));
+        rows = tabState.rows();
         for (var item : AchievementCatalog.Tier.values()) {
             Button tab = tabs[item.ordinal()];
             tab.setSelected(item == tier);
             tab.setBackgroundTintList(android.content.res.ColorStateList.valueOf(item == tier ? SELECTED : SURFACE));
         }
         adapter.notifyDataSetChanged();
-        list.setSelectionFromTop(firstRows[tier.ordinal()], offsets[tier.ordinal()]);
+        int position = Math.min(firstRows[tier.ordinal()], rows.size() - 1);
+        if (position >= 0) list.setSelectionFromTop(position, offsets[tier.ordinal()]);
     }
 
-    private String status(AchievementCatalog.Entry entry) {
-        var state = progress.state(entry);
-        if (progress.completed(entry, state)) return getString(R.string.achievement_done);
-
-        if (!progress.available(entry)) return getString(R.string.achievement_locked);
-        return entry.lots() > 1 ? getString(R.string.achievement_lots, state.passedLots(), entry.lots())
-                : getString(R.string.achievement_score, state.correct(), entry.required());
+    private String status(AchievementPresentation.Row row) {
+        return switch (row.status()) {
+            case LOCKED -> getString(R.string.achievement_locked);
+            case READY -> getString(R.string.achievement_ready);
+            case COMPLETE -> getString(R.string.achievement_done);
+            case IN_PROGRESS -> {
+                var entry = row.entry();
+                var state = row.progress();
+                String main = entry.lots() > 1
+                        ? getString(R.string.achievement_lots, state.passedLots(), entry.lots())
+                        : getString(R.string.achievement_score, state.correct(), entry.required());
+                if (row.showsCurrentLot()) main += "\n" + getString(R.string.achievement_lot_score,
+                        state.answered(), entry.size(), state.correct());
+                yield main;
+            }
+        };
     }
 
+    private final class AchievementRowView extends LinearLayout {
+        private final TextView family = label(13, ACCENT);
+        private final TextView title = label(16, TEXT);
+        private final TextView state = label(13, SECONDARY);
+
+        AchievementRowView() {
+            super(AchievementsActivity.this);
+            setOrientation(VERTICAL);
+            setPadding(dp(12), dp(10), dp(12), dp(10));
+            family.setTypeface(null, android.graphics.Typeface.BOLD);
+            family.setPadding(0, dp(4), 0, dp(6));
+            if (android.os.Build.VERSION.SDK_INT >= 28) family.setAccessibilityHeading(true);
+            title.setTypeface(null, android.graphics.Typeface.BOLD);
+            state.setPadding(0, dp(3), 0, 0);
+            addView(family);
+            addView(title);
+            addView(state);
+        }
+
+        void bind(AchievementPresentation.Row row) {
+            var entry = row.entry();
+            family.setVisibility(row.startsFamily() ? VISIBLE : GONE);
+            family.setText(row.startsFamily() ? familyLabels[catalog.familyIndex(entry)] : "");
+            title.setText(getString(R.string.achievement_title, entry.context(), entry.stage()));
+            state.setText(status(row));
+            state.setTextColor(row.status() == AchievementPresentation.Status.COMPLETE
+                    ? ACCENT : SECONDARY);
+        }
+    }
     private void showDetails(AchievementCatalog.Entry entry) {
+        var row = AchievementPresentation.row(entry, progress, false);
         var prerequisite = catalog.find(entry.prerequisite());
         String detail = getString(R.string.achievement_criteria, entry.required(), entry.size(), entry.lots());
         if (prerequisite != null) detail += "\n" + getString(R.string.achievement_prerequisite,
                 prerequisite.context(), prerequisite.stage());
         var dialog = new AlertDialog.Builder(this)
                 .setTitle(entry.context())
-                .setMessage(detail + "\n\n" + status(entry))
+                .setMessage(detail + "\n\n" + status(row))
                 .setNegativeButton(android.R.string.cancel, null);
-        if (progress.available(entry) && !progress.completed(entry, progress.state(entry)))
+        if (row.canPractice())
             dialog.setPositiveButton(R.string.achievement_practice, (ignored, which) -> ask(entry));
         dialog.show();
     }
@@ -263,10 +307,8 @@ public final class AchievementsActivity extends Activity {
             var state = progress.state(entry);
             String result = getString(correct ? R.string.achievement_correct : R.string.achievement_incorrect);
             String explanation = exercise.explanation();
-            String lot = entry.tier() == AchievementCatalog.Tier.EASY ? "" : "\n"
-                    + getString(R.string.achievement_lot_score, state.answered(), entry.size(), state.correct());
             var dialog = new AlertDialog.Builder(this).setTitle(result)
-                    .setMessage(explanation + "\n\n" + status(entry) + lot)
+                    .setMessage(explanation + "\n\n" + status(AchievementPresentation.row(entry, progress, false)))
                     .setNegativeButton(R.string.achievement_back, null);
             if (!progress.completed(entry, state))
                 dialog.setPositiveButton(R.string.achievement_next, (ignored, which) -> ask(entry));
@@ -280,7 +322,8 @@ public final class AchievementsActivity extends Activity {
     private Button button(int text) {
         var view = new Button(this);
         view.setText(text);
-        view.setTextColor(ScreenViews.INK);
+        view.setTextColor(TEXT);
+        view.setBackgroundTintList(android.content.res.ColorStateList.valueOf(SURFACE));
         return view;
     }
 

@@ -20,10 +20,10 @@ Hold’em Android are sesiune locală și clasament de turnee. Propunerea adaug�
 
 - Adăugați intrarea **Realizări** în meniul profilului.
 - Ecranul afișează progresul total și trei taburi fixe, **Ușoare**, **Medii** și **Grele**, fiecare cu numărul deblocat și totalul. Tabul păstrează selecția și poziția la revenirea din detalii. Filtrele sunt Toate, În progres și Deblocate, cu căutare după titlu sau familie.
-- Lista virtualizată folosește rânduri compacte cu titlu, criteriu și progres numeric. În detalii se văd prerechizitul, sursa creditului și următorul pas.
+- Lista virtualizată separă antetul familiei, titlul realizării și starea. Un lot greu în curs afișează atât loturile promovate, cât și numărul de răspunsuri din lotul curent. Detaliile afișează criteriul și etapa necesară.
 - În profil compact, taburile încap fără derulare orizontală. Folosiți text și icon pentru stare și verificați contrastul și ordinea TalkBack.
 - Pentru profil fără progres, fiecare tab arată un prim pas. Testele de componentă acoperă selecția, filtrele, listele goale, 500 de rânduri și păstrarea poziției.
-- Smoke-ul verifică navigarea din meniu, schimbarea tabului și revenirea din detalii.
+- Smoke-ul verifică navigarea din meniu și schimbarea tabului. Proba cu profil simulat verifică stările deblocată, în curs și blocată, precum și alinierea celor trei taburi în profil compact.
 
 ## Praguri
 

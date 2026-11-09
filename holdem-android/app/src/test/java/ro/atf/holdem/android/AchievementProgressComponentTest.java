@@ -110,6 +110,57 @@ public class AchievementProgressComponentTest {
         assertEquals("Egalitate", boardPlays.options().get(boardPlays.correct()));
     }
 
+    @Test public void mockedProgressActivatesNextStageAndKeepsLockedRowsOutOfPractice() {
+        saved.put("achievements-v1:one:pozitie-1-easy", "1:1:1:0");
+        var progress = profile("one");
+        var tab = AchievementPresentation.tab(catalog, progress, AchievementCatalog.Tier.EASY, false);
+        assertEquals(500, tab.total());
+        assertEquals(1, tab.unlocked());
+        assertEquals(AchievementPresentation.Status.COMPLETE, tab.rows().get(0).status());
+        assertEquals(AchievementPresentation.Status.IN_PROGRESS, tab.rows().get(1).status());
+        assertEquals(AchievementPresentation.Status.LOCKED, tab.rows().get(2).status());
+        assertEquals(AchievementPresentation.Status.READY, tab.rows().get(5).status());
+
+        var filtered = AchievementPresentation.tab(catalog, progress, AchievementCatalog.Tier.EASY, true);
+        assertEquals(500, filtered.total());
+        assertEquals(1, filtered.unlocked());
+        assertEquals("pozitie-1-u2", filtered.rows().get(0).entry().id());
+        assertTrue(filtered.rows().get(0).startsFamily());
+        assertFalse(filtered.rows().get(1).startsFamily());
+        assertTrue(filtered.rows().stream().allMatch(AchievementPresentation.Row::canPractice));
+    }
+
+    @Test public void mockedHardLotShowsBothCountersAfterReload() {
+        saved.put("achievements-v1:one:pozitie-1-easy", "5:5:5:0");
+        saved.put("achievements-v1:one:pozitie-1-m1", "10:0:0:1");
+        saved.put("achievements-v1:one:pozitie-1-m2", "15:0:0:1");
+        saved.put("achievements-v1:one:pozitie-1-g1", "17:7:5:1");
+        var tab = AchievementPresentation.tab(catalog, profile("one"), AchievementCatalog.Tier.HARD, true);
+        assertEquals(100, tab.total());
+        assertEquals(0, tab.unlocked());
+        assertEquals(1, tab.rows().size());
+        var row = tab.rows().get(0);
+        assertEquals(AchievementPresentation.Status.IN_PROGRESS, row.status());
+        assertTrue(row.startsFamily());
+        assertTrue(row.showsCurrentLot());
+        assertEquals(1, row.progress().passedLots());
+        assertEquals(7, row.progress().answered());
+        assertEquals(5, row.progress().correct());
+
+        var other = AchievementPresentation.tab(catalog, profile("other"), AchievementCatalog.Tier.HARD, true);
+        assertTrue(other.rows().isEmpty());
+    }
+
+    @Test public void mockUnlockUpdatesTheDisplayedSummaryAndNextPracticeRowAfterAnAnswer() {
+        var entry = catalog.find("pozitie-1-u1");
+        var progress = profile("one");
+        assertEquals(AchievementPresentation.Status.READY, AchievementPresentation.row(entry, progress, true).status());
+        assertTrue(progress.submit(entry, 0, AchievementExercises.question(entry, 0).correct()));
+        var tab = AchievementPresentation.tab(catalog, profile("one"), AchievementCatalog.Tier.EASY, true);
+        assertEquals(1, tab.unlocked());
+        assertEquals("pozitie-1-u2", tab.rows().get(0).entry().id());
+    }
+
     private AchievementProgress profile(String id) { return new AchievementProgress(catalog, storage, id); }
 
     private static void answer(AchievementProgress progress, AchievementCatalog.Entry entry, int count, int right) {

@@ -40,9 +40,9 @@ Testele curente acoperă ordinea actorilor, sizing-ul minim, menținerea stării
 | Cash, 2–6 locuri | `audit-cash-sessions.cjs` verifică dealerul, blindurile fixe, durata, stivele și conservarea. Candidatul și controlul pornesc cu același seed și primul buton. |
 | Politică și lineup | CLI-ul verifică stilul efectiv cu și fără YAML explicit. `TournamentStrategyArenaTest` acoperă rotația rolurilor și jurnalul public, inclusiv lineup-ul adversarial separat. |
 
-`HardPressurePolicyTest` joacă limp-ul în motor și verifică separat perechea premium, mâna slabă, stiva proprie și suma maximă pe care o poate egala adversarul. Testul de configurație verifică încărcarea YAML cu și fără opțiunea din blindul mare și respinge o valoare care nu este booleană.
-
-`MonteCarloEquityEstimatorTest` compară seed-ul implicit cu un reper numeric, la două bugete de eșantionare. Calificarea unei politici repetă aceleași partide în procese JVM separate și compară deciziile, pe lângă auditul independent al legalității și scorului.
+- **Opțiunea din blindul mare.** `HardPressurePolicyTest` joacă limp-ul în motor și verifică perechea premium, mâna slabă, stiva proprie și acoperirea sumei. Loaderul verifică valoarea booleană a opțiunii YAML.
+- **Raise cu preț pozitiv.** Testele variază discountul de call, poziția heads-up, agresiunea publică și acoperirea minimului legal. Verifică pragul separat și suma executată. Loaderul validează cheile și limitele ponderilor de raise.
+- **Reproductibilitate.** `MonteCarloEquityEstimatorTest` compară seed-ul implicit cu un reper numeric, la două bugete. Calificarea repetă partidele în procese JVM separate și auditează legalitatea și scorul independent.
 | Istoric de shove | `--require-public-shove-history` reconstruiește oportunitățile din stivă și acțiunile legale. Compară numai contoarele mâinilor deja încheiate. |
 
 - Cohortele `equity` și `legacy-equity` păstrează locurile candidate și seed-urile. Pragurile loose-aggressive se compară prin perechi YAML.

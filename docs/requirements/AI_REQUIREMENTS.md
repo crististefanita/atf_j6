@@ -46,19 +46,19 @@ flowchart LR
     DECK -->|alimentează| MC[Eșantionează adversari activi și board-ul rămas]
     MC -->|estimează| EQ[Equity medie, win/tie și eroare standard]
     OBS -->|descrie| CTX[Pot odds, adversari activi, acțiuni publice, locuri care mai pot acționa]
-    EQ -->|se compară cu| RISK[Prag de continuare ponderat]
-    CTX -->|ajustează| RISK
-    RISK -->|orientează| ACT{Acțiune legală}
-    ACT -->|equity sub prag| FOLD[Fold sau check]
-    ACT -->|equity peste prag| CALL[Call numai dacă prețul e justificat]
-    ACT -->|edge suplimentar| RAISE[Raise/bet ca fracție din pot]
+    EQ -->|se compară cu| CALL[Prag de call]
+    EQ -->|se compară cu| RAISE[Prag de raise Hard]
+    CTX -->|ajustează| CALL
+    CTX -->|ajustează| RAISE
+    RAISE -->|echitate și sumă legale| ACT{Acțiune}
+    CALL -->|alternativă la raise| ACT
 ```
 
 <details>
 <summary><strong>Legendă — observație și prag</strong></summary>
 
 - **Eșantionarea** estimează equity din cărțile necunoscute.
-- **Contextul public** ajustează pragul de continuare.
+- **Contextul public** alimentează ambele praguri. Fiecare folosește ponderile acțiunii sale.
 - **Acțiunea** este aleasă numai dintre opțiunile legale.
 
 </details>
@@ -66,7 +66,7 @@ flowchart LR
 | Decizie | Calcul și limite |
 |---|---|
 | Call | Pentru un call pozitiv, `c = min(toCall, heroStack)`. Pragul pornește de la `ceil(100 × c / (pot + c))` și adaugă marjele de mod, adversari, poziție, agresiune, presiune, stivă și incertitudine. Intervalul final este 0–98%. |
-| Raise contra unui preț pozitiv | Cere pragul de continuare plus `raiseEdgePercent` și marja pentru adversari suplimentari, până la 99%. Motorul furnizează intervalul legal pentru jetoanele adăugate prin acțiune. |
+| Raise contra unui preț pozitiv | Hard cu `raiseContext` calculează separat pragul de raise. Profilurile fără acest bloc folosesc pragul de call plus `raiseEdgePercent` și marja pentru adversari suplimentari. Motorul furnizează intervalul legal. |
 | Bet | Când prețul este zero, pragul de valoare ține cont de adversari, agresiune, poziție și mod. Politica de bază calculează 25–75% din pot înainte de aplicarea limitelor legale. |
 
 - **Incertitudine.** `uncertaintyZHundredths: 164` înseamnă `z = 1,64`. Componenta de prag este `ceil(z × standardError × 100)`, în puncte procentuale. Agresiunile proprii sunt excluse.
@@ -79,7 +79,23 @@ flowchart LR
 - Normal păstrează adversarii check/call. În Hard, adversarii, coach-ul și preluarea folosesc aceeași politică contextuală cu 512 eșantioane pe decizie.
 - Profilul reduce cu până la trei puncte procentuale pragul unei continuări preflop de cel mult două blinduri mari. Păstrează pragul obișnuit în fața unui all-in agresiv sau a riscului de eliminare și ține cont de costul apelului și eroarea estimării.
 
-| Deschidere heads-up | Condiții suplimentare |
+#### Raise cu preț pozitiv
+
+Turneul local Hard folosește aceleași ponderi ca profilul YAML de arenă. Ponderile din `hardPressure.raiseContext` sunt exprimate în puncte procentuale, iar limita de angajare este un procent din stivă.
+
+| Semnal | Aplicare |
+|---|---|
+| Preț și incertitudine | Pornește de la pot odds rotunjite în sus, eroarea de eșantionare, `baseMargin` și `raiseEdgePercent`. |
+| Poziție | Adaugă `positionMargin` devreme și o scade pentru ultima jumătate a locurilor care pot acționa, rotunjită în jos la minimum un loc. Heads-up, ultimul actor beneficiază de reducere. |
+| Adversari | Adaugă `multiwayMargin` pentru fiecare adversar suplimentar în mână. Numără până la trei agresiuni adverse pe strada curentă. Adaugă prime distincte când o acțiune ridică prețul cu cel puțin 75% din potul anterior sau când un all-in ridică prețul. |
+| Acoperire | Plafonează suma la capacitatea celui mai bine finanțat adversar activ, ținând cont de contribuții. Exclude jucătorii care au dat fold sau și-au consumat stiva. Dacă plafonul cade sub minimul legal, evaluează call-ul sau fold-ul. |
+| Angajarea stivei | La `commitmentThresholdPercent` din stiva rămasă, cere `commitmentMargin` în plus. Când echitatea justifică doar o mărire mai mică, plafonează suma imediat sub limită și verifică minimul legal. |
+
+Discountul de call ieftin, reducerea de urgență pentru stivă scurtă și istoricul de shove rămân în pragul de call. Raise-ul folosește acțiunile adverse din mâna curentă. Jurnalul separă pragul de call `required` de `raiseRequired` și afișează plafonul `raiseCap` când motorul oferă raise.
+
+#### Pariu de deschidere postflop
+
+| Deschidere heads-up la preț zero | Condiții suplimentare |
 |---|---|
 | 1× pot | Turn sau river, cel puțin două perechi și equity conservatoare de minimum 76%. |
 | 2× pot | Aceleași condiții, cu minimum 86%. |
@@ -117,14 +133,11 @@ Arena poate activa `hardPressure.bigBlindValueRaise` pentru o comparație dedica
 
 ## Acceptanță
 
-O politică nouă se acceptă numai dacă:
+O schimbare de decizie trebuie să păstreze legalitatea, reproductibilitatea și izolarea cărților ascunse. Evaluarea competitivă măsoară separat diferența față de control.
 
-- bate baseline-ul pe un corpus ținut separat și pe seed-uri independente, nu doar pe rotații pereche ale aceluiași seed;
-- nu regresează legalitatea sau timeout-ul;
-- păstrează aceeași decizie pe replay determinist;
-- are rezultate raportate cu număr de turnee și mâini, seed-cluster, interval de încredere și drawdown;
-- este testată împotriva mai multor stiluri, nu doar împotriva propriei versiuni;
-- nu primește informație ascunsă accidental.
+- **Control.** Compară pe un corpus ținut separat și pe seed-uri independente, cu același buget și mai multe stiluri de adversar.
+- **Raport.** Include numărul de turnee și mâini, diferența pereche, intervalul de încredere și drawdown-ul când jurnalul îl măsoară.
+- **Promovare competitivă.** Cere un avantaj față de control care depășește incertitudinea. O schimbare structurală poate fi acceptată pentru comportamentul verificat în teste și trebuie evaluată separat înainte de a i se atribui un avantaj la victorii.
 
 ## Politică mixtă de bluff pentru laborator
 

@@ -1,6 +1,7 @@
 package ro.atf.holdem.ai;
 
 import java.util.List;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import ro.atf.holdem.core.*;
 
@@ -20,6 +21,94 @@ class HardPressurePolicyTest {
         assertEquals(baseline.requiredEquityPercent(cheap) - 3, hard.requiredEquityPercent(cheap));
         assertEquals(baseline.requiredEquityPercent(expensive), hard.requiredEquityPercent(expensive));
         assertEquals(baseline.requiredEquityPercent(shoved), hard.requiredEquityPercent(shoved));
+    }
+
+    @Test void preflopCallDiscountCannotChangeRaiseThresholdOrSizing() {
+        var spot = new HoldemObservation(5, 0, 2, 1, Street.PREFLOP, cards("As", "Ad"), List.of(), 120,
+                20, 500, 0, List.of(500, 500), pricedActions(40), List.of("SEATS [0, 1]", "BB 1 20"),
+                0, 20, List.of(0, 20));
+        var tight = splitPolicy(0).decide(spot);
+        var loose = splitPolicy(8).decide(spot);
+        assertTrue(metric(loose, "required") < metric(tight, "required"));
+        assertEquals(metric(tight, "raiseRequired"), metric(loose, "raiseRequired"));
+        assertEquals(ActionType.RAISE, tight.action());
+        assertEquals(tight.action(), loose.action());
+        assertEquals(tight.amount(), loose.amount());
+        assertTrue(loose.policyVersion().contains("-split.8.5.4.3.4.6.10.60"));
+    }
+
+    @Test void raiseSeparatesHeadsUpPositionAndPublicPressure() {
+        var candidate = splitPolicy(3);
+        var neutral = List.of("SEATS [0, 1]", "RIVER [Qs, Js, Ts, 2d, 3c]");
+        var withBet = List.of("SEATS [0, 1]", "RIVER [Qs, Js, Ts, 2d, 3c]", "RIVER 1 BET 20");
+        var onButton = candidate.decide(pricedRiver(0, 500, List.of(500, 500), List.of(40, 60), 40, neutral));
+        var outOfPosition = candidate.decide(pricedRiver(1, 500, List.of(500, 500), List.of(40, 60), 40, neutral));
+        var underPressure = candidate.decide(pricedRiver(0, 500, List.of(500, 500), List.of(40, 60), 40, withBet));
+        assertEquals(8, metric(outOfPosition, "raiseRequired") - metric(onButton, "raiseRequired"));
+        assertEquals(3, metric(underPressure, "raiseRequired") - metric(onButton, "raiseRequired"));
+    }
+
+    @Test void minimumRaiseCommitmentRaisesOnlyTheAggressionThreshold() {
+        var candidate = splitPolicy(3);
+        var history = List.of("SEATS [0, 1]", "RIVER [Qs, Js, Ts, 2d, 3c]", "RIVER 1 BET 20");
+        var uncommitted = candidate.decide(pricedRiver(0, 100, List.of(100, 500), List.of(40, 60), 59, history));
+        var committed = candidate.decide(pricedRiver(0, 100, List.of(100, 500), List.of(40, 60), 60, history));
+        assertEquals(metric(uncommitted, "required"), metric(committed, "required"));
+        assertEquals(10, metric(committed, "raiseRequired") - metric(uncommitted, "raiseRequired"));
+        assertEquals(ActionType.RAISE, committed.action());
+        assertTrue(committed.amount() >= 60 && committed.amount() < 100);
+    }
+
+    @Test void moderateEquityCanRaiseBelowTheCommitmentCutoffOrCallIfTheMinimumExceedsIt() {
+        var weights = new ContextualEquityPolicy.RaiseContext(25, 5, 4, 3, 4, 6, 35, 60);
+        var candidate = policy(new ContextualEquityPolicy.HardPressure(3, 76, 86, 94, false, weights));
+        var sized = candidate.decide(overpairFacingBet(40));
+        assertEquals(ActionType.RAISE, sized.action());
+        assertEquals(59, sized.amount());
+        assertEquals(ActionType.CALL, candidate.decide(overpairFacingBet(60)).action());
+    }
+
+    @Test void sidePotRaiseRequiresAFundedNonFoldedOpponentWhoCanMatchTheMinimum() {
+        var history = List.of("SEATS [0, 2, 4, 5]", "PREFLOP 2 FOLD 0",
+                "RIVER [Qs, Js, Ts, 2d, 3c]", "RIVER 5 ALL_IN 20");
+        var candidate = splitPolicy(3);
+        var shortOpponent = pricedRiver(0, 500, List.of(500, 900, 10, 0),
+                List.of(40, 10, 60, 200), 40, history);
+        var fundedOpponent = pricedRiver(0, 500, List.of(500, 900, 24, 0),
+                List.of(40, 10, 60, 200), 40, history);
+        assertEquals(ActionType.CALL, candidate.decide(shortOpponent).action());
+        var raise = candidate.decide(fundedOpponent);
+        assertEquals(ActionType.RAISE, raise.action());
+        assertEquals(44, raise.amount());
+    }
+
+    private static HoldemObservation pricedRiver(int position, int stack, List<Integer> stacks,
+                                                List<Integer> contributions, int minRaise, List<String> history) {
+        return new HoldemObservation(1, 0, stacks.size(), stacks.size() == 2 ? 1 : 2,
+                Street.RIVER, cards("As", "Ks"), ROYAL, 150, 20, stack, position, stacks,
+                pricedActions(minRaise), history, 0, 20, contributions);
+    }
+
+    private static HoldemObservation overpairFacingBet(int minRaise) {
+        return new HoldemObservation(11, 0, 2, 1, Street.FLOP, cards("As", "Ad"), cards("7c", "9h", "Js"),
+                150, 20, 100, 0, List.of(100, 500), pricedActions(minRaise),
+                List.of("SEATS [0, 1]", "FLOP [7c, 9h, Js]", "FLOP 1 BET 20"), 0, 20, List.of(65, 85));
+    }
+
+    private static List<LegalAction> pricedActions(int minRaise) {
+        return List.of(LegalAction.noAmount(ActionType.FOLD), new LegalAction(ActionType.CALL, 20, 20, 20),
+                new LegalAction(ActionType.RAISE, minRaise, minRaise, 500));
+    }
+
+    private static int metric(Decision decision, String name) {
+        var match = Pattern.compile(" " + name + "=(\\d+)(?:\\.0)?%").matcher(decision.explanation());
+        assertTrue(match.find(), decision::explanation);
+        return Integer.parseInt(match.group(1));
+    }
+
+    private static ContextualEquityPolicy splitPolicy(int discount) {
+        var context = new ContextualEquityPolicy.RaiseContext(8, 5, 4, 3, 4, 6, 10, 60);
+        return policy(new ContextualEquityPolicy.HardPressure(discount, 76, 86, 94, false, context));
     }
 
     @Test void deepHeadsUpNutHandUsesTwoPotOnTurnAndThreeOnRiver() {

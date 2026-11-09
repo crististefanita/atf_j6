@@ -57,3 +57,12 @@ hardPressure:
   fullPotEquity: 76
   doublePotEquity: 86
   triplePotEquity: 94
+  raiseContext:
+    baseMargin: 8
+    multiwayMargin: 5
+    positionMargin: 2
+    aggressionMargin: 3
+    largeBetMargin: 3
+    allInMargin: 6
+    commitmentMargin: 8
+    commitmentThresholdPercent: 75

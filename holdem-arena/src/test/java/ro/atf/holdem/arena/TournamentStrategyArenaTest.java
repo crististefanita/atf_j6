@@ -23,6 +23,33 @@ class TournamentStrategyArenaTest {
 
     @TempDir Path temp;
 
+    @Test void hardRaiseWeightsAreIndependentAndRejectIncompleteOrUnknownKeys() throws Exception {
+        String legacy = Files.readString(config("policy-tuning/j6-policy-hard-pressure.yaml"))
+                .replaceAll("(?ms)^  raiseContext:.*\\z", "").stripTrailing();
+        var path = temp.resolve("hard-context.yaml");
+        assertNull(TournamentPolicyConfig.load(Files.writeString(path, legacy)).hardPressure().raiseContext());
+        String context = """
+
+                  raiseContext:
+                    baseMargin: 8
+                    multiwayMargin: 5
+                    positionMargin: 4
+                    aggressionMargin: 3
+                    largeBetMargin: 4
+                    allInMargin: 6
+                    commitmentMargin: 10
+                    commitmentThresholdPercent: 60
+                """;
+        var parsed = TournamentPolicyConfig.load(Files.writeString(path, legacy + context)).hardPressure().raiseContext();
+        assertEquals(new ro.atf.holdem.ai.ContextualEquityPolicy.RaiseContext(8, 5, 4, 3, 4, 6, 10, 60), parsed);
+        for (String invalid : List.of(context.replace("positionMargin", "position"),
+                context.replace("    positionMargin: 4\n", ""),
+                context.replace("ThresholdPercent: 60", "ThresholdPercent: 49"))) {
+            Files.writeString(path, legacy + invalid);
+            assertThrows(IllegalArgumentException.class, () -> TournamentPolicyConfig.load(path));
+        }
+    }
+
     @Test void bigBlindValueRaiseIsOptionalAndRequiresABoolean() throws Exception {
         String valid = Files.readString(config("policy-tuning/j6-policy-hard-pressure.yaml"))
                 .replaceAll("(?m)^  bigBlindValueRaise:.*\\R?", "").stripTrailing();

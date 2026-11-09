@@ -149,6 +149,7 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
         var required = java.util.Set.of("cheapPreflopDiscount", "fullPotEquity", "doublePotEquity", "triplePotEquity");
         var keys = new java.util.HashSet<>(hard.keySet());
         keys.remove("bigBlindValueRaise");
+        keys.remove("raiseContext");
         if (!keys.equals(required))
             throw new IllegalArgumentException("Expected exact hardPressure settings");
         Object bigBlindValueRaise = hard.containsKey("bigBlindValueRaise") ? hard.get("bigBlindValueRaise") : false;
@@ -156,7 +157,21 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
             throw new IllegalArgumentException("Expected boolean bigBlindValueRaise");
         return new ContextualEquityPolicy.HardPressure(integer(hard, "cheapPreflopDiscount"),
                 integer(hard, "fullPotEquity"), integer(hard, "doublePotEquity"), integer(hard, "triplePotEquity"),
-                enabled);
+                enabled, raiseContext(hard));
+    }
+
+    private static ContextualEquityPolicy.RaiseContext raiseContext(Map<?, ?> hard) {
+        if (!hard.containsKey("raiseContext")) return null;
+        if (!(hard.get("raiseContext") instanceof Map<?, ?> context)
+                || !context.keySet().equals(java.util.Set.of("baseMargin", "multiwayMargin", "positionMargin",
+                    "aggressionMargin", "largeBetMargin", "allInMargin", "commitmentMargin",
+                    "commitmentThresholdPercent")))
+            throw new IllegalArgumentException("Expected exact raiseContext settings");
+        return new ContextualEquityPolicy.RaiseContext(integer(context, "baseMargin"),
+                integer(context, "multiwayMargin"), integer(context, "positionMargin"),
+                integer(context, "aggressionMargin"), integer(context, "largeBetMargin"),
+                integer(context, "allInMargin"), integer(context, "commitmentMargin"),
+                integer(context, "commitmentThresholdPercent"));
     }
 
     public TournamentPolicyConfig {

@@ -19,8 +19,8 @@ android {
         applicationId 'ro.atf.holdem.android'
         minSdk 26
         targetSdk 36
-        versionCode 19
-        versionName '0.11.1'
+        versionCode 20
+        versionName '0.12.0'
         testApplicationId 'ro.atf.holdem.android.test'
         testInstrumentationRunner 'ro.atf.holdem.android.TournamentSanity'
     }
@@ -80,12 +80,14 @@ abstract class GenerateGameplayAchievementCatalog extends DefaultTask {
                 if (row.keySet() != ['id', 'metric', 'target', 'label'].toSet() ||
                         !(row.id ==~ /[a-z][a-z0-9-]*/) || !(row.metric ==~ /[A-Z][A-Z0-9_]*/) ||
                         !(row.target instanceof Integer) || row.target < 1 ||
-                        !(row.label ==~ /gameplay_achievement_[a-z0-9_]+/) ||
+                        !(row.label ==~ /(plurals\/)?gameplay_achievement_[a-z0-9_]+/) ||
                         !ids.add(row.id) || !labels.add(row.label) ||
                         !rules.add([row.metric, row.target])) {
                     throw new GradleException("Invalid or duplicate achievement in $tier: $row")
                 }
-                "new Milestone(\"$row.id\", Metric.$row.metric, $row.target, R.string.$row.label)"
+                def plural = row.label.startsWith('plurals/')
+                def resource = plural ? row.label.replace('/', '.') : "string.$row.label"
+                "new Milestone(\"$row.id\", Metric.$row.metric, $row.target, R.$resource, $plural)"
             }
             "            case $tier -> List.of(\n                    " + entries.join(',\n                    ') + ');'
         }.join('\n')

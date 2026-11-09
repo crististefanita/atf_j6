@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Hold’em Lab</string>
     <string name="language">Language</string>
     <string name="profile">Profile · %1$s</string>
@@ -172,19 +172,47 @@
     <string name="achievement_training">Training exercises</string>
     <string name="gameplay_achievement_earned">Earned · %1$d/%2$d</string>
     <string name="gameplay_achievement_progress">Progress · %1$d/%2$d</string>
-    <string name="gameplay_achievement_first_pot">Win a poker hand</string>
-    <string name="gameplay_achievement_big_blind">Win a pot from the big blind</string>
-    <string name="gameplay_achievement_finish_tournament">Finish your run in a tournament</string>
-    <string name="gameplay_achievement_tournament_pot">Win a hand in a tournament</string>
-    <string name="gameplay_achievement_three_pots">Win %1$d different hands</string>
-    <string name="gameplay_achievement_first_title">Win a tournament</string>
-    <string name="gameplay_achievement_podium">Finish in the top three in %1$d different tournaments</string>
-    <string name="gameplay_achievement_multiway_showdowns">Win %1$d hands at showdown with at least three players still in the hand</string>
-    <string name="gameplay_achievement_straight">Win %1$d hands at showdown with a straight or better</string>
-    <string name="gameplay_achievement_tournament_pots">Win %1$d hands in tournaments</string>
-    <string name="gameplay_achievement_three_titles">Win %1$d different tournaments</string>
-    <string name="gameplay_achievement_high_card">Win every pot at showdown with high card</string>
-    <string name="gameplay_achievement_six_seat_titles">Win %1$d tournaments that started with six players</string>
-    <string name="gameplay_achievement_full_house">Win %1$d hands at showdown with a full house or better</string>
-    <string name="gameplay_achievement_multiway_series">Win %1$d hands at showdown with at least three players still in the hand</string>
+    <!-- The generated gameplay catalog owns these resource references. -->
+    <string name="gameplay_achievement_first_pot" tools:ignore="UnusedResources">Win a poker hand</string>
+    <string name="gameplay_achievement_big_blind" tools:ignore="UnusedResources">Win a pot from the big blind</string>
+    <string name="gameplay_achievement_finish_tournament" tools:ignore="UnusedResources">Finish your run in a tournament</string>
+    <string name="gameplay_achievement_tournament_pot" tools:ignore="UnusedResources">Win a hand in a tournament</string>
+    <plurals name="gameplay_achievement_three_pots" tools:ignore="UnusedResources">
+        <item quantity="one">Win %1$d hand</item>
+        <item quantity="other">Win %1$d different hands</item>
+    </plurals>
+    <string name="gameplay_achievement_first_title" tools:ignore="UnusedResources">Win a tournament</string>
+    <plurals name="gameplay_achievement_podium" tools:ignore="UnusedResources">
+        <item quantity="one">Finish in the top three in %1$d tournament</item>
+        <item quantity="other">Finish in the top three in %1$d different tournaments</item>
+    </plurals>
+    <plurals name="gameplay_achievement_multiway_showdowns" tools:ignore="UnusedResources">
+        <item quantity="one">Win %1$d hand at showdown with at least three players still in the hand</item>
+        <item quantity="other">Win %1$d hands at showdown with at least three players still in the hand</item>
+    </plurals>
+    <plurals name="gameplay_achievement_straight" tools:ignore="UnusedResources">
+        <item quantity="one">Win %1$d hand at showdown with a straight or better</item>
+        <item quantity="other">Win %1$d hands at showdown with a straight or better</item>
+    </plurals>
+    <plurals name="gameplay_achievement_tournament_pots" tools:ignore="UnusedResources">
+        <item quantity="one">Win %1$d hand in tournaments</item>
+        <item quantity="other">Win %1$d hands in tournaments</item>
+    </plurals>
+    <plurals name="gameplay_achievement_three_titles" tools:ignore="UnusedResources">
+        <item quantity="one">Win %1$d tournament</item>
+        <item quantity="other">Win %1$d different tournaments</item>
+    </plurals>
+    <string name="gameplay_achievement_high_card" tools:ignore="UnusedResources">Win every pot at showdown with high card</string>
+    <plurals name="gameplay_achievement_six_seat_titles" tools:ignore="UnusedResources">
+        <item quantity="one">Win %1$d tournament that started with six players</item>
+        <item quantity="other">Win %1$d tournaments that started with six players</item>
+    </plurals>
+    <plurals name="gameplay_achievement_full_house" tools:ignore="UnusedResources">
+        <item quantity="one">Win %1$d hand at showdown with a full house or better</item>
+        <item quantity="other">Win %1$d hands at showdown with a full house or better</item>
+    </plurals>
+    <plurals name="gameplay_achievement_multiway_series" tools:ignore="UnusedResources">
+        <item quantity="one">Win %1$d hand at showdown with at least three players still in the hand</item>
+        <item quantity="other">Win %1$d hands at showdown with at least three players still in the hand</item>
+    </plurals>
 </resources>

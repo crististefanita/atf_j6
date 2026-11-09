@@ -175,15 +175,51 @@
     <string name="gameplay_achievement_big_blind">Câștigă un pot din poziția de blind mare</string>
     <string name="gameplay_achievement_finish_tournament">Încheie-ți participarea la un turneu</string>
     <string name="gameplay_achievement_tournament_pot">Câștigă o mână într-un turneu</string>
-    <string name="gameplay_achievement_three_pots">Câștigă %1$d mâini diferite</string>
+    <plurals name="gameplay_achievement_three_pots">
+        <item quantity="one">Câștigă %1$d mână</item>
+        <item quantity="few">Câștigă %1$d mâini diferite</item>
+        <item quantity="other">Câștigă %1$d de mâini diferite</item>
+    </plurals>
     <string name="gameplay_achievement_first_title">Câștigă un turneu</string>
-    <string name="gameplay_achievement_podium">Termină în top trei în %1$d turnee diferite</string>
-    <string name="gameplay_achievement_multiway_showdowns">Câștigă %1$d mâini la dezvăluire cu cel puțin trei jucători rămași</string>
-    <string name="gameplay_achievement_straight">Câștigă %1$d mâini la dezvăluire cu o chintă sau mai bine</string>
-    <string name="gameplay_achievement_tournament_pots">Câștigă %1$d mâini în turnee</string>
-    <string name="gameplay_achievement_three_titles">Câștigă %1$d turnee diferite</string>
+    <plurals name="gameplay_achievement_podium">
+        <item quantity="one">Termină în top trei în %1$d turneu</item>
+        <item quantity="few">Termină în top trei în %1$d turnee diferite</item>
+        <item quantity="other">Termină în top trei în %1$d de turnee diferite</item>
+    </plurals>
+    <plurals name="gameplay_achievement_multiway_showdowns">
+        <item quantity="one">Câștigă %1$d mână la dezvăluire cu cel puțin trei jucători rămași</item>
+        <item quantity="few">Câștigă %1$d mâini la dezvăluire cu cel puțin trei jucători rămași</item>
+        <item quantity="other">Câștigă %1$d de mâini la dezvăluire cu cel puțin trei jucători rămași</item>
+    </plurals>
+    <plurals name="gameplay_achievement_straight">
+        <item quantity="one">Câștigă %1$d mână la dezvăluire cu o chintă sau mai bine</item>
+        <item quantity="few">Câștigă %1$d mâini la dezvăluire cu o chintă sau mai bine</item>
+        <item quantity="other">Câștigă %1$d de mâini la dezvăluire cu o chintă sau mai bine</item>
+    </plurals>
+    <plurals name="gameplay_achievement_tournament_pots">
+        <item quantity="one">Câștigă %1$d mână în turnee</item>
+        <item quantity="few">Câștigă %1$d mâini în turnee</item>
+        <item quantity="other">Câștigă %1$d de mâini în turnee</item>
+    </plurals>
+    <plurals name="gameplay_achievement_three_titles">
+        <item quantity="one">Câștigă %1$d turneu</item>
+        <item quantity="few">Câștigă %1$d turnee diferite</item>
+        <item quantity="other">Câștigă %1$d de turnee diferite</item>
+    </plurals>
     <string name="gameplay_achievement_high_card">Câștigă toate poturile la dezvăluire cu o carte mare, fără pereche</string>
-    <string name="gameplay_achievement_six_seat_titles">Câștigă %1$d turnee care au început cu șase jucători</string>
-    <string name="gameplay_achievement_full_house">Câștigă %1$d mâini la dezvăluire cu un full sau mai bine</string>
-    <string name="gameplay_achievement_multiway_series">Câștigă %1$d mâini la dezvăluire cu cel puțin trei jucători rămași</string>
+    <plurals name="gameplay_achievement_six_seat_titles">
+        <item quantity="one">Câștigă %1$d turneu care a început cu șase jucători</item>
+        <item quantity="few">Câștigă %1$d turnee care au început cu șase jucători</item>
+        <item quantity="other">Câștigă %1$d de turnee care au început cu șase jucători</item>
+    </plurals>
+    <plurals name="gameplay_achievement_full_house">
+        <item quantity="one">Câștigă %1$d mână la dezvăluire cu un full sau mai bine</item>
+        <item quantity="few">Câștigă %1$d mâini la dezvăluire cu un full sau mai bine</item>
+        <item quantity="other">Câștigă %1$d de mâini la dezvăluire cu un full sau mai bine</item>
+    </plurals>
+    <plurals name="gameplay_achievement_multiway_series">
+        <item quantity="one">Câștigă %1$d mână la dezvăluire cu cel puțin trei jucători rămași</item>
+        <item quantity="few">Câștigă %1$d mâini la dezvăluire cu cel puțin trei jucători rămași</item>
+        <item quantity="other">Câștigă %1$d de mâini la dezvăluire cu cel puțin trei jucători rămași</item>
+    </plurals>
 </resources>

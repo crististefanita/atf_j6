@@ -5,22 +5,22 @@
       {"id":"first-pot", "metric":"POT", "target":1, "label":"gameplay_achievement_first_pot"},
       {"id":"first-tournament-pot", "metric":"TOURNAMENT_POT", "target":1, "label":"gameplay_achievement_tournament_pot"},
       {"id":"big-blind-pot", "metric":"BIG_BLIND_POT", "target":1, "label":"gameplay_achievement_big_blind"},
-      {"id":"three-pots", "metric":"POT", "target":3, "label":"gameplay_achievement_three_pots"},
+      {"id":"three-pots", "metric":"POT", "target":3, "label":"plurals/gameplay_achievement_three_pots"},
       {"id":"finish-tournament", "metric":"TOURNAMENT_FINISHED", "target":1, "label":"gameplay_achievement_finish_tournament"}
     ],
     "MEDIUM": [
       {"id":"first-title", "metric":"TITLE", "target":1, "label":"gameplay_achievement_first_title"},
-      {"id":"tournament-pots", "metric":"TOURNAMENT_POT", "target":5, "label":"gameplay_achievement_tournament_pots"},
-      {"id":"multiway-showdowns", "metric":"MULTIWAY_SHOWDOWN_POT", "target":3, "label":"gameplay_achievement_multiway_showdowns"},
-      {"id":"straight-or-better", "metric":"STRAIGHT_OR_BETTER", "target":2, "label":"gameplay_achievement_straight"},
-      {"id":"tournament-podiums", "metric":"PODIUM", "target":2, "label":"gameplay_achievement_podium"}
+      {"id":"tournament-pots", "metric":"TOURNAMENT_POT", "target":5, "label":"plurals/gameplay_achievement_tournament_pots"},
+      {"id":"multiway-showdowns", "metric":"MULTIWAY_SHOWDOWN_POT", "target":3, "label":"plurals/gameplay_achievement_multiway_showdowns"},
+      {"id":"straight-or-better", "metric":"STRAIGHT_OR_BETTER", "target":2, "label":"plurals/gameplay_achievement_straight"},
+      {"id":"tournament-podiums", "metric":"PODIUM", "target":2, "label":"plurals/gameplay_achievement_podium"}
     ],
     "HARD": [
-      {"id":"three-titles", "metric":"TITLE", "target":3, "label":"gameplay_achievement_three_titles"},
+      {"id":"three-titles", "metric":"TITLE", "target":3, "label":"plurals/gameplay_achievement_three_titles"},
       {"id":"high-card", "metric":"SOLE_HIGH_CARD_POT", "target":1, "label":"gameplay_achievement_high_card"},
-      {"id":"full-house-or-better", "metric":"FULL_HOUSE_OR_BETTER", "target":2, "label":"gameplay_achievement_full_house"},
-      {"id":"multiway-showdown-series", "metric":"MULTIWAY_SHOWDOWN_POT", "target":12, "label":"gameplay_achievement_multiway_series"},
-      {"id":"six-seat-titles", "metric":"SIX_SEAT_TITLE", "target":2, "label":"gameplay_achievement_six_seat_titles"}
+      {"id":"full-house-or-better", "metric":"FULL_HOUSE_OR_BETTER", "target":2, "label":"plurals/gameplay_achievement_full_house"},
+      {"id":"multiway-showdown-series", "metric":"MULTIWAY_SHOWDOWN_POT", "target":12, "label":"plurals/gameplay_achievement_multiway_series"},
+      {"id":"six-seat-titles", "metric":"SIX_SEAT_TITLE", "target":2, "label":"plurals/gameplay_achievement_six_seat_titles"}
     ]
   }
 }

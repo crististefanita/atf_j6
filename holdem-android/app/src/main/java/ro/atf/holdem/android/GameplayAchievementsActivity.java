@@ -100,7 +100,7 @@ public final class GameplayAchievementsActivity extends Activity {
             tab.setSelected(group == tier);
             HoldemTableButton.apply(views, tab, group == tier);
         }
-                rows.removeAllViews();
+        rows.removeAllViews();
         java.util.Map<GameplayAchievements.Metric, Integer> counts;
         try {
             counts = achievements.counts(profile);
@@ -116,7 +116,9 @@ public final class GameplayAchievementsActivity extends Activity {
             row.setOrientation(LinearLayout.VERTICAL);
             row.setPadding(dp(4), dp(8), dp(4), dp(8));
             var title = label(16, AchievementPresentation.TEXT);
-            title.setText(getString(milestone.label(), milestone.target()));
+            title.setText(milestone.plural()
+                    ? getResources().getQuantityString(milestone.label(), milestone.target(), milestone.target())
+                    : getString(milestone.label()));
             row.addView(title);
             int current = milestone.progress(counts);
             boolean earned = current == milestone.target();

@@ -137,9 +137,124 @@ public final class TournamentSanity extends Instrumentation {
             tap("Play a tournament");
             see("Release APK opens tournament setup", "Tournament setup");
             capture("02-release-tournament-setup");
+            tap("Main menu");
+            inspectNewAchievementCatalog();
+            inspectRomanianAchievementLabels();
         } finally {
             runOnMainSync(activity::finish);
         }
+    }
+
+    private void inspectNewAchievementCatalog() throws Exception {
+        tap("Achievements");
+        see("Achievements opens from the main menu", "Achievements");
+        openAchievementTier("Easy");
+        achievementRow("Win a poker hand", "Progress · 0/1");
+        achievementRow("Win a hand in a tournament", "Progress · 0/1");
+        achievementRow("Win a pot from the big blind", "Progress · 0/1");
+        achievementRow("Win 3 different hands", "Progress · 0/3");
+        achievementRow("Finish your run in a tournament", "Progress · 0/1");
+        tap("Easy");
+        capture("03-achievements-easy");
+
+        openAchievementTier("Medium");
+        achievementRow("Win a tournament", "Progress · 0/1");
+        achievementRow("Win 5 hands in tournaments", "Progress · 0/5");
+        achievementRow("Win 3 hands at showdown with at least three players still in the hand", "Progress · 0/3");
+        achievementRow("Win 2 hands at showdown with a straight or better", "Progress · 0/2");
+        achievementRow("Finish in the top three in 2 different tournaments", "Progress · 0/2");
+        tap("Medium");
+        capture("04-achievements-medium");
+
+        openAchievementTier("Hard");
+        achievementRow("Win 3 different tournaments", "Progress · 0/3");
+        achievementRow("Win every pot at showdown with high card", "Progress · 0/1");
+        achievementRow("Win 2 hands at showdown with a full house or better", "Progress · 0/2");
+        achievementRow("Win 12 hands at showdown with at least three players still in the hand", "Progress · 0/12");
+        achievementRow("Win 2 tournaments that started with six players", "Progress · 0/2");
+        tap("Hard");
+        capture("05-achievements-hard");
+        tap("Training exercises");
+        see("Training opens separately from gameplay achievements", "Training exercises");
+        tap("Back");
+        see("Back returns from training to gameplay achievements", "Achievements");
+        achievementRow("Win 3 different tournaments", "Progress · 0/3");
+        tap("Back");
+    }
+
+    private void inspectRomanianAchievementLabels() throws Exception {
+        tap("interface-language");
+        tap("Română");
+        tap("Realizări");
+        openAchievementTier("Ușoare");
+        achievementRow("Câștigă 3 mâini diferite", "Progres · 0/3");
+        capture("05a-achievements-romanian-easy");
+        openAchievementTier("Medii");
+        achievementRow("Câștigă 5 mâini în turnee", "Progres · 0/5");
+        capture("05b-achievements-romanian-medium");
+        openAchievementTier("Grele");
+        achievementRow("Câștigă 12 mâini la dezvăluire cu cel puțin trei jucători rămași", "Progres · 0/12");
+        capture("05c-achievements-romanian-hard");
+        tap("Înapoi");
+    }
+
+    private void inspectEarnedAchievementProgress() throws Exception {
+        tap("Achievements");
+        openAchievementTier("Easy");
+        achievementRow("Win a poker hand", "Earned · 1/1");
+        achievementRow("Win a hand in a tournament", "Earned · 1/1");
+        achievementRow("Win 3 different hands", "Progress · 2/3");
+        achievementRow("Finish your run in a tournament", "Earned · 1/1");
+        capture("04a-achievements-earned");
+
+        openAchievementTier("Medium");
+        achievementRow("Win a tournament", "Earned · 1/1");
+        achievementRow("Win 5 hands in tournaments", "Progress · 2/5");
+        achievementRow("Finish in the top three in 2 different tournaments", "Progress · 1/2");
+        capture("04b-achievements-parallel");
+
+        openAchievementTier("Hard");
+        achievementRow("Win 3 different tournaments", "Progress · 1/3");
+        achievementRow("Win 2 tournaments that started with six players", "Progress · 0/2");
+        capture("04c-achievements-hard-progress");
+        tap("Back");
+        tap("Achievements");
+        openAchievementTier("Medium");
+        achievementRow("Win a tournament", "Earned · 1/1");
+        achievementRow("Win 5 hands in tournaments", "Progress · 2/5");
+        achievementRow("Finish in the top three in 2 different tournaments", "Progress · 1/2");
+        tap("Back");
+    }
+
+    private void openAchievementTier(String name) throws Exception {
+        tap(name);
+        var tab = await(name);
+        check("Select achievement tier " + name, "selected",
+                tab != null && tab.isSelected() ? "selected" : "not selected");
+    }
+
+    private void achievementRow(String title, String expected) throws Exception {
+        String observed = "not visible";
+        for (int attempt = 0; attempt < 6; attempt++) {
+            var texts = collect(node -> {
+                String text = value(node.getText());
+                return text.equals(title) || text.startsWith("Earned · ") || text.startsWith("Progress · ")
+                        || text.startsWith("Obținută · ") || text.startsWith("Progres · ");
+            });
+            for (int index = 0; index + 1 < texts.size(); index++) {
+                if (title.equals(value(texts.get(index).getText()))) {
+                    observed = value(texts.get(index + 1).getText());
+                    check("Achievement progress: " + title, expected, observed);
+                    return;
+                }
+            }
+            var scrollers = collect(node -> node.isScrollable()
+                    && "android.widget.ScrollView".contentEquals(node.getClassName()));
+            if (scrollers.isEmpty() || !scrollers.get(0).performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)) break;
+            waitForIdleSync();
+            ui.waitForIdle(200, 4000);
+        }
+        check("Achievement progress: " + title, expected, observed);
     }
 
     private String installedApkHash() throws Exception {
@@ -230,6 +345,8 @@ public final class TournamentSanity extends Instrumentation {
             tap("Tournament leaderboard");
             see("Leaderboard reloads from app-private storage", "Cumulative tournament points");
             seeContains("Reopening the activity does not duplicate the tournament", "Points 100 · Tournaments 1");
+            tap("Main menu");
+            inspectEarnedAchievementProgress();
         } finally {
             runOnMainSync(activity::finish);
         }

@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.11.1",
-  "previousVersion": "0.11.0",
-  "changeClass": "PATCH_FIX",
-  "changeRationale": "Corectează contrastul ecranului Realizări și distanța dintre acțiunile jucătorului.",
-  "state": "PREPARED",
+  "currentVersion": "0.12.0",
+  "previousVersion": "0.11.1",
+  "changeClass": "COMPATIBLE_FEATURE",
+  "changeRationale": "Adaugă realizări bazate pe joc, cu praguri calibrate pe turnee simulate și progres paralel între niveluri.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.11.1"
+    "0.12.0"
   ]
 }

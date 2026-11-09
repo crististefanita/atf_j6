@@ -47,7 +47,7 @@ final class AchievementProgress {
     }
 
     boolean available(AchievementCatalog.Entry entry) {
-        if (!entry.playable()) return false;
+
         var previous = catalog.find(entry.prerequisite());
         return previous == null || completed(previous, state(previous));
     }
@@ -72,11 +72,14 @@ final class AchievementProgress {
         return new Question(pot, call, equity);
     }
 
-    boolean submit(AchievementCatalog.Entry entry, int expectedAttempt, Answer answer) {
+    boolean submit(AchievementCatalog.Entry entry, int expectedAttempt, int choice) {
+        if (choice < 0 || choice >= 3) throw new IllegalArgumentException("Invalid answer choice");
         State before = state(entry);
         if (before.attempts != expectedAttempt || !available(entry) || completed(entry, before))
             throw new IllegalStateException("Achievement question is no longer active");
-        boolean correct = question(entry, expectedAttempt).solution() == answer;
+        int solution = entry.usesPotOdds() ? question(entry, expectedAttempt).solution().ordinal()
+                : AchievementExercises.question(entry, expectedAttempt).correct();
+        boolean correct = solution == choice;
         int answers = before.answered + 1;
         int score = before.correct + (correct ? 1 : 0);
         int lots = before.passedLots;

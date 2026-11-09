@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.9.0",
-  "previousVersion": "0.8.0",
-  "changeClass": "REFACTOR_ONLY",
-  "changeRationale": "Completează semnalele RAG pentru eliminări și califică noul candidat.",
-  "state": "PREPARED",
+  "currentVersion": "0.10.0",
+  "previousVersion": "0.9.0",
+  "changeClass": "COMPATIBLE_FEATURE",
+  "changeRationale": "Adaugă exerciții și progres persistent pentru toate familiile.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.9.0"
+    "0.10.0"
   ]
 }

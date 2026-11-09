@@ -18,7 +18,7 @@ final class AchievementCatalog {
 
     record Entry(String id, Tier tier, String family, String context, int required, int size, int lots,
                  String prerequisite, int contextIndex, int stage) {
-        boolean playable() { return family.equals("potodds"); }
+        boolean usesPotOdds() { return family.equals("potodds"); }
         String trackKey() { return tier == Tier.EASY ? family + "-" + contextIndex + "-easy" : id; }
     }
 

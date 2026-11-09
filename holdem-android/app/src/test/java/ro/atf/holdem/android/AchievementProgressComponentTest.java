@@ -24,7 +24,7 @@ public class AchievementProgressComponentTest {
         assertEquals("pozitie-1-u1", easy.get(0).id());
         assertEquals("pozitie-1-u5", easy.get(4).id());
         assertEquals("review-5-u5", easy.get(499).id());
-        assertFalse(profile("one").available(easy.get(0)));
+        assertTrue(profile("one").available(easy.get(0)));
     }
 
     @Test public void savedEasyAnswersUnlockInOrderAndStayWithTheProfile() {
@@ -32,13 +32,13 @@ public class AchievementProgressComponentTest {
         var second = catalog.find("potodds-1-u2");
         var progress = profile("one");
         assertFalse(progress.available(second));
-        assertTrue(progress.submit(first, 0, progress.question(first, 0).solution()));
+        assertTrue(progress.submit(first, 0, progress.question(first, 0).solution().ordinal()));
         var restored = profile("one");
         assertTrue(restored.completed(first, restored.state(first)));
         assertTrue(restored.available(second));
         assertEquals(1, restored.state(second).correct());
         assertThrows(IllegalStateException.class,
-                () -> restored.submit(second, 0, AchievementProgress.Answer.PROFIT));
+                () -> restored.submit(second, 0, 0));
         assertFalse(profile("two").available(second));
     }
 
@@ -74,14 +74,50 @@ public class AchievementProgressComponentTest {
         assertEquals(AchievementProgress.Answer.LOSS, new AchievementProgress.Question(90, 10, 9).solution());
     }
 
+    @Test public void everyCatalogEntryCanBeEarnedAndRestoredInCurriculumOrder() {
+        var progress = profile("complete");
+        for (var tier : AchievementCatalog.Tier.values()) {
+            for (var entry : catalog.entries(tier)) {
+                assertTrue(entry.id(), progress.available(entry));
+                int questions = tier == AchievementCatalog.Tier.EASY ? 1 : entry.size();
+                int right = tier == AchievementCatalog.Tier.EASY ? 1 : entry.required();
+                for (int lot = 0; lot < entry.lots(); lot++) {
+                    for (int i = 0; i < questions; i++) {
+                        int attempt = progress.state(entry).attempts();
+                        if (!entry.usesPotOdds()) {
+                            var exercise = AchievementExercises.question(entry, attempt);
+                            assertFalse(entry.id(), exercise.prompt().isBlank());
+                            assertFalse(entry.id(), exercise.explanation().isBlank());
+                            assertEquals(entry.id(), 3, new java.util.HashSet<>(exercise.options()).size());
+                        }
+                        answer(progress, entry, 1, i < right ? 1 : 0);
+                    }
+                    progress = profile("complete");
+                }
+                assertTrue(entry.id(), progress.completed(entry, progress.state(entry)));
+            }
+        }
+    }
+
+    @Test public void rulesExercisesResolveSidePotsAndReopeningBoundaries() {
+        var side = AchievementExercises.question(catalog.find("poturi-2-u1"), 0);
+        assertEquals("36", side.options().get(side.correct()));
+        var shortAllIn = AchievementExercises.question(catalog.find("allin-2-u1"), 0);
+        var cumulative = AchievementExercises.question(catalog.find("allin-3-u1"), 0);
+        assertEquals("Nu", shortAllIn.options().get(shortAllIn.correct()));
+        assertEquals("Da", cumulative.options().get(cumulative.correct()));
+        var boardPlays = AchievementExercises.question(catalog.find("showdown-2-u1"), 0);
+        assertEquals("Egalitate", boardPlays.options().get(boardPlays.correct()));
+    }
+
     private AchievementProgress profile(String id) { return new AchievementProgress(catalog, storage, id); }
 
     private static void answer(AchievementProgress progress, AchievementCatalog.Entry entry, int count, int right) {
         for (int i = 0; i < count; i++) {
             int attempt = progress.state(entry).attempts();
-            var solution = progress.question(entry, attempt).solution();
-            var wrong = AchievementProgress.Answer.values()[(solution.ordinal() + 1) % 3];
-            progress.submit(entry, attempt, i < right ? solution : wrong);
+            int solution = entry.usesPotOdds() ? progress.question(entry, attempt).solution().ordinal()
+                    : AchievementExercises.question(entry, attempt).correct();
+            assertEquals(i < right, progress.submit(entry, attempt, i < right ? solution : (solution + 1) % 3));
         }
     }
 

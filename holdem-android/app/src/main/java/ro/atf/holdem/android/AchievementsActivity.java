@@ -194,7 +194,7 @@ public final class AchievementsActivity extends Activity {
     private String status(AchievementCatalog.Entry entry) {
         var state = progress.state(entry);
         if (progress.completed(entry, state)) return getString(R.string.achievement_done);
-        if (!entry.playable()) return getString(R.string.achievement_planned);
+
         if (!progress.available(entry)) return getString(R.string.achievement_locked);
         return entry.lots() > 1 ? getString(R.string.achievement_lots, state.passedLots(), entry.lots())
                 : getString(R.string.achievement_score, state.correct(), entry.required());
@@ -216,32 +216,53 @@ public final class AchievementsActivity extends Activity {
 
     private void ask(AchievementCatalog.Entry entry) {
         var state = progress.state(entry);
-        var question = progress.question(entry, state.attempts());
-        String prompt = getString(R.string.achievement_question, question.pot(), question.call(), question.equity());
-        var options = new String[] {getString(R.string.achievement_profit), getString(R.string.achievement_even),
-                getString(R.string.achievement_loss)};
-        new AlertDialog.Builder(this).setTitle(entry.context()).setMessage(prompt)
-                .setPositiveButton(options[0], (dialog, which) -> answer(entry, state, question, AchievementProgress.Answer.PROFIT))
-                .setNeutralButton(options[1], (dialog, which) -> answer(entry, state, question, AchievementProgress.Answer.BREAK_EVEN))
-                .setNegativeButton(options[2], (dialog, which) -> answer(entry, state, question, AchievementProgress.Answer.LOSS))
-                .show();
+        var exercise = exercise(entry, state.attempts());
+        var content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(20), dp(8), dp(20), dp(8));
+        var prompt = new TextView(this);
+        prompt.setTextSize(16);
+        prompt.setText(exercise.prompt());
+        content.addView(prompt);
+        var scroller = new android.widget.ScrollView(this);
+        scroller.addView(content);
+        var dialog = new AlertDialog.Builder(this).setTitle(entry.context()).setView(scroller)
+                .setNegativeButton(android.R.string.cancel, null).create();
+        for (int choice = 0; choice < exercise.options().size(); choice++) {
+            int selected = choice;
+            var option = new Button(this);
+            option.setAllCaps(false);
+            option.setText(exercise.options().get(choice));
+            option.setOnClickListener(view -> {
+                dialog.dismiss();
+                answer(entry, state.attempts(), exercise, selected);
+            });
+            content.addView(option);
+        }
+        dialog.show();
     }
 
-    private void answer(AchievementCatalog.Entry entry, AchievementProgress.State before,
-                        AchievementProgress.Question question, AchievementProgress.Answer selected) {
+    private AchievementExercises.Question exercise(AchievementCatalog.Entry entry, int attempt) {
+        if (!entry.usesPotOdds()) return AchievementExercises.question(entry, attempt);
+        var odds = progress.question(entry, attempt);
+        String prompt = getString(R.string.achievement_question, odds.pot(), odds.call(), odds.equity());
+        var options = List.of(getString(R.string.achievement_profit), getString(R.string.achievement_even),
+                getString(R.string.achievement_loss));
+        int correct = odds.solution().ordinal();
+        String explanation = getString(R.string.achievement_explanation, options.get(correct),
+                100.0 * odds.call() / (odds.pot() + odds.call()));
+        return new AchievementExercises.Question(prompt, options, correct, explanation);
+    }
+
+    private void answer(AchievementCatalog.Entry entry, int attempt,
+                        AchievementExercises.Question exercise, int selected) {
         try {
-            boolean correct = progress.submit(entry, before.attempts(), selected);
+            boolean correct = progress.submit(entry, attempt, selected);
             rememberScroll();
             render(tier);
             var state = progress.state(entry);
-            int solution = switch (question.solution()) {
-                case PROFIT -> R.string.achievement_profit;
-                case BREAK_EVEN -> R.string.achievement_even;
-                case LOSS -> R.string.achievement_loss;
-            };
             String result = getString(correct ? R.string.achievement_correct : R.string.achievement_incorrect);
-            String explanation = getString(R.string.achievement_explanation, getString(solution),
-                    100.0 * question.call() / (question.pot() + question.call()));
+            String explanation = exercise.explanation();
             String lot = entry.tier() == AchievementCatalog.Tier.EASY ? "" : "\n"
                     + getString(R.string.achievement_lot_score, state.answered(), entry.size(), state.correct());
             var dialog = new AlertDialog.Builder(this).setTitle(result)

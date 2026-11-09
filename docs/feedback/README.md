@@ -9,7 +9,7 @@ Indexul urmărește lacunele verificabile ale J6. Cerințele stabile apar în do
 | Prioritate | Subiect | Dovada care lipsește |
 |---|---|---|
 | P1 | [J6-UI-07 · Showdown](J6-UI-07-SHOWDOWN-WIN-CLARITY.md#dovezi-rămase) | Identitatea cărților decisive, descrierile accesibile și lizibilitatea marcajelor în profil compact. |
-| P1 · extern | [J6-REL-01 · Vizibilitate publică](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | Verificarea accesului anonim și a integrității ambelor fișiere. Starea ediției este în manifest. |
+| Extern · la cerere | [J6-REL-01 · Vizibilitate publică](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | Investigație separată de calificarea autentificată a ediției curente. |
 | P1 | [J6-AI-02 · Calibrare](J6-AI-02-STRATEGY-CALIBRATION.md) | Evaluare independentă și model de range înainte de promovarea stilului Hard. |
 | P1 | [J6-AI-04 · Ablație shove](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) | Efect repetat cu minimum 20 de seed-uri independente pe configurație. |
 | P1 | [J6-UI-05 · Coach](J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md) | Oracol pentru combinație, invarianta la cărți ascunse și traseul nativ de la selectorul de blinduri la sesiunea restaurată. |

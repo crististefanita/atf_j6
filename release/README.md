@@ -50,7 +50,7 @@ Seriile 0.1.x și 0.2.x sunt retrase din distribuția curentă. Tagurile și ist
 
 | Stare | Înțeles |
 |---|---|
-| `PREPARED` | APK-ul semnat și verificările locale sunt în dosarul ediției; descărcarea anonimă nu este încă acceptată. |
+| `PREPARED` | Dosarul conține calificarea APK-ului semnat și dovada descărcării autentificate. Aceasta este ținta politicii curente de distribuție. |
 | `PUBLISHED` | APK-ul și checksum-ul pot fi descărcate fără autentificare, iar digestul corespunde manifestului. |
 
 În `DRAFT`, README-ul principal indică doar dosarul ediției. După calificare, păstrează două legături ordonate: pagina Release, apoi APK-ul. Limitările de acces și detaliile de verificare aparțin dosarului versiunii.

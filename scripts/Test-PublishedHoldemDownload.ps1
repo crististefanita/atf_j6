@@ -3,6 +3,7 @@ param(
     [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot),
     [string]$DataRoot = 'C:\work\holdem_back',
     [string]$OutputDirectory,
+    [ValidatePattern('^[A-Za-z0-9._/-]+$')][string]$RemoteRef = 'main',
     [switch]$PlanOnly
 )
 $ErrorActionPreference = 'Stop'
@@ -13,7 +14,7 @@ if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Catalog version must be seman
 $validationPath = Join-Path $ProjectRoot ("release/$version/release-validation.json")
 $validation = Get-Content -Raw -LiteralPath $validationPath | ConvertFrom-Json
 if ($index.state -notin @('PREPARED','PUBLISHED') -or $validation.publication.state -ne $index.state) {
-    throw 'Anonymous download acceptance is available only for a PREPARED or PUBLISHED release.'
+    throw 'Authenticated download acceptance is available only for a PREPARED or PUBLISHED release.'
 }
 $expected = $validation.release
 $repository = [string]$index.repository
@@ -42,7 +43,7 @@ if ($PlanOnly) {
     [ordered]@{
         schemaVersion=1; version=$version; tag=$tag; state=$index.state
         apkUrl=$url; checksumUrl=$checksumUrl; apkName=$assetName
-        apkBytes=$expectedBytes; apkSha256=$expectedHash
+        apkBytes=$expectedBytes; apkSha256=$expectedHash; distributionVerification='AUTHENTICATED_ONLY'; remoteRef=$RemoteRef
     } | ConvertTo-Json
     return
 }
@@ -52,6 +53,50 @@ function Assert-GitHubAssetHost([uri]$Uri) {
         !$Uri.Host.EndsWith('.githubusercontent.com', [StringComparison]::OrdinalIgnoreCase))) {
         throw 'GitHub redirected the asset request to an unexpected host.'
     }
+}
+
+$token = $env:GH_TOKEN
+if ([string]::IsNullOrWhiteSpace($token)) {
+    $query = @('protocol=https', 'host=github.com', '', '') -join [Environment]::NewLine
+    $previousPrompt = $env:GIT_TERMINAL_PROMPT
+    try {
+        $env:GIT_TERMINAL_PROMPT = '0'
+        $credential = $query | git -c credential.interactive=never credential fill 2>$null |
+            Where-Object { $_.StartsWith('password=') } | Select-Object -First 1
+        if ($credential) { $token = $credential.Substring(9) }
+    } finally { $env:GIT_TERMINAL_PROMPT = $previousPrompt }
+}
+if ([string]::IsNullOrWhiteSpace($token)) {
+    throw 'GitHub authentication is required. Set GH_TOKEN or use an existing Git credential.'
+}
+$apiRoot = "https://api.github.com/repos/$repository"
+$metadataHeaders = @{
+    Authorization = "Bearer $token"
+    Accept = 'application/vnd.github+json'
+    'X-GitHub-Api-Version' = '2022-11-28'
+    'Cache-Control' = 'no-cache'
+}
+
+function Get-AuthenticatedMetadata([string]$route) {
+    Invoke-RestMethod ($apiRoot + $route) -Headers $metadataHeaders -MaximumRedirection 0 -TimeoutSec 30
+}
+
+function Get-ReleaseAsset([string]$name, [string]$route) {
+    $matches = @($githubRelease.assets | Where-Object { $_.name -ceq $name })
+    if ($matches.Count -ne 1 -or $matches[0].state -cne 'uploaded' -or
+        $matches[0].browser_download_url -cne $route -or $matches[0].id -le 0) {
+        throw "GitHub has no unique uploaded asset for $route."
+    }
+    $matches[0]
+}
+
+function New-ReleaseAssetRequest([long]$assetId) {
+    $request = [Net.Http.HttpRequestMessage]::new([Net.Http.HttpMethod]::Get, "$apiRoot/releases/assets/$assetId")
+    $request.Headers.Authorization = [Net.Http.Headers.AuthenticationHeaderValue]::new('Bearer', $token)
+    $request.Headers.UserAgent.ParseAdd('HoldemLab-Release-Download-Acceptance/1.0')
+    $request.Headers.Accept.ParseAdd('application/octet-stream')
+    $request.Headers.Add('X-GitHub-Api-Version', '2022-11-28')
+    $request
 }
 
 $DataRoot = [IO.Path]::GetFullPath($DataRoot)
@@ -72,6 +117,28 @@ try {
     }
     throw
 }
+
+$githubRelease = Get-AuthenticatedMetadata "/releases/tags/$tag"
+$releasePage = "https://github.com/$repository/releases/tag/$tag"
+if ($githubRelease.draft -or !$githubRelease.published_at -or $githubRelease.tag_name -cne $tag -or
+    $githubRelease.html_url -cne $releasePage) {
+    throw "GitHub has no published release at $releasePage."
+}
+$remoteReadme = Get-AuthenticatedMetadata ('/contents/README.md?ref=' + [Uri]::EscapeDataString($RemoteRef))
+$remoteText = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($remoteReadme.content))
+$remoteSections = [regex]::Matches($remoteText, '(?ms)^## Jocul[^\S\r\n]*\r?\n(.*?)(?=^## |\z)')
+if ($remoteSections.Count -ne 1) { throw 'Remote README must contain one Jocul section.' }
+$remoteRoutes = [regex]::Matches($remoteSections[0].Groups[1].Value, '\]\((https://[^\s)]+/releases/(?:tag|download)/[^\s)]+)\)')
+if ($remoteRoutes.Count -ne 2 -or $remoteRoutes[0].Groups[1].Value -cne $releasePage -or
+    $remoteRoutes[1].Groups[1].Value -cne $url) {
+    throw 'Remote README routes differ from the qualified release and APK.'
+}
+$apkAsset = Get-ReleaseAsset $assetName $url
+$checksumAsset = Get-ReleaseAsset "$assetName.sha256" $checksumUrl
+if ($apkAsset.size -ne $expectedBytes -or ($apkAsset.digest -and $apkAsset.digest -cne "sha256:$expectedHash")) {
+    throw 'GitHub APK metadata differs from qualification.'
+}
+
 $partial = Join-Path $OutputDirectory ($assetName + '.part')
 $downloaded = Join-Path $OutputDirectory $assetName
 $handler = [Net.Http.SocketsHttpHandler]::new()
@@ -84,13 +151,11 @@ $handler.DefaultProxyCredentials = $null
 $client = [Net.Http.HttpClient]::new($handler, $true)
 $client.Timeout = [Threading.Timeout]::InfiniteTimeSpan
 $deadline = [Threading.CancellationTokenSource]::new([TimeSpan]::FromMinutes(3))
-$request = [Net.Http.HttpRequestMessage]::new([Net.Http.HttpMethod]::Get, $url)
-$request.Headers.UserAgent.ParseAdd('HoldemLab-Release-Download-Acceptance/1.0')
-$request.Headers.Accept.ParseAdd('application/octet-stream')
+$request = New-ReleaseAssetRequest $apkAsset.id
 try {
     $response = $client.SendAsync($request, [Net.Http.HttpCompletionOption]::ResponseHeadersRead, $deadline.Token).GetAwaiter().GetResult()
     try {
-        if ([int]$response.StatusCode -ne 200) { throw "Anonymous asset GET returned HTTP $([int]$response.StatusCode)." }
+        if ([int]$response.StatusCode -ne 200) { throw "Authenticated asset GET returned HTTP $([int]$response.StatusCode)." }
         if ($response.Content.Headers.ContentLength -and [long]$response.Content.Headers.ContentLength -ne $expectedBytes) {
             throw 'GitHub Content-Length differs from the qualified APK size.'
         }
@@ -109,7 +174,7 @@ try {
         finally { $output.Dispose(); $responseStream.Dispose() }
         if ($count -ne $expectedBytes) { throw "Incomplete download: expected $expectedBytes bytes, received $count." }
         $hash = (Get-FileHash -LiteralPath $partial -Algorithm SHA256).Hash.ToLowerInvariant()
-        if ($hash -ne $expectedHash) { throw 'Anonymous download SHA-256 differs from the qualified APK.' }
+        if ($hash -ne $expectedHash) { throw 'Authenticated download SHA-256 differs from the qualified APK.' }
         $header = [IO.BinaryReader]::new([IO.File]::OpenRead($partial))
         try { $signature = $header.ReadBytes(4) }
         finally { $header.Dispose() }
@@ -119,13 +184,12 @@ try {
         $finalUri = $response.RequestMessage.RequestUri
         Assert-GitHubAssetHost $finalUri
 
-        $checksumRequest = [Net.Http.HttpRequestMessage]::new([Net.Http.HttpMethod]::Get, $checksumUrl)
+        $checksumRequest = New-ReleaseAssetRequest $checksumAsset.id
         try {
-            $checksumRequest.Headers.UserAgent.ParseAdd('HoldemLab-Release-Download-Acceptance/1.0')
             $checksumResponse = $client.SendAsync($checksumRequest, [Net.Http.HttpCompletionOption]::ResponseHeadersRead, $deadline.Token).GetAwaiter().GetResult()
             try {
                 if ([int]$checksumResponse.StatusCode -ne 200) {
-                    throw "Anonymous checksum GET returned HTTP $([int]$checksumResponse.StatusCode)."
+                    throw "Authenticated checksum GET returned HTTP $([int]$checksumResponse.StatusCode)."
                 }
                 $checksumFinalUri = $checksumResponse.RequestMessage.RequestUri
                 Assert-GitHubAssetHost $checksumFinalUri
@@ -140,13 +204,22 @@ try {
                     }
                     if ($checksumBytes -eq $checksumBuffer.Length -or
                         [Text.Encoding]::UTF8.GetString($checksumBuffer, 0, $checksumBytes).TrimEnd("`r", "`n") -cne "$hash  $assetName") {
-                        throw 'Anonymous checksum does not identify the verified APK.'
+                        throw 'Authenticated checksum does not identify the verified APK.'
                     }
                 }
                 finally { $checksumStream.Dispose() }
+                $checksumPayload = [byte[]]::new($checksumBytes)
+                [Array]::Copy($checksumBuffer, $checksumPayload, $checksumBytes)
+                $checksumHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($checksumPayload)).ToLowerInvariant()
+                if ($checksumAsset.size -ne $checksumBytes -or
+                    ($checksumAsset.digest -and $checksumAsset.digest -cne "sha256:$checksumHash")) {
+                    throw 'GitHub checksum metadata differs from the downloaded file.'
+                }
                 $checksumReceipt = [ordered]@{
                     verified=$true; assetUrl=$checksumUrl; finalHost=$checksumFinalUri.Host; httpStatus=200
-                    credentialMode='anonymous; no cookies, authorization header, or default credentials'
+                    credentialMode='authenticated GitHub REST API'
+                    assetId=$checksumAsset.id; bytes=$checksumBytes
+                    sha256=$checksumHash
                     apkSha256=$hash; apkName=$assetName
                 }
             }
@@ -158,11 +231,11 @@ try {
         $receipt = [ordered]@{
             schemaVersion=1; verified=$true; version=$version; tag=$tag; repository=$repository
             readme='README.md#jocul'; assetUrl=$url; finalHost=$finalUri.Host; httpStatus=200
-            credentialMode='anonymous; no cookies, authorization header, or default credentials'
+            credentialMode='authenticated GitHub REST API'; assetId=$apkAsset.id; remoteRef=$RemoteRef; remoteReadmeBlob=$remoteReadme.sha
             bytes=$count; sha256=$hash; apk=$assetName; completedUtc=[datetime]::UtcNow.ToString('o')
         }
         $receiptPath = Join-Path $OutputDirectory 'download-receipt.json'
-        $receiptJson = [ordered]@{ publicDownload=$receipt; publicChecksumDownload=$checksumReceipt } | ConvertTo-Json -Depth 4
+        $receiptJson = [ordered]@{ authenticatedAssetDownload=$receipt; authenticatedChecksumDownload=$checksumReceipt } | ConvertTo-Json -Depth 4
         Set-Content -LiteralPath $receiptPath -Value $receiptJson -Encoding utf8NoBOM
         $receiptJson
         Write-Output "Downloaded APK: $downloaded"

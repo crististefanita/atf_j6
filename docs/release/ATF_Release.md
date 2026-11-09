@@ -5,7 +5,7 @@
 | Stare | Criteriu |
 |---|---|
 | `DRAFT` | Versiune, note și guvernanță inspectabile; fără APK și fără link de descărcare. |
-| `PREPARED` | Sursă fixată și curată, teste trecute, APK Release semnat cu identitatea J6, instalare sanity și inventar hash complet. |
+| `PREPARED` | Sursă fixată, APK semnat calificat prin teste și instalare sanity, inventar SHA-256 și descărcare autentificată verificată. |
 | `PUBLISHED` | Tag-ul indică commit-ul calificat, APK-ul și checksum-ul sunt atașate și ambele descărcări anonime sunt verificate. |
 
 APK-urile intermediare, build-urile, cache-urile, logurile și capturile brute rămân în `C:\work\holdem_back`. Dosarul ediției leagă pachetul selectat, checksum-ul, manifestul și rapoartele Extent cu imagini încorporate. APK-ul și checksum-ul rămân în afara Git și devin fișiere atașate release-ului.
@@ -129,7 +129,7 @@ Auditul citește manifestul calificării și verifică APK-ul, checksum-ul, inte
 
 ## Promovare și descărcare
 
-`ReleaseGovernanceTest` verifică legăturile locale din dosarul ediției și octeții inventarului de dovezi. Proba anonimă citește URL-ul din secțiunea `Jocul` a README-ului și îl compară cu ruta canonică a versiunii înainte de GET.
+`ReleaseGovernanceTest` verifică legăturile locale din dosarul ediției și octeții inventarului de dovezi. Proba autentificată compară URL-ul din secțiunea `Jocul` a README-ului remote cu ruta canonică înainte de a descărca asset-urile.
 
 1. Copiați APK-ul semnat și `.sha256` din `$run` în `release/<versiune>/`; selectați rapoartele Extent relevante și încorporați capturile, fără copii PNG redundante.
 2. Verificați copia care va fi încărcată față de `qualification.json` din rularea calificată și față de versiunea și commit-ul selectate pentru tag. Folosiți raportul Extent din afara checkout-ului. Un fișier lipsă, un checksum necorespunzător sau o identitate diferită opresc promovarea.
@@ -149,16 +149,16 @@ Auditul citește manifestul calificării și verifică APK-ul, checksum-ul, inte
 3. Completați `release-validation.json` cu identitatea APK-ului, commit-ul sursă, calificarea și hash-urile documentelor. Păstrați raportul Extent al porții în dosarul extern al rulării.
 4. Commit-ul sursă și tag-ul `v<versiune>` identifică exact binarul. Împingeți commitul calificat și tag-ul împreună. Verificați pe remote commitul indicat de tag.
 5. Atașați APK-ul verificat și checksum-ul la GitHub Release, publicați și confruntați asset-urile cu manifestul. După o descărcare autentificată completă, păstrați receipt-ul, marcați ediția `PREPARED` și aliniați linkurile din README. Împingeți commitul separat al dovezilor, apoi citiți README-ul de pe branchul remote. Comparați pagina Release și URL-ul APK-ului cu metadatele GitHub și păstrați separat rezultatul descărcării directe și pe cel prin API.
-6. Cu catalogul în `PREPARED`, rulați `scripts/Test-PublishedHoldemDownload.ps1`. Clientul verifică anonim ruta din README, redirect-ul, statusul final, lungimea completă, SHA-256 și octeții de identificare ZIP/APK.
-   - Clientul verifică și fișierul checksum de la ruta aceleiași ediții. După PASS, păstrați ambele dovezi, `publicDownload` și `publicChecksumDownload`, apoi marcați `PUBLISHED`.
-   - Dacă proba anonimă e blocată, păstrați `PREPARED` cu `authenticatedBrowserDownload` sau `authenticatedAssetDownload`.
-   - Consemnați metoda și ruta canonică în receipt, fără credențiale sau URL semnat.
+6. Cu catalogul în `PREPARED`, rulați `scripts/Test-PublishedHoldemDownload.ps1`. Politica RAG curentă este `AUTHENTICATED_ONLY`. Clientul citește README-ul remote și metadatele release-ului prin API-ul GitHub autentificat. Descarcă integral APK-ul și checksum-ul prin ID-urile asset-urilor, apoi compară lungimea, SHA-256 și numele din checksum.
+   - Păstrați ambele dovezi autentificate, `authenticatedAssetDownload` și `authenticatedChecksumDownload`. Verificarea din browser folosește aceeași rută directă din README, într-o sesiune GitHub autentificată.
+   - Păstrați catalogul în `PREPARED` pentru distribuția calificată cu autentificare. `PUBLISHED` reprezintă o calificare distinctă pentru accesul anonim și rămâne în schema dosarelor istorice.
+   - Folosiți `GH_TOKEN` sau o credențială GitHub deja salvată în Git. Dovada conține ruta canonică, metoda și hashul, fără credențiale sau URL semnat.
 
 Pagina de Release și endpointul de download sunt distincte de `release/<versiune>/`, care rămâne catalogul tehnic și dovada locală.
 
 ### Planul de descărcare
 
-Folosiți opțiunea `-PlanOnly` pentru un checkout care indică o ediție `PREPARED` sau `PUBLISHED`. Scriptul citește manifestul și secțiunea `Jocul` din README și afișează rutele canonice, dimensiunea și SHA-256, fără acces la rețea sau fișiere de ieșire.
+Folosiți opțiunea `-PlanOnly` pentru un checkout care indică o ediție `PREPARED` sau `PUBLISHED`. Scriptul citește manifestul și secțiunea `Jocul` din README și afișează rutele canonice, dimensiunea, SHA-256 și politica de autentificare, fără acces la rețea sau fișiere de ieșire.
 
 ```powershell
 .\scripts\Test-PublishedHoldemDownload.ps1 -ProjectRoot C:\cale\ediție-publicată -PlanOnly
@@ -169,6 +169,8 @@ Verificarea online folosește un singur termen de trei minute pentru antete și 
 Fiecare încercare de descărcare folosește un director nou. Un director existent este respins înainte de cererea HTTP, astfel încât dovada veche să rămână asociată rulării sale. Scriptul emite aceeași dovadă JSON în fișier și la ieșirea standard.
 
 ## Diagnostic HTTP 404 pentru GitHub Release
+
+Pentru o ediție curentă, verificați exclusiv în sesiune autentificată. Proba anonimă este rezervată unei investigații de vizibilitate cerute separat.
 
 | Probă | Ce comparați |
 |---|---|

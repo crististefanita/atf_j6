@@ -111,6 +111,7 @@ class ReleaseImpactRagTest {
         assertEquals("NONE", review.path("gateEffect").asText());
         assertFalse(review.path("canDeclareTestPass").asBoolean());
         assertEquals("NOT_EVALUATED", review.path("testReceiptState").asText());
+        assertEquals("AUTHENTICATED_ONLY", review.path("distributionVerification").asText());
         assertEquals(candidate, review.path("candidateCommit").asText());
         assertEquals("0.1.1", review.path("baseReleaseVersion").asText());
         assertTrue(review.path("changedFiles").toString().contains("HoldemTablePresentation.java"));

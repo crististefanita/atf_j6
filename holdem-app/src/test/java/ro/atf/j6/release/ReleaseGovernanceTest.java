@@ -130,10 +130,17 @@ class ReleaseGovernanceTest {
         String folderAsset = "release/" + version + "/HoldemLab-" + version + ".apk";
         recordRoute(checks, "Catalog folder is not a public asset", "PUBLISHED", publishedGuide.replace(apk, folderAsset), version, false, false);
         String downloader = Files.readString(root.resolve("scripts/Test-PublishedHoldemDownload.ps1"));
-        add(checks, "Anonymous download runner disables credentials and cookies", "credentialless HTTP client",
-                downloader.contains("UseCookies = $false") && downloader.contains("$handler.Credentials = $null")
-                        && downloader.contains("$handler.DefaultProxyCredentials = $null")
-                        ? "credentialless HTTP client" : "credentials may be sent");
+        add(checks, "Distribution verification requires GitHub authentication", "authenticated API only",
+                downloader.contains("GitHub authentication is required") && downloader.contains("Headers.Authorization")
+                        && downloader.contains("New-ReleaseAssetRequest $apkAsset.id")
+                        && downloader.contains("New-ReleaseAssetRequest $checksumAsset.id")
+                        && !downloader.contains("::Get, $url)") && !downloader.contains("::Get, $checksumUrl)")
+                        ? "authenticated API only" : "an asset request can bypass authentication");
+        add(checks, "Distribution verifies the remote README and records separate authenticated receipts", "remote routes and both receipts",
+                downloader.contains("/contents/README.md?ref=") && downloader.contains("$remoteRoutes[1].Groups[1].Value -cne $url")
+                        && downloader.contains("authenticatedAssetDownload=$receipt")
+                        && downloader.contains("authenticatedChecksumDownload=$checksumReceipt")
+                        ? "remote routes and both receipts" : "remote route or authenticated evidence missing");
         add(checks, "Download runner verifies byte length, digest, and APK signature", "complete APK integrity gate",
                 downloader.contains("$count -ne $expectedBytes") && downloader.contains("$hash -ne $expectedHash")
                         && downloader.contains("$signature[0] -ne 0x50") ? "complete APK integrity gate" : "integrity gate incomplete");
@@ -143,7 +150,7 @@ class ReleaseGovernanceTest {
                 downloader.contains("Join-Path $ProjectRoot 'README.md'") && downloader.contains("-cne $canonicalUrl")
                         && downloader.contains("$url = $routes[0].Groups[1].Value")
                         ? "Jocul to canonical asset" : "README route bypassed");
-        publish(root, "J6ReleaseDownloadRouteGovernance", "Current version and authenticated/anonymous download contract", checks);
+        publish(root, "J6ReleaseDownloadRouteGovernance", "Current version and authenticated download contract", checks);
         assertTrue(!checks.isEmpty() && checks.stream().allMatch(AtfAssertion::passed),
                 () -> checks.stream().filter(check -> !check.passed()).map(check -> check.name() + " expected "
                         + check.expected() + " actual " + check.actual()).toList().toString());

@@ -1,15 +1,15 @@
 # J6-REL-01 · Vizibilitatea publică a release-ului
 
-P1, blocaj extern. Ownerul este titularul contului GitHub.
+Investigație externă. Ownerul este titularul contului GitHub. Verificarea vizibilității publice se reia la cerere și este separată de calificarea ediției curente.
 
 ## Dovadă curentă
 
-- API-ul autentificat a descărcat integral APK-ul și checksum-ul ediției 0.7.0.
-- Ambele rute anonime ale ediției au răspuns HTTP 404. Linkul direct din README a răspuns HTTP 404 și la proba cu token REST. Descărcarea ambelor fișiere prin endpointurile REST ale asset-urilor a trecut. [Manifestul 0.7.0](../../release/0.7.0/release-validation.json) · [Tichetul GitHub #4973045](https://support.github.com/ticket/4973045)
+- Sesiunea GitHub autentificată a descărcat APK-ul ediției 0.12.0 din README. API-ul autentificat a livrat APK-ul și checksum-ul, ambele verificate integral. [Manifestul ediției](../../release/0.12.0/release-validation.json)
+- Răspunsurile HTTP 404 pentru accesul public fac parte din investigația deschisă. [Tichetul GitHub #4973045](https://support.github.com/ticket/4973045)
 
 Procedura de diagnostic și trimiterea către GitHub apar în documentul owner. [Procesul de release](../release/ATF_Release.md#diagnostic-http-404-pentru-github-release)
 
 ## Criteriu de închidere
 
-- După revizuirea vizibilității, verifică accesul anonim la profil și la cele șase repo-uri, apoi descarcă integral APK-ul din README și fișierul `.sha256` de lângă el. Runnerul verifică ambele fișiere și emite dovezile împreună.
+- Când se reia investigația, verifică accesul anonim la profil și la cele șase repo-uri. Verifică integral APK-ul din README și fișierul `.sha256` al aceleiași ediții, cu dovezi separate de runnerul autentificat.
 - Manifestul ediției curente păstrează receipt-ul anonim și catalogul trece la `PUBLISHED`.

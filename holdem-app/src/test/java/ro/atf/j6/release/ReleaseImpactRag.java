@@ -139,6 +139,7 @@ public final class ReleaseImpactRag {
         result.put("candidateCommit", head);
         result.put("baseReleaseCommit", base);
         result.put("testReceiptState", "NOT_EVALUATED");
+        result.put("distributionVerification", "AUTHENTICATED_ONLY");
         result.put("evidenceNote", enoughEvidence ? "Changed-text signals have versioned source and suite citations."
                 : "No sufficiently specific source and suite mapping was retrieved; human review is required.");
         ArrayNode files = result.putArray("changedFiles");

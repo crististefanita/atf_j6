@@ -12,7 +12,11 @@ import ro.atf.holdem.core.Street;
 
 /** Empirical next-action probabilities for a funded opponent facing a heads-up preflop raise. */
 public record PreflopResponseModel(int minSamples, int priorStrength, int foldWeight, int raiseWeight,
-                                   int maxAdjustment, Map<Spot, Counts> observations) {
+                                   int maxAdjustment, boolean penalizeRaisesOnly, Map<Spot, Counts> observations) {
+    public PreflopResponseModel(int minSamples, int priorStrength, int foldWeight, int raiseWeight,
+                               int maxAdjustment, Map<Spot, Counts> observations) {
+        this(minSamples, priorStrength, foldWeight, raiseWeight, maxAdjustment, false, observations);
+    }
     public enum Sequence { OPEN, AFTER_LIMP, RERAISE }
 
     public record Spot(Sequence sequence, boolean late, boolean cheap, boolean shortStack) {
@@ -70,7 +74,9 @@ public record PreflopResponseModel(int minSamples, int priorStrength, int foldWe
         double denominator = local.opportunities() + (double) priorStrength;
         double fold = (local.folds() + priorStrength * priorFold) / denominator;
         double raise = (local.raises() + priorStrength * priorRaise) / denominator;
-        int delta = (int) Math.round(foldWeight * (priorFold - fold) + raiseWeight * (raise - priorRaise));
+        double excessRaise = raise - priorRaise;
+        if (penalizeRaisesOnly) excessRaise = Math.max(0, excessRaise);
+        int delta = (int) Math.round(foldWeight * (priorFold - fold) + raiseWeight * excessRaise);
         return new Estimate(local.opportunities(), fold, raise, priorFold, priorRaise,
                 Bounds.clamp(delta, -maxAdjustment, maxAdjustment));
     }
@@ -78,7 +84,8 @@ public record PreflopResponseModel(int minSamples, int priorStrength, int foldWe
     String version() {
         var canonical = new TreeMap<String, Counts>();
         observations.forEach((spot, counts) -> canonical.put(spot.key(), counts));
-        String settings = minSamples + ":" + priorStrength + ":" + foldWeight + ":" + raiseWeight + ":" + maxAdjustment;
+        String settings = minSamples + ":" + priorStrength + ":" + foldWeight + ":" + raiseWeight + ":" + maxAdjustment
+                + (penalizeRaisesOnly ? ":penalty" : "");
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
                     .digest((settings + canonical).getBytes(StandardCharsets.UTF_8));

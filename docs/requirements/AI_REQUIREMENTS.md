@@ -167,6 +167,15 @@ Jurnalul înregistrează cheia situației, cele două probabilități, numărul 
 
 - Pentru fiecare reacție, probabilitatea estimată este `(număr local + priorStrength × probabilitatea grupului) / (observații locale + priorStrength)`.
 - Pragul de raise primește ajustarea rotunjită `foldWeight × (foldGrup − foldLocal) + raiseWeight × (raiseLocal − raiseGrup)`. Aici valorile locale sunt estimările după regularizare. Se aplică plafonul simetric `maxAdjustment`.
+- Cu `penalizeRaisesOnly: true`, contribuția de re-raise folosește numai excesul pozitiv față de grup. Când probabilitatea estimată este sub reper, contribuția este zero. Omiterea cheii păstrează formula semnată.
+
+| Profil de evaluare | Intervenție |
+|---|---|
+| Fold | Pune `raiseWeight` la zero. Ajustează pragul după diferența dintre frecvența estimată de fold și reper. |
+| Penalizare re-raise | Pune `foldWeight` la zero și activează `penalizeRaisesOnly`. Ridică pragul când modelul estimează un exces de re-raise. |
+| Control | Folosește același prag Hard cu blocul `responseModel` absent. |
+
+Cele două profiluri folosesc aceiași numărători calibrați. La calificare, fixează lotul principal de adversari, regula de promovare și tratarea turneelor neterminate înainte de rulare.
 
 ## Politică mixtă de bluff pentru laborator
 

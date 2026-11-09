@@ -44,6 +44,7 @@ Testele curente acoperă ordinea actorilor, sizing-ul minim, menținerea stării
 - **Raise cu preț pozitiv.** Testele variază discountul de call, poziția heads-up, agresiunea publică și acoperirea minimului legal. Verifică pragul separat și suma executată. Loaderul validează cheile și limitele ponderilor de raise.
 - **Discount preflop.** Verifică pragul inclusiv de două blinduri mari, limita dată de pot odds și riscul de angajare a stivei. Distinge all-in-ul care egalează de cel care mărește prețul.
 - **Răspunsul la raise.** Verifică aceeași cheie înainte de acțiune și după executarea ei în motor. Acoperă prețul, poziția, ordinea acțiunilor, abstinența la dovezi puține și plafonul ajustării. Loaderul respinge chei și numărători incompatibile.
+- **Izolarea semnalelor.** Compară fold-ul și penalizarea de re-raise cu același model calibrat. Verifică pragul de call și suma propusă pe o observație comună, precum și contribuția zero când frecvența de re-raise este sub reper în modul de penalizare.
 - **Reproductibilitate.** `MonteCarloEquityEstimatorTest` compară seed-ul implicit cu un reper numeric, la două bugete. Calificarea repetă partidele în procese JVM separate și auditează legalitatea și scorul independent.
 | Istoric de shove | `--require-public-shove-history` reconstruiește oportunitățile din stivă și acțiunile legale. Compară numai contoarele mâinilor deja încheiate. |
 

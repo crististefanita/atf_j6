@@ -42,8 +42,13 @@ class TournamentStrategyArenaTest {
         var model = TournamentPolicyConfig.load(Files.writeString(path, active + block)).hardPressure().responseModel();
         assertEquals(32, model.minSamples());
         assertEquals(40, model.observations().values().iterator().next().opportunities());
+        assertFalse(model.penalizeRaisesOnly());
+        String penalty = block.replace("    observations:", "    penalizeRaisesOnly: true\n    observations:");
+        assertTrue(TournamentPolicyConfig.load(Files.writeString(path, active + penalty))
+                .hardPressure().responseModel().penalizeRaisesOnly());
         for (String invalid : List.of(block.replace("folds: 21", "folds: 32"),
-                block.replace("OPEN.late", "OPEN.middle"), block.replace("raiseWeight", "raiseBias"))) {
+                block.replace("OPEN.late", "OPEN.middle"), block.replace("raiseWeight", "raiseBias"),
+                penalty.replace("penalizeRaisesOnly: true", "penalizeRaisesOnly: 'true'"))) {
             Files.writeString(path, active + invalid);
             assertThrows(IllegalArgumentException.class, () -> TournamentPolicyConfig.load(path));
         }

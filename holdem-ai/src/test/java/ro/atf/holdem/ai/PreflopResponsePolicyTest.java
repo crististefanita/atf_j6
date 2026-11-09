@@ -84,6 +84,39 @@ class PreflopResponsePolicyTest {
         assertFalse(control.policyVersion().contains("-response."));
     }
 
+    @Test void isolatedSignalsKeepTheSameForecastsAndOnlyThePenaltyOmitsTheRaiseDiscount() {
+        var fit = model(32);
+        var foldOnly = new PreflopResponseModel(32, 30, 16, 0, 4, fit.observations());
+        var signedRaise = new PreflopResponseModel(32, 30, 0, 24, 4, fit.observations());
+        var penalty = new PreflopResponseModel(32, 30, 0, 24, 4, true, fit.observations());
+
+        assertEquals(fit.estimate(OPEN_LATE).fold(), foldOnly.estimate(OPEN_LATE).fold());
+        assertEquals(signedRaise.estimate(OPEN_LATE).raise(), penalty.estimate(OPEN_LATE).raise());
+        assertEquals(-3, foldOnly.estimate(OPEN_LATE).adjustment());
+        assertEquals(3, foldOnly.estimate(OPEN_EARLY).adjustment());
+        assertEquals(-4, signedRaise.estimate(OPEN_LATE).adjustment());
+        assertEquals(0, penalty.estimate(OPEN_LATE).adjustment());
+        assertEquals(3, penalty.estimate(OPEN_EARLY).adjustment());
+        assertNotEquals(signedRaise.version(), penalty.version());
+    }
+
+    @Test void isolatedProfilesPreserveTheCallThresholdAndTheQuotedRaise() {
+        var fit = model(32);
+        var observation = headsUp().observeActor();
+        var control = policy(null).decide(observation);
+        var fold = policy(new PreflopResponseModel(32, 30, 16, 0, 4, fit.observations())).decide(observation);
+        var penalty = policy(new PreflopResponseModel(32, 30, 0, 24, 4, true, fit.observations())).decide(observation);
+
+        for (var decision : List.of(fold, penalty)) {
+            assertEquals(ActionType.RAISE, decision.action());
+            assertEquals(control.amount(), decision.amount());
+            assertEquals(metric(control, "required"), metric(decision, "required"));
+            assertEquals(metric(control, "raiseCap"), metric(decision, "raiseCap"));
+        }
+        assertEquals(metric(control, "raiseRequired") - 3, metric(fold, "raiseRequired"));
+        assertEquals(metric(control, "raiseRequired"), metric(penalty, "raiseRequired"));
+    }
+
     private static PreflopResponseModel model(int minSamples) {
         return new PreflopResponseModel(minSamples, 30, 16, 24, 4, Map.of(
                 OPEN_LATE, new PreflopResponseModel.Counts(40, 32, 0),

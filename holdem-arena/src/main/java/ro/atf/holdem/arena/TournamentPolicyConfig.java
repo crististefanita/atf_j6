@@ -165,10 +165,16 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
     private static PreflopResponseModel responseModel(Map<?, ?> hard) {
         if (!hard.containsKey("responseModel")) return null;
         if (!(hard.get("responseModel") instanceof Map<?, ?> model)
-                || !model.keySet().equals(java.util.Set.of("minSamples", "priorStrength", "foldWeight",
-                    "raiseWeight", "maxAdjustment", "observations"))
                 || !(model.get("observations") instanceof Map<?, ?> observations))
             throw new IllegalArgumentException("Expected exact responseModel settings and observations");
+        var keys = new java.util.HashSet<>(model.keySet());
+        keys.remove("penalizeRaisesOnly");
+        if (!keys.equals(java.util.Set.of("minSamples", "priorStrength", "foldWeight", "raiseWeight",
+                "maxAdjustment", "observations")))
+            throw new IllegalArgumentException("Expected exact responseModel settings and observations");
+        Object penalty = model.containsKey("penalizeRaisesOnly") ? model.get("penalizeRaisesOnly") : false;
+        if (!(penalty instanceof Boolean penalizeRaisesOnly))
+            throw new IllegalArgumentException("Expected boolean penalizeRaisesOnly");
         var counts = new java.util.HashMap<PreflopResponseModel.Spot, PreflopResponseModel.Counts>();
         for (var entry : observations.entrySet()) {
             if (!(entry.getKey() instanceof String key) || !(entry.getValue() instanceof Map<?, ?> row)
@@ -178,7 +184,8 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
                     integer(row, "opportunities"), integer(row, "folds"), integer(row, "raises")));
         }
         return new PreflopResponseModel(integer(model, "minSamples"), integer(model, "priorStrength"),
-                integer(model, "foldWeight"), integer(model, "raiseWeight"), integer(model, "maxAdjustment"), counts);
+                integer(model, "foldWeight"), integer(model, "raiseWeight"), integer(model, "maxAdjustment"),
+                penalizeRaisesOnly, counts);
     }
 
     private static ContextualEquityPolicy.RaiseContext raiseContext(Map<?, ?> hard) {

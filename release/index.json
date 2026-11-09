@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.10.0",
-  "previousVersion": "0.9.0",
+  "currentVersion": "0.11.0",
+  "previousVersion": "0.10.0",
   "changeClass": "COMPATIBLE_FEATURE",
-  "changeRationale": "Adaugă exerciții și progres persistent pentru toate familiile.",
-  "state": "PREPARED",
+  "changeRationale": "Afișează separat stările realizărilor și progresul lotului curent pe ecran compact.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.10.0"
+    "0.11.0"
   ]
 }

@@ -52,6 +52,23 @@ class TournamentStrategyArenaTest {
             Files.writeString(path, active + invalid);
             assertThrows(IllegalArgumentException.class, () -> TournamentPolicyConfig.load(path));
         }
+        String sizing = """
+
+                  raiseEv:
+                    calledEquityDiscountPp: 8
+                    minEdgePercentOfBigBlind: 20
+                    potPercents: [50, 100, 150]
+                """;
+        String probabilitiesOnly = block.replace("foldWeight: 16", "foldWeight: 0").replace("raiseWeight: 24", "raiseWeight: 0");
+        var ev = TournamentPolicyConfig.load(Files.writeString(path, active + probabilitiesOnly + sizing))
+                .hardPressure().raiseEv();
+        assertEquals(List.of(50, 100, 150), ev.potPercents());
+        assertEquals(20, ev.minEdgePercentOfBigBlind());
+        for (String invalid : List.of(active + block + sizing, active + sizing,
+                active + probabilitiesOnly + sizing.replace("[50, 100, 150]", "[100, 50, 100]"))) {
+            Files.writeString(path, invalid);
+            assertThrows(IllegalArgumentException.class, () -> TournamentPolicyConfig.load(path));
+        }
     }
 
     @Test void hardRaiseWeightsAreIndependentAndRejectIncompleteOrUnknownKeys() throws Exception {

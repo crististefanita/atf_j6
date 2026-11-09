@@ -5,6 +5,7 @@ import java.nio.file.*;
 import java.util.Map;
 import ro.atf.holdem.ai.ContextualEquityPolicy;
 import ro.atf.holdem.ai.PreflopResponseModel;
+import ro.atf.holdem.ai.RaiseEvSizing;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -152,6 +153,7 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
         keys.remove("bigBlindValueRaise");
         keys.remove("raiseContext");
         keys.remove("responseModel");
+        keys.remove("raiseEv");
         if (!keys.equals(required))
             throw new IllegalArgumentException("Expected exact hardPressure settings");
         Object bigBlindValueRaise = hard.containsKey("bigBlindValueRaise") ? hard.get("bigBlindValueRaise") : false;
@@ -159,7 +161,18 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
             throw new IllegalArgumentException("Expected boolean bigBlindValueRaise");
         return new ContextualEquityPolicy.HardPressure(integer(hard, "cheapPreflopDiscount"),
                 integer(hard, "fullPotEquity"), integer(hard, "doublePotEquity"), integer(hard, "triplePotEquity"),
-                enabled, raiseContext(hard), responseModel(hard));
+                enabled, raiseContext(hard), responseModel(hard), raiseEv(hard));
+    }
+
+    private static RaiseEvSizing.Settings raiseEv(Map<?, ?> hard) {
+        if (!hard.containsKey("raiseEv")) return null;
+        if (!(hard.get("raiseEv") instanceof Map<?, ?> ev)
+                || !ev.keySet().equals(java.util.Set.of("calledEquityDiscountPp", "minEdgePercentOfBigBlind", "potPercents"))
+                || !(ev.get("potPercents") instanceof java.util.List<?> percents)
+                || !percents.stream().allMatch(Integer.class::isInstance))
+            throw new IllegalArgumentException("Expected exact raiseEv settings");
+        return new RaiseEvSizing.Settings(integer(ev, "calledEquityDiscountPp"), integer(ev, "minEdgePercentOfBigBlind"),
+                percents.stream().map(Integer.class::cast).toList());
     }
 
     private static PreflopResponseModel responseModel(Map<?, ?> hard) {

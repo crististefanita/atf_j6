@@ -107,11 +107,19 @@ public record PreflopResponseModel(int minSamples, int priorStrength, int foldWe
     }
 
     static Spot proposedRaise(HoldemObservation observation, int amount) {
+        Quote quote = quote(observation, amount);
+        return quote == null ? null : quote.spot();
+    }
+
+    record Quote(Spot spot, int opponentPrice) {}
+
+    static Quote quote(HoldemObservation observation, int amount) {
         var context = context(observation);
         if (context == null || amount <= observation.toCall()) return null;
         var paid = observation.visibleContributions();
         long price = (long) paid.get(observation.heroSeat()) + amount - paid.get(context.opponent);
-        return spot(observation, context, context.opponent, price, context.nextRaise);
+        Spot response = spot(observation, context, context.opponent, price, context.nextRaise);
+        return response == null ? null : new Quote(response, Math.toIntExact(price));
     }
 
     private static Spot spot(HoldemObservation obs, PublicContext context, int responder, long price, Sequence sequence) {

@@ -177,6 +177,28 @@ Jurnalul înregistrează cheia situației, cele două probabilități, numărul 
 
 Cele două profiluri folosesc aceiași numărători calibrați. La calificare, fixează lotul principal de adversari, regula de promovare și tratarea turneelor neterminate înainte de rulare.
 
+#### Valoarea estimată a mărimii unui raise
+
+`hardPressure.raiseEv` este opțional și folosește `responseModel` cu ponderile de prag la zero. Candidatul intervine când Hard a ales deja un raise preflop heads-up, cu preț pozitiv.
+
+| Pas | Contract |
+|---|---|
+| Oferte | Compară suma de control, minimul legal și fracțiile configurate din potul după call. Păstrează suma de control în clasa ei de preț și cea mai apropiată sumă legală din cealaltă clasă. |
+| Fold | Câștigul imediat este potul curent `P`. Jetoanele neacoperite din raise se întorc actorului. |
+| Call | Contribuția este `e × (P + R + D) − R`, unde `R` este suma adăugată de actor și `D` este suma de plătit pentru adversar. `e` pornește de la equity conservatoare și scade discountul configurat. |
+| Re-raise | Evaluează abandonul ulterior la `−R`. Scorul însumează cele trei ramuri ponderate cu probabilitățile estimate. |
+| Alegere | Cere suport în ambele clase de preț, un câștig minim exprimat în blinduri mari și încadrarea sub plafonul de angajare. În celelalte situații păstrează suma de control. |
+
+Valoarea este un scor în jetoane pentru dimensionare. Equity la call este aproximată, iar jocul ulterior și premiile de turneu rămân în afara scorului. [Valoarea așteptată pe ramuri](https://blog.gtowizard.com/what-is-expected-value-in-poker/)
+
+Pentru diagnostic, reluarea offline poate continua ramura de call până la showdown, cu check pe străzile rămase și același pachet. Raportează separat cota observată, valoarea imediată în jetoane și rezultatul turneului. Datele oracolului rămân în analiza offline.
+
+#### Inițiativa și poziția
+
+- **Inițiativă.** Prima mărire stabilește un preț nou. În simulare, compară call-ul și raise-ul din aceeași stare a primului actor și măsoară reacția imediată.
+- **Poziție.** În heads-up, butonul acționează primul preflop și ultimul postflop. Segmentează rezultatele după stradă, prima mărire și re-raise. [Ordinea heads-up](https://www.pokerstars.com/poker/learn/news/strategy-to-play-heads-up-poker/)
+- **Comparație.** Reexecută două sume din același prefix pe o copie a mâinii și validează prețul efectiv. Estimează frecvențele pe turnee separate și măsoară victoriile într-un lot competitiv independent. [Dimensiuni de acțiune în jocuri cu informație incompletă](https://arxiv.org/abs/1705.02955)
+
 ## Politică mixtă de bluff pentru laborator
 
 Politica experimentală `BLUFF-MIXED-0.1` explorează o deschidere minimă după check, cu frecvență și fereastră de poziție configurate. [YAML-ul politicilor](../../config/j6-policy.yaml)

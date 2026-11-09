@@ -6,7 +6,7 @@
 |---|---|
 | `DRAFT` | Versiune, note și guvernanță inspectabile; fără APK și fără link de descărcare. |
 | `PREPARED` | Sursă fixată și curată, teste trecute, APK Release semnat cu identitatea J6, instalare sanity și inventar hash complet. |
-| `PUBLISHED` | Tag-ul indică commit-ul calificat, asset-ul este atașat, iar descărcarea publică are bytes și SHA-256 verificate. |
+| `PUBLISHED` | Tag-ul indică commit-ul calificat, APK-ul și checksum-ul sunt atașate și ambele descărcări anonime sunt verificate. |
 
 APK-urile intermediare, build-urile, cache-urile, logurile și capturile brute rămân în `C:\work\holdem_back`. Dosarul ediției leagă pachetul selectat, checksum-ul, manifestul și rapoartele Extent cu imagini încorporate. APK-ul și checksum-ul rămân în afara Git și devin fișiere atașate release-ului.
 
@@ -139,7 +139,7 @@ Guvernanța verifică sursele Java incluse în APK pentru metode cunoscute ca in
 4. Commit-ul sursă și tag-ul `v<versiune>` identifică exact binarul. Commit-ul ulterior al dovezilor poate actualiza catalogul și linkurile, dar nu mută tag-ul.
 5. Atașați APK-ul verificat și checksum-ul la GitHub Release, publicați și confruntați asset-urile cu manifestul. După o descărcare autentificată completă, păstrați receipt-ul, marcați ediția `PREPARED` și aliniați linkurile din README.
 6. Cu catalogul în `PREPARED`, rulați `scripts/Test-PublishedHoldemDownload.ps1`. Clientul verifică anonim ruta din README, redirect-ul, statusul final, lungimea completă, SHA-256 și octeții de identificare ZIP/APK.
-   - După PASS, păstrați receipt-ul în `publicDownload` și marcați `PUBLISHED`.
+   - Clientul verifică și fișierul checksum de la ruta aceleiași ediții. După PASS, păstrați ambele dovezi, `publicDownload` și `publicChecksumDownload`, apoi marcați `PUBLISHED`.
    - Dacă proba anonimă e blocată, păstrați `PREPARED` cu `authenticatedBrowserDownload` sau `authenticatedAssetDownload`.
    - Consemnați metoda și ruta canonică în receipt, fără credențiale sau URL semnat.
 

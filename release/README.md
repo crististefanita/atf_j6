@@ -16,6 +16,7 @@ Dosarele de mai jos păstrează dovezile edițiilor. Când un fișier este inven
 
 | Versiune | Documentație | Identitatea pachetului |
 |---|---|---|
+| 0.4.1 | [Dosarul candidatului](0.4.1/README.md) · `DRAFT` | [Manifestul candidatului](0.4.1/release-validation.json) |
 | 0.4.0 | [Dosarul ediției](0.4.0/README.md) · `PREPARED` | [Manifestul ediției](0.4.0/release-validation.json) |
 | 0.3.1 | [Dosarul ediției](0.3.1/README.md) · `PREPARED` | [Manifestul ediției](0.3.1/release-validation.json) |
 | 0.3.0 | [Dosarul ediției](0.3.0/README.md) · `PREPARED` | [Manifestul ediției](0.3.0/release-validation.json) |
@@ -41,7 +42,7 @@ Seriile 0.1.x și 0.2.x sunt retrase din distribuția curentă. Tagurile și ist
 | Stare | Înțeles |
 |---|---|
 | `PREPARED` | APK-ul semnat și verificările locale sunt în dosarul ediției; descărcarea anonimă nu este încă acceptată. |
-| `PUBLISHED` | APK-ul poate fi descărcat complet fără autentificare, iar identitatea binarului corespunde manifestului. |
+| `PUBLISHED` | APK-ul și checksum-ul pot fi descărcate fără autentificare, iar digestul corespunde manifestului. |
 
 În `DRAFT`, README-ul principal indică doar dosarul ediției. După calificare, păstrează două legături ordonate: pagina Release, apoi APK-ul. Limitările de acces și detaliile de verificare aparțin dosarului versiunii.
 

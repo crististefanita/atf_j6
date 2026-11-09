@@ -45,6 +45,13 @@ $url = $routes[0].Groups[1].Value
 if ($validation.publication.state -eq 'PUBLISHED' -and $validation.publicDownload.assetUrl -ne $url) {
     throw 'Published catalog does not point to the canonical versioned GitHub asset.'
 }
+function Assert-GitHubAssetHost([uri]$Uri) {
+    if ($Uri.Scheme -ne 'https' -or ($Uri.Host -ne 'github.com' -and
+        !$Uri.Host.EndsWith('.githubusercontent.com', [StringComparison]::OrdinalIgnoreCase))) {
+        throw 'GitHub redirected the asset request to an unexpected host.'
+    }
+}
+
 New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
 $partial = Join-Path $OutputDirectory ($assetName + '.part')
 $downloaded = Join-Path $OutputDirectory $assetName
@@ -87,11 +94,46 @@ try {
         if ($signature.Length -lt 4 -or $signature[0] -ne 0x50 -or $signature[1] -ne 0x4b) {
             throw 'Downloaded file is not a ZIP/APK payload.'
         }
-        Move-Item -LiteralPath $partial -Destination $downloaded
         $finalUri = $response.RequestMessage.RequestUri
-        if ($finalUri.Host -ne 'github.com' -and !$finalUri.Host.EndsWith('.githubusercontent.com', [StringComparison]::OrdinalIgnoreCase)) {
-            throw 'GitHub redirected the asset request to an unexpected host.'
+        Assert-GitHubAssetHost $finalUri
+
+        $checksumUrl = $url + '.sha256'
+        $checksumRequest = [Net.Http.HttpRequestMessage]::new([Net.Http.HttpMethod]::Get, $checksumUrl)
+        try {
+            $checksumRequest.Headers.UserAgent.ParseAdd('HoldemLab-Release-Download-Acceptance/1.0')
+            $checksumResponse = $client.SendAsync($checksumRequest, [Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+            try {
+                if ([int]$checksumResponse.StatusCode -ne 200) {
+                    throw "Anonymous checksum GET returned HTTP $([int]$checksumResponse.StatusCode)."
+                }
+                $checksumFinalUri = $checksumResponse.RequestMessage.RequestUri
+                Assert-GitHubAssetHost $checksumFinalUri
+                $checksumStream = $checksumResponse.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+                try {
+                    $checksumBuffer = [byte[]]::new(257)
+                    $checksumBytes = 0
+                    while ($checksumBytes -lt $checksumBuffer.Length) {
+                        $read = $checksumStream.Read($checksumBuffer, $checksumBytes, $checksumBuffer.Length - $checksumBytes)
+                        if ($read -eq 0) { break }
+                        $checksumBytes += $read
+                    }
+                    if ($checksumBytes -eq $checksumBuffer.Length -or
+                        [Text.Encoding]::UTF8.GetString($checksumBuffer, 0, $checksumBytes).TrimEnd("`r", "`n") -cne "$hash  $assetName") {
+                        throw 'Anonymous checksum does not identify the verified APK.'
+                    }
+                }
+                finally { $checksumStream.Dispose() }
+                $checksumReceipt = [ordered]@{
+                    verified=$true; assetUrl=$checksumUrl; finalHost=$checksumFinalUri.Host; httpStatus=200
+                    credentialMode='anonymous; no cookies, authorization header, or default credentials'
+                    apkSha256=$hash; apkName=$assetName
+                }
+            }
+            finally { $checksumResponse.Dispose() }
         }
+        finally { $checksumRequest.Dispose() }
+
+        Move-Item -LiteralPath $partial -Destination $downloaded
         $receipt = [ordered]@{
             schemaVersion=1; verified=$true; version=$version; tag=$tag; repository=$repository
             readme='README.md#jocul'; assetUrl=$url; finalHost=$finalUri.Host; httpStatus=200
@@ -99,8 +141,8 @@ try {
             bytes=$count; sha256=$hash; apk=$assetName; completedUtc=[datetime]::UtcNow.ToString('o')
         }
         $receiptPath = Join-Path $OutputDirectory 'download-receipt.json'
-        $receipt | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $receiptPath -Encoding utf8NoBOM
-        $receipt | ConvertTo-Json -Depth 4
+        [ordered]@{ publicDownload=$receipt; publicChecksumDownload=$checksumReceipt } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $receiptPath -Encoding utf8NoBOM
+        [ordered]@{ publicDownload=$receipt; publicChecksumDownload=$checksumReceipt } | ConvertTo-Json -Depth 4
         Write-Output "Downloaded APK: $downloaded"
         Write-Output "Download receipt: $receiptPath"
     }

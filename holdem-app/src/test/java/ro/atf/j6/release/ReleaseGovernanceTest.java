@@ -68,9 +68,22 @@ class ReleaseGovernanceTest {
         var checks = new ArrayList<AtfAssertion>();
         recordEvidenceCase(checks, "Draft needs no local APK", "DRAFT", draft, url, null);
         recordEvidenceCase(checks, "Prepared uses authenticated evidence", "PREPARED", prepared, url, null);
-        recordEvidenceCase(checks, "Published uses anonymous evidence", "PUBLISHED", published, url, null);
+        recordEvidenceCase(checks, "APK receipt alone cannot establish public distribution", "PUBLISHED",
+                published, url, "PUBLISHED requires an anonymous checksum download");
+        var checksum = published.putObject("publicChecksumDownload").put("verified", true).put("httpStatus", 200)
+                .put("credentialMode", "anonymous").put("assetUrl", url + ".sha256")
+                .put("apkSha256", sha).put("apkName", "HoldemLab-1.2.3.apk");
+        recordEvidenceCase(checks, "Published uses both anonymous receipts", "PUBLISHED", published, url, null);
+        checksum.put("apkSha256", "b".repeat(64));
+        recordEvidenceCase(checks, "Checksum for different bytes blocks publication", "PUBLISHED",
+                published, url, "PUBLISHED requires an anonymous checksum download");
+        checksum.put("apkSha256", sha);
+        checksum.put("assetUrl", url.replace("1.2.3", "1.2.2") + ".sha256");
+        recordEvidenceCase(checks, "Checksum from a different version blocks publication", "PUBLISHED",
+                published, url, "PUBLISHED requires an anonymous checksum download");
+        checksum.put("assetUrl", url + ".sha256");
         recordEvidenceCase(checks, "Authenticated receipt cannot stand in for anonymous download", "PUBLISHED",
-                prepared, url, "PUBLISHED requires a complete anonymous download");
+                prepared, url, "PUBLISHED requires a complete anonymous download, PUBLISHED requires an anonymous checksum download");
         ((com.fasterxml.jackson.databind.node.ObjectNode) prepared.get("authenticatedAssetDownload")).put("sha256", "b".repeat(64));
         recordEvidenceCase(checks, "Authenticated receipt with the wrong hash is rejected", "PREPARED",
                 prepared, url, "PREPARED requires an authenticated download receipt");
@@ -402,6 +415,16 @@ class ReleaseGovernanceTest {
                     matchesDownload(download, identity, apkUrl) && download.path("httpStatus").asInt(-1) == 200
                             && download.path("credentialMode").asText().startsWith("anonymous")
                             ? "HTTP 200 for the verified canonical asset" : "unverified, non-anonymous or mismatched receipt");
+            JsonNode checksum = validation.path("publicChecksumDownload");
+            String apkName = apkUrl.substring(apkUrl.lastIndexOf('/') + 1);
+            boolean verifiedChecksum = checksum.path("verified").asBoolean(false)
+                    && checksum.path("httpStatus").asInt(-1) == 200
+                    && checksum.path("credentialMode").asText().startsWith("anonymous")
+                    && checksum.path("assetUrl").asText().equals(apkUrl + ".sha256")
+                    && checksum.path("apkSha256").asText().equals(identity.path("sha256").asText())
+                    && checksum.path("apkName").asText().equals(apkName);
+            add(checks, "PUBLISHED requires an anonymous checksum download", "verified checksum for the same APK",
+                    verifiedChecksum ? "verified checksum for the same APK" : "unverified, non-anonymous or mismatched checksum");
         }
     }
 

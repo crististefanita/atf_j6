@@ -19,8 +19,12 @@ final class PolicySeed {
     }
 
     static int rollPercent(HoldemObservation observation) {
+        return rollPercent(observation, observation.publicActionHistory());
+    }
+
+    static int rollPercent(HoldemObservation observation, List<String> history) {
         return Math.floorMod(Objects.hash(observation.handNumber(), observation.heroSeat(),
                 observation.positionFromButton(), observation.street().ordinal(), cardsHash(observation.holeCards()),
-                cardsHash(observation.communityCards()), observation.publicActionHistory()), 100);
+                cardsHash(observation.communityCards()), history), 100);
     }
 }

@@ -1,5 +1,6 @@
 package ro.atf.holdem.ai;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -31,7 +32,27 @@ public final class LooseAggressivePolicy implements DecisionPolicy {
     @Override
     public Decision decide(HoldemObservation observation) {
         Objects.requireNonNull(observation, "observation");
-        int roll = PolicySeed.rollPercent(observation);
+        return decide(observation, PolicySeed.rollPercent(observation));
+    }
+
+    /** Arena comparison with a shared draw for the immediate response to matched preflop raise quotes. */
+    public Decision decideWithSharedPreflopDraw(HoldemObservation observation) {
+        return decide(observation, sharedPreflopRoll(observation));
+    }
+
+    static int sharedPreflopRoll(HoldemObservation observation) {
+        var history = observation.publicActionHistory();
+        if (observation.street() != Street.PREFLOP || history.isEmpty())
+            return PolicySeed.rollPercent(observation);
+        int latest = history.size() - 1;
+        String event = history.get(latest);
+        if (!event.matches("PREFLOP \\d+ RAISE \\d+")) return PolicySeed.rollPercent(observation);
+        var matched = new ArrayList<>(history);
+        matched.set(latest, event.substring(0, event.lastIndexOf(' ') + 1) + "0");
+        return PolicySeed.rollPercent(observation, matched);
+    }
+
+    private Decision decide(HoldemObservation observation, int roll) {
         var raise = observation.legalActions().stream().filter(action -> action.type() == ActionType.RAISE)
                 .min(Comparator.comparingInt(LegalAction::minAmount)).orElse(null);
         boolean alreadyAggressed = hasAggressionThisStreet(observation);

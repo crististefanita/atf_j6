@@ -231,6 +231,23 @@ Pentru o clasă de cărți `H` și o reacție `R`, auditorul poate calcula `P(H 
 - **Informații.** Politica folosește numai cărțile proprii și starea publică. Auditorul poate folosi cărțile ascunse pentru a explica selecția după decontarea ambelor ramuri.
 - **Valoare aleatorie comună.** Repetă diagnosticul primei reacții cu aceeași valoare aleatorie la ambele oferte. Suma rămâne vizibilă pentru calculul prețului și al acțiunilor legale. Compară rezultatul cu reacția în care generatorul folosește istoricul fiecărei oferte.
 
+#### Equity contra range-ului care răspunde
+
+În arenă, estimăm separat range-ul de call și cel de re-raise pentru fiecare sumă. Profilul păstrează numărători de fold, call și re-raise pe clasă de cărți, bandă de stivă efectivă și pereche de oferte.
+
+| Etapă | Contract |
+|---|---|
+| Calibrare | Rulează perechi din același prefix. Pentru adversarii LAG, egalizează extragerea la prima reacție prin normalizarea ultimei sume preflop doar în calculul extragerii. |
+| Range | Împarte combinațiile în premium, perechi mici, două cărți de rang mare și rest. Pentru fiecare clasă, corectează frecvența observată cu proporția de combinații disponibile după excluderea cărților proprii. |
+| Equity | Eșantionează un buget fix de runout-uri pe clasă și reutilizează aceleași eșantioane la ambele oferte. Fiecare reacție are propria medie ponderată, inclusiv jumătate de pot pentru egalitate. |
+| Scor | La call folosește equity contra range-ului care plătește. La re-raise, compară abandonul cu decontarea la stiva efectivă, folosind equity contra range-ului care mărește. Această decontare este o aproximare în scorul de selecție. |
+| Validare | Măsoară eroarea equity față de un showdown de control și față de estimatorul uniform. Verifică separat jetoanele realizate sub politicile de continuare și victoriile în turnee pereche. |
+
+- Ponderea unei clase la o reacție este numărul de răspunsuri din clasă înmulțit cu `combinații disponibile / combinații totale în clasă`.
+- Probabilitatea reacției împarte ponderea ei la ponderea tuturor răspunsurilor. Equity condiționată este media equity pe clase, cu ponderile acelei reacții.
+
+Datele ascunse intră în numărătorile offline și în oracol. La alegerea sumei, candidatul vede numai cărțile proprii, stiva, prețul și istoricul public. Când lipsesc date pentru o ofertă sau o bandă, păstrează suma de control.
+
 #### Inițiativa și poziția
 
 - **Inițiativă.** Prima mărire stabilește un preț nou. În simulare, compară call-ul și raise-ul din aceeași stare a primului actor și măsoară reacția imediată.

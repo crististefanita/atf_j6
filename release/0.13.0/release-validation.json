@@ -179,12 +179,12 @@
     "httpStatus": 200,
     "credentialMode": "authenticated GitHub REST API",
     "assetId": 729147566,
-    "remoteRef": "release/j6-0.13.0",
+    "remoteRef": "main",
     "remoteReadmeBlob": "364d4d71f9719546606b9afc5994c1724e0c1e02",
     "bytes": 844174,
     "sha256": "bfff6a910586821d6462a7af5ce6109cec7bb17918cbb385088b44d932c10978",
     "apk": "HoldemLab-0.13.0.apk",
-    "completedUtc": "2026-11-09T22:09:16.7546761Z"
+    "completedUtc": "2026-11-09T22:14:00.8025594Z"
   },
   "authenticatedChecksumDownload": {
     "verified": true,

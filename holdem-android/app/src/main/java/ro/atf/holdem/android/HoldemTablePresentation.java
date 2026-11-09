@@ -76,7 +76,7 @@ final class HoldemTablePresentation {
     }
 
     static boolean alignTerminalSeatHands(HoldemTableViewState frame) {
-        return frame.street() == Street.COMPLETE && frame.seats().size() == 6;
+        return frame.street() == Street.COMPLETE && frame.seats().size() >= 5;
     }
 
     static List<Card> terminalCardsAtSeat(HoldemTableViewState frame, int physicalSeat) {

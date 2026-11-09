@@ -8,7 +8,7 @@
 
 Estimatorul Monte Carlo eșantionează uniform mâinile necunoscute. Ponderile contextuale schimbă pragul, iar estimatorul nu modelează range-uri individuale sau cota pe straturile potului. Holdout-urile existente dau rezultate mixte în funcție de mărimea mesei și poziție.
 
-În Android, adversarii rămân pe check/call, iar politica contextuală servește coach-ul și preluarea. [Contractul AI](../requirements/AI_REQUIREMENTS.md) · [Evaluarea în arenă](../requirements/TOURNAMENT_RULES.md)
+În Android, Normal păstrează adversarii check/call. Hard este o alegere explicită pentru turneele locale și folosește profilul de presiune și pentru coach și preluare. Statisticile de shove se reconstruiesc din acțiunile publice ale mâinilor încheiate, inclusiv după reluare. [Contractul AI](../requirements/AI_REQUIREMENTS.md) · [Evaluarea în arenă](../requirements/TOURNAMENT_RULES.md)
 
 ## Candidat Hard pentru arenă
 
@@ -20,6 +20,9 @@ Mărimile respectă limitele No-Limit. Analizele de solver motivează testarea o
 
 ## Criterii de închidere
 
+- [ ] Verifică nativ selectorul „Nivelul adversarilor” în română și engleză, opțiunile Normal și Hard, Normal la prima deschidere, Hard după rotație și Hard după salvare și reluare. Verifică și textul de pe ecranul principal, care prezintă jocul offline și alegerea nivelului.
+- [ ] Joacă turnee Hard din interfață și confirmă că adversarii pot continua, renunța și mări pariul legal. Urmărește timpul de răspuns și schimbarea ecranului în timpul calculului.
+
 - Definiți înainte de evaluare metrica primară, baseline-urile și pragul de promovare. Separați reglajul de holdout. Comparația păstrează seed-urile, pozițiile, nivelurile și adversarii pereche. Raportați incertitudinea pe seed, chips/hand, bb/100 și drawdown.
 - Verificați calibrarea range-urilor din informația publică și deciziile în poturi secundare cu stive inegale. Păstrați legalitatea, confidențialitatea, replay-ul și bugetul de calcul.
-- Promovați un nivel Android doar cu dovezi pentru politica instalată efectiv ca adversar local. [J6-AI-04](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) urmărește separat contribuția istoricului de shove.
+- Calificați forța nivelului Hard în configurația Android efectivă înainte de a declara superioritatea. [J6-AI-04](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) urmărește separat contribuția istoricului de shove.

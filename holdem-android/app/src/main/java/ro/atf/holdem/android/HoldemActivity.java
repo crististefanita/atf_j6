@@ -64,6 +64,7 @@ public final class HoldemActivity extends Activity {
     private Future<?> aiTask;
     private int setupBlindLevelMinutes = 1;
     private android.widget.Spinner setupBlindIntervalPicker;
+    private android.widget.Spinner setupDifficultyPicker;
     private CheckBox setupWinChance;
     private HoldemWinChance lastWinChance;
     private CompletableFuture<Integer> winChanceResult;
@@ -102,7 +103,8 @@ public final class HoldemActivity extends Activity {
             if (state != null && state.getBoolean("configuring")) {
                 setupBlindLevelMinutes = state.getInt("setup-blind-level-minutes", 1);
                 if (!LocalHoldemGame.BLIND_LEVEL_MINUTES.contains(setupBlindLevelMinutes)) setupBlindLevelMinutes = 1;
-                setup(state.getBoolean("tournament-setup"), state.getBoolean("setup-win-chance"));
+                setup(state.getBoolean("tournament-setup"), state.getBoolean("setup-win-chance"),
+                        state.getBoolean("setup-hard"));
             } else home();
             if (saved.hasFailure()) Toast.makeText(this, text(R.string.restore_error), Toast.LENGTH_LONG).show();
         }
@@ -120,6 +122,8 @@ public final class HoldemActivity extends Activity {
         }
         state.putInt("setup-blind-level-minutes", setupBlindLevelMinutes);
         state.putBoolean("setup-win-chance", configuring && setupWinChance != null && setupWinChance.isChecked());
+        state.putBoolean("setup-hard", configuring && setupDifficultyPicker != null
+                && setupDifficultyPicker.getSelectedItemPosition() == LocalHoldemGame.Difficulty.HARD.ordinal());
     }
 
     @Override protected void onDestroy() {
@@ -194,6 +198,7 @@ public final class HoldemActivity extends Activity {
         configuring = false;
         showingResult = false;
         setupBlindIntervalPicker = null;
+        setupDifficultyPicker = null;
         setupWinChance = null;
         views.applyStandardWindowChrome();
         var page = views.page(null, text(R.string.app_name));
@@ -242,10 +247,10 @@ public final class HoldemActivity extends Activity {
     }
 
     private void setup(boolean tournament) {
-        setup(tournament, false);
+        setup(tournament, false, false);
     }
 
-    private void setup(boolean tournament, boolean showWinChance) {
+    private void setup(boolean tournament, boolean showWinChance, boolean hard) {
         configuring = true;
         tournamentSetup = tournament;
         var page = views.page(null, text(tournament ? R.string.tournament_setup : R.string.setup));
@@ -254,7 +259,13 @@ public final class HoldemActivity extends Activity {
         picker.setSelection(sizes.indexOf(4));
         views.addSetupSelector(page, text(R.string.players), picker);
         android.widget.Spinner blindInterval = null;
+        setupDifficultyPicker = null;
         if (tournament) {
+            setupDifficultyPicker = views.spinner(List.of("Normal", "Hard"), "ai-level");
+            setupDifficultyPicker.setContentDescription(text(R.string.ai_level));
+            setupDifficultyPicker.setSelection(hard ? LocalHoldemGame.Difficulty.HARD.ordinal()
+                    : LocalHoldemGame.Difficulty.NORMAL.ordinal());
+            views.addSetupSelector(page, text(R.string.ai_level), setupDifficultyPicker);
             var intervals = LocalHoldemGame.BLIND_LEVEL_MINUTES.stream()
                     .map(minutes -> text(R.string.blind_interval_option, minutes)).collect(Collectors.toList());
             blindInterval = views.spinner(intervals, "blind-level-interval");
@@ -273,19 +284,25 @@ public final class HoldemActivity extends Activity {
         }
         var selectedInterval = blindInterval;
         var selectedWinChance = setupWinChance;
+        var selectedDifficulty = setupDifficultyPicker;
         views.addButton(page, text(R.string.deal_hand), "deal-hand", true,
                 () -> {
                     setupBlindLevelMinutes = selectedInterval == null ? 1
                             : LocalHoldemGame.BLIND_LEVEL_MINUTES.get(selectedInterval.getSelectedItemPosition());
                     open(sizes.get(picker.getSelectedItemPosition()), tournament, setupBlindLevelMinutes,
-                            selectedWinChance != null && selectedWinChance.isChecked());
+                            selectedWinChance != null && selectedWinChance.isChecked(),
+                            selectedDifficulty != null && selectedDifficulty.getSelectedItemPosition()
+                                    == LocalHoldemGame.Difficulty.HARD.ordinal()
+                                    ? LocalHoldemGame.Difficulty.HARD : LocalHoldemGame.Difficulty.NORMAL);
                 }, true);
         views.addQuietButton(page, text(R.string.home), this::home);
     }
 
-    private void open(int size, boolean tournament, int blindLevelMinutes, boolean showWinChance) {
+    private void open(int size, boolean tournament, int blindLevelMinutes, boolean showWinChance,
+                      LocalHoldemGame.Difficulty difficulty) {
         long seed = newDealSeed();
-        var next = tournament ? LocalHoldemGame.tournament(size, seed, blindLevelMinutes, stablePlayerId(), showWinChance)
+        var next = tournament ? LocalHoldemGame.tournament(size, seed, blindLevelMinutes, stablePlayerId(), showWinChance,
+                difficulty)
                 : LocalHoldemGame.table(size, 0, seed, stablePlayerId());
         try {
             progress.start(resumableGame, next, displayName());
@@ -299,6 +316,7 @@ public final class HoldemActivity extends Activity {
         aiBusy = false;
         autoFinishingHand = false;
         setupBlindIntervalPicker = null;
+        setupDifficultyPicker = null;
         setupWinChance = null;
         resumableGame = game;
         showHand();
@@ -479,7 +497,8 @@ public final class HoldemActivity extends Activity {
                         && (current.hasPassiveTurn() || (autoFinishingHand && current.view().actor() == current.view().viewer())),
                 (action, delay) -> mainHandler.postDelayed(action, delay),
                 () -> {
-                    if (current.hasPassiveTurn()) {
+                    boolean opponentTurn = current.hasPassiveTurn();
+                    if (opponentTurn && current.difficulty() == LocalHoldemGame.Difficulty.NORMAL) {
                         try {
                             current.advancePassiveAction(turn);
                             saveCheckpoint(current, false);
@@ -490,28 +509,31 @@ public final class HoldemActivity extends Activity {
                             android.util.Log.e("HoldemLab", "Automated action failed; current checkpoint retained", failure);
                             Toast.makeText(this, text(R.string.ai_action_error), Toast.LENGTH_LONG).show();
                         }
-                    } else if (autoFinishingHand && automatedHumanTurn && !aiBusy) {
+                    } else if ((opponentTurn || (autoFinishingHand && automatedHumanTurn)) && !aiBusy) {
                         aiBusy = true;
                         aiTask = aiExecutor.submit(() -> {
-                            LocalHoldemGame.AiSuggestion suggestion = null;
+                            LocalHoldemGame.Move suggestion = null;
                             RuntimeException failure = null;
-                            try { suggestion = current.suggest(turn); }
+                            try {
+                                suggestion = opponentTurn ? current.suggestOpponent(turn) : current.suggest(turn).move();
+                            }
                             catch (RuntimeException error) { failure = error; }
-                            LocalHoldemGame.AiSuggestion result = suggestion;
+                            LocalHoldemGame.Move result = suggestion;
                             RuntimeException error = failure;
                             mainHandler.post(() -> {
-                                aiBusy = false;
-                                aiTask = null;
                                 if (!activityResumed || sceneRevision != renderedScene
                                         || isFinishing() || isDestroyed() || game != current
                                         || !current.turn().equals(turn)) return;
+                                aiBusy = false;
+                                aiTask = null;
                                 if (error != null || result == null) {
                                     autoFinishingHand = false;
                                     Toast.makeText(this, text(R.string.ai_action_error), Toast.LENGTH_LONG).show();
                                     return;
                                 }
                                 try {
-                                    current.play(turn, result.move());
+                                    if (opponentTurn) current.playOpponent(turn, result);
+                                    else current.play(turn, result);
                                 } catch (IllegalArgumentException stale) {
                                     return;
                                 }

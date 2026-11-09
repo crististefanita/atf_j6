@@ -699,6 +699,35 @@ public final class TournamentSanity extends Instrumentation {
         } finally {
             runOnMainSync(activity::finish);
         }
+        inspectFiveSeatShowdown();
+    }
+
+    private void inspectFiveSeatShowdown() throws Exception {
+        var activity = launchHoldem();
+        try {
+            tap("Joacă un turneu");
+            selectTableSize("5");
+            var difficultyOptions = new ArrayList<String>();
+            runOnMainSync(() -> {
+                android.widget.Spinner difficulty = activity.getWindow().getDecorView().findViewWithTag("ai-level");
+                if (difficulty == null) return;
+                for (int index = 0; index < difficulty.getCount(); index++) {
+                    difficultyOptions.add(difficulty.getItemAtPosition(index).toString());
+                }
+                difficultyOptions.add(String.valueOf(difficulty.getSelectedItem()));
+            });
+            check("Tournament setup offers Normal and Hard and defaults to Normal",
+                    "[Normal, Hard, Normal]", difficultyOptions.toString());
+            tap("Împarte cărțile");
+            see("Five-seat hand reaches preflop", "Mâna 1 · Preflop");
+            tap(revealTaggedControl(activity, "ALL_IN"));
+            var settled = awaitSeatSettlement();
+            check("Five-seat hand settles", "COMPLETE", settled == null ? "checkpoint unavailable" : settled.street().name());
+            inspectSettledHandAlignment(activity, settled);
+            capture("03-five-seat-showdown-alignment");
+        } finally {
+            runOnMainSync(activity::finish);
+        }
     }
 
     private HoldemTableViewState awaitSeatSettlement() {
@@ -726,7 +755,7 @@ public final class TournamentSanity extends Instrumentation {
         actions.put("Open the table size selector");
         var option = await(size);
         while (option != null && !option.isClickable()) option = option.getParent();
-        check("Select six seats", "click dispatched",
+        check("Select " + size + " seats", "click dispatched",
                 option != null && option.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                         ? "click dispatched" : "option unavailable");
         actions.put("Select " + size + " seats");
@@ -794,10 +823,11 @@ public final class TournamentSanity extends Instrumentation {
         var errors = new ArrayList<String>();
         runOnMainSync(() -> {
             View root = activity.getWindow().getDecorView();
-            var rows = CompactSeatRows.forSeats(6);
+            var rows = CompactSeatRows.forSeats(frame.seats().size());
             for (int[] row : List.of(rows.top(), rows.bottom())) {
                 Integer rowTop = null;
                 for (int displaySeat : row) {
+                    if (displaySeat == CompactSeatRows.EMPTY) continue;
                     int seat = frame.physicalSeat(displaySeat);
                     View nameFrame = root.findViewWithTag("settlement-target:seat:" + seat);
                     LinearLayout hand = root.findViewWithTag("settlement-hand:seat:" + seat);
@@ -821,7 +851,7 @@ public final class TournamentSanity extends Instrumentation {
                 }
             }
         });
-        check("Six settled hands align below their seat frames, including the viewer",
+        check(frame.seats().size() + " settled hands align below their seat frames, including the viewer",
                 "aligned pairs", errors.isEmpty() ? "aligned pairs" : String.join("; ", errors));
     }
 

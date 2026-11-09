@@ -6,6 +6,19 @@ import static org.junit.jupiter.api.Assertions.*;
 import static ro.atf.holdem.core.ActionType.*;
 
 class HoldemRulesTest {
+    @Test void shoveTendenciesOnlyPublishAcceptedOpportunitiesAfterSettlement() {
+        var history = new PublicShoveHistory(6);
+        var observation = new HoldemObservation(3, 0, 2, 1, Street.PREFLOP, List.of(), List.of(),
+                60, 20, 120, 0, List.of(120, 2000),
+                List.of(new LegalAction(ActionType.ALL_IN, 120, 120, 120)), List.of(), 4, 20, List.of(0, 20));
+        history.recordAccepted(observation, ActionType.ALL_IN, 120);
+        assertEquals(new PublicOpponentTendency(4, 0, 0), history.snapshot().get(4));
+        history.settleHand();
+        history.settleHand();
+        assertEquals(new PublicOpponentTendency(4, 1, 1), history.snapshot().get(4));
+        assertEquals(new PublicOpponentTendency(0, 0, 0), history.snapshot().get(0));
+    }
+
     private static final BlindLevel BLINDS = new BlindLevel(5, 10, 15);
 
     private HoldemHand hand(Integer... stacks) {

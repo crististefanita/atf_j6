@@ -9,6 +9,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
     public enum GameMode { CASH, TOURNAMENT }
 
     public record HardPressure(int cheapPreflopDiscount, int fullPotEquity, int doublePotEquity, int triplePotEquity) {
+        public static final HardPressure TOURNAMENT = new HardPressure(3, 76, 86, 94);
         public HardPressure {
             if (cheapPreflopDiscount < 0 || cheapPreflopDiscount > 12
                     || fullPotEquity < 70 || doublePotEquity <= fullPotEquity

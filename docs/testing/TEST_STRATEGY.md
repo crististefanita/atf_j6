@@ -80,7 +80,7 @@ Aceste teste demonstrează contractul și direcția pragurilor; nu demonstrează
 ### Realizări de joc
 
 - Testele de componentă verifică ordinea, pragul fiecărui obiectiv, poturile secundare sau împărțite, blindul fizic, participanții la dezvăluire și progresul deduplicat. Motorul verifică momentul când se fixează locul într-un turneu, inclusiv locurile împărțite.
-- Calibrarea rulează aceleași reguli de turneu la mese de 4, 5 și 6 locuri. Cohorta de produs folosește consilierul și adversarii pasivi ai aplicației. Cohorta mixtă rotește cinci politici. Rezultatele finale se verifică pe semințe distincte de cele folosite la ajustare.
+- Calibrarea rulează aceleași reguli de turneu la mese de 4, 5 și 6 locuri. Normal este controlul de produs pentru adversarii pasivi. Arena Hard compară politicile cu buget de calcul egal, aceiași adversari și aceleași poziții. Rezultatele finale se verifică pe semințe distincte de cele folosite la ajustare.
 - Raportul arată rata de obținere după 1, 3, 6 și 12 turnee și mediana mâinii între sesiunile care au obținut obiectivul. Turneele care ating limita de observare rămân în numitor. Pentru cele de șase locuri se numără doar sesiunile eligibile.
 - Proba vizuală urmărește deschiderea meniului, nivelurile, progresul și legătura către Antrenament.
 

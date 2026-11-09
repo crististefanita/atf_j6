@@ -15,7 +15,7 @@ class TournamentStrategyArenaTest {
         var control = TournamentPolicyConfig.load(projectPath(lineup.equityPolicyFiles().get("equity-stack-aware")));
         var hard = TournamentPolicyConfig.load(projectPath(lineup.equityPolicyFiles().get("equity-hard-pressure")));
         assertNull(control.hardPressure());
-        assertEquals(new ro.atf.holdem.ai.ContextualEquityPolicy.HardPressure(3, 76, 86, 94), hard.hardPressure());
+        assertEquals(ro.atf.holdem.ai.ContextualEquityPolicy.HardPressure.TOURNAMENT, hard.hardPressure());
         assertEquals(control.equitySamples(), hard.equitySamples());
         assertEquals(control.equityContextWeights(), hard.equityContextWeights());
         for (int seats : List.of(4, 5, 6)) assertTrue(lineup.forSeats(seats).contains("equity-hard-pressure"));

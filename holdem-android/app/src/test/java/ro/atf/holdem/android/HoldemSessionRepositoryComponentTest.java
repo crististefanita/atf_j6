@@ -117,10 +117,23 @@ public final class HoldemSessionRepositoryComponentTest {
     }
 
     @Test public void schemaTwoTournamentDefaultsToHiddenWinChance() throws Exception {
+        var restored = restoreLegacyTournament(2);
+        assertEquals("existing-tournament", restored.tournamentId());
+        assertFalse(restored.showsWinChance());
+        assertEquals(LocalHoldemGame.Difficulty.NORMAL, restored.difficulty());
+    }
+
+    @Test public void schemaThreeKeepsWinChanceAndDefaultsToNormal() throws Exception {
+        var restored = restoreLegacyTournament(3);
+        assertTrue(restored.showsWinChance());
+        assertEquals(LocalHoldemGame.Difficulty.NORMAL, restored.difficulty());
+    }
+
+    private static LocalHoldemGame restoreLegacyTournament(int schema) throws Exception {
         var bytes = new java.io.ByteArrayOutputStream();
         try (var out = new java.io.DataOutputStream(bytes)) {
             out.writeInt(0x484C534A);
-            out.writeInt(2);
+            out.writeInt(schema);
             out.writeBoolean(false);
             out.writeInt(4);
             out.writeInt(0);
@@ -130,6 +143,7 @@ public final class HoldemSessionRepositoryComponentTest {
             out.writeLong(0);
             out.writeUTF("existing-tournament");
             out.writeUTF("existing-player");
+            if (schema >= 3) out.writeBoolean(true);
             out.writeInt(1);
             out.writeLong(0);
             out.writeInt(0);
@@ -138,8 +152,45 @@ public final class HoldemSessionRepositoryComponentTest {
         storage.value = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes.toByteArray());
         var result = new HoldemSessionRepository(storage).load();
         assertTrue(result.hasCheckpoint());
-        assertEquals("existing-tournament", result.resumed().game().tournamentId());
-        assertFalse(result.resumed().game().showsWinChance());
+        return result.resumed().game();
+    }
+
+    @Test public void hardAndNormalTakeDifferentOpponentActionsAndHardReplaysTheAcceptedMove() throws Exception {
+        LocalHoldemGame hard = null;
+        LocalHoldemGame.Move chosen = null;
+        for (long seed = 1; seed <= 16 && chosen == null; seed++) {
+            var candidate = LocalHoldemGame.tournament(5, seed, 1, "player", false, LocalHoldemGame.Difficulty.HARD);
+            var normal = LocalHoldemGame.tournament(5, seed, 1, "player");
+            var opening = candidate.view().legalActions().stream().filter(action -> action.type() == ActionType.CALL)
+                    .findFirst().orElseThrow();
+            var call = new LocalHoldemGame.Move(opening.type(), opening.amount());
+            candidate.play(candidate.turn(), call);
+            normal.play(normal.turn(), call);
+            var position = candidate.turn();
+            var move = candidate.suggestOpponent(position);
+            assertEquals(position, candidate.turn());
+            normal.advancePassiveAction(normal.turn());
+            var normalMove = normal.save().rounds().get(0).get(1).move();
+            assertTrue(normalMove.action() == ActionType.CALL || normalMove.action() == ActionType.CHECK);
+            if (!move.equals(normalMove)) {
+                candidate.playOpponent(position, move);
+                assertThrows(IllegalArgumentException.class, () -> candidate.playOpponent(position, move));
+                chosen = move;
+                hard = candidate;
+            }
+        }
+        assertNotNull("Hard must differ from the passive Normal player on this fixed deal set", hard);
+
+        var storage = new MemoryStorage();
+        var repository = new HoldemSessionRepository(storage);
+        repository.save(hard, false);
+        var restored = repository.load().resumed().game();
+        assertEquals(LocalHoldemGame.Difficulty.HARD, restored.difficulty());
+        assertEquals(hard.view(), restored.view());
+        assertEquals(chosen, restored.save().rounds().get(0).get(1).move());
+        if (restored.hasPassiveTurn()) {
+            assertEquals(hard.suggestOpponent(hard.turn()), restored.suggestOpponent(restored.turn()));
+        }
     }
 
     @Test public void terminalTournamentCheckpointReopensTheResultScreen() throws Exception {

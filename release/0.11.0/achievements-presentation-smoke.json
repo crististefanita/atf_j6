@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "api": "28",
+  "window": "360x720",
+  "density": 160,
+  "fontScale": 1.3,
+  "locale": "ro",
+  "easyUnlocked": 6,
+  "hardLotsPassed": 1,
+  "hardAnswered": 7,
+  "hardCorrect": 5,
+  "tabBounds": [
+    [
+      16,
+      159,
+      125,
+      207
+    ],
+    [
+      125,
+      159,
+      234,
+      207
+    ],
+    [
+      234,
+      159,
+      344,
+      207
+    ]
+  ],
+  "apkSha256": "68c8947711cd620ab943b45b46e4ad6d2f59284041148956c9a23abf4c5f46c3"
+}

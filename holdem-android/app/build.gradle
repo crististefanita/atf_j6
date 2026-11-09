@@ -50,6 +50,14 @@ android {
     }
 }
 
+def achievementAssets = layout.buildDirectory.dir('generated/achievement-assets')
+def copyAchievementCatalog = tasks.register('copyAchievementCatalog', Copy) {
+    from rootProject.file('../docs/feedback/J6-PROD-01-ACHIEVEMENT-CATALOG.csv')
+    into achievementAssets
+}
+android.sourceSets.main.assets.srcDir achievementAssets.get().asFile
+tasks.named('preBuild') { dependsOn copyAchievementCatalog }
+
 def verifyLanguageBundlePolicy = tasks.register('verifyLanguageBundlePolicy') {
     doLast {
         if (android.bundle.language.enableSplit != false) {

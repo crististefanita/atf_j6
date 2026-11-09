@@ -120,4 +120,53 @@
     <string name="win_chance_description">Estimated chance to win this hand outright: %1$d%% (unknown hands)</string>
     <string name="win_chance_unavailable">Win chance —</string>
     <string name="win_chance_unavailable_description">Win chance unavailable</string>
+    <string name="achievements">Achievements</string>
+    <string name="achievement_back">Back</string>
+    <string name="achievement_easy">Easy</string>
+    <string name="achievement_medium">Medium</string>
+    <string name="achievement_hard">Hard</string>
+    <string name="achievement_error">Achievement data could not be loaded or saved.</string>
+    <string name="achievement_summary">Unlocked (%1$d / %2$d)</string>
+    <string name="achievement_row">%1$s · %2$d\n%3$s</string>
+    <string name="achievement_done">Unlocked</string>
+    <string name="achievement_planned">Exercises in preparation</string>
+    <string name="achievement_locked">Prerequisite required</string>
+    <string name="achievement_lots">Lots passed (%1$d / %2$d)</string>
+    <string name="achievement_score">Correct (%1$d / %2$d)</string>
+    <string name="achievement_criteria">Correct answers per lot (%1$d / %2$d). Required lots (%3$d).</string>
+    <string name="achievement_prerequisite">Requires %1$s · stage %2$d</string>
+    <string name="achievement_practice">Practice</string>
+    <string name="achievement_question">Eligible pot in chips before your call (%1$d). Call cost in chips (%2$d). Equity (%3$d%%). What is the expected value of calling? Assume no further betting or fees.</string>
+    <string name="achievement_profit">Positive</string>
+    <string name="achievement_even">Zero</string>
+    <string name="achievement_loss">Negative</string>
+    <string name="achievement_correct">Correct</string>
+    <string name="achievement_incorrect">Try the next one</string>
+    <string name="achievement_explanation">%1$s. Break-even equity is %2$.1f%%.</string>
+    <string name="achievement_lot_score">Answered (%1$d / %2$d) · Correct (%3$d)</string>
+    <string name="achievement_next">Next</string>
+    <string name="achievement_playable">Available to practice</string>
+    <string name="achievement_empty">Complete the prerequisite to unlock the next exercise.</string>
+    <string-array name="achievement_families">
+        <item>Position</item>
+        <item>Showdown</item>
+        <item>Bet sizing</item>
+        <item>Blinds</item>
+        <item>All-in</item>
+        <item>Pots</item>
+        <item>Split pots</item>
+        <item>Pot odds</item>
+        <item>Outs</item>
+        <item>Preflop</item>
+        <item>Board texture</item>
+        <item>Ranges</item>
+        <item>Value</item>
+        <item>Discipline</item>
+        <item>Bluffs</item>
+        <item>Short stacks</item>
+        <item>Heads-up</item>
+        <item>Cash games</item>
+        <item>Tournaments</item>
+        <item>Hand review</item>
+    </string-array>
 </resources>

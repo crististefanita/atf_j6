@@ -119,4 +119,53 @@
     <string name="win_chance_description">Șansa estimată de a câștiga singur mâna: %1$d%% (mâini necunoscute)</string>
     <string name="win_chance_unavailable">Șansă —</string>
     <string name="win_chance_unavailable_description">Șansă de câștig indisponibilă</string>
+    <string name="achievements">Realizări</string>
+    <string name="achievement_back">Înapoi</string>
+    <string name="achievement_easy">Ușoare</string>
+    <string name="achievement_medium">Medii</string>
+    <string name="achievement_hard">Grele</string>
+    <string name="achievement_error">Datele realizărilor nu au putut fi citite sau salvate.</string>
+    <string name="achievement_summary">Deblocate (%1$d / %2$d)</string>
+    <string name="achievement_row">%1$s · %2$d\n%3$s</string>
+    <string name="achievement_done">Deblocată</string>
+    <string name="achievement_planned">Exerciții în pregătire</string>
+    <string name="achievement_locked">Necesită etapa anterioară</string>
+    <string name="achievement_lots">Loturi promovate (%1$d / %2$d)</string>
+    <string name="achievement_score">Răspunsuri corecte (%1$d / %2$d)</string>
+    <string name="achievement_criteria">Răspunsuri corecte pe lot (%1$d / %2$d). Loturi necesare (%3$d).</string>
+    <string name="achievement_prerequisite">Necesită %1$s · etapa %2$d</string>
+    <string name="achievement_practice">Exersează</string>
+    <string name="achievement_question">Pot eligibil în jetoane înainte de call (%1$d). Costul call-ului în jetoane (%2$d). Echitate (%3$d%%). Ce valoare așteptată are call-ul? Presupune că nu urmează pariuri sau comisioane.</string>
+    <string name="achievement_profit">Pozitivă</string>
+    <string name="achievement_even">Zero</string>
+    <string name="achievement_loss">Negativă</string>
+    <string name="achievement_correct">Corect</string>
+    <string name="achievement_incorrect">Încearcă următorul exercițiu</string>
+    <string name="achievement_explanation">%1$s. Echitatea de echilibru este %2$.1f%%.</string>
+    <string name="achievement_lot_score">Rezolvate (%1$d / %2$d) · Corecte (%3$d)</string>
+    <string name="achievement_next">Următorul</string>
+    <string name="achievement_playable">Disponibile pentru exersare</string>
+    <string name="achievement_empty">Finalizează etapa anterioară pentru a debloca următorul exercițiu.</string>
+    <string-array name="achievement_families">
+        <item>Poziție</item>
+        <item>Showdown</item>
+        <item>Mărimea pariului</item>
+        <item>Blinduri</item>
+        <item>All-in</item>
+        <item>Poturi</item>
+        <item>Poturi împărțite</item>
+        <item>Pot odds</item>
+        <item>Outs</item>
+        <item>Preflop</item>
+        <item>Textura boardului</item>
+        <item>Range-uri</item>
+        <item>Valoare</item>
+        <item>Disciplină</item>
+        <item>Bluffuri</item>
+        <item>Stackuri scurte</item>
+        <item>Heads-up</item>
+        <item>Mese cash</item>
+        <item>Turnee</item>
+        <item>Analiza mâinii</item>
+    </string-array>
 </resources>

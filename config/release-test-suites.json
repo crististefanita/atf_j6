@@ -22,6 +22,7 @@
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseVersionPolicyTest" }
   ],
   "android": [
+    { "module": "holdem-android", "testClass": "ro.atf.holdem.android.AchievementProgressComponentTest", "impactPaths": ["docs/feedback/J6-PROD-01-ACHIEVEMENT-CATALOG.csv"] },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.HoldemSessionRepositoryComponentTest" },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.HoldemTablePresentationComponentTest" },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.LocalHoldemGameTest" },

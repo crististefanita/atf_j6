@@ -211,6 +211,9 @@ public final class HoldemActivity extends Activity {
         views.addButton(page, text(R.string.tournament_leaderboard), "tournament-leaderboard", true,
                 this::showLeaderboard, false);
         views.addButton(page, text(R.string.play_hand), "play-hand", true, () -> setup(false), false);
+        views.addButton(page, text(R.string.achievements), "achievements", true,
+                () -> startActivity(new android.content.Intent(this, AchievementsActivity.class)
+                        .putExtra(AchievementsActivity.PROFILE_ID, stablePlayerId())), false);
         views.addText(page, text(R.string.training_summary), 14, ScreenViews.MUTED, false, 10, 0);
     }
 

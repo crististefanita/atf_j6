@@ -2,11 +2,19 @@
 
 ## Pe scurt
 
-**Stare:** ToDo
+**Stare:** pilot Android implementat pentru Pot odds. Băncile pentru celelalte familii rămân în pregătire.
 
 Hold’em Android are sesiune locală și clasament de turnee. Propunerea adaugă progres verificabil de profil și o bancă de exerciții. Clasamentul continuă să măsoare rezultatele turneelor.
 
 [Catalogul cu 800 de ID-uri și praguri](J6-PROD-01-ACHIEVEMENT-CATALOG.csv) · [Cerințe de produs](../requirements/PRODUCT_REQUIREMENTS.md) · [Reguli de turneu](../requirements/TOURNAMENT_RULES.md)
+
+## Pilot Android
+
+- Meniul principal deschide Realizări. Taburile urmează ordinea fundamente, reguli de pariere, calcule, strategie și contexte specializate.
+- Catalogul complet este consultabil. Filtrul Disponibile pentru exersare arată probele Pot odds deblocate și încă nefinalizate.
+- Progresul se salvează offline după fiecare răspuns, pe ID-ul stabil al profilului. La Ușoare, pragurile din același context sunt cumulative. La Medii și Grele, fiecare lot păstrează numitorul fix.
+- Catalogul rămâne în română. Controalele și explicațiile au variante în română și engleză.
+- Băncile pilot folosesc calcule cu pot eligibil, cost de call și echitate dată. Calibrarea dificultății și scenariile specifice fiecărei familii continuă în etapele de mai jos.
 
 ## Meniu și ecran
 

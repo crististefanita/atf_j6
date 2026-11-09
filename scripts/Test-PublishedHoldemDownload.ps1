@@ -64,7 +64,14 @@ if (!$OutputDirectory.StartsWith($DataRoot + [IO.Path]::DirectorySeparatorChar, 
     $OutputDirectory.StartsWith([IO.Path]::GetTempPath().TrimEnd('\','/') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
     throw 'Download candidates and receipts must remain outside the source tree and Windows TEMP.'
 }
-New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
+try {
+    New-Item -ItemType Directory -Path $OutputDirectory -ErrorAction Stop | Out-Null
+} catch [System.IO.IOException] {
+    if (Test-Path -LiteralPath $OutputDirectory) {
+        throw 'Use a new output directory for each download attempt.'
+    }
+    throw
+}
 $partial = Join-Path $OutputDirectory ($assetName + '.part')
 $downloaded = Join-Path $OutputDirectory $assetName
 $handler = [Net.Http.SocketsHttpHandler]::new()

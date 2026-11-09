@@ -112,7 +112,7 @@ class NativeTournamentExtentPublisherTest {
             assertions.add(assertion(name, true));
         }
 
-        assertAuditedFailure(publish(temp, receipt), "Missing: [Call remains accessible after closing Raise]");
+        assertAuditedFailure(publish(temp, receipt), "Missing: [Call remains accessible after closing Raise");
     }
 
     @Test

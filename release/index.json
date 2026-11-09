@@ -5,7 +5,7 @@
   "previousVersion": "0.11.1",
   "changeClass": "COMPATIBLE_FEATURE",
   "changeRationale": "Adaugă realizări bazate pe joc, cu praguri calibrate pe turnee simulate și progres paralel între niveluri.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.12.0"

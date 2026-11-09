@@ -7,19 +7,253 @@
     "minSdk": 26,
     "targetSdk": 36,
     "apkName": "HoldemLab-0.12.0.apk",
-    "apkBytes": null,
-    "sha256": null,
-    "certificateSha256": null,
+    "apkBytes": 844138,
+    "sha256": "70cac9a6f8026b2b7e70dd34a57b61578c7fd61aac9d7df755b74e78f448dcb2",
+    "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
     "debuggable": false
   },
   "publication": {
-    "state": "DRAFT",
-    "sourceCommit": null,
+    "state": "PREPARED",
+    "sourceCommit": "951846bc98e22625f9914e685195d05cfdb410f6",
+    "apkBuildCommit": "35cc062572720d0311f8c53d1deac1a0309f6ef1",
     "tag": "v0.12.0",
-    "githubState": "not-created",
-    "assets": []
+    "releaseId": 439470075,
+    "githubReleaseUrl": "https://github.com/crististefanita/atf_j6/releases/tag/v0.12.0",
+    "githubState": "published",
+    "githubPublishedAt": "2026-11-09T18:02:12Z",
+    "assets": [
+      {
+        "name": "HoldemLab-0.12.0.apk",
+        "id": 728446239,
+        "state": "uploaded",
+        "bytes": 844138,
+        "sha256": "70cac9a6f8026b2b7e70dd34a57b61578c7fd61aac9d7df755b74e78f448dcb2",
+        "httpStatus": 200,
+        "finalHost": "release-assets.githubusercontent.com",
+        "verified": true
+      },
+      {
+        "name": "HoldemLab-0.12.0.apk.sha256",
+        "id": 728446287,
+        "state": "uploaded",
+        "bytes": 87,
+        "sha256": "a4d4558a1e33787a4a0eb52f9eb11cc8f24e818b452e62c4b2b5dac2e90535b0",
+        "httpStatus": 200,
+        "finalHost": "release-assets.githubusercontent.com",
+        "verified": true
+      }
+    ]
   },
   "qualification": {
-    "status": "DRAFT"
+    "status": "PASS",
+    "tests": 211,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "details": {
+      "maven": {
+        "suites": 19,
+        "tests": 128,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "mavenComponentExtent": {
+        "path": "maven-component-suites-extent.html",
+        "suites": 19,
+        "tests": 128
+      },
+      "androidJvm": {
+        "suites": 7,
+        "tests": 83,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "androidComponentExtent": {
+        "path": "android-component-suites-extent.html",
+        "suites": 7,
+        "tests": 83
+      },
+      "releaseImpactContext": {
+        "path": "release-impact-context.json",
+        "contextState": "CONTEXT_READY",
+        "advisoryOnly": true,
+        "sha256": "0f7d2a68f0673d5a0b48e74d6ef27cedd004b5d4f08f1935502499dba16907cd"
+      },
+      "versionPolicy": {
+        "previousVersion": "0.11.1",
+        "changeClass": "COMPATIBLE_FEATURE",
+        "candidateVersion": "0.12.0",
+        "rationale": "Adaugă realizări bazate pe joc, cu praguri calibrate pe turnee simulate și progres paralel între niveluri."
+      },
+      "lint": {
+        "status": "PASS",
+        "warnings": []
+      },
+      "tournamentSanity": {
+        "status": "PASS",
+        "api": 28,
+        "window": "392 × 626 dp",
+        "assertions": 101,
+        "screenshots": 12,
+        "apkSha256": "747fd504d6819d3340c66f2e077d4a50bc8996fff5b9cc20d8aeda2394e98715",
+        "report": "android-tournament-extent.html"
+      },
+      "releaseInstallSmoke": {
+        "status": "PASS",
+        "api": 28,
+        "window": "392 × 626 dp",
+        "assertions": 53,
+        "screenshots": 8,
+        "apkSha256": "70cac9a6f8026b2b7e70dd34a57b61578c7fd61aac9d7df755b74e78f448dcb2",
+        "report": "android-release-smoke-extent.html"
+      },
+      "settlementAward": {
+        "status": "PASS",
+        "api": 28,
+        "window": "392 × 626 dp",
+        "assertions": 10,
+        "screenshots": 3,
+        "apkSha256": "747fd504d6819d3340c66f2e077d4a50bc8996fff5b9cc20d8aeda2394e98715",
+        "report": "android-settlement-award-extent.html"
+      },
+      "settlementMultiAward": {
+        "status": "PASS",
+        "api": 28,
+        "window": "392 × 626 dp",
+        "assertions": 19,
+        "screenshots": 5,
+        "apkSha256": "747fd504d6819d3340c66f2e077d4a50bc8996fff5b9cc20d8aeda2394e98715",
+        "report": "android-settlement-multi-award-extent.html"
+      },
+      "settlementStaticAward": {
+        "status": "PASS",
+        "api": 28,
+        "window": "392 × 626 dp",
+        "assertions": 10,
+        "screenshots": 1,
+        "apkSha256": "747fd504d6819d3340c66f2e077d4a50bc8996fff5b9cc20d8aeda2394e98715",
+        "report": "android-settlement-static-award-extent.html"
+      },
+      "settlementCompactAward": {
+        "status": "PASS",
+        "api": 28,
+        "window": "320 × 328 dp",
+        "assertions": 14,
+        "screenshots": 3,
+        "apkSha256": "747fd504d6819d3340c66f2e077d4a50bc8996fff5b9cc20d8aeda2394e98715",
+        "report": "android-settlement-compact-award-extent.html"
+      }
+    }
+  },
+  "authenticatedAssetDownload": {
+    "verified": true,
+    "credentialMode": "authenticated GitHub REST API",
+    "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.12.0/HoldemLab-0.12.0.apk",
+    "assetId": 728446239,
+    "httpStatus": 200,
+    "finalHost": "release-assets.githubusercontent.com",
+    "completedUtc": "2026-11-09T18:02:21.9989238Z",
+    "bytes": 844138,
+    "sha256": "70cac9a6f8026b2b7e70dd34a57b61578c7fd61aac9d7df755b74e78f448dcb2"
+  },
+  "authenticatedChecksumDownload": {
+    "verified": true,
+    "credentialMode": "authenticated GitHub REST API",
+    "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.12.0/HoldemLab-0.12.0.apk.sha256",
+    "assetId": 728446287,
+    "httpStatus": 200,
+    "finalHost": "release-assets.githubusercontent.com",
+    "completedUtc": "2026-11-09T18:02:22.5785044Z",
+    "bytes": 87,
+    "sha256": "a4d4558a1e33787a4a0eb52f9eb11cc8f24e818b452e62c4b2b5dac2e90535b0",
+    "apkSha256": "70cac9a6f8026b2b7e70dd34a57b61578c7fd61aac9d7df755b74e78f448dcb2",
+    "apkName": "HoldemLab-0.12.0.apk"
+  },
+  "integrity": {
+    "algorithm": "SHA-256",
+    "files": [
+      {
+        "path": "README.md",
+        "bytes": 542,
+        "sha256": "cb79658b30a12eff6099cb87d7fac24b41c68514dc1e6edbd92c030a973ed4c1"
+      },
+      {
+        "path": "release-notes.md",
+        "bytes": 449,
+        "sha256": "8f0d01de08e25d8d198ae4cac1466b40c23375fe0adb1a30e27ce92b882e2311"
+      },
+      {
+        "path": "reports/README.md",
+        "bytes": 988,
+        "sha256": "c86e5c8d23198fd62d26a349f107bdcedd4ab4ea18c9b3826a86e9f9249e492c"
+      },
+      {
+        "path": "qualification.json",
+        "bytes": 6795,
+        "sha256": "a07d0b735d6d882cce34a84b09170242ddf5cf348081574dae3baf3a81d350d1"
+      },
+      {
+        "path": "release-impact-context.json",
+        "bytes": 41843,
+        "sha256": "0f7d2a68f0673d5a0b48e74d6ef27cedd004b5d4f08f1935502499dba16907cd"
+      },
+      {
+        "path": "release-evidence-audit.json",
+        "bytes": 621,
+        "sha256": "eb1c98a4f31a2e9e42f60bebe7bf5f13bf1ff7b265566d114dc6db11febdf1c6"
+      },
+      {
+        "path": "qualification-continuation.json",
+        "bytes": 394,
+        "sha256": "66ed798354425ff358681e21d1c446dccf62dae1ce56fdd2215921b9a8a8f4dc"
+      },
+      {
+        "path": "reports/promotion-extent.html",
+        "bytes": 2413377,
+        "sha256": "db3c9b1d8ebaf244f1ef739c692a83288ead43999656e33f04c13a7f097add9c"
+      },
+      {
+        "path": "reports/maven-component-suites-extent.html",
+        "bytes": 2606013,
+        "sha256": "22a9329b2c53ee7a0477d5667a5e6231c5c403c431fc8e09197aacc8d592571a"
+      },
+      {
+        "path": "reports/android-component-suites-extent.html",
+        "bytes": 2492572,
+        "sha256": "29f81ceafcf7bb5932eb9d815f41859a9a34512bf940fd0c20ac2973a37f3c6f"
+      },
+      {
+        "path": "reports/android-release-smoke-extent.html",
+        "bytes": 3819861,
+        "sha256": "70597964d494729ca9d8a868ac3c5a7431d36dc780030fb71b1be1535194ea76"
+      },
+      {
+        "path": "reports/android-tournament-extent.html",
+        "bytes": 4579730,
+        "sha256": "c5a1ff8279da7c60720fdc1592a293f53633d767286372f29a1f44637cc27589"
+      },
+      {
+        "path": "reports/android-settlement-award-extent.html",
+        "bytes": 2924279,
+        "sha256": "9560c9be969e18d511233ddcce2be993a8b5f90c61c013a3d92892e21a156e94"
+      },
+      {
+        "path": "reports/android-settlement-multi-award-extent.html",
+        "bytes": 3369667,
+        "sha256": "400d7d29aa10bbd9ed3c971bc79d1f5eac346266e73f0d641ba9fef404e0965c"
+      },
+      {
+        "path": "reports/android-settlement-static-award-extent.html",
+        "bytes": 2630219,
+        "sha256": "11e8d5631e71820598cd41822b2a394f59a76f10f8b83eb23ff3152c9e1f066a"
+      },
+      {
+        "path": "reports/android-settlement-compact-award-extent.html",
+        "bytes": 3011466,
+        "sha256": "d0eae81778bcbb1c6db53988eb7cbbef1a5e266d07013271ada5b4c59336a217"
+      }
+    ]
   }
 }

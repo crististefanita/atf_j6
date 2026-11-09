@@ -1,0 +1,12 @@
+{
+  "apkBuildCommit": "35cc062572720d0311f8c53d1deac1a0309f6ef1",
+  "candidateCommit": "951846bc98e22625f9914e685195d05cfdb410f6",
+  "changedAfterBuild": [
+    "holdem-android/tools/PublishTournamentExtent.java",
+    "holdem-app/src/test/java/ro/atf/j6/reporting/NativeTournamentExtentPublisherTest.java"
+  ],
+  "reusedNativeEvidence": [
+    "tournament",
+    "release-smoke"
+  ]
+}

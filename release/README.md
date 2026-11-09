@@ -16,6 +16,7 @@ Dosarele de mai jos păstrează dovezile edițiilor. Când un fișier este inven
 
 | Versiune | Documentație | Identitatea pachetului |
 |---|---|---|
+| 0.8.0 | [Dosarul candidatului](0.8.0/README.md) · `DRAFT` | [Manifestul candidatului](0.8.0/release-validation.json) |
 | 0.7.0 | [Dosarul ediției](0.7.0/README.md) · `PREPARED` | [Manifestul ediției](0.7.0/release-validation.json) |
 | 0.6.0 | [Dosarul ediției](0.6.0/README.md) · `PREPARED` | [Manifestul ediției](0.6.0/release-validation.json) |
 | 0.5.0 | [Dosarul ediției](0.5.0/README.md) · calificat local | [Manifestul ediției](0.5.0/release-validation.json) |

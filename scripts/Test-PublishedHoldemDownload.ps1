@@ -110,7 +110,9 @@ try {
         if ($count -ne $expectedBytes) { throw "Incomplete download: expected $expectedBytes bytes, received $count." }
         $hash = (Get-FileHash -LiteralPath $partial -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($hash -ne $expectedHash) { throw 'Anonymous download SHA-256 differs from the qualified APK.' }
-        $signature = [IO.File]::ReadAllBytes($partial)
+        $header = [IO.BinaryReader]::new([IO.File]::OpenRead($partial))
+        try { $signature = $header.ReadBytes(4) }
+        finally { $header.Dispose() }
         if ($signature.Length -lt 4 -or $signature[0] -ne 0x50 -or $signature[1] -ne 0x4b) {
             throw 'Downloaded file is not a ZIP/APK payload.'
         }
@@ -160,8 +162,9 @@ try {
             bytes=$count; sha256=$hash; apk=$assetName; completedUtc=[datetime]::UtcNow.ToString('o')
         }
         $receiptPath = Join-Path $OutputDirectory 'download-receipt.json'
-        [ordered]@{ publicDownload=$receipt; publicChecksumDownload=$checksumReceipt } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $receiptPath -Encoding utf8NoBOM
-        [ordered]@{ publicDownload=$receipt; publicChecksumDownload=$checksumReceipt } | ConvertTo-Json -Depth 4
+        $receiptJson = [ordered]@{ publicDownload=$receipt; publicChecksumDownload=$checksumReceipt } | ConvertTo-Json -Depth 4
+        Set-Content -LiteralPath $receiptPath -Value $receiptJson -Encoding utf8NoBOM
+        $receiptJson
         Write-Output "Downloaded APK: $downloaded"
         Write-Output "Download receipt: $receiptPath"
     }

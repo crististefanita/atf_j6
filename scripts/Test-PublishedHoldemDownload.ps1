@@ -2,22 +2,14 @@
 param(
     [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot),
     [string]$DataRoot = 'C:\work\holdem_back',
-    [string]$OutputDirectory
+    [string]$OutputDirectory,
+    [switch]$PlanOnly
 )
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = [IO.Path]::GetFullPath($ProjectRoot)
-$DataRoot = [IO.Path]::GetFullPath($DataRoot)
-if (!$OutputDirectory) {
-    $OutputDirectory = Join-Path $DataRoot ("download-checks\j6-" + [guid]::NewGuid().ToString('N'))
-}
-$OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
-if (!$OutputDirectory.StartsWith($DataRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
-    $OutputDirectory.StartsWith($ProjectRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
-    $OutputDirectory.StartsWith([IO.Path]::GetTempPath().TrimEnd('\','/') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
-    throw 'Download candidates and receipts must remain outside the source tree and Windows TEMP.'
-}
 $index = Get-Content -Raw -LiteralPath (Join-Path $ProjectRoot 'release/index.json') | ConvertFrom-Json
 $version = [string]$index.currentVersion
+if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Catalog version must be semantic.' }
 $validationPath = Join-Path $ProjectRoot ("release/$version/release-validation.json")
 $validation = Get-Content -Raw -LiteralPath $validationPath | ConvertFrom-Json
 if ($index.state -notin @('PREPARED','PUBLISHED') -or $validation.publication.state -ne $index.state) {
@@ -45,6 +37,16 @@ $url = $routes[0].Groups[1].Value
 if ($validation.publication.state -eq 'PUBLISHED' -and $validation.publicDownload.assetUrl -ne $url) {
     throw 'Published catalog does not point to the canonical versioned GitHub asset.'
 }
+$checksumUrl = $url + '.sha256'
+if ($PlanOnly) {
+    [ordered]@{
+        schemaVersion=1; version=$version; tag=$tag; state=$index.state
+        apkUrl=$url; checksumUrl=$checksumUrl; apkName=$assetName
+        apkBytes=$expectedBytes; apkSha256=$expectedHash
+    } | ConvertTo-Json
+    return
+}
+
 function Assert-GitHubAssetHost([uri]$Uri) {
     if ($Uri.Scheme -ne 'https' -or ($Uri.Host -ne 'github.com' -and
         !$Uri.Host.EndsWith('.githubusercontent.com', [StringComparison]::OrdinalIgnoreCase))) {
@@ -52,6 +54,16 @@ function Assert-GitHubAssetHost([uri]$Uri) {
     }
 }
 
+$DataRoot = [IO.Path]::GetFullPath($DataRoot)
+if (!$OutputDirectory) {
+    $OutputDirectory = Join-Path $DataRoot ("download-checks\j6-" + [guid]::NewGuid().ToString('N'))
+}
+$OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
+if (!$OutputDirectory.StartsWith($DataRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
+    $OutputDirectory.StartsWith($ProjectRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
+    $OutputDirectory.StartsWith([IO.Path]::GetTempPath().TrimEnd('\','/') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+    throw 'Download candidates and receipts must remain outside the source tree and Windows TEMP.'
+}
 New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
 $partial = Join-Path $OutputDirectory ($assetName + '.part')
 $downloaded = Join-Path $OutputDirectory $assetName
@@ -63,12 +75,13 @@ $handler.Credentials = $null
 $handler.PreAuthenticate = $false
 $handler.DefaultProxyCredentials = $null
 $client = [Net.Http.HttpClient]::new($handler, $true)
-$client.Timeout = [TimeSpan]::FromMinutes(3)
+$client.Timeout = [Threading.Timeout]::InfiniteTimeSpan
+$deadline = [Threading.CancellationTokenSource]::new([TimeSpan]::FromMinutes(3))
 $request = [Net.Http.HttpRequestMessage]::new([Net.Http.HttpMethod]::Get, $url)
 $request.Headers.UserAgent.ParseAdd('HoldemLab-Release-Download-Acceptance/1.0')
 $request.Headers.Accept.ParseAdd('application/octet-stream')
 try {
-    $response = $client.SendAsync($request, [Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+    $response = $client.SendAsync($request, [Net.Http.HttpCompletionOption]::ResponseHeadersRead, $deadline.Token).GetAwaiter().GetResult()
     try {
         if ([int]$response.StatusCode -ne 200) { throw "Anonymous asset GET returned HTTP $([int]$response.StatusCode)." }
         if ($response.Content.Headers.ContentLength -and [long]$response.Content.Headers.ContentLength -ne $expectedBytes) {
@@ -79,7 +92,7 @@ try {
         try {
             $buffer = [byte[]]::new(65536)
             [long]$count = 0
-            while (($read = $responseStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+            while (($read = $responseStream.ReadAsync($buffer, 0, $buffer.Length, $deadline.Token).GetAwaiter().GetResult()) -gt 0) {
                 $count += $read
                 if ($count -gt $expectedBytes) { throw 'Download exceeded the qualified APK size.' }
                 $output.Write($buffer, 0, $read)
@@ -97,11 +110,10 @@ try {
         $finalUri = $response.RequestMessage.RequestUri
         Assert-GitHubAssetHost $finalUri
 
-        $checksumUrl = $url + '.sha256'
         $checksumRequest = [Net.Http.HttpRequestMessage]::new([Net.Http.HttpMethod]::Get, $checksumUrl)
         try {
             $checksumRequest.Headers.UserAgent.ParseAdd('HoldemLab-Release-Download-Acceptance/1.0')
-            $checksumResponse = $client.SendAsync($checksumRequest, [Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+            $checksumResponse = $client.SendAsync($checksumRequest, [Net.Http.HttpCompletionOption]::ResponseHeadersRead, $deadline.Token).GetAwaiter().GetResult()
             try {
                 if ([int]$checksumResponse.StatusCode -ne 200) {
                     throw "Anonymous checksum GET returned HTTP $([int]$checksumResponse.StatusCode)."
@@ -113,7 +125,7 @@ try {
                     $checksumBuffer = [byte[]]::new(257)
                     $checksumBytes = 0
                     while ($checksumBytes -lt $checksumBuffer.Length) {
-                        $read = $checksumStream.Read($checksumBuffer, $checksumBytes, $checksumBuffer.Length - $checksumBytes)
+                        $read = $checksumStream.ReadAsync($checksumBuffer, $checksumBytes, $checksumBuffer.Length - $checksumBytes, $deadline.Token).GetAwaiter().GetResult()
                         if ($read -eq 0) { break }
                         $checksumBytes += $read
                     }
@@ -148,4 +160,4 @@ try {
     }
     finally { $response.Dispose() }
 }
-finally { $request.Dispose(); $client.Dispose() }
+finally { $request.Dispose(); $deadline.Dispose(); $client.Dispose() }

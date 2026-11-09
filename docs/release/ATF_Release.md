@@ -145,6 +145,16 @@ Guvernanța verifică sursele Java incluse în APK pentru metode cunoscute ca in
 
 Pagina de Release și endpointul de download sunt distincte de `release/<versiune>/`, care rămâne catalogul tehnic și dovada locală.
 
+### Planul de descărcare
+
+Folosiți opțiunea `-PlanOnly` pentru un checkout care indică o ediție `PREPARED` sau `PUBLISHED`. Scriptul citește manifestul și secțiunea `Jocul` din README și afișează rutele canonice, dimensiunea și SHA-256, fără acces la rețea sau fișiere de ieșire.
+
+```powershell
+.\scripts\Test-PublishedHoldemDownload.ps1 -ProjectRoot C:\cale\ediție-publicată -PlanOnly
+```
+
+Verificarea online folosește un singur termen de trei minute pentru antete și fluxurile ambelor fișiere. Un plan confirmă identitatea țintelor. Pentru promovare sunt necesare dovezile descărcărilor reale.
+
 ## Diagnostic HTTP 404 pentru GitHub Release
 
 | Probă | Ce comparați |

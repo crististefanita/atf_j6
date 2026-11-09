@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.4.1",
-  "previousVersion": "0.4.0",
-  "changeClass": "PATCH_FIX",
-  "changeRationale": "Cere dovada descărcării anonime a checksum-ului împreună cu dovada APK-ului.",
-  "state": "PREPARED",
+  "currentVersion": "0.5.0",
+  "previousVersion": "0.4.1",
+  "changeClass": "COMPATIBLE_FEATURE",
+  "changeRationale": "Adaugă un plan offline pentru rutele de distribuție și aplică un termen unic transferului ambelor fișiere.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.4.1"
+    "0.5.0"
   ]
 }

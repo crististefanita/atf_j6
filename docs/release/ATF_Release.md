@@ -116,6 +116,16 @@ Fiecare câmp leagă hash-ul APK-ului, receipt-ul și raportul `android-<traseu>
 
 Guvernanța verifică sursele Java incluse în APK pentru metode cunoscute ca incompatibile cu `minSdk`, inclusiv din colecții, conversii text și formatare hexazecimală. Proba de execuție la nivelul minim verifică separat codul încărcat de Android. La eșec, păstrați diagnosticul de instrumentare și logcat în dosarul extern. [Criteriul runtime restant](../feedback/J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md)
 
+### Auditul artefactelor după rulare
+
+Păstrați inventarul `config/release-test-suites.json` sincronizat cu suitele Maven și Android JVM. Publisherul de componentă compară inventarul cu XML-urile și marchează suitele lipsă, duplicate ori nevalide. Publisherul nativ verifică separat turneul pe varianta sanity și instalarea pe varianta release.
+
+```powershell
+.\scripts\Test-HoldemReleaseEvidence.ps1 -RunRoot $run
+```
+
+Auditul citește manifestul calificării și verifică APK-ul, checksum-ul, integritatea rapoartelor și capturile originale în Extent. Dosarul extern păstrează și XML-urile, receipt-urile native și contextul RAG.
+
 ## Promovare și descărcare
 
 `ReleaseGovernanceTest` verifică legăturile locale din dosarul ediției și octeții inventarului de dovezi. Proba anonimă citește URL-ul din secțiunea `Jocul` a README-ului și îl compară cu ruta canonică a versiunii înainte de GET.

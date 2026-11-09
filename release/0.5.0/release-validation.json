@@ -7,19 +7,28 @@
     "minSdk": 26,
     "targetSdk": 36,
     "apkName": "HoldemLab-0.5.0.apk",
-    "apkBytes": null,
-    "sha256": null,
-    "certificateSha256": null,
+    "apkBytes": 796272,
+    "sha256": "3e688e42f8f0e0367c0380fbe39edb7cf5a0339021998cd599a8fb26d0708b04",
+    "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
     "debuggable": false
   },
   "publication": {
-    "state": "DRAFT",
-    "sourceCommit": null,
+    "state": "LOCAL_QUALIFIED",
+    "sourceCommit": "9cad53a56b85c43beb9d9fd5004f4cd001536278",
     "tag": "v0.5.0",
     "githubState": "not-created",
     "assets": []
   },
   "qualification": {
-    "status": "DRAFT"
+    "status": "PASS"
+  },
+  "integrity": {
+    "files": [
+      {
+        "sha256": "7207bb46ea90e5f5a7c1b01cf86865cb2daddcc9583c02c30115df305db4c6e0",
+        "bytes": 4369,
+        "path": "qualification.json"
+      }
+    ]
   }
 }

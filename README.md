@@ -12,7 +12,7 @@ ATF J6 este un laborator pentru dezvoltarea și evaluarea locală a unui joc No-
 
 ## Jocul
 
-- **[Hold'em Lab 0.5.0 — dosarul ediției](release/0.5.0/README.md)**
+- **[Hold'em Lab 0.6.0 — dosarul ediției](release/0.6.0/README.md)**
 
 ## Bucla locală
 

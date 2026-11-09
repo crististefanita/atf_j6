@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.5.0",
-  "previousVersion": "0.4.1",
+  "currentVersion": "0.6.0",
+  "previousVersion": "0.5.0",
   "changeClass": "COMPATIBLE_FEATURE",
-  "changeRationale": "Adaugă un plan offline pentru rutele de distribuție și aplică un termen unic transferului ambelor fișiere.",
+  "changeRationale": "Adaugă un audit offline al dovezilor de release și guvernanță documentară în inventarul suitelor.",
   "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.5.0"
+    "0.6.0"
   ]
 }

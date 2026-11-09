@@ -1,5 +1,9 @@
 # Strategie de testare
 
+## Pe scurt
+
+J6 separă oracolul de componentă de probele pe Android. Suita documentară verifică orientarea README și legăturile către documentele responsabile. Regulile editoriale detaliate se verifică separat cu auditul J0.
+
 ## Niveluri
 
 ### Contracte de componentă

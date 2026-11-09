@@ -167,7 +167,36 @@
       }
     ]
   },
-  "authenticatedAssetDownload": null,
-  "authenticatedChecksumDownload": null,
+  "authenticatedAssetDownload": {
+    "schemaVersion": 1,
+    "verified": true,
+    "version": "0.13.0",
+    "tag": "v0.13.0",
+    "repository": "crististefanita/atf_j6",
+    "readme": "README.md#jocul",
+    "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.13.0/HoldemLab-0.13.0.apk",
+    "finalHost": "release-assets.githubusercontent.com",
+    "httpStatus": 200,
+    "credentialMode": "authenticated GitHub REST API",
+    "assetId": 729147566,
+    "remoteRef": "release/j6-0.13.0",
+    "remoteReadmeBlob": "364d4d71f9719546606b9afc5994c1724e0c1e02",
+    "bytes": 844174,
+    "sha256": "bfff6a910586821d6462a7af5ce6109cec7bb17918cbb385088b44d932c10978",
+    "apk": "HoldemLab-0.13.0.apk",
+    "completedUtc": "2026-11-09T22:09:16.7546761Z"
+  },
+  "authenticatedChecksumDownload": {
+    "verified": true,
+    "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.13.0/HoldemLab-0.13.0.apk.sha256",
+    "finalHost": "release-assets.githubusercontent.com",
+    "httpStatus": 200,
+    "credentialMode": "authenticated GitHub REST API",
+    "assetId": 729147648,
+    "bytes": 87,
+    "sha256": "11c2ae8f11f2d97d37e5fd3a448e7fb225836a8ddb5c9b9e6bdca6946f0faf6f",
+    "apkSha256": "bfff6a910586821d6462a7af5ce6109cec7bb17918cbb385088b44d932c10978",
+    "apkName": "HoldemLab-0.13.0.apk"
+  },
   "authenticatedBrowserDownload": null
 }

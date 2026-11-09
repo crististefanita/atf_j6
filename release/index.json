@@ -5,7 +5,7 @@
   "previousVersion": "0.8.0",
   "changeClass": "REFACTOR_ONLY",
   "changeRationale": "Completează semnalele RAG pentru eliminări și califică noul candidat.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.9.0"

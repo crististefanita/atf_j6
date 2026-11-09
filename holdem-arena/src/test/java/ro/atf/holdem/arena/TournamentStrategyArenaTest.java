@@ -10,6 +10,17 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TournamentStrategyArenaTest {
+    @Test void hardLineupAddsOnlyThePressureProfileToAnEqualBudgetControl() throws Exception {
+        var lineup = TournamentStrategyLineups.load(config("j6-strategy-lineups-hard-pressure.yaml"));
+        var control = TournamentPolicyConfig.load(projectPath(lineup.equityPolicyFiles().get("equity-stack-aware")));
+        var hard = TournamentPolicyConfig.load(projectPath(lineup.equityPolicyFiles().get("equity-hard-pressure")));
+        assertNull(control.hardPressure());
+        assertEquals(new ro.atf.holdem.ai.ContextualEquityPolicy.HardPressure(3, 76, 86, 94), hard.hardPressure());
+        assertEquals(control.equitySamples(), hard.equitySamples());
+        assertEquals(control.equityContextWeights(), hard.equityContextWeights());
+        for (int seats : List.of(4, 5, 6)) assertTrue(lineup.forSeats(seats).contains("equity-hard-pressure"));
+    }
+
     @TempDir Path temp;
     @Test void everyRoleVisitsEverySeatAndButtonPositionForEachTableSize() throws Exception {
         var lineups = TournamentStrategyLineups.load(config("j6-strategy-lineups.yaml"));

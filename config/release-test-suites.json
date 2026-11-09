@@ -4,6 +4,7 @@
     { "module": "holdem-core", "testClass": "ro.atf.holdem.core.HoldemRulesTest" },
     { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.ContextualEquityPolicyTest" },
     { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.DeterministicBluffPolicyTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.HardPressurePolicyTest", "impactPaths": ["config/policy-tuning/j6-policy-hard-pressure.yaml", "holdem-ai/src/main/java/ro/atf/holdem/ai/ContextualEquityPolicy.java"] },
     { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.MonteCarloEquityEstimatorTest" },
     { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.PolicyStyleTest" },
     { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.ShortStackShovePolicyTest" },

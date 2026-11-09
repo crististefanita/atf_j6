@@ -61,17 +61,19 @@ public final class TournamentStrategyArena {
                     defaults.latePositionWindow());
             case "short-stack-shove" -> new ShortStackShovePolicy(shoveThreshold);
             case "equity-baseline", "equity-stack-aware", "equity-history-control", "equity-history-aware" ->
-                    equity(variants.get(strategy));
+                    equity(variants.get(strategy), false);
+            case "equity-hard-pressure" -> equity(variants.get(strategy), true);
             default -> throw new IllegalArgumentException("Unknown strategy ID " + strategy);
         };
     }
 
-    private static ContextualEquityPolicy equity(TournamentPolicyConfig config) {
+    private static ContextualEquityPolicy equity(TournamentPolicyConfig config, boolean hard) {
         if (config == null) throw new IllegalArgumentException("Equity strategy has no YAML configuration");
+        if ((config.hardPressure() != null) != hard) throw new IllegalArgumentException("Hard pressure config/role mismatch");
         return new ContextualEquityPolicy(config.equitySamples(), config.cashCallMarginPercent(),
                 config.tournamentCallMarginPercent(), config.equityRaiseEdgePercent(),
                 config.valueBetThresholdPercent(), ContextualEquityPolicy.GameMode.TOURNAMENT,
-                config.equityContextWeights());
+                config.equityContextWeights(), config.hardPressure());
     }
 
     /** CLI: profile.yaml lineup.yaml trace.txt count firstSeed policyOffset seatCount [buttonOffset]. */

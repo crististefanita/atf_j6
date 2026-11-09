@@ -1,0 +1,10 @@
+schemaVersion: 1
+shortStackShoveMaxBigBlinds: 8
+policyDefaults: config/j6-policy-equity.yaml
+equityPolicyFiles:
+  equity-stack-aware: config/policy-tuning/j6-policy-equity-stack-aware.yaml
+  equity-hard-pressure: config/policy-tuning/j6-policy-hard-pressure.yaml
+lineups:
+  4: [tag, pressure, equity-stack-aware, equity-hard-pressure]
+  5: [tag, calling, bluff, equity-stack-aware, equity-hard-pressure]
+  6: [tag, calling, pressure, loose, equity-stack-aware, equity-hard-pressure]

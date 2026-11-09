@@ -15,12 +15,26 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
                                      int looseLatePositionAdjustmentPercent, int equitySamples,
                                      int cashCallMarginPercent, int tournamentCallMarginPercent,
                                      int equityRaiseEdgePercent, int valueBetThresholdPercent,
-                                     ContextualEquityPolicy.ContextWeights equityContextWeights) {
+                                     ContextualEquityPolicy.ContextWeights equityContextWeights,
+                                     ContextualEquityPolicy.HardPressure hardPressure) {
     private static final int DEFAULT_EQUITY_SAMPLES = 256;
     private static final int DEFAULT_CASH_MARGIN = 2;
     private static final int DEFAULT_TOURNAMENT_MARGIN = 8;
     private static final int DEFAULT_RAISE_EDGE = 18;
     private static final int DEFAULT_VALUE_THRESHOLD = 60;
+
+    public TournamentPolicyConfig(int bluffFrequencyPercent, int latePositionWindow,
+                                  int looseOpenFrequencyPercent, int looseRaiseFrequencyPercent,
+                                  int looseMaxCallPotPercent, int looseBetPotPercent,
+                                  int looseLatePositionAdjustmentPercent, int equitySamples,
+                                  int cashCallMarginPercent, int tournamentCallMarginPercent,
+                                  int equityRaiseEdgePercent, int valueBetThresholdPercent,
+                                  ContextualEquityPolicy.ContextWeights equityContextWeights) {
+        this(bluffFrequencyPercent, latePositionWindow, looseOpenFrequencyPercent, looseRaiseFrequencyPercent,
+                looseMaxCallPotPercent, looseBetPotPercent, looseLatePositionAdjustmentPercent, equitySamples,
+                cashCallMarginPercent, tournamentCallMarginPercent, equityRaiseEdgePercent, valueBetThresholdPercent,
+                equityContextWeights, null);
+    }
 
     public TournamentPolicyConfig(int bluffFrequencyPercent, int latePositionWindow,
                                   int looseOpenFrequencyPercent, int looseRaiseFrequencyPercent,
@@ -122,10 +136,19 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
                     integer(weights, "shortStackShoveSensitivity"),
                     integer(weights, "shortStackShoveMaxMarginAdjustment"));
             return new TournamentPolicyConfig(frequency, window, open, raise, callPot, betPot, lateAdjustment,
-                    samples, cashMargin, tournamentMargin, raiseEdge, valueThreshold, contextWeights);
+                    samples, cashMargin, tournamentMargin, raiseEdge, valueThreshold, contextWeights, hardPressure(root));
         } catch (org.yaml.snakeyaml.error.YAMLException failure) {
             throw new IllegalArgumentException("Invalid policy YAML", failure);
         }
+    }
+
+    private static ContextualEquityPolicy.HardPressure hardPressure(Map<?, ?> root) {
+        if (!root.containsKey("hardPressure")) return null;
+        if (!(root.get("hardPressure") instanceof Map<?, ?> hard)
+                || !hard.keySet().equals(java.util.Set.of("cheapPreflopDiscount", "fullPotEquity", "doublePotEquity", "triplePotEquity")))
+            throw new IllegalArgumentException("Expected exact hardPressure settings");
+        return new ContextualEquityPolicy.HardPressure(integer(hard, "cheapPreflopDiscount"),
+                integer(hard, "fullPotEquity"), integer(hard, "doublePotEquity"), integer(hard, "triplePotEquity"));
     }
 
     public TournamentPolicyConfig {

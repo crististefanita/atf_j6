@@ -12,10 +12,10 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 public record TournamentStrategyLineups(Path policyDefaults, Map<String, Path> equityPolicyFiles,
                                         Map<Integer, List<String>> lineups, int shortStackShoveMaxBigBlinds) {
     private static final Set<String> EQUITY_ROLES = Set.of("equity-baseline", "equity-stack-aware",
-            "equity-history-control", "equity-history-aware");
+            "equity-history-control", "equity-history-aware", "equity-hard-pressure");
     private static final Set<String> ALLOWED = Set.of("tag", "calling", "pressure", "loose", "bluff",
             "short-stack-shove", "equity-baseline", "equity-stack-aware", "equity-history-control",
-            "equity-history-aware");
+            "equity-history-aware", "equity-hard-pressure");
 
     public TournamentStrategyLineups {
         Objects.requireNonNull(policyDefaults, "policyDefaults");

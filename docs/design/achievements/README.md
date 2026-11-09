@@ -6,11 +6,20 @@ Realizările marchează ce a reușit jucătorul într-o partidă. Ghidul define�
 
 ```mermaid
 flowchart LR
-    Game["Rezultat validat"] --> Facts["Fapte măsurabile"]
-    Facts --> Rules["Obiective evaluate în paralel"]
-    Rules --> Progress["Progres pe profil"]
-    Progress --> UI["Listă pe niveluri"]
+    Game["Rezultat validat"] -->|furnizează| Facts["Fapte măsurabile"]
+    Facts -->|alimentează| Rules["Obiective evaluate în paralel"]
+    Rules -->|actualizează| Progress["Progres pe profil"]
+    Progress -->|informează| UI["Listă pe niveluri"]
 ```
+
+<details>
+<summary><strong>Legendă — de la rezultatul partidei la progres</strong></summary>
+
+- **Fapt** este o informație verificată, cum ar fi câștigătorul unei runde.
+- **Obiectiv** folosește faptul pentru a acorda credit conform unui criteriu.
+- **Profil** păstrează progresul confirmat la reluare.
+
+</details>
 
 ## Pornește de la joc
 

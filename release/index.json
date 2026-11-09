@@ -5,7 +5,7 @@
   "previousVersion": "0.3.1",
   "changeClass": "COMPATIBLE_FEATURE",
   "changeRationale": "Prezintă câștigătorii și sumele decontării inclusiv pe masa compactă sau fără animații și adaugă verificarea pachetului înainte de promovare.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.4.0"

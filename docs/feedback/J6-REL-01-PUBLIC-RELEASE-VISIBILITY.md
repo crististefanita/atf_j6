@@ -4,8 +4,8 @@ P1, blocaj extern. Ownerul este titularul contului GitHub.
 
 ## Dovadă curentă
 
-- Browserul autentificat a descărcat APK-ul curent din secțiunea `Jocul`. API-ul autentificat a verificat și checksum-ul ediției.
-- Ruta anonimă a răspuns HTTP 404. Catalogul rămâne `PREPARED`. [Dovada 0.3.1](../../release/0.3.1/release-validation.json)
+- API-ul autentificat a descărcat integral APK-ul și checksum-ul ediției 0.4.0.
+- Ruta anonimă a răspuns HTTP 504 pentru APK și HTTP 504 pentru checksum. Catalogul rămâne PREPARED. [Dovada ediției](../../release/0.4.0/release-validation.json)
 
 Procedura de diagnostic și trimiterea către GitHub apar în documentul owner. [Procesul de release](../release/ATF_Release.md#diagnostic-http-404-pentru-github-release)
 

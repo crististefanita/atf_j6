@@ -7,19 +7,201 @@
     "minSdk": 26,
     "targetSdk": 36,
     "apkName": "HoldemLab-0.4.1.apk",
-    "apkBytes": null,
-    "sha256": null,
-    "certificateSha256": null,
+    "apkBytes": 796272,
+    "sha256": "555a6c9a3b50f7c430cf28c9abd7d71373a52148c59440dbf0855b5d603a6b31",
+    "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
     "debuggable": false
   },
   "publication": {
-    "state": "DRAFT",
-    "sourceCommit": null,
+    "state": "PREPARED",
+    "sourceCommit": "2fefe0ec7a6e97de67f55d28303d01cbda11e028",
     "tag": "v0.4.1",
-    "githubState": "not-created",
-    "assets": []
+    "releaseId": 438953462,
+    "githubReleaseUrl": "https://github.com/crististefanita/atf_j6/releases/tag/v0.4.1",
+    "githubState": "published",
+    "githubPublishedAt": "2026-11-09T11:44:57+02:00",
+    "assets": [
+      {
+        "name": "HoldemLab-0.4.1.apk",
+        "id": 726956686,
+        "state": "uploaded",
+        "bytes": 796272,
+        "sha256": "555a6c9a3b50f7c430cf28c9abd7d71373a52148c59440dbf0855b5d603a6b31",
+        "httpStatus": 200,
+        "finalHost": "release-assets.githubusercontent.com",
+        "verified": true
+      },
+      {
+        "name": "HoldemLab-0.4.1.apk.sha256",
+        "id": 726956708,
+        "state": "uploaded",
+        "bytes": 86,
+        "sha256": "9d6fd662758bea65d8f283c38f0bcf55d0079b4bd1c8e6567fbb4eebc727e973",
+        "httpStatus": 200,
+        "finalHost": "release-assets.githubusercontent.com",
+        "verified": true
+      }
+    ]
   },
   "qualification": {
-    "status": "DRAFT"
+    "status": "PASS",
+    "tests": 185,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "details": {
+      "maven": {
+        "suites": 18,
+        "tests": 124.0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "mavenComponentExtent": {
+        "path": "maven-component-suites-extent.html",
+        "suites": 18,
+        "tests": 124.0
+      },
+      "androidJvm": {
+        "suites": 5,
+        "tests": 61.0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "androidComponentExtent": {
+        "path": "android-component-suites-extent.html",
+        "suites": 5,
+        "tests": 61.0
+      },
+      "releaseImpactContext": {
+        "path": "release-impact-context.json",
+        "contextState": "CONTEXT_READY",
+        "advisoryOnly": true,
+        "sha256": "d73dd490d496c6d7a187b2bc70a2546e95a97283f966350ef3d11e00585c5e1e"
+      },
+      "versionPolicy": {
+        "previousVersion": "0.4.0",
+        "changeClass": "PATCH_FIX",
+        "candidateVersion": "0.4.1",
+        "rationale": "Cere dovada descărcării anonime a checksum-ului împreună cu dovada APK-ului."
+      },
+      "lint": {
+        "status": "PASS",
+        "warnings": []
+      },
+      "tournamentSanity": {
+        "status": "PASS",
+        "api": 28,
+        "assertions": 76,
+        "screenshots": 9,
+        "apkSha256": "fb0b2cfc2e051cfe90fa0042e8e34f874050da6c451d1673b70fd98f7be3978f"
+      },
+      "releaseInstallSmoke": {
+        "status": "PASS",
+        "api": 28,
+        "assertions": 7,
+        "screenshots": 2,
+        "apkSha256": "555a6c9a3b50f7c430cf28c9abd7d71373a52148c59440dbf0855b5d603a6b31"
+      }
+    }
+  },
+  "authenticatedAssetDownload": {
+    "verified": true,
+    "source": "GitHub Releases REST asset endpoint",
+    "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.4.1/HoldemLab-0.4.1.apk",
+    "assetId": 726956686,
+    "httpStatus": 200,
+    "finalHost": "release-assets.githubusercontent.com",
+    "bytes": 796272,
+    "sha256": "555a6c9a3b50f7c430cf28c9abd7d71373a52148c59440dbf0855b5d603a6b31",
+    "credentialMode": "authenticated GitHub REST API",
+    "completedUtc": "2026-11-09T09:44:12.3568103Z"
+  },
+  "authenticatedChecksumDownload": {
+    "verified": true,
+    "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.4.1/HoldemLab-0.4.1.apk.sha256",
+    "assetId": 726956708,
+    "httpStatus": 200,
+    "bytes": 86,
+    "sha256": "9d6fd662758bea65d8f283c38f0bcf55d0079b4bd1c8e6567fbb4eebc727e973",
+    "apkSha256": "555a6c9a3b50f7c430cf28c9abd7d71373a52148c59440dbf0855b5d603a6b31",
+    "credentialMode": "authenticated GitHub REST API"
+  },
+  "publicDownloadAttempt": {
+    "verified": false,
+    "credentialMode": "anonymous",
+    "completedUtc": "2026-11-09T09:45:16.2625537Z",
+    "assets": [
+      {
+        "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.4.1/HoldemLab-0.4.1.apk",
+        "httpStatus": 404,
+        "curlExit": 0
+      },
+      {
+        "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.4.1/HoldemLab-0.4.1.apk.sha256",
+        "httpStatus": 404,
+        "curlExit": 0
+      }
+    ]
+  },
+  "integrity": {
+    "files": [
+      {
+        "path": "README.md",
+        "bytes": 572,
+        "sha256": "c85a8c68c1937929b1d61e4f7bf9608d8ac301e8abf6c35589f000805490c5bb"
+      },
+      {
+        "path": "release-notes.md",
+        "bytes": 213,
+        "sha256": "82f992379c451fe3c142f83cc62448b3cb97dce262cb17bc289fde373987ff19"
+      },
+      {
+        "path": "qualification.json",
+        "bytes": 4335,
+        "sha256": "7c43131406a46a65267895438190ce3739ee1f5107ecb983cca5961ae98df369"
+      },
+      {
+        "path": "release-impact-context.json",
+        "bytes": 34095,
+        "sha256": "d73dd490d496c6d7a187b2bc70a2546e95a97283f966350ef3d11e00585c5e1e"
+      },
+      {
+        "path": "qualification-independent-check.json",
+        "bytes": 1891,
+        "sha256": "e3511e592b4a54a5519c71f24ab3ce21c5406dd410a64d1f3a19b32d92c9500b"
+      },
+      {
+        "path": "reports/README.md",
+        "bytes": 839,
+        "sha256": "8b9ee16e7ade5b76a33d2e62a4346ae0db6323b0db0d7287969e050691879494"
+      },
+      {
+        "path": "reports/android-release-smoke-extent.html",
+        "bytes": 2615277,
+        "sha256": "4f54a726621bd1e2ba92eac70f486853c59abbd483e74a690451082f25562492"
+      },
+      {
+        "path": "reports/android-tournament-extent.html",
+        "bytes": 4003464,
+        "sha256": "60fb66e0e92d7110fcc5f19df3a455b9fef083d348eea8b433f833ceb9efe910"
+      },
+      {
+        "path": "reports/maven-component-suites-extent.html",
+        "bytes": 2596485,
+        "sha256": "7f04860dfd6d1bdb4fb39f2ae82d76df76c65a70a20d27872c96f54ca773c8ad"
+      },
+      {
+        "path": "reports/android-component-suites-extent.html",
+        "bytes": 2470561,
+        "sha256": "5308438bef0736df407214a3b33147eee046a01b46eeb663a408eea64983703a"
+      },
+      {
+        "path": "reports/promotion-extent.html",
+        "bytes": 2413370,
+        "sha256": "7c0d755c23e021fe9efb7970dccd802057c46b1f53a1006e7565a6f6367a6299"
+      }
+    ]
   }
 }

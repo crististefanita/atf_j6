@@ -5,7 +5,7 @@
   "previousVersion": "0.4.0",
   "changeClass": "PATCH_FIX",
   "changeRationale": "Cere dovada descărcării anonime a checksum-ului împreună cu dovada APK-ului.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.4.1"

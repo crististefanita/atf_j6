@@ -9,3 +9,11 @@ Indexul leagă verificările acestei ediții de manifest. Runnerul păstrează j
 - Componentele Maven și Android JVM și analiza lint.
 - Turneul nativ, instalarea APK-ului și guvernanța dovezilor de distribuție.
 - [Manifestul ediției](../release-validation.json) și [procesul de release](../../../docs/release/ATF_Release.md).
+
+## Rapoarte Extent
+
+- [android-release-smoke-extent.html](android-release-smoke-extent.html)
+- [android-tournament-extent.html](android-tournament-extent.html)
+- [maven-component-suites-extent.html](maven-component-suites-extent.html)
+- [android-component-suites-extent.html](android-component-suites-extent.html)
+- [promotion-extent.html](promotion-extent.html)

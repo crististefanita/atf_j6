@@ -1,0 +1,51 @@
+{
+  "sourceCommit": "2fefe0ec7a6e97de67f55d28303d01cbda11e028",
+  "apkSha256": "555a6c9a3b50f7c430cf28c9abd7d71373a52148c59440dbf0855b5d603a6b31",
+  "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
+  "ragSuites": [
+    {
+      "class": "ro.atf.j6.release.ReleaseGovernanceTest",
+      "tests": 7,
+      "sha256": "722edd6f35ce2ad78505dd7a5b5c6bbb9cb5d64ad1440ac042888f738c8c6b07"
+    },
+    {
+      "class": "ro.atf.holdem.android.HoldemTablePresentationComponentTest",
+      "tests": 17,
+      "sha256": "1c7f4fe8310da8cd7706380b5c391d8c435d1bc1e7c7a25ffebedcdab0a517f4"
+    },
+    {
+      "class": "ro.atf.j6.release.ReleasePromotionGateTest",
+      "tests": 6,
+      "sha256": "d57b46955ce1d4cbba7d1657aba5edfa60263e0c6fedb9d0c0df3527c8e28263"
+    },
+    {
+      "class": "ro.atf.j6.release.ReleaseVersionPolicyTest",
+      "tests": 3,
+      "sha256": "e8e2f83b21a5ce98dcefd9c6ce2ab70c508dda91f8f7c5c196a19ece9e70d579"
+    },
+    {
+      "class": "ro.atf.j6.release.ReleaseImpactRagTest",
+      "tests": 8,
+      "sha256": "2a90bde886900f40e561f1a6af4546a714c417e7647145c52176f3506cb74164"
+    },
+    {
+      "class": "ro.atf.holdem.android.LocalHoldemGameTest",
+      "tests": 11,
+      "sha256": "2ad84ddba4f6e3d89a2fe7ce1f546c1d568e1177f3edc24553a6d567e6569441"
+    },
+    {
+      "class": "ro.atf.j6.reporting.ComponentSuiteExtentPublisherTest",
+      "tests": 3,
+      "sha256": "3e60b9e10bb9859a51f59548576b5f1ab49fc7fd2091ee2447fd5c7f7b8ce992"
+    },
+    {
+      "class": "ro.atf.j6.reporting.NativeTournamentExtentPublisherTest",
+      "tests": 13,
+      "sha256": "a67af90fa631e827480d2e7652e8553ec882efe8df79570a21f92973bca5bf4c"
+    }
+  ],
+  "assertions": 7,
+  "inlineOriginalPngs": 2,
+  "api": 28,
+  "extentSha256": "4f54a726621bd1e2ba92eac70f486853c59abbd483e74a690451082f25562492"
+}

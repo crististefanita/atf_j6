@@ -1,6 +1,7 @@
 package ro.atf.holdem.android;
 
 import org.junit.Test;
+import ro.atf.holdem.core.ActionType;
 import ro.atf.holdem.core.Card;
 import ro.atf.holdem.core.BettingAction;
 import ro.atf.holdem.core.HandEvaluation;
@@ -202,6 +203,27 @@ public final class HoldemTablePresentationComponentTest {
         assertEquals(0xfff0d486, latest.textColor());
         assertEquals(9, HoldemTablePresentation.seatFactStyle(false, true).valueSp());
         assertEquals(10, HoldemTablePresentation.seatFactStyle(false, false).valueSp());
+    }
+
+    @Test public void acceptedRaiseAppearsOnceInTheLedgerAndSurvivesReplay() {
+        var game = new LocalHoldemGame(2, 0, 62);
+        var turn = game.turn();
+        var names = List.of("You", "Mina");
+        var raise = new LocalHoldemGame.Move(ActionType.RAISE, 60);
+
+        game.play(turn, raise);
+        assertThrows(IllegalArgumentException.class, () -> game.play(turn, raise));
+
+        var rows = HoldemTablePresentation.actionRows(game.view(), names);
+        assertEquals(List.of(
+                new HoldemTablePresentation.ActionRow(1, 0, "You", Street.PREFLOP,
+                        BettingAction.Kind.SMALL_BLIND, 10, 10),
+                new HoldemTablePresentation.ActionRow(2, 1, "Mina", Street.PREFLOP,
+                        BettingAction.Kind.BIG_BLIND, 20, 20),
+                new HoldemTablePresentation.ActionRow(3, 0, "You", Street.PREFLOP,
+                        BettingAction.Kind.RAISE, 60, 70)), rows);
+        var restored = LocalHoldemGame.restore(game.save());
+        assertEquals(rows, HoldemTablePresentation.actionRows(restored.view(), names));
     }
 
     @Test public void bettingLedgerKeepsEngineOrderAndMapsPhysicalActorsToTheDisplayedNames() {

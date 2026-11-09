@@ -11,7 +11,9 @@
 
 ## Acoperirea editorului
 
-Calificarea istorică a acceptat Raise 60 și a respins 39. Turneul 0.3.1 confirmă deschiderea editorului, apoi Call și intrarea lui în jurnal. Lipsește o probă care leagă submit-ul editorului de intrarea Raise și de contribuția cumulată din jurnalul curent. [Strategia Android](../testing/TEST_STRATEGY.md#interfața-android-locală) · [Extent 0.3.1](../../release/0.3.1/reports/android-tournament-extent.html)
+Calificarea istorică a acceptat Raise 60 și a respins 39. Turneul 0.3.1 confirmă deschiderea editorului, apoi Call și intrarea lui în jurnal.
+
+Proba de componentă leagă Raise-ul acceptat de motor de intrarea unică, contribuția cumulată și replay. Rămâne verificarea comenzii de confirmare din editorul Android. [Strategia Android](../testing/TEST_STRATEGY.md#interfața-android-locală) · [Extent 0.3.1](../../release/0.3.1/reports/android-tournament-extent.html)
 
 ## Acceptanță rămasă
 

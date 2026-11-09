@@ -78,6 +78,7 @@ flowchart LR
 
 - Normal păstrează adversarii check/call. În Hard, adversarii, coach-ul și preluarea folosesc aceeași politică contextuală cu 512 eșantioane pe decizie.
 - Profilul reduce cu până la trei puncte procentuale pragul unei continuări preflop de cel mult două blinduri mari. Păstrează pragul obișnuit în fața unui all-in agresiv sau a riscului de eliminare și ține cont de costul apelului și eroarea estimării.
+- `cheapPreflopDiscount` se calibrează cu aceleași ponderi de raise, blinduri și adversari în fiecare pereche. Compară stive inițiale scurte și adânci și urmărește deciziile la care discountul se poate aplica.
 
 #### Raise cu preț pozitiv
 
@@ -138,6 +139,17 @@ O schimbare de decizie trebuie să păstreze legalitatea, reproductibilitatea ș
 - **Control.** Compară pe un corpus ținut separat și pe seed-uri independente, cu același buget și mai multe stiluri de adversar.
 - **Raport.** Include numărul de turnee și mâini, diferența pereche, intervalul de încredere și drawdown-ul când jurnalul îl măsoară.
 - **Promovare competitivă.** Cere un avantaj față de control care depășește incertitudinea. O schimbare structurală poate fi acceptată pentru comportamentul verificat în teste și trebuie evaluată separat înainte de a i se atribui un avantaj la victorii.
+
+### Citirea acțiunilor adverse preflop
+
+| Semnal public | Cum se verifică |
+|---|---|
+| Ordine | Pornește după blindul mare și stabilește poziția între locurile care mai pot acționa. Separă poziția timpurie de jumătatea finală. |
+| Succesiune | Distinge blindurile, un call anterior, un raise și un all-in care ridică prețul. Un all-in de egalare păstrează prețul existent. |
+| Context | Grupează după prețul de call și stiva în blinduri mari. Compară adversarii în aceleași condiții înainte de a atribui efectul ordinii. |
+| Predicție | Estimează frecvențele de fold și raise din turnee de antrenare. Pentru contexte rare, apropie estimarea de rata din grupul mai larg. Măsoară eroarea pe seed-uri separate și calculează incertitudinea pe turneu. |
+
+Scorul Brier compară probabilitățile de acțiune cu răspunsurile observate. Equity estimează separat cota din pot pe cărțile vizibile. Un model de răspuns evaluat în arenă rămâne o ipoteză până la o comparație separată în politica de joc.
 
 ## Politică mixtă de bluff pentru laborator
 

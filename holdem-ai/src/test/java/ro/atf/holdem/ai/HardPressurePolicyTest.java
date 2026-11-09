@@ -37,6 +37,48 @@ class HardPressurePolicyTest {
         assertTrue(loose.policyVersion().contains("-split.8.5.4.3.4.6.10.60"));
     }
 
+    @Test void largerDiscountAppliesAtTwoBigBlindsAndStopsAboveThatPrice() {
+        var control = splitPolicy(3);
+        var candidate = splitPolicy(6);
+        var boundary = callDiscountSpot(40, 1000, List.of(), List.of(1000, 500), List.of(0, 40));
+        var above = callDiscountSpot(41, 1000, List.of(), List.of(1000, 500), List.of(0, 41));
+        assertEquals(3, control.requiredEquityPercent(boundary) - candidate.requiredEquityPercent(boundary));
+        assertEquals(control.requiredEquityPercent(above), candidate.requiredEquityPercent(above));
+    }
+
+    @Test void largerDiscountRespectsPotOddsAndCoveredCommitment() {
+        var control = splitPolicy(3);
+        var candidate = splitPolicy(6);
+        var shortStack = callDiscountSpot(40, 90, List.of(), List.of(90, 500), List.of(0, 40));
+        assertEquals(26, splitPolicy(0).requiredEquityPercent(shortStack));
+        assertEquals(25, control.requiredEquityPercent(shortStack));
+        assertEquals(25, candidate.requiredEquityPercent(shortStack));
+
+        var covered = callDiscountSpot(40, 50, List.of(), List.of(50, 500), List.of(0, 40));
+        assertEquals(splitPolicy(0).requiredEquityPercent(covered), candidate.requiredEquityPercent(covered));
+    }
+
+    @Test void onlyAnAllInThatRaisesThePriceDisablesTheLargerDiscount() {
+        var control = splitPolicy(3);
+        var candidate = splitPolicy(6);
+        var allInCall = callDiscountSpot(40, 1000,
+                List.of("BB 1 20", "PREFLOP 1 RAISE 20", "PREFLOP 2 ALL_IN 40"),
+                List.of(1000, 500, 0), List.of(0, 40, 40));
+        var allInRaise = callDiscountSpot(40, 1000,
+                List.of("BB 1 20", "PREFLOP 2 ALL_IN 40"),
+                List.of(1000, 500, 0), List.of(0, 20, 40));
+        assertTrue(control.requiredEquityPercent(allInCall) > candidate.requiredEquityPercent(allInCall));
+        assertEquals(control.requiredEquityPercent(allInRaise), candidate.requiredEquityPercent(allInRaise));
+    }
+
+    private static HoldemObservation callDiscountSpot(int price, int stack, List<String> history,
+                                                      List<Integer> stacks, List<Integer> contributions) {
+        return new HoldemObservation(5, 0, stacks.size(), stacks.size() - 1, Street.PREFLOP, cards("As", "Ad"), List.of(),
+                120, price, stack, 0, stacks,
+                List.of(LegalAction.noAmount(ActionType.FOLD), new LegalAction(ActionType.CALL, price, price, price)),
+                history, 0, 20, contributions);
+    }
+
     @Test void raiseSeparatesHeadsUpPositionAndPublicPressure() {
         var candidate = splitPolicy(3);
         var neutral = List.of("SEATS [0, 1]", "RIVER [Qs, Js, Ts, 2d, 3c]");

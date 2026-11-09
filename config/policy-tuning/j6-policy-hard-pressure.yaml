@@ -53,6 +53,7 @@ equityDecision:
     shortStackShoveMaxMarginAdjustment: 4
 hardPressure:
   bigBlindValueRaise: false
+  # Reducere maximă pentru call-ul preflop de cel mult două blinduri mari.
   cheapPreflopDiscount: 3
   fullPotEquity: 76
   doublePotEquity: 86

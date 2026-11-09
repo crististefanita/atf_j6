@@ -119,7 +119,7 @@ Meniul **Realizări** arată cinci obiective pe nivel. Ordinea sugerează de und
 
 | Nivel | Primul obiectiv | Alte criterii |
 |---|---|---|
-| Ușor | Câștigă o mână de poker. | Prima mână de turneu câștigată, un pot din blindul mare, trei mâini câștigate și încheierea propriei participări într-un turneu. |
+| Ușor | Câștigă o mână de poker. | Ajungi la prima dezvăluire, câștigi un pot din blindul mare, trei mâini distincte și închei participarea într-un turneu. |
 | Mediu | Câștigă un turneu. | Cinci mâini câștigate în turnee, trei victorii la dezvăluire cu minimum trei participanți, două victorii cu chintă sau mai bine și două podiumuri. |
 | Greu | Câștigă trei turnee distincte. | Carte mare ca unic beneficiar al poturilor, două victorii cu full sau mai bine, 12 victorii la dezvăluire cu minimum trei participanți și două titluri la mese pornite cu șase jucători. |
 

@@ -174,9 +174,9 @@
     <string name="gameplay_achievement_progress">Progress · %1$d/%2$d</string>
     <!-- The generated gameplay catalog owns these resource references. -->
     <string name="gameplay_achievement_first_pot" tools:ignore="UnusedResources">Win a poker hand</string>
+    <string name="gameplay_achievement_first_showdown" tools:ignore="UnusedResources">Reach your first showdown</string>
     <string name="gameplay_achievement_big_blind" tools:ignore="UnusedResources">Win a pot from the big blind</string>
     <string name="gameplay_achievement_finish_tournament" tools:ignore="UnusedResources">Finish your run in a tournament</string>
-    <string name="gameplay_achievement_tournament_pot" tools:ignore="UnusedResources">Win a hand in a tournament</string>
     <plurals name="gameplay_achievement_three_pots" tools:ignore="UnusedResources">
         <item quantity="one">Win %1$d hand</item>
         <item quantity="other">Win %1$d different hands</item>

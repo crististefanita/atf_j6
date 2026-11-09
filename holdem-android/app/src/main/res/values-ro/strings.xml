@@ -172,9 +172,9 @@
     <string name="gameplay_achievement_earned">Obținută · %1$d/%2$d</string>
     <string name="gameplay_achievement_progress">Progres · %1$d/%2$d</string>
     <string name="gameplay_achievement_first_pot">Câștigă o mână de poker</string>
+    <string name="gameplay_achievement_first_showdown">Ajungi prima dată la dezvăluirea cărților</string>
     <string name="gameplay_achievement_big_blind">Câștigă un pot din poziția de blind mare</string>
     <string name="gameplay_achievement_finish_tournament">Încheie-ți participarea la un turneu</string>
-    <string name="gameplay_achievement_tournament_pot">Câștigă o mână într-un turneu</string>
     <plurals name="gameplay_achievement_three_pots">
         <item quantity="one">Câștigă %1$d mână</item>
         <item quantity="few">Câștigă %1$d mâini diferite</item>

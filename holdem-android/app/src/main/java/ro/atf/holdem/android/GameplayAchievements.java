@@ -12,7 +12,7 @@ import ro.atf.holdem.core.Street;
 /** Projects settled poker results into independent, bounded progress counters. */
 final class GameplayAchievements {
     enum Metric {
-        POT(3), TOURNAMENT_POT(5), BIG_BLIND_POT(1), TOURNAMENT_FINISHED(1),
+        POT(3), TOURNAMENT_POT(5), BIG_BLIND_POT(1), SHOWDOWN(1), TOURNAMENT_FINISHED(1),
         PODIUM(2), TITLE(3), SIX_SEAT_TITLE(2), STRAIGHT_OR_BETTER(2),
         FULL_HOUSE_OR_BETTER(2), SOLE_HIGH_CARD_POT(1), MULTIWAY_SHOWDOWN_POT(12);
 
@@ -70,6 +70,7 @@ final class GameplayAchievements {
         var recorded = storage.read(profile);
         var updates = new EnumMap<Metric, Set<String>>(Metric.class);
         var seat = frame.seats().get(frame.viewer());
+        if (seat.handEvaluation() != null) credit(recorded, Metric.SHOWDOWN, hand, updates);
         if (seat.potWon() > 0) {
             credit(recorded, Metric.POT, hand, updates);
             if (tournament != null) credit(recorded, Metric.TOURNAMENT_POT, hand, updates);

@@ -3,7 +3,7 @@
   "tiers": {
     "EASY": [
       {"id":"first-pot", "metric":"POT", "target":1, "label":"gameplay_achievement_first_pot"},
-      {"id":"first-tournament-pot", "metric":"TOURNAMENT_POT", "target":1, "label":"gameplay_achievement_tournament_pot"},
+      {"id":"first-showdown", "metric":"SHOWDOWN", "target":1, "label":"gameplay_achievement_first_showdown"},
       {"id":"big-blind-pot", "metric":"BIG_BLIND_POT", "target":1, "label":"gameplay_achievement_big_blind"},
       {"id":"three-pots", "metric":"POT", "target":3, "label":"plurals/gameplay_achievement_three_pots"},
       {"id":"finish-tournament", "metric":"TOURNAMENT_FINISHED", "target":1, "label":"gameplay_achievement_finish_tournament"}

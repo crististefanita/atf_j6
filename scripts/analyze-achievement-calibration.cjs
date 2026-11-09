@@ -21,21 +21,23 @@ const legacy = {
 function facts(hand, lockedRank) {
   const wins = hand.potWon > 0;
   const strength = ranks.indexOf(hand.category);
-  const showdown = wins && strength >= 0;
+  const reachedShowdown = strength >= 0;
+  const showdownWin = wins && reachedShowdown;
   return {
     POT: wins,
     TOURNAMENT_POT: wins,
     BIG_BLIND_POT: wins && hand.bigBlind === 1,
+    SHOWDOWN: reachedShowdown,
     TOURNAMENT_FINISHED: lockedRank > 0,
     PODIUM: lockedRank >= 1 && lockedRank <= 3,
     TITLE: lockedRank === 1,
     SIX_SEAT_TITLE: lockedRank === 1 && hand.seats === 6,
-    STRAIGHT_OR_BETTER: showdown && strength >= ranks.indexOf('STRAIGHT'),
-    FULL_HOUSE_OR_BETTER: showdown && strength >= ranks.indexOf('FULL_HOUSE'),
-    SOLE_HIGH_CARD_POT: showdown && strength === 0 && hand.potRecipients === 1,
-    MULTIWAY_SHOWDOWN_POT: showdown && hand.showdownPlayers >= 3,
-    UNCONTESTED_POT: wins && !showdown,
-    MULTIWAY_TOURNAMENT_UNCONTESTED: wins && !showdown && hand.dealt >= 3,
+    STRAIGHT_OR_BETTER: showdownWin && strength >= ranks.indexOf('STRAIGHT'),
+    FULL_HOUSE_OR_BETTER: showdownWin && strength >= ranks.indexOf('FULL_HOUSE'),
+    SOLE_HIGH_CARD_POT: showdownWin && strength === 0 && hand.potRecipients === 1,
+    MULTIWAY_SHOWDOWN_POT: showdownWin && hand.showdownPlayers >= 3,
+    UNCONTESTED_POT: wins && !reachedShowdown,
+    MULTIWAY_TOURNAMENT_UNCONTESTED: wins && !reachedShowdown && hand.dealt >= 3,
   };
 }
 

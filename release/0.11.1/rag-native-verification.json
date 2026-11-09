@@ -1,0 +1,35 @@
+{
+  "status": "PASS",
+  "sourceCommit": "2da752ed7ac551b60a8270df9fe8f60c274bcf1c",
+  "apkSha256": "fc6d3198e56ef5ecb1c0af23eeec65afaf6810c467cf7c20376fa7b5279b4455",
+  "journeys": [
+    {
+      "mode": "settlement-award",
+      "status": "PASS",
+      "api": 28,
+      "assertions": 10,
+      "apkSha256": "fc6d3198e56ef5ecb1c0af23eeec65afaf6810c467cf7c20376fa7b5279b4455"
+    },
+    {
+      "mode": "settlement-multi-award",
+      "status": "PASS",
+      "api": 28,
+      "assertions": 19,
+      "apkSha256": "fc6d3198e56ef5ecb1c0af23eeec65afaf6810c467cf7c20376fa7b5279b4455"
+    },
+    {
+      "mode": "settlement-static-award",
+      "status": "PASS",
+      "api": 28,
+      "assertions": 10,
+      "apkSha256": "fc6d3198e56ef5ecb1c0af23eeec65afaf6810c467cf7c20376fa7b5279b4455"
+    },
+    {
+      "mode": "settlement-compact-award",
+      "status": "PASS",
+      "api": 28,
+      "assertions": 14,
+      "apkSha256": "fc6d3198e56ef5ecb1c0af23eeec65afaf6810c467cf7c20376fa7b5279b4455"
+    }
+  ]
+}

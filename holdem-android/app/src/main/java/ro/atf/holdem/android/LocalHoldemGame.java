@@ -107,6 +107,10 @@ final class LocalHoldemGame {
         this(seats, dealer, seed, false, 1, System::nanoTime);
     }
 
+    static LocalHoldemGame table(int seats, int dealer, long seed, String humanPlayerId) {
+        return new LocalHoldemGame(seats, dealer, seed, false, 1, System::nanoTime, humanPlayerId, "", false);
+    }
+
     static LocalHoldemGame tournament(int seats, long seed) {
         return tournament(seats, seed, 1);
     }

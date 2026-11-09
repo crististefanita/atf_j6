@@ -58,7 +58,7 @@ final class HoldemSessionRepository {
         } else if (!result) {
             int seats = frame.seats().size();
             int dealer = seats == 2 ? frame.bigBlind() : frame.dealer();
-            destination = new LocalHoldemGame(seats, dealer, trainingSeed.getAsLong());
+            destination = LocalHoldemGame.table(seats, dealer, trainingSeed.getAsLong(), source.humanPlayerId());
         }
         save(destination, result);
         return new Resumed(destination, result);

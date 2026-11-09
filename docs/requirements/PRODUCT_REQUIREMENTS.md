@@ -112,3 +112,21 @@ O comandă de continuare acceptată în timpul animației salvează destinația 
 - ascunderea unui bot prin timing artificial;
 - folosirea mâinilor adverse reale în politica actorului;
 - promisiunea de profit sau recomandări de miză personală.
+
+## Realizări și antrenament
+
+Meniul **Realizări** arată cinci obiective pe nivel, cu progres local pe profil. Ordinea este de lectură: o mână sau un turneu poate avansa mai multe obiective simultan. **Exerciții de antrenament** păstrează separat catalogul și răspunsurile existente.
+
+| Nivel | Primul obiectiv | Alte criterii |
+|---|---|---|
+| Ușor | Câștigă o mână de poker. | Pot fără dezvăluire, pot la dezvăluire, mână de turneu și trei mâini distincte. |
+| Mediu | Câștigă un turneu. | Podium, trei câștiguri la dezvăluire, chintă sau mai bine la dezvăluire și cinci mâini de turneu. |
+| Greu | Câștigă trei turnee distincte. | Singurul beneficiar al poturilor cu o carte mare la dezvăluire, două titluri la mese de șase, full sau mai bine și cinci câștiguri fără dezvăluire în mâini de turneu cu minimum trei jucători distribuiți. |
+
+- O mână se califică la decontare când profilul primește jetoane dintr-un pot. Un pot împărțit sau secundar poate conta; restituirea unui pariu nu contează.
+- Pentru carte mare, combinația finală nu conține nicio pereche și niciun alt jucător nu primește o parte din poturi.
+- Titlul cere locul întâi într-un turneu încheiat. Două deschideri ale aceluiași rezultat nu dau credit dublu.
+
+Progresul pornește de la rezultatele observate după actualizare. Sesiunea încă salvată poate fi reconciliată la reluare; clasamentul agregat și răspunsurile din Antrenament nu reconstruiesc partidele vechi.
+
+[Ghid de proiectare reutilizabil](../design/achievements/README.md) · [Testele realizărilor](../testing/TEST_STRATEGY.md#realizări-de-joc)

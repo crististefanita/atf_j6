@@ -77,6 +77,14 @@ Aceste teste demonstrează contractul și direcția pragurilor; nu demonstrează
 
 [Procesul de release](../release/ATF_Release.md)
 
+### Realizări de joc
+
+- Suita de componentă verifică decontarea, restituirile, poturile împărțite, combinația de carte mare, clasarea și pragurile pentru turnee distincte. Un rezultat eligibil poate avansa simultan obiective din niveluri diferite.
+- Proba cu un turneu local încheiat verifică faptul că reluarea păstrează profilul și identitatea rezultatului fără credit dublu. Banca de exerciții are o suită separată.
+- Smoke-ul de prezentare urmărește meniul Realizări, cele trei taburi și legătura către Exerciții de antrenament. Un profil de test poate afișa progres parțial; proba nu ține locul validării rezultatului la motor.
+
+[Contractul realizărilor](../requirements/PRODUCT_REQUIREMENTS.md#realizări-și-antrenament) · [Suita de componentă](../../holdem-android/app/src/test/java/ro/atf/holdem/android/GameplayAchievementsComponentTest.java)
+
 ### Alegerea nivelului de test
 
 | Contract | Probă principală | Dovadă Android |

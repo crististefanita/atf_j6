@@ -157,7 +157,7 @@ public final class TournamentLeaderboardTest {
         var storage = new MemoryStorage();
         var sessions = new HoldemSessionRepository(new MemorySession());
         var board = new TournamentLeaderboardRepository(storage);
-        var progress = new HoldemProgressStore(sessions, board);
+        var progress = new HoldemProgressStore(sessions, board, GameplayAchievementsComponentTest.memory());
         var game = completedTournament();
         var next = LocalHoldemGame.tournament(4, 2);
 
@@ -180,7 +180,7 @@ public final class TournamentLeaderboardTest {
         var sessionStorage = new MemorySession();
         var sessions = new HoldemSessionRepository(sessionStorage);
         var board = new TournamentLeaderboardRepository(storage);
-        var progress = new HoldemProgressStore(sessions, board);
+        var progress = new HoldemProgressStore(sessions, board, GameplayAchievementsComponentTest.memory());
         var game = completedTournament();
         var next = LocalHoldemGame.tournament(4, 2);
         storage.failWrites = true;
@@ -192,7 +192,7 @@ public final class TournamentLeaderboardTest {
         assertTrue(board.load().completedTournamentIds().isEmpty());
 
         storage.failWrites = false;
-        var reopened = new HoldemProgressStore(new HoldemSessionRepository(sessionStorage), new TournamentLeaderboardRepository(storage));
+        var reopened = new HoldemProgressStore(new HoldemSessionRepository(sessionStorage), new TournamentLeaderboardRepository(storage), GameplayAchievementsComponentTest.memory());
         sessionStorage.failWrites = true;
         assertThrows(IOException.class, () -> reopened.start(null, next, "You"));
         assertEquals(game.tournamentId(), sessions.load().resumed().game().tournamentId());
@@ -214,7 +214,7 @@ public final class TournamentLeaderboardTest {
         var sessionStorage = new MemorySession();
         var sessions = new HoldemSessionRepository(sessionStorage);
         var board = new TournamentLeaderboardRepository(storage);
-        var progress = new HoldemProgressStore(sessions, board);
+        var progress = new HoldemProgressStore(sessions, board, GameplayAchievementsComponentTest.memory());
         var game = LocalHoldemGame.tournament(4, 1);
         sessions.save(game, false);
         finishTournament(game);

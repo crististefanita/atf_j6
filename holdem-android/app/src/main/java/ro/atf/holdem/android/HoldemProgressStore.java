@@ -8,7 +8,11 @@ final class HoldemProgressStore {
     private final HoldemSessionRepository sessions;
     private final TournamentLeaderboardRepository leaderboard;
 
-    HoldemProgressStore(HoldemSessionRepository sessions, TournamentLeaderboardRepository leaderboard) {
+    private final GameplayAchievements achievements;
+
+    HoldemProgressStore(HoldemSessionRepository sessions, TournamentLeaderboardRepository leaderboard,
+                        GameplayAchievements achievements) {
+        this.achievements = achievements;
         this.sessions = sessions;
         this.leaderboard = leaderboard;
     }
@@ -28,10 +32,12 @@ final class HoldemProgressStore {
             // A previous checkpoint write may have failed before the UI reached the terminal table.
             checkpoint(previous, false, humanName);
         }
+        achievements.recordSettled(previous);
         sessions.save(next, false);
     }
 
     TournamentLeaderboard.State recordCompleted(LocalHoldemGame game, String humanName) throws IOException {
+        achievements.recordSettled(game);
         if (game == null || game.outcome() == null) return null;
         var frame = game.view();
         var names = HoldemTablePresentation.playerNames(frame.seats().size(), humanName, game.displayNameSeed());

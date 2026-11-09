@@ -1,56 +1,13 @@
-# J6-PROD-01 · Realizări pentru contul Hold’em
+# Realizări Hold’em — calibrarea dificultății
 
 ## Pe scurt
 
-**Stare:** toate cele 20 de familii sunt active. Calibrarea dificultății rămâne de evaluat cu jucători.
+**P2 · De validat cu jucători.** Catalogul grupează obiectivele în funcție de rezultatele de la masă. Dificultatea relativă rămâne o ipoteză până vedem cum avansează profilurile în sesiuni reale.
 
-Hold’em Android are sesiune locală și clasament de turnee. Propunerea adaugă progres verificabil de profil și o bancă de exerciții. Clasamentul continuă să măsoare rezultatele turneelor.
+[Contractul implementat](../requirements/PRODUCT_REQUIREMENTS.md#realizări-și-antrenament) · [Metoda de proiectare](../design/achievements/README.md)
 
-[Catalogul cu 800 de ID-uri și praguri](J6-PROD-01-ACHIEVEMENT-CATALOG.csv) · [Cerințe de produs](../requirements/PRODUCT_REQUIREMENTS.md) · [Reguli de turneu](../requirements/TOURNAMENT_RULES.md)
+## Criterii de acceptanță
 
-## Implementare Android
-
-- Meniul principal deschide Realizări. Taburile urmează ordinea fundamente, reguli de pariere, calcule, strategie și contexte specializate.
-- Catalogul cuprinde 500 de realizări ușoare, 200 medii și 100 grele. Filtrul Disponibile pentru exersare arată probele deblocate și încă nefinalizate.
-- Progresul se salvează offline după fiecare răspuns, pe ID-ul stabil al profilului. La Ușoare, pragurile din același context sunt cumulative. La Medii și Grele, fiecare lot păstrează numitorul fix.
-- Catalogul și exercițiile noi sunt în română. Controalele și exercițiile Pot odds au variante în română și engleză.
-- Exercițiile de reguli folosesc poziții, cărți și contribuții concrete. Exercițiile de strategie precizează modelul și ipotezele. Verificarea unei linii într-un model dat nu certifică o decizie universal optimă.
-
-## Meniu și ecran
-
-- Adăugați intrarea **Realizări** în meniul profilului.
-- Ecranul afișează progresul total și trei taburi fixe, **Ușoare**, **Medii** și **Grele**, fiecare cu numărul deblocat și totalul. Tabul păstrează selecția și poziția la revenirea din detalii. Filtrele sunt Toate, În progres și Deblocate, cu căutare după titlu sau familie.
-- Lista virtualizată separă antetul familiei, titlul realizării și starea. Un lot greu în curs afișează atât loturile promovate, cât și numărul de răspunsuri din lotul curent. Detaliile afișează criteriul și etapa necesară.
-- Ecranul folosește fundalul și butoanele rotunjite ale mesei. Titlurile sunt albe, informațiile secundare sunt verde deschis, iar auriul marchează familia și realizările deblocate. În profil compact, taburile încap fără derulare orizontală.
-- Pentru profil fără progres, fiecare tab arată un prim pas. Testele de componentă acoperă selecția, filtrele, listele goale, 500 de rânduri și păstrarea poziției.
-- Smoke-ul verifică navigarea din meniu și schimbarea tabului. Proba cu profil simulat verifică stările deblocată, în curs și blocată, precum și alinierea celor trei taburi în profil compact.
-
-## Praguri
-
-| Nivel | Număr | Durată estimată | Criteriu |
-|---|---:|---|---|
-| Ușor | 500 | Câteva minute pe prag | Cinci praguri cumulative de 1–5 răspunsuri corecte în situații distincte din același context. |
-| Mediu | 200 | În jur de o zi | Două realizări per context, 8/10 și 12/15 în loturi diferite. |
-| Greu | 100 | Câteva zile, cu pauze | Trei loturi avansate independente, fiecare cu minimum 8/10. |
-
-Cele 20 de familii au câte cinci contexte. Duratele sunt estimări de pilot. Loturile se reiau fără termen-limită.
-
-Insignele și titlurile sunt cosmetice, fără depuneri, serii zilnice sau stimulente pentru volum.
-
-Google oferă un model pentru progres incremental și offline. Catalogul propriu depășește limita Play Games Services. Misiunile PokerStars ilustrează afișarea criteriilor și a progresului. [Android Developers](https://developer.android.com/games/pgs/achievements) · [PokerStars](https://www.pokerstars.com/poker/promotions/daily-missions/) · [Gambling Commission](https://www.gamblingcommission.gov.uk/public-and-players/page/control-the-time-and-money-spent-gambling)
-
-## Evaluare
-
-- Pentru poziție, blinduri, mărimea legală a pariului, redeschiderea după all-in, poturi, showdown și egalități, oracolul returnează rezultatul exact. [Reguli Poker TDA](https://www.pokertda.com/view-poker-tda-rules/)
-- Pentru pot odds compară echitatea stipulată cu prețul call-ului. Pentru outs deduplică și elimină cărțile contaminate.
-- Pentru deciziile strategice fixează poziția, acțiunile publice, stackul efectiv, range-urile ipotetice și variantele echivalente. În probele ICM fixează și premiile.
-- Decizia primește credit pe baza informației disponibile înainte de acțiune. Autoplay și soluțiile dezvăluite înainte de răspuns rămân antrenament.
-
-## Etape și acceptanță
-
-1. Pilotați un context din fiecare familie. Afișați criteriul înainte de răspuns și explicația după. Măsurați durata efectivă și acordul dintre verificatori.
-2. Implementați identitatea locală de profil și progresul atomic pe baza profileId, scenarioId, bankVersion și attemptId. Creditul se acordă o dată per scenariu calificat și profil.
-3. Publicați treptat loturile. Probele grele folosesc trei bănci distincte, situații noi pentru credit, numitor fix și checkpoint la pauză.
-4. Dacă apare cont de rețea, separați sursele locală și online. Îmbinați evenimentele validate după identificator. Mutați contractele implementate în cerințele de produs.
-
-Verificați unicitatea celor 800 de chei, pragurile, prerechizitele fără cicluri, limitele 7/10 și 8/10, lotul incomplet, evenimentul duplicat, două profile cu același nume, migrarea rubricii și reluarea offline. În evaluarea strategică, variați cărțile adverse ascunse și runout-ul. La side pots verificați beneficiarii fiecărui pot și conservarea jetoanelor.
+- Verifică dacă primul obiectiv din fiecare tab este înțeles fără explicații și dacă se vede că alte obiective pot progresa în paralel.
+- Compară distribuția numărului de mâini și turnee necesare per nivel. Urmărește separat victoria cu o carte mare, unde oportunitatea depinde de distribuție și de adversari.
+- Adaugă obiective doar pentru situații observabile din joc. Pentru o tactică nouă, precizează evenimentul autoritar, ce o deosebește de un câștig întâmplător și testul care respinge un caz aproape identic.

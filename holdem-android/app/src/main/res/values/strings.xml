@@ -169,4 +169,22 @@
         <item>Tournaments</item>
         <item>Hand review</item>
     </string-array>
+    <string name="achievement_training">Training exercises</string>
+    <string name="gameplay_achievement_earned">Earned · %1$d/%2$d</string>
+    <string name="gameplay_achievement_progress">Progress · %1$d/%2$d</string>
+    <string name="gameplay_achievement_first_pot">Win a poker hand</string>
+    <string name="gameplay_achievement_folds">Win a pot after every opponent folds</string>
+    <string name="gameplay_achievement_showdown">Win a pot at showdown</string>
+    <string name="gameplay_achievement_tournament_pot">Win a hand in a tournament</string>
+    <string name="gameplay_achievement_three_pots">Win three different hands</string>
+    <string name="gameplay_achievement_first_title">Win a tournament</string>
+    <string name="gameplay_achievement_podium">Finish in the top three of a tournament</string>
+    <string name="gameplay_achievement_three_showdowns">Win at showdown in three different hands</string>
+    <string name="gameplay_achievement_straight">Win at showdown with a straight or better</string>
+    <string name="gameplay_achievement_five_tournament_pots">Win five tournament hands</string>
+    <string name="gameplay_achievement_three_titles">Win three different tournaments</string>
+    <string name="gameplay_achievement_high_card">Win every pot at showdown with high card</string>
+    <string name="gameplay_achievement_six_seat_titles">Win two tournaments that started with six players</string>
+    <string name="gameplay_achievement_full_house">Win at showdown with a full house or better</string>
+    <string name="gameplay_achievement_multiway_folds">Win five tournament hands with at least three players dealt in after all opponents fold</string>
 </resources>

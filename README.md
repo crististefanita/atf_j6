@@ -54,6 +54,7 @@ J6 consumă Core, Reporting, Console, Mock și Test Kit din perechile JAR/POM di
 - [Cerințe AI și evaluare](docs/requirements/AI_REQUIREMENTS.md)
 - [Cerințe online și siguranță](docs/requirements/ONLINE_REQUIREMENTS.md)
 - [Arhitectură](docs/architecture/ARCHITECTURE.md)
+- [Proiectarea realizărilor într-un joc](docs/design/achievements/README.md)
 - [Strategie de testare](docs/testing/TEST_STRATEGY.md)
 - [Catalogul release-urilor](release/README.md)
 - [Procesul de release Android](docs/release/ATF_Release.md)

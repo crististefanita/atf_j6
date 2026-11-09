@@ -168,4 +168,22 @@
         <item>Turnee</item>
         <item>Analiza mâinii</item>
     </string-array>
+    <string name="achievement_training">Exerciții de antrenament</string>
+    <string name="gameplay_achievement_earned">Obținută · %1$d/%2$d</string>
+    <string name="gameplay_achievement_progress">Progres · %1$d/%2$d</string>
+    <string name="gameplay_achievement_first_pot">Câștigă o mână de poker</string>
+    <string name="gameplay_achievement_folds">Câștigă un pot după ce toți adversarii au dat fold</string>
+    <string name="gameplay_achievement_showdown">Câștigă un pot la dezvăluirea cărților</string>
+    <string name="gameplay_achievement_tournament_pot">Câștigă o mână într-un turneu</string>
+    <string name="gameplay_achievement_three_pots">Câștigă trei mâini diferite</string>
+    <string name="gameplay_achievement_first_title">Câștigă un turneu</string>
+    <string name="gameplay_achievement_podium">Termină un turneu pe unul dintre primele trei locuri</string>
+    <string name="gameplay_achievement_three_showdowns">Câștigă la dezvăluirea cărților în trei mâini diferite</string>
+    <string name="gameplay_achievement_straight">Câștigă la dezvăluire cu o chintă sau mai bine</string>
+    <string name="gameplay_achievement_five_tournament_pots">Câștigă cinci mâini în turnee</string>
+    <string name="gameplay_achievement_three_titles">Câștigă trei turnee diferite</string>
+    <string name="gameplay_achievement_high_card">Câștigă toate poturile la dezvăluire cu o carte mare, fără pereche</string>
+    <string name="gameplay_achievement_six_seat_titles">Câștigă două turnee care au început cu șase jucători</string>
+    <string name="gameplay_achievement_full_house">Câștigă la dezvăluire cu un full sau mai bine</string>
+    <string name="gameplay_achievement_multiway_folds">Câștigă în turnee cinci mâini cu cel puțin trei jucători, după ce adversarii au dat fold</string>
 </resources>

@@ -76,7 +76,7 @@ public final class HoldemActivity extends Activity {
         profile = getSharedPreferences("holdem-profile", MODE_PRIVATE);
         sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(getFilesDir()));
         leaderboard = new TournamentLeaderboardRepository(new AtomicFileTournamentLeaderboardStorage(getFilesDir()));
-        progress = new HoldemProgressStore(sessions, leaderboard);
+        progress = new HoldemProgressStore(sessions, leaderboard, GameplayAchievementFile.local(this));
         stablePlayerId();
         romanian = profile.getBoolean(LANGUAGE, false);
         views = new ScreenViews(this, tag -> tag, HoldemActivity::protect);
@@ -212,7 +212,7 @@ public final class HoldemActivity extends Activity {
                 this::showLeaderboard, false);
         views.addButton(page, text(R.string.play_hand), "play-hand", true, () -> setup(false), false);
         views.addButton(page, text(R.string.achievements), "achievements", true,
-                () -> startActivity(new android.content.Intent(this, AchievementsActivity.class)
+                () -> startActivity(new android.content.Intent(this, GameplayAchievementsActivity.class)
                         .putExtra(AchievementsActivity.PROFILE_ID, stablePlayerId())), false);
         views.addText(page, text(R.string.training_summary), 14, ScreenViews.MUTED, false, 10, 0);
     }
@@ -286,7 +286,7 @@ public final class HoldemActivity extends Activity {
     private void open(int size, boolean tournament, int blindLevelMinutes, boolean showWinChance) {
         long seed = newDealSeed();
         var next = tournament ? LocalHoldemGame.tournament(size, seed, blindLevelMinutes, stablePlayerId(), showWinChance)
-                : new LocalHoldemGame(size, 0, seed);
+                : LocalHoldemGame.table(size, 0, seed, stablePlayerId());
         try {
             progress.start(resumableGame, next, displayName());
         } catch (java.io.IOException | RuntimeException failure) {
@@ -429,6 +429,7 @@ public final class HoldemActivity extends Activity {
             if (!activityResumed || sceneRevision != renderedScene || game != current
                     || !current.turn().equals(turn) || deferredContinuation != null) return;
             try {
+                progress.recordCompleted(current, displayName());
                 var destination = sessions.continueAfterSettlement(current, turn, this::newDealSeed);
                 if (settlementPending) deferredContinuation = destination;
                 else showResumed(destination);
@@ -640,7 +641,7 @@ public final class HoldemActivity extends Activity {
         return createConfigurationContext(configuration).getString(id, arguments);
     }
 
-    private static void protect(View root) {
+    static void protect(View root) {
         if (Build.VERSION.SDK_INT < 35) return;
         int left = root.getPaddingLeft();
         int top = root.getPaddingTop();

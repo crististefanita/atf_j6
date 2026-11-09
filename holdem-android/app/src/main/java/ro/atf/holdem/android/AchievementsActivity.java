@@ -48,11 +48,15 @@ public final class AchievementsActivity extends Activity {
 
     // Both locales are included in every build by verifyLanguageBundlePolicy.
     @android.annotation.SuppressLint("AppBundleLocaleChanges")
-    @Override protected void attachBaseContext(Context base) {
-        var profile = base.getSharedPreferences("holdem-profile", MODE_PRIVATE);
+    static Context localizedContext(Context base) {
+        var profile = base.getSharedPreferences("holdem-profile", Context.MODE_PRIVATE);
         var configuration = new Configuration(base.getResources().getConfiguration());
         configuration.setLocale(profile.getBoolean("language", false) ? Locale.forLanguageTag("ro") : Locale.ENGLISH);
-        super.attachBaseContext(base.createConfigurationContext(configuration));
+        return base.createConfigurationContext(configuration);
+    }
+
+    @Override protected void attachBaseContext(Context base) {
+        super.attachBaseContext(localizedContext(base));
     }
 
     @Override protected void onCreate(Bundle saved) {
@@ -82,12 +86,12 @@ public final class AchievementsActivity extends Activity {
                 ViewGroup.LayoutParams.WRAP_CONTENT));
         TextView heading = label(26, TEXT);
         if (android.os.Build.VERSION.SDK_INT >= 28) heading.setAccessibilityHeading(true);
-        heading.setText(R.string.achievements);
+        heading.setText(R.string.achievement_training);
         root.addView(heading);
         summary = label(14, SECONDARY_TEXT);
         root.addView(summary);
 
-        try (var asset = getAssets().open("J6-PROD-01-ACHIEVEMENT-CATALOG.csv");
+        try (var asset = getAssets().open("training-achievements.csv");
              var reader = new InputStreamReader(asset, StandardCharsets.UTF_8)) {
             catalog = new AchievementCatalog(reader);
         } catch (IOException failure) {

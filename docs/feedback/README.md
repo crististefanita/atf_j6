@@ -16,7 +16,7 @@ Indexul urmărește lacunele verificabile ale J6. Cerințele stabile apar în do
 | P1 | [J6-UI-10 · Istoricul pariurilor](J6-UI-10-BETTING-ACTION-LEDGER.md) | Confirmarea unui Raise din editorul nativ. Proba de componentă verifică deja jurnalul și replay-ul. Rămân verificările vizuale și audio în fereastra scundă. |
 | P2 | [J6-UI-09 · Lizibilitate](J6-UI-09-SEAT-METRIC-HIERARCHY.md) | Anunțurile audio și parcurgerea tuturor locurilor prin gesturi. |
 | P2 | [J6-REL-03 · API minim](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) | Instalare și proba de recomandare AI pe API 26. |
-| P2 | [J6-PROD-01 · Realizări de cont](J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md) | Catalog și plan de implementare pentru progres verificabil în Hold’em. |
+| P2 | [J6-PROD-01 · Realizări de cont](J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md) | Calibrarea dificultății și verificarea progresului în sesiuni reale. |
 
 ## Contracte și dovezi
 

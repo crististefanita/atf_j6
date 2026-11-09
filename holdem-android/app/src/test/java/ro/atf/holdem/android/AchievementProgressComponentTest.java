@@ -173,7 +173,7 @@ public class AchievementProgressComponentTest {
     }
 
     private static AchievementCatalog loadCatalog() {
-        try (var reader = Files.newBufferedReader(Path.of("../../docs/feedback/J6-PROD-01-ACHIEVEMENT-CATALOG.csv"))) {
+        try (var reader = Files.newBufferedReader(Path.of("src/main/assets/training-achievements.csv"))) {
             return new AchievementCatalog(reader);
         } catch (java.io.IOException error) {
             throw new AssertionError(error);

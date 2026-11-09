@@ -91,9 +91,12 @@ public final class ReleaseImpactRag {
         Map<String, Integer> query = new HashMap<>();
         impactPaths.forEach(path -> addTokens(query, path, 3));
         Set<String> changeSignals = new HashSet<>();
-        for (String line : diff.split("\\R")) if (line.startsWith("+") && !line.startsWith("+++")) {
-            addTokens(query, line.substring(1), 1);
-            changeSignals.addAll(tokens(line.substring(1)));
+        for (String line : diff.split("\\R")) {
+            if (!line.startsWith("+") && !line.startsWith("-")) continue;
+            if (line.startsWith("+++ ") || line.startsWith("--- ")) continue;
+            String changedText = line.substring(1);
+            addTokens(query, changedText, 1);
+            changeSignals.addAll(tokens(changedText));
         }
 
         Corpus snapshot = corpus(root);

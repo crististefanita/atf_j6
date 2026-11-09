@@ -26,6 +26,22 @@ class ReleaseImpactRagTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     @Test
+    void retrievesTheContractWhenTheOnlyChangeDeletesAnImplementation(@TempDir Path temp) throws Exception {
+        Path root = project(temp, "0.3.0", "holdem-android", "ro.atf.holdem.android.LocalHoldemGameTest");
+        write(root, "docs/architecture/ARCHITECTURE.md", "# Settlement\nReconcile an unmatched overbet before awarding chips.\n");
+        String obsolete = "holdem-android/legacy/rule.txt";
+        write(root, obsolete, "reconcile unmatched overbet\n");
+        String base = commit(root, "baseline");
+        Files.delete(root.resolve(obsolete));
+        String candidate = commit(root, "remove obsolete rule");
+
+        JsonNode review = ReleaseImpactRag.review(root, "0.2.2", base, candidate, "0.3.0", temp.resolve("context.json"));
+
+        assertEquals("CONTEXT_READY", review.path("contextState").asText());
+        assertTrue(review.path("retrievedSources").toString().contains("docs/architecture/ARCHITECTURE.md"));
+    }
+
+    @Test
     void prioritizesDeclaredDistributionSuiteWithoutLexicalOverlap(@TempDir Path temp) throws Exception {
         String suite = "ro.atf.j6.release.ReleaseGovernanceTest";
         String script = "scripts/verify-artifact.ps1";

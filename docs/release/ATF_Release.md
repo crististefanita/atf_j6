@@ -44,7 +44,7 @@ Rulați verificările J0 pe arborele complet și păstrați rezultatul brut. În
 
 Runnerul scrie în dosarul extern un context consultativ pentru diferența față de ediția precedentă. `CONTEXT_READY` indică surse și suite sugerate.
 
-- `ReleaseImpactRag` caută documente și suite pornind de la fișierele modificate, adăugate sau șterse.
+- `ReleaseImpactRag` caută documente și suite pornind de la fișierele modificate, adăugate sau șterse. Fragmentele adăugate și eliminate contribuie la căutarea contractelor afectate, inclusiv atunci când diff-ul conține doar eliminări.
 - Pentru o suită care verifică un fișier din alt modul sau un script, declarați calea exactă în `impactPaths` din inventarul suitelor. O potrivire are prioritate față de relevanța lexicală și apare în `matchingChanges`, lângă digestul inventarului.
 - În documentele normative, puneți `<!-- rag:contract identificator -->` imediat după valoarea din cod inline.
 - În feedbackul activ, folosiți `<!-- rag:observed identificator -->` pentru aceeași regulă și unitate. Comparația citește commitul candidatului.

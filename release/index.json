@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.11.0",
-  "previousVersion": "0.10.0",
-  "changeClass": "COMPATIBLE_FEATURE",
-  "changeRationale": "Afișează separat stările realizărilor și progresul lotului curent pe ecran compact.",
-  "state": "PREPARED",
+  "currentVersion": "0.11.1",
+  "previousVersion": "0.11.0",
+  "changeClass": "PATCH_FIX",
+  "changeRationale": "Corectează contrastul ecranului Realizări și distanța dintre acțiunile jucătorului.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.11.0"
+    "0.11.1"
   ]
 }

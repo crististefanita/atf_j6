@@ -3,11 +3,16 @@ package ro.atf.j6.reporting;
 import atf.testkit.AtfComponentTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javax.imageio.ImageIO;
+import javax.tools.ToolProvider;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -24,6 +29,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class NativeTournamentExtentPublisherTest {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final String AUDITED_FAILURE = "A failure Extent report was created and structurally audited";
+    private static Path publisherClasses;
+
+    @BeforeAll
+    static void compilePublisher(@TempDir Path classes) {
+        var compiler = ToolProvider.getSystemJavaCompiler();
+        var diagnostics = new ByteArrayOutputStream();
+        int exitCode = compiler.run(null, diagnostics, diagnostics,
+                "-encoding", "UTF-8", "-classpath", System.getProperty("java.class.path"),
+                "-d", classes.toString(), publisherSource().toString());
+        assertEquals(0, exitCode, () -> diagnostics.toString(StandardCharsets.UTF_8));
+        publisherClasses = classes;
+    }
 
     @Test
     void completeSmokePassesAndEmbedsBothCaptures(@TempDir Path temp) throws Exception {
@@ -205,8 +222,9 @@ class NativeTournamentExtentPublisherTest {
         Path report = temp.resolve("extent.html");
         Path log = temp.resolve("publisher.log");
         String java = ProcessHandle.current().info().command().orElseThrow();
-        var process = new ProcessBuilder(java, "-cp", System.getProperty("java.class.path"),
-                publisherSource().toString(), report.toString(), evidence.toString(), apk.toString())
+        String classPath = publisherClasses + File.pathSeparator + System.getProperty("java.class.path");
+        var process = new ProcessBuilder(java, "-cp", classPath, "PublishTournamentExtent",
+                report.toString(), evidence.toString(), apk.toString())
                 .redirectErrorStream(true).redirectOutput(log.toFile()).start();
         try {
             assertTrue(process.waitFor(30, TimeUnit.SECONDS), "Native Extent publisher timed out");

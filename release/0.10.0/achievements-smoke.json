@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "family": "pozitie",
+  "api": "28",
+  "version": "0.10.0",
+  "apkSha256": "9215368126895755ef4f28ef06fbd37cbcb544263cae2aac94000fa0b246e49b",
+  "tabs": [
+    500,
+    200,
+    100
+  ],
+  "pilotUnlockedBeforeUpgrade": 1,
+  "restoredUnlocked": 2
+}

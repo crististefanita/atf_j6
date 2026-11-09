@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "sourceCommit": "bd1b4b2854a0ac259a302034c2b7b74c319a8fcd",
+  "versionName": "0.10.0",
+  "apkName": "HoldemLab-0.10.0.apk",
+  "apkBytes": 831595,
+  "sha256": "9215368126895755ef4f28ef06fbd37cbcb544263cae2aac94000fa0b246e49b",
+  "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
+  "debuggable": false,
+  "targetSdk": 36,
+  "minSdk": 26,
+  "qualification": {
+    "maven": {
+      "suites": 19,
+      "tests": 127.0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mavenComponentExtent": {
+      "path": "maven-component-suites-extent.html",
+      "suites": 19,
+      "tests": 127.0
+    },
+    "androidJvm": {
+      "suites": 6,
+      "tests": 67.0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "androidComponentExtent": {
+      "path": "android-component-suites-extent.html",
+      "suites": 6,
+      "tests": 67.0
+    },
+    "releaseImpactContext": {
+      "path": "release-impact-context.json",
+      "contextState": "CONTEXT_READY",
+      "advisoryOnly": true,
+      "sha256": "99730c376dafa400ed8ac4c1aba0a66c4072325228c45ee7a3f2d3bcad6ded0a"
+    },
+    "versionPolicy": {
+      "previousVersion": "0.9.0",
+      "changeClass": "COMPATIBLE_FEATURE",
+      "candidateVersion": "0.10.0",
+      "rationale": "Adaugă exerciții și progres persistent pentru toate familiile."
+    },
+    "lint": {
+      "status": "PASS",
+      "warnings": []
+    },
+    "tournamentSanity": {
+      "status": "PASS",
+      "api": 28,
+      "assertions": 76,
+      "screenshots": 9,
+      "apkSha256": "894c559e2fcc604d5b3dda72c970605b5a93cbdbacb9572e8af7ed5703e832e5"
+    },
+    "releaseInstallSmoke": {
+      "status": "PASS",
+      "api": 28,
+      "assertions": 7,
+      "screenshots": 2,
+      "apkSha256": "9215368126895755ef4f28ef06fbd37cbcb544263cae2aac94000fa0b246e49b"
+    }
+  },
+  "reports": [
+    {
+      "path": "android-component-suites-extent.html",
+      "bytes": 2480651,
+      "sha256": "6823db02c00c21d458274f053204e7c95580f9c14fa9916bdd5fd90c8c50ee8e"
+    },
+    {
+      "path": "android-release-smoke-extent.html",
+      "bytes": 2608117,
+      "sha256": "4bd52b58a96076f55c94c6188d809605337023b447880579aa974e46f70438d9"
+    },
+    {
+      "path": "android-tournament-extent.html",
+      "bytes": 3989445,
+      "sha256": "5fd6530fa768866525f8f22a8dab156200f3c16c2e618f64fbf0e00fed1ccbe2"
+    },
+    {
+      "path": "j6-library-component-1794233648538.html",
+      "bytes": 2412217,
+      "sha256": "5780340273285ace991916d6c1ca16bc2ea11274c6a7cf985a69079c98f513b9"
+    },
+    {
+      "path": "J6AndroidRuntimeApiGovernance-1794233691617.html",
+      "bytes": 2412317,
+      "sha256": "34670e37e27ac980f91c1802ceddd0b231cbee1022186167fc97156e4be3dc33"
+    },
+    {
+      "path": "J6CheckoutEvidenceGovernance-1794233673309.html",
+      "bytes": 2412999,
+      "sha256": "48cfb5a9b60f907a0b4c6bcbb305aac5acb28371669b3bab86a3a8df8dd3ae66"
+    },
+    {
+      "path": "J6DocumentationGovernance-1794233657441.html",
+      "bytes": 2412799,
+      "sha256": "751e2b8bc9d9468fdcecd5e477c88438c461e458e609f9919fd9eebe94c7b5c1"
+    },
+    {
+      "path": "J6EditionEvidenceMutationGovernance-1794233661457.html",
+      "bytes": 2411759,
+      "sha256": "645969f4c08898125fd2c218ac7484ba66e163c6b7f2fe844d2db2b2e0ceb9aa"
+    },
+    {
+      "path": "J6ExtentSuiteGovernance-1794233694345.html",
+      "bytes": 2412075,
+      "sha256": "5831f5eeb545923135efce9a3dcd160826df717a00e77f605a7fb5c787d974ec"
+    },
+    {
+      "path": "J6MainReadmeGovernance-1794233685683.html",
+      "bytes": 2413633,
+      "sha256": "fefe12543b4df9cf7578448f1f85fbfda1611de0578454574e8fb10a179ebc41"
+    },
+    {
+      "path": "J6ReleaseDownloadRouteGovernance-1794233666192.html",
+      "bytes": 2413265,
+      "sha256": "3a61376e53d901504b712cec7ece5b99da7ab4b5d6e2ef5ab2fc327a5344e9e6"
+    },
+    {
+      "path": "J6ReleaseGovernance-1794233677727.html",
+      "bytes": 2416874,
+      "sha256": "0e9e3b081805da6bafdcb349cc6200d78dda45c1420ea2d69b5d45c3dcba29f9"
+    },
+    {
+      "path": "maven-component-suites-extent.html",
+      "bytes": 2605829,
+      "sha256": "5b486793e8c77bb09c8917c49a33c5ae9928c7543fe433109e9b6a9183851194"
+    }
+  ],
+  "runRoot": "C:\\work\\holdem_back\\release-runs\\j6-0.10.0-20261109",
+  "completedUtc": "2026-11-09T14:26:38.4296189Z"
+}

@@ -23,6 +23,18 @@ final class HoldemTablePresentation {
     static final int MIN_CARD_SCALE = 70;
     static final int ACTION_TARGET_DP = 48;
     static final float ACTION_FACE_INSET = .1875f;
+    private static final float ACTION_PAIR_GAP_DP = 1.5f;
+    private static final int ACTION_EDGE_MARGIN_DP = 3;
+
+    record ActionMargins(int start, int end) {}
+
+    static ActionMargins actionMargins(float density, boolean firstInRow, boolean hasPartner) {
+        int edge = Math.round(ACTION_EDGE_MARGIN_DP * density);
+        int gap = Math.round(ACTION_PAIR_GAP_DP * density);
+        int leadingHalf = gap / 2;
+        return firstInRow ? new ActionMargins(edge, hasPartner ? leadingHalf : edge)
+                : new ActionMargins(gap - leadingHalf, edge);
+    }
 
     record ActionRow(int ordinal, int physicalSeat, String player, Street street, BettingAction.Kind kind,
                      int amount, int totalContribution) { }

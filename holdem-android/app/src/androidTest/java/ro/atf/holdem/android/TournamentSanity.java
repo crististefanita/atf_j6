@@ -334,7 +334,7 @@ public final class TournamentSanity extends Instrumentation {
                         || visibleBounds.width() < minimum || visibleBounds.height() < minimum
                         || Math.abs(visible - height * .625) > 2) invalid.add(tag);
             }
-            int expectedGap = Math.round(3 * activity.getResources().getDisplayMetrics().density);
+            int expectedGap = Math.round(1.5f * activity.getResources().getDisplayMetrics().density);
             for (var pair : List.of(List.of("FOLD", "CALL"), List.of("RAISE", "ALL_IN"))) {
                 var first = root.findViewWithTag(pair.get(0));
                 var second = root.findViewWithTag(pair.get(1));
@@ -348,7 +348,7 @@ public final class TournamentSanity extends Instrumentation {
             }
         });
         check("Opening action buttons retain their tap bounds with shorter backgrounds",
-                "Fold, Call, Raise and All-in have 48 dp touch bounds, 62.5% visual height and 3 dp horizontal gap",
+                "Fold, Call, Raise and All-in have 48 dp touch bounds, 62.5% visual height and 1.5 dp horizontal gap",
                 String.join(", ", sizes) + (invalid.isEmpty() ? "" : " · invalid " + invalid), invalid.isEmpty());
     }
 

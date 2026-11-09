@@ -130,6 +130,20 @@ public final class HoldemTablePresentationComponentTest {
         return new HoldemTablePresentation.SeatMetric(HoldemTablePresentation.SeatMetricKind.valueOf(kind), amount);
     }
 
+    @Test public void bettingButtonsHalveTheInteriorGapWithoutMovingTheOuterEdges() {
+        for (float density : new float[]{1, 1.5f, 2, 3}) {
+            int edge = Math.round(3 * density);
+            var left = HoldemTablePresentation.actionMargins(density, true, true);
+            var right = HoldemTablePresentation.actionMargins(density, false, false);
+            assertEquals(Math.round(1.5f * density), left.end() + right.start());
+            assertEquals(edge, left.start());
+            assertEquals(edge, right.end());
+            assertEquals(new HoldemTablePresentation.ActionMargins(edge, edge),
+                    HoldemTablePresentation.actionMargins(density, true, false));
+        }
+        assertEquals(48, HoldemTablePresentation.ACTION_TARGET_DP);
+    }
+
     @Test public void achievementsTextAndTableButtonsStayReadableAgainstTheirActualFills() {
         // TablePalette.TABLE_FELT is Color.rgb(23, 79, 60) in the Android library.
         int felt = 0xff174f3c;

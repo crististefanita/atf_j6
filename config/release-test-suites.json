@@ -33,6 +33,21 @@
   ],
   "native": [
     {
+      "mode": "seat-metrics",
+      "switch": "-IncludeSeatMetrics",
+      "impactPaths": [
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/CompactSeatRows.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTablePresentation.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemViewport.java",
+        "holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java",
+        "holdem-android/app/src/main/res/values/strings.xml",
+        "holdem-android/app/src/main/res/values-ro/strings.xml",
+        "holdem-android/tools/PublishTournamentExtent.java"
+      ]
+    },
+    {
       "mode": "settlement-award",
       "switch": "-IncludeSettlementAward",
       "companionModes": ["settlement-multi-award", "settlement-static-award", "settlement-compact-award"],

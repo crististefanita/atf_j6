@@ -6,9 +6,7 @@
 
 **Owner:** Evaluarea strategiilor în arena J6
 
-Perechea `equity-history-control` / `equity-history-aware` izolează sensibilitatea istoricului. Lotul de stres din `<external-evidence-root>/strategy-shove-history-ablation-20261107` are 16 seed-uri independente. Efectul diferă între mărimile mesei.
-
-Studiul extern păstrează rezultatele pe cohorte și proveniența `sourceDirty=true`. [Contractul semnalului public](../requirements/AI_REQUIREMENTS.md)
+Perechea `equity-history-control` / `equity-history-aware` izolează sensibilitatea istoricului. Hard reconstruiește în Android același semnal public după reluare. Efectul asupra deciziilor rămâne de confirmat separat pe mărimi de masă, cu rezultate și proveniență în dosarul extern de evaluare. [Contractul semnalului public](../requirements/AI_REQUIREMENTS.md)
 
 ## Criterii de închidere
 

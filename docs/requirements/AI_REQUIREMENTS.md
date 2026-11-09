@@ -66,17 +66,30 @@ flowchart LR
 | Decizie | Calcul și limite |
 |---|---|
 | Call | Pentru un call pozitiv, `c = min(toCall, heroStack)`. Pragul pornește de la `ceil(100 × c / (pot + c))` și adaugă marjele de mod, adversari, poziție, agresiune, presiune, stivă și incertitudine. Intervalul final este 0–98%. |
-| Raise | Cere pragul de call plus `raiseEdgePercent` și marja pentru adversari suplimentari, până la 99%. Mărimea crește cu avantajul estimat în limitele legale și ale stivei. |
-| Bet | Când prețul este zero, pragul de valoare ține cont de adversari, agresiune, poziție și mod. Mărimea este limitată la o fracție configurată din pot și la stiva efectivă. |
+| Raise | Cere pragul de continuare plus `raiseEdgePercent` și marja pentru adversari suplimentari, până la 99%. Motorul furnizează intervalul legal pentru contribuția totală din acțiune. |
+| Bet | Când prețul este zero, pragul de valoare ține cont de adversari, agresiune, poziție și mod. Politica de bază calculează 25–75% din pot înainte de aplicarea limitelor legale. |
 
 - **Incertitudine.** `uncertaintyZHundredths: 164` înseamnă `z = 1,64`. Componenta de prag este `ceil(z × standardError × 100)`, în puncte procentuale. Agresiunile proprii sunt excluse.
 - **Configurare.** `equityDecision.contextWeights` declară ponderile. Parserul verifică setul exact de chei, iar versiunea deciziei identifică bugetul, modul, pragurile și ponderile. [Profil equity cu buget mărit](../../config/j6-policy-equity.yaml)
 - **Limită de model.** Riscul de turneu este o marjă configurată. ICM, valoarea premiilor și equity pe straturile potului rămân în afara estimatorului.
 
+### Profilul Hard al turneului local
+
+- Normal păstrează adversarii check/call. În Hard, adversarii, coach-ul și preluarea folosesc aceeași politică contextuală cu 512 eșantioane pe decizie.
+- Profilul reduce cu până la trei puncte procentuale pragul unei continuări preflop de cel mult două blinduri mari. Păstrează pragul obișnuit în fața unui all-in agresiv sau a riscului de eliminare și ține cont de costul apelului și eroarea estimării.
+
+| Deschidere heads-up | Condiții suplimentare |
+|---|---|
+| 1× pot | Turn sau river, cel puțin două perechi și equity conservatoare de minimum 76%. |
+| 2× pot | Aceleași condiții, cu minimum 86%. |
+| 3× pot | River, cel puțin chintă și minimum 94%. |
+
+Equity conservatoare scade marja de incertitudine din cota estimată. Suma trebuie să intre în intervalul legal și să fie acoperită de stiva adversarului rămas. Politica încearcă mărimile descrescător și revine la mărimea de bază dacă niciuna nu se potrivește. [Configurația comparată în arenă](../../config/policy-tuning/j6-policy-hard-pressure.yaml)
+
 ### Riscul public de stack și all-in
 
 - **Oportunitate.** În turneu, locul fizic intră în numitor pentru o decizie preflop cu stiva rămasă peste 2 și cel mult 10 blinduri mari și cu un `ALL_IN` legal peste prețul call-ului. Open-shove și re-shove intră împreună, iar call-ul all-in rămâne în afara numitorului.
-- **Moment.** Contoarele devin vizibile după terminarea mâinii. La raise-ul all-in curent, stiva rămasă este suma acțiunii publice, după blindurile deja plătite.
+- **Moment.** `PublicShoveHistory` publică în arenă și în turneul Hard numai contoarele mâinilor încheiate. Android le reconstruiește la replay-ul acțiunilor acceptate. La raise-ul all-in curent, stiva rămasă este suma acțiunii publice, după blindurile deja plătite.
 - **Loc.** `HoldemObservation` separă indexul compact al motorului de `physicalHeroSeat`, folosit în jurnal. Ordinea postflop exclude locurile foldate și fără jetoane, cu fallback la poziția din observație dacă lipsește harta publică.
 
 | Pas | Efect asupra pragului de call |

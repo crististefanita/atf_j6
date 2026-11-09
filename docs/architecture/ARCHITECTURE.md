@@ -31,6 +31,8 @@ flowchart LR
     App -->|"acțiune pentru turul curent"| Session
     Session -->|"aplicare validată"| Core
     Library["Card Table · AAR și JAR"] -->|furnizează componente| App
+    Session -->|"observația actorului"| AI["Politica Hard"]
+    AI -->|"mutare propusă"| Session
 ```
 
 <details>
@@ -42,7 +44,9 @@ flowchart LR
 
 </details>
 
-Gradle compilează sursele comune ale motorului și politicii pentru Java 17. La restaurare, sesiunea reia jurnalul în ordine și verifică actorul și legalitatea fiecărei mutări. La suspendare, Activity oprește ceasul și salvează checkpoint-ul. [Integrarea Android](../../holdem-android/README.md)
+- Gradle compilează sursele comune ale motorului și politicii pentru Java 17.
+- Activity calculează în fundal propunerile adversarilor Hard și verifică din nou scena și tura înainte de aplicare.
+- La suspendare, Activity oprește ceasul și salvează checkpoint-ul. La restaurare, sesiunea verifică actorul și legalitatea mutărilor. [Integrarea Android](../../holdem-android/README.md)
 
 ```mermaid
 sequenceDiagram
@@ -57,7 +61,7 @@ sequenceDiagram
     UI->>Store: jurnal + actori + metadate
     Note over UI,Store: fiecare acțiune automată apare individual după 550 ms și un cadru vizibil
     UI->>Session: onPause · oprește ceasul și salvează checkpoint-ul
-    Note over UI: sugestia AI nu schimbă starea până când Activity este activă din nou
+    Note over UI: rezultatul AI se aplică numai pentru scena și tura încă active
     Store-->>UI: încărcare la redeschidere
     UI->>Engine: replay ordonat al acțiunilor
     Engine-->>UI: sesiune restaurată sau eroare explicită
@@ -67,7 +71,7 @@ sequenceDiagram
 <summary><strong>Legendă — salvare și reluare</strong></summary>
 
 - **Tokenul turei** identifică mutarea pentru revizia acceptată.
-- **Checkpoint-ul** păstrează actorii, mutările și metadatele de replay.
+- **Checkpoint-ul** păstrează actorii, mutările și dificultatea. Sesiunile mai vechi se deschid în Normal.
 - **Restaurarea** revalidează mutările înainte să afișeze masa.
 
 </details>
@@ -84,7 +88,7 @@ Orice eveniment trebuie să poată fi serializat, verificat și aplicat din nou.
 
 ## Configurare
 
-Regulile de joc, bugetul AI, profilele de adversari și transportul se configurează declarativ. Configurația nu poate schimba invarianta fundamentală că politica nu primește cărți adverse reale.
+Arena citește din YAML regulile, bugetul AI și profilurile. Android compilează profilul în aplicație, iar un test confruntă parametrii de presiune Hard cu valorile din YAML. Politica primește numai informația permisă actorului.
 
 ## Două sesiuni offline
 

@@ -87,14 +87,17 @@ După `mvn test`, porniți `TournamentArena` cu clasele core, AI și arena și c
 
 ### Rotația aceleiași distribuții
 
+Setați `HOLDEM_DATA_ROOT` la directorul extern de date și `HOLDEM_MAVEN_REPOSITORY` la cache-ul Maven folosit la compilare.
+
 - **Distribuție controlată.** `PositionRotationExperiment` păstrează cărțile private, board-ul și stivele pe loc fizic și rotește butonul prin șase poziții.
 - **Politici.** TAG, calling, pressure, loose, bluff și equity primesc `HoldemObservation`. Calling stations sunt adversarii de referință. `bluff-always` exercită declanșatorul.
 - **Oracol.** Auditorul verifică observația și legalitatea fiecărei mutări. Comparația de stivă folosește TAG în același loc.
 
 ```powershell
-$run = Join-Path 'C:\work\holdem_back' ('position-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+$run = Join-Path $env:HOLDEM_DATA_ROOT ('position-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 New-Item -ItemType Directory -Path $run | Out-Null
-$cp = 'holdem-core\target\classes;holdem-ai\target\classes;holdem-arena\target\classes;C:\work\holdem_back\maven-cache\org\yaml\snakeyaml\2.2\snakeyaml-2.2.jar'
+$yaml = Join-Path $env:HOLDEM_MAVEN_REPOSITORY 'org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar'
+$cp = "holdem-core/target/classes;holdem-ai/target/classes;holdem-arena/target/classes;$yaml"
 java -cp $cp ro.atf.holdem.arena.PositionRotationExperiment config/j6-policy.yaml "$run\positions.psv"
 node scripts/audit-position-rotations.cjs "$run\positions.psv"
 ```
@@ -104,8 +107,9 @@ Auditul compară aceeași distribuție fizică între toate rotațiile, confirm�
 Exemplu PowerShell, din rădăcina proiectului (JAR-ul SnakeYAML trebuie să existe în repository-ul Maven local):
 
 ```powershell
-$run = 'C:\work\holdem_back\j6-run'
-$cp = 'holdem-core\target\classes;holdem-ai\target\classes;holdem-arena\target\classes;C:\work\holdem_back\maven-cache\org\yaml\snakeyaml\2.2\snakeyaml-2.2.jar'
+$run = Join-Path $env:HOLDEM_DATA_ROOT ('tournament-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+$yaml = Join-Path $env:HOLDEM_MAVEN_REPOSITORY 'org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar'
+$cp = "holdem-core/target/classes;holdem-ai/target/classes;holdem-arena/target/classes;$yaml"
 New-Item -ItemType Directory -Force -Path $run | Out-Null
 java -cp $cp ro.atf.holdem.arena.TournamentArena config/j6-tournaments-stress.yaml "$run\mixed.trace" 50 7000 mixed
 java -cp $cp ro.atf.holdem.arena.TournamentArena config/j6-tournaments-stress.yaml "$run\control.trace" 50 7000 control
@@ -167,7 +171,7 @@ flowchart LR
 Rulați comparația pereche din rădăcina proiectului după ce `mvn test` a compilat modulele:
 
 ```powershell
-$run = Join-Path 'C:\work\holdem_back' ('cash-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+$run = Join-Path $env:HOLDEM_DATA_ROOT ('cash-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 .\scripts\run-cash-sessions.ps1 -OutputRoot $run -FirstSeed 12000 -SessionsPerSeatCount 8 -HandLimit 100
 ```
 

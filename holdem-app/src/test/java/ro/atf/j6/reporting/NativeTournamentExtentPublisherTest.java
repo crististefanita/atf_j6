@@ -132,16 +132,46 @@ class NativeTournamentExtentPublisherTest {
 
     @Test
     void seatMetricsRejectAUniformScreenshotEvenWithCompleteAssertions(@TempDir Path temp) throws Exception {
+        assertAuditedFailure(publish(temp, seatMetricsReceipt(), "01-compact-seat-metrics.png"), "uniform raster");
+    }
+
+    @Test
+    void seatMetricsPublishesBothShowdownLayoutsAndTheDefaultDifficulty(@TempDir Path temp) throws Exception {
+        var result = publish(temp, seatMetricsReceipt());
+        assertEquals(0, result.exitCode(), result.output());
+        assertTrue(result.html().contains("03-five-seat-showdown-alignment.png"));
+    }
+
+    @Test
+    void seatMetricsCannotPassWithoutBothShowdownAssertions(@TempDir Path temp) throws Exception {
+        var receipt = seatMetricsReceipt();
+        var assertions = receipt.withArray("assertions");
+        assertions.remove(assertions.size() - 1);
+        assertAuditedFailure(publish(temp, receipt), "5 settled hands align below their seat frames, including the viewer");
+    }
+
+    @Test
+    void seatMetricsCannotPassWithoutTheFiveSeatCapture(@TempDir Path temp) throws Exception {
+        var receipt = seatMetricsReceipt();
+        receipt.withArray("captures").remove(2);
+        assertAuditedFailure(publish(temp, receipt), "03-five-seat-showdown-alignment.png");
+    }
+
+    private static ObjectNode seatMetricsReceipt() {
         var receipt = smokeReceipt().put("journey", "seat-metrics");
-        receipt.putArray("captures").add("01-compact-seat-metrics.png").add("02-settled-seat-metrics.png");
+        receipt.putArray("captures").add("01-compact-seat-metrics.png").add("02-settled-seat-metrics.png")
+                .add("03-five-seat-showdown-alignment.png");
         var assertions = receipt.putArray("assertions");
         for (String name : List.of("Compact viewport uses enlarged text", "Google TalkBack service is enabled",
                 "Live seat amounts match the engine and fit", "Narrow seat facts use the stacked layout",
                 "Active seat exposes one full accessibility description", "Active seat accepts Android accessibility focus",
-                "Settled seat amounts match the engine and fit")) {
+                "Settled seat amounts match the engine and fit",
+                "6 settled hands align below their seat frames, including the viewer",
+                "Tournament setup offers Normal and Hard and defaults to Normal",
+                "5 settled hands align below their seat frames, including the viewer")) {
             assertions.add(assertion(name, true));
         }
-        assertAuditedFailure(publish(temp, receipt, "01-compact-seat-metrics.png"), "uniform raster");
+        return receipt;
     }
 
     @Test void settlementAwardReceiptCannotPassWithoutMeasuredArrival(@TempDir Path temp) throws Exception {

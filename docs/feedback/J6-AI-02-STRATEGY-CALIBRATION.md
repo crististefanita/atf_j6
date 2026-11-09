@@ -2,7 +2,7 @@
 
 **Prioritate:** P1
 
-**Stare:** Candidat de laborator, evaluare independentă restantă
+**Stare:** Profil selectabil în cod. Forța de joc și acceptanța nativă rămân deschise.
 
 **Owner:** Politicile și arena Hold’em J6
 
@@ -10,13 +10,9 @@ Estimatorul Monte Carlo eșantionează uniform mâinile necunoscute. Ponderile c
 
 În Android, Normal păstrează adversarii check/call. Hard este o alegere explicită pentru turneele locale și folosește profilul de presiune și pentru coach și preluare. Statisticile de shove se reconstruiesc din acțiunile publice ale mâinilor încheiate, inclusiv după reluare. [Contractul AI](../requirements/AI_REQUIREMENTS.md) · [Evaluarea în arenă](../requirements/TOURNAMENT_RULES.md)
 
-## Candidat Hard pentru arenă
+## Reper de evaluare
 
-- Pentru o continuare preflop de cel mult două blinduri mari, profilul reduce marja cu cel mult trei puncte procentuale. Pragul rămâne legat de prețul apelului și de incertitudinea estimării. Un all-in advers sau riscul de eliminare păstrează pragul de control.
-- La deschiderea pariului heads-up, turnul poate folosi 1× sau 2× pot, iar riverul poate folosi și 3×. Pragurile folosesc limita inferioară a cotei estimate și categoria mâinii. Mărimea trebuie să intre în intervalul legal și să fie acoperită de adversarul rămas. Politica coboară la treapta inferioară care trece aceleași condiții.
-- Comparația schimbă doar profilul candidatului și păstrează bugetul Monte Carlo. Configurația definește parametrii de evaluat, iar replay-ul și loturile de control stabilesc efectul lor. [Ponderi Hard](../../config/policy-tuning/j6-policy-hard-pressure.yaml) · [Linia de test](../../config/j6-strategy-lineups-hard-pressure.yaml)
-
-Mărimile respectă limitele No-Limit. Analizele de solver motivează testarea overbetului în situații cu avantaj de valoare. Pragurile locale rămân ipoteze de evaluat în turneu. [Reguli No-Limit](https://www.pokerstars.com/poker/games/texas-holdem/) · [Analiză a overbetului](https://blog.gtowizard.com/overbetting-the-flop-in-cash-games/)
+Comparația pereche schimbă numai profilul candidatului și păstrează bugetul Monte Carlo. Criteriile pentru continuare și mărimile de pariu sunt documentate lângă modelul AI. [Profilul Hard](../requirements/AI_REQUIREMENTS.md#profilul-hard-al-turneului-local) · [Lineup de test](../../config/j6-strategy-lineups-hard-pressure.yaml)
 
 ## Criterii de închidere
 
@@ -25,4 +21,4 @@ Mărimile respectă limitele No-Limit. Analizele de solver motivează testarea o
 
 - Definiți înainte de evaluare metrica primară, baseline-urile și pragul de promovare. Separați reglajul de holdout. Comparația păstrează seed-urile, pozițiile, nivelurile și adversarii pereche. Raportați incertitudinea pe seed, chips/hand, bb/100 și drawdown.
 - Verificați calibrarea range-urilor din informația publică și deciziile în poturi secundare cu stive inegale. Păstrați legalitatea, confidențialitatea, replay-ul și bugetul de calcul.
-- Calificați forța nivelului Hard în configurația Android efectivă înainte de a declara superioritatea. [J6-AI-04](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) urmărește separat contribuția istoricului de shove.
+- [ ] Izolați discountul preflop de sizing pe structura Android, cu adversari diferiți și holdout separat. Distingeți turneele standard de stivele adânci. [J6-AI-04](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) urmărește separat contribuția istoricului de shove.

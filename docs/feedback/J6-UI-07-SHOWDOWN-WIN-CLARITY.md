@@ -1,6 +1,6 @@
 # J6-UI-07 · Cărțile decisive și semnalul premiului
 
-**Stare:** Premiile, traiectoriile și rezumatul compact sunt verificate. Rămân identitatea și lizibilitatea marcajelor de carte.
+**Stare:** Proiecția perechilor este acoperită în JVM. Verificarea pozițiilor randate și lizibilitatea marcajelor rămân deschise.
 
 ## Acoperirea existentă
 

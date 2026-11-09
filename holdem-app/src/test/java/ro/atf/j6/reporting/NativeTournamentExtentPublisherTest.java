@@ -43,7 +43,7 @@ class NativeTournamentExtentPublisherTest {
     }
 
     @Test
-    void completeSmokePassesAndEmbedsBothCaptures(@TempDir Path temp) throws Exception {
+    void completeSmokePassesAndEmbedsEveryCapture(@TempDir Path temp) throws Exception {
         var result = publish(temp, smokeReceipt());
         assertEquals(0, result.exitCode(), result.output());
         assertTrue(result.html().contains("All required assertions present once"));
@@ -107,7 +107,8 @@ class NativeTournamentExtentPublisherTest {
         var assertions = receipt.putArray("assertions");
         for (String name : List.of("Opening hand", "First hand pot is paid", "Raise opens the amount editor",
                 "Dismiss the amount editor", "Opt-in shows the human win chance", "Unchecked setup leaves the win chance hidden",
-                "Third hand starts heads-up", "Winner sees congratulations", "Losing player sees the elimination result")) {
+                "Third hand starts heads-up", "Winner sees congratulations", "Losing player sees the elimination result",
+                "Achievement progress: Win 3 different hands", "Achievement progress: Win 3 different tournaments")) {
             assertions.add(assertion(name, true));
         }
 
@@ -185,14 +186,29 @@ class NativeTournamentExtentPublisherTest {
         assertAuditedFailure(publish(temp, receipt), "The hidden recipient never creates a marker");
     }
 
+    @Test
+    void releaseSmokeRequiresTheRomanianHardCheckpoint(@TempDir Path temp) throws Exception {
+        var receipt = smokeReceipt();
+        var captures = receipt.withArray("captures");
+        captures.remove(captures.size() - 1);
+
+        assertAuditedFailure(publish(temp, receipt), "Native capture inventory matches the journey");
+    }
+
     private static ObjectNode smokeReceipt() {
         var receipt = JSON.createObjectNode().put("journey", "release-smoke").put("status", "PASS")
                 .put("error", "").put("api", 28).put("window", "392 × 626 dp").put("density", 320).put("fontScale", 1);
         receipt.putArray("actions").add("Open hand setup").add("Open tournament setup");
-        receipt.putArray("captures").add("01-release-hand-setup.png").add("02-release-tournament-setup.png");
+        receipt.putArray("captures").add("01-release-hand-setup.png").add("02-release-tournament-setup.png")
+                .add("03-achievements-easy.png").add("04-achievements-medium.png").add("05-achievements-hard.png")
+                .add("05a-achievements-romanian-easy.png").add("05b-achievements-romanian-medium.png")
+                .add("05c-achievements-romanian-hard.png");
         var assertions = receipt.putArray("assertions");
         for (String name : List.of("Release APK opens the branded home menu", "Release APK opens hand setup",
-                "Hand setup returns to the home menu", "Release APK opens tournament setup")) {
+                "Hand setup returns to the home menu", "Release APK opens tournament setup",
+                "Achievements opens from the main menu", "Training opens separately from gameplay achievements",
+                "Achievement progress: Câștigă 3 mâini diferite", "Achievement progress: Câștigă 5 mâini în turnee",
+                "Achievement progress: Câștigă 12 mâini la dezvăluire cu cel puțin trei jucători rămași")) {
             assertions.add(assertion(name, true));
         }
         // The same navigation action can legitimately occur more than once.

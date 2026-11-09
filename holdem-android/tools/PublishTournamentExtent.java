@@ -30,15 +30,22 @@ class PublishTournamentExtent {
             "Raise opens the amount editor", "Call remains accessible after closing Raise",
             "Opt-in shows the human win chance", "Unchecked setup leaves the win chance hidden",
             "Third hand starts heads-up", "Winner sees congratulations",
-            "Losing player sees the elimination result");
+            "Losing player sees the elimination result",
+            "Achievement progress: Win 3 different hands", "Achievement progress: Win 3 different tournaments");
     private static final List<String> RELEASE_SMOKE_ASSERTIONS = List.of("Release APK opens the branded home menu",
-            "Release APK opens hand setup", "Hand setup returns to the home menu", "Release APK opens tournament setup");
+            "Release APK opens hand setup", "Hand setup returns to the home menu", "Release APK opens tournament setup",
+            "Achievements opens from the main menu", "Training opens separately from gameplay achievements",
+            "Achievement progress: Câștigă 3 mâini diferite", "Achievement progress: Câștigă 5 mâini în turnee",
+            "Achievement progress: Câștigă 12 mâini la dezvăluire cu cel puțin trei jucători rămași");
     private static final List<String> TOURNAMENT_CAPTURES = List.of(
             "01b-opening-preflop.png", "01-call-ledger-visible.png", "01-betting-ledger-history.png", "01-hand-one-settled.png",
             "01a-settlement-retained.png", "02-two-seats-eliminated.png", "03-heads-up.png",
-            "04-tournament-won.png", "05-tournament-lost.png");
+            "04-tournament-won.png", "04a-achievements-earned.png", "04b-achievements-parallel.png",
+            "04c-achievements-hard-progress.png", "05-tournament-lost.png");
     private static final List<String> RELEASE_SMOKE_CAPTURES = List.of(
-            "01-release-hand-setup.png", "02-release-tournament-setup.png");
+            "01-release-hand-setup.png", "02-release-tournament-setup.png", "03-achievements-easy.png",
+            "04-achievements-medium.png", "05-achievements-hard.png", "05a-achievements-romanian-easy.png",
+            "05b-achievements-romanian-medium.png", "05c-achievements-romanian-hard.png");
     private static final List<String> SETTLEMENT_ASSERTIONS = List.of(
             "Next hand tap accepted during settlement", "Activity recreation opens exactly hand two", "Next hand persisted once",
             "Result tap accepted during settlement", "Result persisted before reopening",

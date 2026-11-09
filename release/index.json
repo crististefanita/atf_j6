@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.12.0",
-  "previousVersion": "0.11.1",
+  "currentVersion": "0.13.0",
+  "previousVersion": "0.12.0",
   "changeClass": "COMPATIBLE_FEATURE",
-  "changeRationale": "Adaugă realizări bazate pe joc, cu praguri calibrate pe turnee simulate și progres paralel între niveluri.",
-  "state": "PREPARED",
+  "changeRationale": "Înlocuiește obiectivul Ușor duplicat cu prima dezvăluire, recompensată indiferent de câștigarea potului; calibrarea și testele de componentă confirmă regula.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.12.0"
+    "0.13.0"
   ]
 }

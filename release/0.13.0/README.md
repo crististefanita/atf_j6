@@ -14,4 +14,4 @@
 
 ## Distribuție
 
-Ediția este în pregătire. După publicarea release-ului, manifestul va înregistra asset-urile și verificarea descărcării autentificate.
+Release-ul este publicat. Descărcați [APK-ul semnat](https://github.com/crististefanita/atf_j6/releases/download/v0.13.0/HoldemLab-0.13.0.apk) și păstrați checksum-ul din pagina release-ului. Descărcarea autentificată este verificată în receipt-urile manifestului.

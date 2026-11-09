@@ -7,21 +7,42 @@
     "minSdk": 26,
     "targetSdk": 36,
     "apkName": "HoldemLab-0.13.0.apk",
-    "apkBytes": null,
-    "sha256": null,
-    "certificateSha256": null,
-    "debuggable": null
+    "apkBytes": 844174,
+    "sha256": "bfff6a910586821d6462a7af5ce6109cec7bb17918cbb385088b44d932c10978",
+    "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
+    "debuggable": false
   },
   "publication": {
-    "state": "DRAFT",
+    "state": "PREPARED",
     "sourceCommit": "8010c05dabfcd28673583a555755950ee93428cf",
     "apkBuildCommit": "8010c05dabfcd28673583a555755950ee93428cf",
     "tag": "v0.13.0",
-    "releaseId": null,
-    "githubReleaseUrl": null,
-    "githubState": null,
-    "githubPublishedAt": null,
-    "assets": []
+    "releaseId": 439701874,
+    "githubReleaseUrl": "https://github.com/crististefanita/atf_j6/releases/tag/v0.13.0",
+    "githubState": "published",
+    "githubPublishedAt": "2026-11-09T22:05:37Z",
+    "assets": [
+      {
+        "name": "HoldemLab-0.13.0.apk",
+        "id": 729147566,
+        "state": "uploaded",
+        "bytes": 844174,
+        "sha256": "bfff6a910586821d6462a7af5ce6109cec7bb17918cbb385088b44d932c10978",
+        "httpStatus": 200,
+        "finalHost": "release-assets.githubusercontent.com",
+        "verified": true
+      },
+      {
+        "name": "HoldemLab-0.13.0.apk.sha256",
+        "id": 729147648,
+        "state": "uploaded",
+        "bytes": 87,
+        "sha256": "11c2ae8f11f2d97d37e5fd3a448e7fb225836a8ddb5c9b9e6bdca6946f0faf6f",
+        "httpStatus": 200,
+        "finalHost": "release-assets.githubusercontent.com",
+        "verified": true
+      }
+    ]
   },
   "qualification": {
     "status": "PASS",
@@ -96,8 +117,8 @@
       },
       {
         "path": "README.md",
-        "bytes": 677,
-        "sha256": "d1c8317b20772d1a3b594d725a25596de1bda3bdc6ab83c8bbd7305810f63e92"
+        "bytes": 808,
+        "sha256": "6eee90196dcbb30fbb251e6a849fbb61fbb317dc8f1e280b2cadd8bbd8e36d09"
       },
       {
         "path": "release-evidence-audit.json",

@@ -150,7 +150,7 @@ public final class TournamentSanity extends Instrumentation {
         see("Achievements opens from the main menu", "Achievements");
         openAchievementTier("Easy");
         achievementRow("Win a poker hand", "Progress · 0/1");
-        achievementRow("Win a hand in a tournament", "Progress · 0/1");
+        achievementRow("Reach your first showdown", "Progress · 0/1");
         achievementRow("Win a pot from the big blind", "Progress · 0/1");
         achievementRow("Win 3 different hands", "Progress · 0/3");
         achievementRow("Finish your run in a tournament", "Progress · 0/1");
@@ -187,6 +187,7 @@ public final class TournamentSanity extends Instrumentation {
         tap("Română");
         tap("Realizări");
         openAchievementTier("Ușoare");
+        achievementRow("Ajungi prima dată la dezvăluirea cărților", "Progres · 0/1");
         achievementRow("Câștigă 3 mâini diferite", "Progres · 0/3");
         capture("05a-achievements-romanian-easy");
         openAchievementTier("Medii");
@@ -202,7 +203,7 @@ public final class TournamentSanity extends Instrumentation {
         tap("Achievements");
         openAchievementTier("Easy");
         achievementRow("Win a poker hand", "Earned · 1/1");
-        achievementRow("Win a hand in a tournament", "Earned · 1/1");
+        achievementRow("Reach your first showdown", "Earned · 1/1");
         achievementRow("Win 3 different hands", "Progress · 2/3");
         achievementRow("Finish your run in a tournament", "Earned · 1/1");
         capture("04a-achievements-earned");

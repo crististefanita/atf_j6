@@ -31,10 +31,13 @@ class PublishTournamentExtent {
             "Opt-in shows the human win chance", "Unchecked setup leaves the win chance hidden",
             "Third hand starts heads-up", "Winner sees congratulations",
             "Losing player sees the elimination result",
+            "Achievement progress: Reach your first showdown",
             "Achievement progress: Win 3 different hands", "Achievement progress: Win 3 different tournaments");
     private static final List<String> RELEASE_SMOKE_ASSERTIONS = List.of("Release APK opens the branded home menu",
             "Release APK opens hand setup", "Hand setup returns to the home menu", "Release APK opens tournament setup",
             "Achievements opens from the main menu", "Training opens separately from gameplay achievements",
+            "Achievement progress: Reach your first showdown",
+            "Achievement progress: Ajungi prima dată la dezvăluirea cărților",
             "Achievement progress: Câștigă 3 mâini diferite", "Achievement progress: Câștigă 5 mâini în turnee",
             "Achievement progress: Câștigă 12 mâini la dezvăluire cu cel puțin trei jucători rămași");
     private static final List<String> TOURNAMENT_CAPTURES = List.of(

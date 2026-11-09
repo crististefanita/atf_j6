@@ -8,8 +8,14 @@ import ro.atf.holdem.core.*;
 public final class ContextualEquityPolicy implements DecisionPolicy {
     public enum GameMode { CASH, TOURNAMENT }
 
-    public record HardPressure(int cheapPreflopDiscount, int fullPotEquity, int doublePotEquity, int triplePotEquity) {
+    public record HardPressure(int cheapPreflopDiscount, int fullPotEquity, int doublePotEquity, int triplePotEquity,
+                               boolean bigBlindValueRaise) {
         public static final HardPressure TOURNAMENT = new HardPressure(3, 76, 86, 94);
+
+        public HardPressure(int cheapPreflopDiscount, int fullPotEquity, int doublePotEquity, int triplePotEquity) {
+            this(cheapPreflopDiscount, fullPotEquity, doublePotEquity, triplePotEquity, false);
+        }
+
         public HardPressure {
             if (cheapPreflopDiscount < 0 || cheapPreflopDiscount > 12
                     || fullPotEquity < 70 || doublePotEquity <= fullPotEquity
@@ -102,7 +108,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         }
     }
 
-    public static final String VERSION = "EQUITY-MC-0.3";
+    public static final String VERSION = "EQUITY-MC-0.4";
     private final MonteCarloEquityEstimator estimator = new MonteCarloEquityEstimator();
     private final int samples;
     private final int cashRiskMarginPercent;
@@ -187,6 +193,12 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
             if (find(legal, ActionType.FOLD) != null)
                 return decision(ActionType.FOLD, 0, metrics + "; fold below contextual call threshold");
         } else {
+            LegalAction raise = find(legal, ActionType.RAISE);
+            if (raise != null && pressure.aggressionCount() == 0) {
+                int amount = hardBigBlindRaise(observation, raise, equity, estimate.standardError());
+                if (amount > 0) return decision(ActionType.RAISE, amount,
+                        metrics + "; Hard preflop value raise with the big-blind option");
+            }
             LegalAction bet = find(legal, ActionType.BET);
             int valueThreshold = valueBetThreshold(observation);
             if (bet != null && equity >= valueThreshold) {
@@ -240,6 +252,25 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                     required - hardPressure.cheapPreflopDiscount()));
         }
         return (int) Bounds.clamp(required, 0.0, 98.0);
+    }
+
+    private int hardBigBlindRaise(HoldemObservation observation, LegalAction legal, double equity, double standardError) {
+        if (hardPressure == null || !hardPressure.bigBlindValueRaise() || gameMode != GameMode.TOURNAMENT
+                || observation.street() != Street.PREFLOP) return 0;
+        double conservativeEquity = equity - contextWeights.uncertaintyZHundredths() * standardError;
+        double threshold = Math.max(45.0, 100.0 / (observation.activeOpponentCount() + 1) + 20.0);
+        if (conservativeEquity < threshold) return 0;
+
+        var seats = physicalSeats(observation);
+        var folded = foldedSeats(observation);
+        int largestOpponentStack = 0;
+        for (int seat = 0; seat < observation.playerCount(); seat++) {
+            if (seat != observation.heroSeat() && !folded.contains(seats.get(seat)))
+                largestOpponentStack = Math.max(largestOpponentStack, observation.visibleStacks().get(seat));
+        }
+        int cap = Math.min(Math.min(legal.maxAmount(), observation.heroStack() - 1), largestOpponentStack);
+        if (cap < legal.minAmount()) return 0;
+        return Math.min(cap, Math.max(legal.minAmount(), observation.pot() / 2));
     }
 
     private int hardPressureBet(HoldemObservation observation, LegalAction legal, double equity, double standardError) {
@@ -583,7 +614,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                 + contextWeights.shortStackShoveMaxMarginAdjustment()
                 + (hardPressure == null ? "" : "-hard2." + hardPressure.cheapPreflopDiscount()
                         + "." + hardPressure.fullPotEquity() + "." + hardPressure.doublePotEquity()
-                        + "." + hardPressure.triplePotEquity()),
+                        + "." + hardPressure.triplePotEquity() + (hardPressure.bigBlindValueRaise() ? "-bb-option" : "")),
                 explanation);
     }
 

@@ -22,6 +22,18 @@ class TournamentStrategyArenaTest {
     }
 
     @TempDir Path temp;
+
+    @Test void bigBlindValueRaiseIsOptionalAndRequiresABoolean() throws Exception {
+        String valid = Files.readString(config("policy-tuning/j6-policy-hard-pressure.yaml"))
+                .replaceAll("(?m)^  bigBlindValueRaise:.*\\R?", "").stripTrailing();
+        var path = temp.resolve("hard-pressure.yaml");
+        assertFalse(TournamentPolicyConfig.load(Files.writeString(path, valid)).hardPressure().bigBlindValueRaise());
+        assertTrue(TournamentPolicyConfig.load(Files.writeString(path, valid + "\n  bigBlindValueRaise: true\n"))
+                .hardPressure().bigBlindValueRaise());
+        Files.writeString(path, valid + "\n  bigBlindValueRaise: 'true'\n");
+        assertThrows(IllegalArgumentException.class, () -> TournamentPolicyConfig.load(path));
+    }
+
     @Test void everyRoleVisitsEverySeatAndButtonPositionForEachTableSize() throws Exception {
         var lineups = TournamentStrategyLineups.load(config("j6-strategy-lineups.yaml"));
         for (int seats = 4; seats <= 6; seats++) {

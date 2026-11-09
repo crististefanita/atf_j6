@@ -52,6 +52,7 @@ equityDecision:
     shortStackShoveSensitivity: 16
     shortStackShoveMaxMarginAdjustment: 4
 hardPressure:
+  bigBlindValueRaise: false
   cheapPreflopDiscount: 3
   fullPotEquity: 76
   doublePotEquity: 86

@@ -7,7 +7,7 @@ import ro.atf.holdem.core.*;
 
 /** Reproducible loose-aggressive style that prefers minimum legal pressure to large sizing. */
 public final class LooseAggressivePolicy implements DecisionPolicy {
-    public static final String VERSION = "LOOSE-AGGRESSIVE-0.2";
+    public static final String VERSION = "LOOSE-AGGRESSIVE-0.3";
 
     private final int openFrequencyPercent;
     private final int raiseFrequencyPercent;
@@ -31,7 +31,7 @@ public final class LooseAggressivePolicy implements DecisionPolicy {
     @Override
     public Decision decide(HoldemObservation observation) {
         Objects.requireNonNull(observation, "observation");
-        int roll = roll(observation);
+        int roll = PolicySeed.rollPercent(observation);
         var raise = observation.legalActions().stream().filter(action -> action.type() == ActionType.RAISE)
                 .min(Comparator.comparingInt(LegalAction::minAmount)).orElse(null);
         boolean alreadyAggressed = hasAggressionThisStreet(observation);
@@ -91,12 +91,6 @@ public final class LooseAggressivePolicy implements DecisionPolicy {
         String prefix = observation.street() + " ";
         return history.subList(start, history.size()).stream().anyMatch(event -> event.startsWith(prefix)
                 && (event.matches(prefix + "\\d+ BET \\d+") || event.matches(prefix + "\\d+ RAISE \\d+")));
-    }
-
-    private static int roll(HoldemObservation observation) {
-        return Math.floorMod(Objects.hash(observation.handNumber(), observation.heroSeat(),
-                observation.positionFromButton(), observation.street(), observation.holeCards(),
-                observation.communityCards(), observation.publicActionHistory()), 100);
     }
 
     private static int percent(int value, String name) {

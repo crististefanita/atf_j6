@@ -21,4 +21,5 @@ Comparația pereche schimbă numai profilul candidatului și păstrează bugetul
 
 - Definiți înainte de evaluare metrica primară, baseline-urile și pragul de promovare. Separați reglajul de holdout. Comparația păstrează seed-urile, pozițiile, nivelurile și adversarii pereche. Raportați incertitudinea pe seed, chips/hand, bb/100 și drawdown.
 - Verificați calibrarea range-urilor din informația publică și deciziile în poturi secundare cu stive inegale. Păstrați legalitatea, confidențialitatea, replay-ul și bugetul de calcul.
-- [ ] Izolați discountul preflop de sizing pe structura Android, cu adversari diferiți și holdout separat. Distingeți turneele standard de stivele adânci. [J6-AI-04](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) urmărește separat contribuția istoricului de shove.
+- [ ] Măsurați efectul unui discount aplicat exclusiv la call, cu pragul de raise fix. Discountul curent intră în pragul comun și poate schimba ambele acțiuni. Comparați foldurile raportate la oportunități cu preț pozitiv și separați sizing-ul postflop în propriul lot.
+- [ ] Măsurați frecvența și efectul mărimii de raise după limp din blindul mare. Separați heads-up de multiway, păstrați pozițiile și bugetul de calcul în perechi și comparați turneele standard cu stivele adânci. [J6-AI-04](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) urmărește separat contribuția istoricului de shove.

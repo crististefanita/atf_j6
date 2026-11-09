@@ -144,11 +144,19 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
 
     private static ContextualEquityPolicy.HardPressure hardPressure(Map<?, ?> root) {
         if (!root.containsKey("hardPressure")) return null;
-        if (!(root.get("hardPressure") instanceof Map<?, ?> hard)
-                || !hard.keySet().equals(java.util.Set.of("cheapPreflopDiscount", "fullPotEquity", "doublePotEquity", "triplePotEquity")))
+        if (!(root.get("hardPressure") instanceof Map<?, ?> hard))
+            throw new IllegalArgumentException("Expected hardPressure settings");
+        var required = java.util.Set.of("cheapPreflopDiscount", "fullPotEquity", "doublePotEquity", "triplePotEquity");
+        var keys = new java.util.HashSet<>(hard.keySet());
+        keys.remove("bigBlindValueRaise");
+        if (!keys.equals(required))
             throw new IllegalArgumentException("Expected exact hardPressure settings");
+        Object bigBlindValueRaise = hard.containsKey("bigBlindValueRaise") ? hard.get("bigBlindValueRaise") : false;
+        if (!(bigBlindValueRaise instanceof Boolean enabled))
+            throw new IllegalArgumentException("Expected boolean bigBlindValueRaise");
         return new ContextualEquityPolicy.HardPressure(integer(hard, "cheapPreflopDiscount"),
-                integer(hard, "fullPotEquity"), integer(hard, "doublePotEquity"), integer(hard, "triplePotEquity"));
+                integer(hard, "fullPotEquity"), integer(hard, "doublePotEquity"), integer(hard, "triplePotEquity"),
+                enabled);
     }
 
     public TournamentPolicyConfig {

@@ -1,0 +1,52 @@
+{
+  "sourceCommit": "e9f17b90f070597a57a6c6ec47fbeb583ac2ef32",
+  "apkSha256": "ec8100744671f68b9263de8e340fee6e03ea51c30190e2707d7ec8dda4e3b512",
+  "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
+  "ragCitationsVerified": 15,
+  "ragSuites": [
+    {
+      "class": "ro.atf.j6.release.DocumentationGovernanceTest",
+      "tests": 1,
+      "sha256": "42d4c66a724a9b563614ebcb0adfaabd3943858f15a32c2926ea31a28f77f5e0"
+    },
+    {
+      "class": "ro.atf.j6.reporting.NativeTournamentExtentPublisherTest",
+      "tests": 13,
+      "sha256": "cff0aa45fe3d8fbe072146aa917807e2b4b4c5bb70d27d804d3318b02e026ede"
+    },
+    {
+      "class": "ro.atf.j6.release.ReleaseVersionPolicyTest",
+      "tests": 3,
+      "sha256": "e48383fe4d19cc47116ce2e1d8a97cccc134e14679a1b345f6c82e5c59976105"
+    },
+    {
+      "class": "ro.atf.j6.release.ReleaseGovernanceTest",
+      "tests": 7,
+      "sha256": "70ca4b8f73a4f8aa8a2c4e380e87b886bb8f94530c3129bbe0a2757b3b8f8b8c"
+    },
+    {
+      "class": "ro.atf.j6.release.ReleaseImpactRagTest",
+      "tests": 8,
+      "sha256": "8621b06e3d607a9b9634561001b3ec4561f0aa0aaafebacc914a2578fea265f5"
+    },
+    {
+      "class": "ro.atf.j6.release.ReleasePromotionGateTest",
+      "tests": 6,
+      "sha256": "cd06c5514c46f81f784e91415fb65306577542dfb0fa2487f5b8678f8386ad37"
+    },
+    {
+      "class": "ro.atf.j6.reporting.ComponentSuiteExtentPublisherTest",
+      "tests": 3,
+      "sha256": "8e582cdf0b4e5dacb8cea002b1fa94f33e6ba212d567e8d793548d9e8dc843a6"
+    },
+    {
+      "class": "ro.atf.holdem.android.LocalHoldemTournamentTest",
+      "tests": 8,
+      "sha256": "3a99b7f4ac4a06f1730dfaa7c90f8ab93405db1e65703d7113bbb417a97fddf8"
+    }
+  ],
+  "assertions": 7,
+  "inlineOriginalPngs": 2,
+  "api": 28,
+  "extentSha256": "cd91af1944846cd60e986062289daa8f0de275a0388e3f2ceb9181592ddaccc3"
+}

@@ -5,7 +5,7 @@
   "previousVersion": "0.5.0",
   "changeClass": "COMPATIBLE_FEATURE",
   "changeRationale": "Adaugă un audit offline al dovezilor de release și guvernanță documentară în inventarul suitelor.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.6.0"

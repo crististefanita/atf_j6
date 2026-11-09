@@ -1,0 +1,6 @@
+{
+  "sourceCommit": "e9f17b90f070597a57a6c6ec47fbeb583ac2ef32",
+  "apkSha256": "ec8100744671f68b9263de8e340fee6e03ea51c30190e2707d7ec8dda4e3b512",
+  "firstFailedReceipt": "first-native-attempt/android-tournament-sanity/native.json",
+  "note": "Native stages repeated on the same built APKs; qualification finalized with the pinned runner checks."
+}

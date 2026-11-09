@@ -17,6 +17,6 @@ Proba de componentă leagă Raise-ul acceptat de motor de intrarea unică, contr
 
 ## Acceptanță rămasă
 
-1. Folosește o probă de componentă pentru fiecare tip de acțiune, contribuție cumulată și rotație de locuri. Android trebuie să confirme doar un Raise aplicat din editor, cu suma reală și o singură intrare acceptată.
+1. Confirmă în Android un Raise aplicat din editor. Verifică suma și intrarea unică din jurnal după apăsarea butonului de confirmare.
 2. Într-o fereastră scundă, verifică nume lungi în română și engleză. Badge-ul, stiva, acțiunile și cărțile trebuie să rămână lizibile. Istoricul trebuie să păstreze ordinea motorului.
 3. Cu TalkBack activ, parcurge indicatorul fiecărui loc și istoricul. Ascultă numele, acțiunea, suma și contribuția cumulată o singură dată pentru fiecare loc. Leagă proba de matricea [J6-UI-09](J6-UI-09-SEAT-METRIC-HIERARCHY.md).

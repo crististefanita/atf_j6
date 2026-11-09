@@ -86,6 +86,10 @@ gradle.beforeProject { project ->
 
 În fereastra compactă, potul și rezumatul premiilor apar înaintea categoriei mâinii și a blindurilor. Runnerul restaurează setările Android modificate înainte de a elibera emulatorul. [Calificarea release-ului](../docs/release/ATF_Release.md#calificare-reproductibilă)
 
+### Spațierea acțiunilor
+
+Perechile de butoane de sub mâna jucătorului au un spațiu orizontal de 3 dp. Fiecare buton păstrează o zonă tactilă de cel puțin 48 dp. Proba nativă măsoară ambele perechi la deschiderea turneului.
+
 ## Documente owner
 
 - [Cerințe și reguli](../docs/requirements/README.md)

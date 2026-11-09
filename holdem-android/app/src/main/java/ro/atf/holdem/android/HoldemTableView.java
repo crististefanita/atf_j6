@@ -768,7 +768,12 @@ final class HoldemTableView {
             decisionControls.add(button);
             var box = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
             int verticalMargin = views.dp(compact ? 0 : 1);
-            box.setMargins(views.dp(3), verticalMargin, views.dp(3), verticalMargin);
+            int edgeMargin = views.dp(3);
+            boolean firstInRow = i % 2 == 0;
+            int firstInnerMargin = edgeMargin / 2;
+            box.setMargins(0, verticalMargin, 0, verticalMargin);
+            box.setMarginStart(firstInRow ? edgeMargin : edgeMargin - firstInnerMargin);
+            box.setMarginEnd(firstInRow && i + 1 < legal.size() ? firstInnerMargin : edgeMargin);
             row.addView(button, box);
         }
     }

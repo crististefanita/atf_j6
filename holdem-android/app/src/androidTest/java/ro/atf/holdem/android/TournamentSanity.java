@@ -334,9 +334,21 @@ public final class TournamentSanity extends Instrumentation {
                         || visibleBounds.width() < minimum || visibleBounds.height() < minimum
                         || Math.abs(visible - height * .625) > 2) invalid.add(tag);
             }
+            int expectedGap = Math.round(3 * activity.getResources().getDisplayMetrics().density);
+            for (var pair : List.of(List.of("FOLD", "CALL"), List.of("RAISE", "ALL_IN"))) {
+                var first = root.findViewWithTag(pair.get(0));
+                var second = root.findViewWithTag(pair.get(1));
+                if (first == null || second == null || first.getParent() != second.getParent()) {
+                    invalid.add(pair + " missing shared row");
+                    continue;
+                }
+                int gap = Math.max(first.getLeft(), second.getLeft()) - Math.min(first.getRight(), second.getRight());
+                sizes.add(pair + " gap " + gap + " px");
+                if (gap != expectedGap) invalid.add(pair + " expected " + expectedGap + " px");
+            }
         });
         check("Opening action buttons retain their tap bounds with shorter backgrounds",
-                "Fold, Call, Raise and All-in have at least 48 dp touch bounds and 62.5% visual height",
+                "Fold, Call, Raise and All-in have 48 dp touch bounds, 62.5% visual height and 3 dp horizontal gap",
                 String.join(", ", sizes) + (invalid.isEmpty() ? "" : " · invalid " + invalid), invalid.isEmpty());
     }
 
@@ -1133,8 +1145,14 @@ public final class TournamentSanity extends Instrumentation {
 
     private void seeActionForPlayer(String player, String action, int amount) throws Exception {
         String marker = " · " + player + " · " + action + " +" + amount + " · ";
-        var matches = collect(node -> value(node.getContentDescription()).contains(", Action #")
-                && value(node.getContentDescription()).contains(marker));
+        long deadline = SystemClock.uptimeMillis() + 2500;
+        List<AccessibilityNodeInfo> matches;
+        do {
+            matches = collect(node -> value(node.getContentDescription()).contains(", Action #")
+                    && value(node.getContentDescription()).contains(marker));
+            if (matches.size() == 1) break;
+            SystemClock.sleep(80);
+        } while (SystemClock.uptimeMillis() < deadline);
         check("Seat retains " + player + " · " + action + " +" + amount,
                 "one visible action badge for " + player, Integer.toString(matches.size()), matches.size() == 1);
     }

@@ -13,7 +13,7 @@ Indexul urmărește lacunele verificabile ale J6. Cerințele stabile apar în do
 | P1 | [J6-AI-02 · Calibrare](J6-AI-02-STRATEGY-CALIBRATION.md) | Evaluare independentă și model de range înainte de promovarea stilului Hard. |
 | P1 | [J6-AI-04 · Ablație shove](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) | Efect repetat cu minimum 20 de seed-uri independente pe configurație. |
 | P1 | [J6-UI-05 · Coach](J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md) | Oracol pentru combinație, invarianta la cărți ascunse și traseul nativ de la selectorul de blinduri la sesiunea restaurată. |
-| P1 | [J6-UI-10 · Istoricul pariurilor](J6-UI-10-BETTING-ACTION-LEDGER.md) | Raise aplicat și corelat cu jurnalul pe traseul curent. În fereastra scundă rămân verificările vizuale și audio. |
+| P1 | [J6-UI-10 · Istoricul pariurilor](J6-UI-10-BETTING-ACTION-LEDGER.md) | Confirmarea unui Raise din editorul nativ. Proba de componentă verifică deja jurnalul și replay-ul. Rămân verificările vizuale și audio în fereastra scundă. |
 | P2 | [J6-UI-09 · Lizibilitate](J6-UI-09-SEAT-METRIC-HIERARCHY.md) | Anunțurile audio și parcurgerea tuturor locurilor prin gesturi. |
 | P2 | [J6-REL-03 · API minim](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) | Instalare și proba de recomandare AI pe API 26. |
 

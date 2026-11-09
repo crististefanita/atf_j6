@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.6.0",
-  "previousVersion": "0.5.0",
+  "currentVersion": "0.7.0",
+  "previousVersion": "0.6.0",
   "changeClass": "COMPATIBLE_FEATURE",
-  "changeRationale": "Adaugă un audit offline al dovezilor de release și guvernanță documentară în inventarul suitelor.",
-  "state": "PREPARED",
+  "changeRationale": "Apropie controalele de sub mâna jucătorului și verifică spațiul la execuție.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.6.0"
+    "0.7.0"
   ]
 }

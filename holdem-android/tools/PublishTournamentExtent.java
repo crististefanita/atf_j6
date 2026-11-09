@@ -27,7 +27,6 @@ import java.util.List;
 /** Publishes observed native Android E2E results using the admitted J0 Reporting JAR. */
 class PublishTournamentExtent {
     private static final List<String> TOURNAMENT_ASSERTIONS = List.of("Opening hand", "First hand pot is paid",
-<<<<<<< Updated upstream
             "Raise opens the amount editor", "Call remains accessible after closing Raise",
             "Opt-in shows the human win chance", "Unchecked setup leaves the win chance hidden",
             "Third hand starts heads-up", "Winner sees congratulations",
@@ -36,18 +35,10 @@ class PublishTournamentExtent {
             "Release APK opens hand setup", "Hand setup returns to the home menu", "Release APK opens tournament setup");
     private static final List<String> TOURNAMENT_CAPTURES = List.of(
             "01b-opening-preflop.png", "01-call-ledger-visible.png", "01-betting-ledger-history.png", "01-hand-one-settled.png",
-=======
-            "Third hand starts heads-up", "Winner sees congratulations", "Losing player sees the elimination result");
-    private static final List<String> RELEASE_SMOKE_ASSERTIONS = List.of("Release APK opens the branded home menu",
-            "Release APK opens hand setup", "Hand setup returns to the home menu", "Release APK opens tournament setup");
-    private static final List<String> TOURNAMENT_CAPTURES = List.of(
-            "01-call-ledger-visible.png", "01-betting-ledger-history.png", "01-hand-one-settled.png",
->>>>>>> Stashed changes
             "01a-settlement-retained.png", "02-two-seats-eliminated.png", "03-heads-up.png",
             "04-tournament-won.png", "05-tournament-lost.png");
     private static final List<String> RELEASE_SMOKE_CAPTURES = List.of(
             "01-release-hand-setup.png", "02-release-tournament-setup.png");
-<<<<<<< Updated upstream
     private static final List<String> SETTLEMENT_ASSERTIONS = List.of(
             "Next hand tap accepted during settlement", "Activity recreation opens exactly hand two", "Next hand persisted once",
             "Result tap accepted during settlement", "Result persisted before reopening",
@@ -64,8 +55,6 @@ class PublishTournamentExtent {
 
     private record Journey(String scenario, String description, String conclusion,
                            List<String> assertions, List<String> captures) { }
-=======
->>>>>>> Stashed changes
 
     public static void main(String[] args) throws Exception {
         if (args.length != 3) throw new IllegalArgumentException("Expected report, native evidence directory and app APK");
@@ -100,12 +89,53 @@ class PublishTournamentExtent {
 
     private static ReportArtifactProfile.Scenario nativeUi(ExtentReportSession report, Path evidence, JsonNode receipt, Path apk) throws Exception {
         String journey = receipt.path("journey").asText("tournament");
-<<<<<<< Updated upstream
         var contract = switch (journey) {
             case "release-smoke" -> new Journey("ReleaseInstallSmoke", "Installable release APK opens and navigates its entry screens",
                     "The signed release APK opens the expected app flow", RELEASE_SMOKE_ASSERTIONS, RELEASE_SMOKE_CAPTURES);
             case "tournament" -> new Journey("TournamentSanity", "Three hands to victory and an opening all-in defeat",
                     "The device follows the tournament contract", TOURNAMENT_ASSERTIONS, TOURNAMENT_CAPTURES);
+            case "settlement-award" -> new Journey("SettlementAwardSanity", "A heads-up payout includes a separate unmatched return",
+                    "Only the won pot moves from the pot to the winning seat", List.of(
+                            "The seeded fixture resumes at the heads-up decision",
+                            "The all-in settles the resumed hand", "The paid pot excludes the unmatched return",
+                            "The pot marker starts at the pot center",
+                            "The pot marker reaches the winning seat frame",
+                            "The sole moving marker carries only the pot award",
+                            "The winning seat receives a pot award and an unmatched return",
+                            "The winner shows separate readable and accessible payout rows"),
+                    List.of("01-award-departure.png", "02-award-arrival.png", "03-separate-payout.png"));
+            case "settlement-multi-award" -> new Journey("SettlementMultiAwardSanity",
+                    "Split and side pots pay two distinct physical recipients",
+                    "Every awarded seat receives its own marker and exact amount", List.of(
+                            "Android animator policy matches the journey",
+                            "Split pot settles after the all-in", "Split pot shows the total distributed pot",
+                            "Split pot markers start together at the pot", "Split pot markers reach their own seat frames",
+                            "Split pot markers carry exact awards once per recipient", "Split pot names and amounts remain in visible text",
+                            "Split pot seat rows expose every exact award",
+                            "Side pot settles after the all-in", "Side pot shows the total distributed pot",
+                            "Side pot markers start together at the pot", "Side pot markers reach their own seat frames",
+                            "Side pot markers carry exact awards once per recipient", "Side pot names and amounts remain in visible text",
+                            "Side pot seat rows expose every exact award"),
+                    List.of("01-split-departure.png", "02-split-arrival.png", "03-side-departure.png",
+                            "04-side-arrival.png", "05-side-payout.png"));
+            case "settlement-static-award" -> new Journey("SettlementStaticAwardSanity",
+                    "Side-pot recipients are readable with Android animations disabled",
+                    "Every award remains visible and continuation works without animation", List.of(
+                            "Android animator policy matches the journey",
+                            "Side pot settles after the all-in", "Side pot shows the total distributed pot",
+                            "Disabled animation creates no award markers", "Side pot names and amounts remain in visible text",
+                            "Side pot seat rows expose every exact award", "Disabled animation leaves continuation usable"),
+                    List.of("01-static-awards.png"));
+            case "settlement-compact-award" -> new Journey("SettlementCompactAwardSanity",
+                    "A short Android viewport clips one side-pot recipient",
+                    "Only the visible recipient animates while the text lists both awards", List.of(
+                            "The compact award journey uses a short window with enlarged text",
+                            "Android animator policy matches the journey", "Compact side pot settles after the all-in",
+                            "The compact viewport keeps one recipient fully outside", "The compact award starts at the pot center",
+                            "The compact award reaches only the visible recipient", "The hidden recipient never creates a marker",
+                            "The visible marker carries the exact award", "Compact side pot names and amounts remain in visible text",
+                            "Compact side pot seat rows expose every exact award"),
+                    List.of("01-compact-departure.png", "02-compact-arrival.png", "03-compact-summary.png"));
             case "settlement-resume" -> new Journey("SettlementResumeSanity", "Continue from a settled table during Activity interruption",
                     "The accepted continuation survives once", SETTLEMENT_ASSERTIONS, SETTLEMENT_CAPTURES);
             case "leaderboard-settlement" -> new Journey("LeaderboardSettlementSanity", "Start another tournament from a settled table",
@@ -126,14 +156,6 @@ class PublishTournamentExtent {
         var captureNames = new ArrayList<String>();
         for (var entry : receipt.required("captures")) captureNames.add(entry.asText());
         var expectedCaptures = contract.captures();
-=======
-        boolean releaseSmoke = journey.equals("release-smoke");
-        if (!releaseSmoke && !journey.equals("tournament")) throw new IllegalArgumentException("Unknown native journey " + journey);
-        var checks = nativeChecks(receipt, releaseSmoke ? RELEASE_SMOKE_ASSERTIONS : TOURNAMENT_ASSERTIONS);
-        var captureNames = new ArrayList<String>();
-        for (var entry : receipt.required("captures")) captureNames.add(entry.asText());
-        var expectedCaptures = releaseSmoke ? RELEASE_SMOKE_CAPTURES : TOURNAMENT_CAPTURES;
->>>>>>> Stashed changes
         checks.add(new AtfAssertion("Native capture inventory matches the journey", String.join(", ", expectedCaptures),
                 String.join(", ", captureNames), expectedCaptures.equals(captureNames)));
         var actions = new ArrayList<String>();
@@ -165,21 +187,19 @@ class PublishTournamentExtent {
                     List.of("Android API", "Window", "Density (dpi)", "Font scale", "Installed APK SHA-256", "Execution failure"),
                     List.of("Accessibility actions in order")));
             int captureIndex = 0;
-<<<<<<< Updated upstream
             var unusableCaptures = new ArrayList<String>();
-=======
->>>>>>> Stashed changes
             for (String name : captureNames) {
                 if (!name.matches("0[1-5][a-z]?-[a-z-]+\\.png")) throw new IllegalArgumentException("Unexpected capture name " + name);
                 var image = ImageIO.read(evidence.resolve(name).toFile());
                 boolean decodes = image != null && image.getWidth() > 0 && image.getHeight() > 0;
                 String dimensions = decodes ? image.getWidth() + " × " + image.getHeight() : "unreadable";
-                boolean seatMetrics = journey.equals("seat-metrics");
-                boolean usable = decodes && (!seatMetrics || hasImageDetail(image));
+                boolean requireDetail = List.of("seat-metrics", "settlement-award",
+                        "settlement-multi-award", "settlement-static-award", "settlement-compact-award").contains(journey);
+                boolean usable = decodes && (!requireDetail || hasImageDetail(image));
                 passed &= usable;
                 if (!usable) unusableCaptures.add(name);
-                String checkName = seatMetrics ? "Native screenshot shows a rendered frame" : "Native screenshot decodes";
-                String expected = seatMetrics ? "non-uniform raster" : "positive raster dimensions";
+                String checkName = requireDetail ? "Native screenshot shows a rendered frame" : "Native screenshot decodes";
+                String expected = requireDetail ? "non-uniform raster" : "positive raster dimensions";
                 String observed = decodes && !usable ? "uniform raster · " + dimensions : dimensions;
                 var keyword = captureIndex++ == 0 ? AtfGherkinKeyword.GIVEN : AtfGherkinKeyword.AND;
                 phase.step(keyword, name,
@@ -208,7 +228,6 @@ class PublishTournamentExtent {
                 List.of(new ReportArtifactProfile.Phase("TEST BODY", result, checkpointEvidence)));
     }
 
-<<<<<<< Updated upstream
     private static boolean hasImageDetail(java.awt.image.BufferedImage image) {
         int first = image.getRGB(0, 0);
         for (int y = 1; y < 8; y++) {
@@ -219,8 +238,6 @@ class PublishTournamentExtent {
         return false;
     }
 
-=======
->>>>>>> Stashed changes
     private static List<AtfAssertion> nativeChecks(JsonNode receipt, List<String> requiredAssertions) {
         var checks = new ArrayList<AtfAssertion>();
         var assertions = receipt.path("assertions");

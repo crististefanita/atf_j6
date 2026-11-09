@@ -1,7 +1,7 @@
 #requires -Version 7.0
 param(
     [Parameter(Mandatory)][string]$RunRoot,
-    [ValidateSet('tournament','release-smoke','settlement-resume','leaderboard-settlement','leaderboard-profile-restart','seat-metrics')][string]$Mode = 'tournament',
+    [ValidateSet('tournament','release-smoke','settlement-award','settlement-multi-award','settlement-static-award','settlement-compact-award','settlement-resume','leaderboard-settlement','leaderboard-profile-restart','seat-metrics')][string]$Mode = 'tournament',
     [string]$Serial = '127.0.0.1:5555',
     [string]$Sdk = 'C:\tools\whist-android-sdk'
 )
@@ -26,6 +26,7 @@ $lease = [ordered]@{ active=$true; leaseId=$token; serial=$Serial; owner="J6 $Mo
 $installed = [Collections.Generic.List[string]]::new()
 $originalDisplay = $null
 $originalAccessibility = $null
+$originalAnimatorScale = $null
 function UpdateLease([bool]$acquire) {
     $stream = [IO.File]::Open($leaseFile, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     try {
@@ -129,10 +130,12 @@ try {
     if ($devicePackages -match ('(?m)^package:' + [regex]::Escape($appId) + '(?:\.test)?\s*$')) {
         throw "Preserved existing app installation; refusing to replace user data: $appId"
     }
-    if ($Mode -eq 'seat-metrics') {
-        $talkBack = 'com.google.android.marvin.talkback/.TalkBackService'
-        $services = InvokeAdb @('shell','cmd','package','query-services','--brief','-a','android.accessibilityservice.AccessibilityService')
-        if (!$services.Contains($talkBack)) { throw 'Install Android Accessibility Suite from Google Play before running seat-metrics.' }
+    if ($Mode -in @('settlement-award','settlement-multi-award','settlement-static-award','settlement-compact-award')) {
+        $originalAnimatorScale = (InvokeAdb @('shell','settings','get','global','animator_duration_scale')).Trim()
+        $testScale = if ($Mode -eq 'settlement-static-award') { '0' } else { '1' }
+        InvokeAdb @('shell','settings','put','global','animator_duration_scale',$testScale) | Out-Null
+    }
+    if ($Mode -in @('seat-metrics','settlement-compact-award')) {
         $size = InvokeAdb @('shell','wm','size')
         $density = InvokeAdb @('shell','wm','density')
         $physicalWidth = [regex]::Match($size, '(?m)^Physical size:\s*(\d+)x\d+')
@@ -142,11 +145,21 @@ try {
             density = [regex]::Match($density, '(?m)^Override density:\s*(\d+)').Groups[1].Value
             fontScale = (InvokeAdb @('shell','settings','get','system','font_scale')).Trim()
         }
-        if ($originalDisplay.size) { InvokeAdb @('shell','wm','size','reset') | Out-Null }
-        # Keep the capture at physical resolution; the API 28 compositor can crop screenshots under wm size overrides.
+        if ($Mode -eq 'settlement-compact-award') {
+            $width = [int]$physicalWidth.Groups[1].Value
+            $height = [int][Math]::Round($width * 1.25)
+            InvokeAdb @('shell','wm','size',"${width}x${height}") | Out-Null
+        } elseif ($originalDisplay.size) {
+            InvokeAdb @('shell','wm','size','reset') | Out-Null
+        }
         $compactDensity = [int][Math]::Ceiling([int]$physicalWidth.Groups[1].Value / 2.0)
         InvokeAdb @('shell','wm','density',"$compactDensity") | Out-Null
         InvokeAdb @('shell','settings','put','system','font_scale','2.0') | Out-Null
+    }
+    if ($Mode -eq 'seat-metrics') {
+        $talkBack = 'com.google.android.marvin.talkback/.TalkBackService'
+        $services = InvokeAdb @('shell','cmd','package','query-services','--brief','-a','android.accessibilityservice.AccessibilityService')
+        if (!$services.Contains($talkBack)) { throw 'Install Android Accessibility Suite from Google Play before running seat-metrics.' }
         $originalAccessibility = @{
             services = (InvokeAdb @('shell','settings','get','secure','enabled_accessibility_services')).Trim()
             enabled = (InvokeAdb @('shell','settings','get','secure','accessibility_enabled')).Trim()
@@ -215,7 +228,11 @@ finally {
                     InvokeAdb @('shell','wm','density',$restoreDensity) | Out-Null
                 } finally {
                     try {
-                        if ($originalDisplay.size) { InvokeAdb @('shell','wm','size',$originalDisplay.size) | Out-Null }
+                        if ($originalDisplay.size) {
+                            InvokeAdb @('shell','wm','size',$originalDisplay.size) | Out-Null
+                        } elseif ($Mode -eq 'settlement-compact-award') {
+                            InvokeAdb @('shell','wm','size','reset') | Out-Null
+                        }
                     } finally { RestoreSetting 'system' 'font_scale' $originalDisplay.fontScale }
                 }
             }
@@ -225,7 +242,13 @@ finally {
                     try { RestoreSetting 'secure' 'enabled_accessibility_services' $originalAccessibility.services }
                     finally { RestoreSetting 'secure' 'accessibility_enabled' $originalAccessibility.enabled }
                 }
-            } finally { UpdateLease $false }
+            } finally {
+                try {
+                    if ($null -ne $originalAnimatorScale) {
+                        RestoreSetting 'global' 'animator_duration_scale' $originalAnimatorScale
+                    }
+                } finally { UpdateLease $false }
+            }
         }
     }
 }

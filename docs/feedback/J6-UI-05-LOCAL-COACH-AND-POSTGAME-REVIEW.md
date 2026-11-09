@@ -1,94 +1,14 @@
-# J6-UI-05 · Probe pentru coach, preluare și blinduri
+# J6-UI-05 · Calificarea coach-ului și a recapitulării locale
 
-**Prioritate:** P1
+P1. Ownerul este interfața Android J6.
 
-**Stare:** Comportamentul de bază este implementat, verificările de mai jos rămân deschise
+## Acoperirea existentă
 
-**Owner:** Interfață și sesiune Android J6
+Componentele verifică sugestia legală, finalizarea mâinii curente prin AI și restaurarea intervalului de blinduri din sesiune. Contractul produsului descrie vizibilitatea cărților, limita coach-ului și controlul asupra mâinii curente. [Contract Android](../../holdem-android/README.md#contractul-mâinii) · [Teste ale mâinii](../../holdem-android/app/src/test/java/ro/atf/holdem/android/LocalHoldemGameTest.java) · [Teste ale turneului](../../holdem-android/app/src/test/java/ro/atf/holdem/android/LocalHoldemTournamentTest.java)
 
-`LocalHoldemGameTest` verifică sugestia legală și terminarea mâinii curente prin AI. `LocalHoldemTournamentTest` verifică intervalul și restaurarea la nivel de sesiune. Sanity-ul calificat 0.2.0 exercită turneul. [Contract Android](../../holdem-android/README.md) · [Testele de sesiune](../../holdem-android/app/src/test/java/ro/atf/holdem/android/LocalHoldemGameTest.java)
+## Criterii rămase
 
-<<<<<<< Updated upstream
-- **Implementat:** locurile adverse afișează cărțile distribuite după `Street.COMPLETE`, inclusiv pentru locurile foldate. Rezultatul turneului păstrează recapitularea cu nume, Fold/Out și cărțile ultimei mâini.
-- **Implementat:** etichetă centrală cu numele actorului, categorie de mână formată din cele două cărți proprii și board-ul vizibil, marcaj Fold pe locul retras și selector de blinduri 1/2/3/5 minute, implicit 1. Nivelul se schimbă la începutul mâinii următoare după expirare.
-- **Implementat:** hint-ul rulează în fundal, nu aplică acțiunea și afișează acțiunea, equity, pot odds, pragul, versiunea politicii, eșantioanele și eroarea standard disponibile.
-- **Implementat limitat:** butonul lasă AI-ul să termine mâna locală curentă și blochează comenzile manuale cât timp rulează; nu pornește automat următoarea mână sau întregul turneu.
-- **Rămâne pentru calificare:** expunerea și testarea celor cinci cărți decisive, kicker-ului și cazului în care board-ul joacă singur; un test explicit că schimbarea exclusivă a cărților ascunse nu schimbă hint-ul/decizia; testarea legăturii dintre selecția din meniu (1/2/3/5 minute, implicit 1), setarea salvată și regulile turneului; verificări dedicate de localizare, accesibilitate și layout la font mărit. Sanity-ul nativ de turneu și cel de instalare Release au trecut, însă nu înlocuiesc aceste verificări de componentă și nu declară acceptanță UI completă.
-
-### Testare curentă
-
-Calificarea 0.3.0 a trecut 108 teste Maven, 58 teste Android JVM și lint Release fără avertismente. Pe API 28, turneul a trecut 76 de aserțiuni, iar instalarea APK-ului Release a trecut șapte. Lacunele dedicate evaluatorului, confidențialității și configurării rămân în lista de acceptanță. [Rapoarte 0.3.0](../../release/0.3.0/reports/README.md)
-
-Ținta este o masă care explică ce se întâmplă, ce combinație are jucătorul acum și ce decizie sugerează AI-ul, fără a-i arăta informații pe care politica nu le-ar avea în mod legitim.
-
-## Cerințe de produs
-
-### 1. Indică fără ambiguitate cine acționează
-
-- Locul activ are o evidențiere vizuală consecventă cu masa comună J4/J5 și o etichetă textuală lângă nume; culoarea singură nu transmite tura.
-- Antetul mesei sau zona de acțiuni spune pe scurt cine trebuie să acționeze și ce așteaptă interfața: acțiunea jucătorului, răspunsul AI-ului, următoarea stradă ori decontarea.
-- Eticheta se mută după fiecare acțiune validă și dispare la o stare terminală. În heads-up, rotația dealerului, blindurilor și actorului nu trebuie să mute eticheta pe locul greșit.
-- Textul, ordinea de focus și descrierea accesibilă identifică actorul chiar și la font mărit și în layout compact. Testele nu se bazează numai pe culoarea chenarului.
-
-### 2. Arată cea mai bună combinație făcută din informația cunoscută
-
-- În timpul unei mâini locale, un indicator dedicat prezintă categoria celei mai bune mâini Hold’em pe care jucătorul o poate forma **acum** din cele două cărți proprii și cărțile comune deja deschise.
-- Categoria și cărțile decisive se recalculează după flop, turn și river. Se aplică regulile reale de departajare și kicker; când board-ul comun este cea mai bună mână, indicatorul spune explicit că mâna este pe board.
-- Înainte de flop, interfața nu inventează o combinație de cinci cărți: afișează separat profilul celor două cărți proprii sau mesajul localizat că încă nu există o mână făcută. Draw-urile și șansele rămân câmpuri separate de categoria mâinii făcute.
-- Indicatorul folosește numai cărțile proprii și board-ul public curent. Nu evaluează și nu sugerează rangul cărților adversarilor ascunse. Se localizează în română și engleză și are o descriere accesibilă completă.
-
-### 3. Oferă un hint AI explicabil, numai în antrenamentul local
-
-- Când jucătorul uman este actor, un hint poate arăta acțiunea legală recomandată de politica selectată și o explicație scurtă bazată pe semnalele pe care le-a folosit: prețul call-ului, pot odds/equity estimată, poziție sau context public relevant. Dacă modelul nu estimează un semnal, interfața nu îl inventează.
-- Hint-ul este consultativ: nu execută mutarea, nu schimbă revizia mâinii, stack-urile ori istoricul. Jucătorul poate alege orice acțiune legală disponibilă.
-- Hint-ul indică nivelul și versiunea politicii, precum și incertitudinea disponibilă; nu pretinde că acțiunea este perfectă sau că garantează câștigul.
-- Hint-ul nu este afișat la tura adversarului, când observația este incompletă ori când nu există decizie umană de luat. Nu dezvăluie seed, pachet, cărți ascunse sau rezultate viitoare.
-- Coaching-ul și autoplay-ul sunt disponibile **numai în modurile locale offline**. Sunt dezactivate în adaptorul online, inclusiv când platforma permite bot-uri; astfel UI-ul nu devine asistență în timp real pentru un jucător de pe o platformă externă.
-
-### 4. Dezvăluie cărțile după terminarea jocului, nu în timpul lui
-
-- Pe durata unei mâini active, inclusiv după fold-ul unui loc, cărțile adverse rămân ascunse în masa, observația actorului, hint și jurnalul de decizie.
-- După decontarea terminală a unei mâini de antrenament, sau după victoria/eliminarea care încheie un turneu local, ecranul de rezultat oferă o recapitulare cu cele două cărți ale fiecărui loc din **ultima mână încheiată**, inclusiv cărțile locurilor care au dat fold.
-- Recapitularea este marcată drept dezvăluire pentru învățare după joc. Ea nu schimbă showdown-ul oficial, câștigătorii, poturile, stack-urile ori istoricul acțiunilor și nu este accesibilă până când rezultatul este terminal.
-- Dacă recapitularea persistă după recrearea activității, sursa ei este snapshot-ul terminal salvat, nu o nouă citire privilegiată din politica AI. La „Play again” sau la o nouă mână, cărțile adverse sunt din nou ascunse.
-
-### 5. Permite preluarea și oprirea controlului AI
-
-- În jocul local există o comandă explicită **„AI termină mâna”**, cu stare vizibilă; la apăsare, AI-ul joacă deciziile locului uman până la decontarea mâinii curente. Rularea se oprește la terminal, iar o mână nouă cere o acțiune nouă a utilizatorului.
-- Pe durata preluării, eticheta arată că AI-ul joacă, iar acțiunile manuale se dezactivează. Politica verifică întreruperea și o limită de pași; după completare, controlul manual este disponibil din nou pe mâna următoare.
-- Fiecare mutare trece prin aceeași validare de acțiuni legale, identificator de tură și revizie ca mutarea manuală. Re-render, tap repetat, recrearea activității sau pauza nu dublează o acțiune deja acceptată.
-- Politica primește aceeași observație limitată a actorului ca în evaluarea offline: cărțile proprii, board-ul public, acțiunile publice, stack-urile și meniul legal. Oracolul de test poate vedea starea completă numai separat și nu este conectat la politica jucătorului.
-- Preluarea nu pornește automat la intrarea în joc și nu este disponibilă în modul online.
-
-## Verificare cerută
-
-### Teste de componentă, fără emulator
-
-- Evaluarea mâinii: high card, pereche, două perechi, trei de-un fel, chintă, culoare, full house, careu și chintă de culoare; kicker-uri; board care joacă singur; board-uri pereche; tranzițiile flop–turn–river. Compară categoria și cele cinci cărți alese cu un oracol independent.
-- Vizibilitate: politica și hint-ul nu se schimbă când se modifică numai cărțile ascunse ale adversarilor; proiecția conține numai cărțile actorului și board-ul public.
-- Hint: acțiunea recomandată aparține meniului legal; cererea hint-ului nu mută mâna; același snapshot și aceeași versiune de politică produc același rezultat; lipsa estimării produce formularea de fallback, nu o valoare inventată.
-- Starea turei: actorul vizual corespunde exact actorului din motor după call, raise, fold, schimbarea străzii, heads-up, eliminare și restaurare.
-- Dezvăluirea: înainte de terminal, nicio carte ascunsă nu ajunge în view-state sau în arborele de accesibilitate; după terminal, recapitularea conține câte două cărți per loc și nu modifică rezultatul; la joc nou, dezvăluirea veche dispare.
-- Autoplay: fiecare acțiune este legală, se acceptă cel mult o dată, oprirea păstrează următoarea decizie pentru om, iar politica nu poate accesa pachetul/seed-ul sau mâinile adverse.
-- Interfață: componente JVM verifică layout compact și normal, mese heads-up și 4–6 locuri, română/engleză, font mărit și etichete accesibile fără suprapuneri.
-
-### E2E minim, doar după ce componentele trec
-
-Un traseu local de mână verifică hint-ul fără execuție, alegerea manuală, autoplay pornit/oprit și recapitularea terminală. Un sanity scurt de turneu verifică faptul că adversarii continuă automat și că dezvăluirea apare numai după victorie/eliminare. Păstrați E2E la aceste două trasee; restul matricei rămâne simulată și testată pe componente.
-
-## Limite și dependențe
-
-Indicatorul opțional de șansă este descris în [contractul Android](../../holdem-android/README.md). Rămân aici doar contractele și probele specifice coach-ului și recapitulării.
-
-- `J6-UI-01` rămâne descrierea fluxului existent de mână și a contractului de vizibilitate. Cerința nouă extinde contractul doar pentru ecranul local terminal de review; nu schimbă regulile de showdown.
-- Egalitatea dimensiunii cărților, selecția vizuală a celor cinci cărți alese și semnalul premiului spre beneficiari sunt extensii separate, urmărite în [J6-UI-07](J6-UI-07-SHOWDOWN-WIN-CLARITY.md). Acest feedback păstrează owner-ul pentru coach și confidențialitatea dezvăluirii.
-- Eticheta combinației reutilizează evaluatorul de reguli Hold’em, iar hint-ul reutilizează politica AI și observația actorului. UI-ul nu implementează logică paralelă de poker și nu deduce cărți din adversari.
-- Prioritatea nu justifică prezentarea actualului estimator Monte Carlo drept solver: documentația AI continuă să declare limitele de calibrare și estimare din [AI și evaluare](../requirements/AI_REQUIREMENTS.md).
-=======
-## Criterii de închidere
-
-- Verificați că schimbarea exclusivă a cărților ascunse păstrează hint-ul pentru aceeași observație și același seed de estimare. Cererea hint-ului păstrează revizia, stivele și istoricul. Testați fallback-ul și respingerea unei sugestii întârziate după schimbarea turei.
-- Clarificați oprirea preluării AI. `HoldemTableView` afișează starea AI fără comandă de oprire pe masă. Criteriul anterior cerea revenirea la următoarea decizie umană. Dacă produsul păstrează acest criteriu, cereți o comandă explicită și dovediți că rezultatul din fundal invalidat nu aplică o mutare.
-- Verificați conexiunea selectorului 1/2/3/5 minute, implicit 1, până la valoarea salvată și reîncărcată. Păstrați avansul nivelului la începutul mâinii următoare.
-- Comparați categoria și cele cinci cărți cu un oracol independent pentru kicker și board-play. Proba UI poate rămâne o singură mână scurtă cu hint și recapitulare. [J6-UI-07](J6-UI-07-SHOWDOWN-WIN-CLARITY.md) deține marcajele terminale.
->>>>>>> Stashed changes
+- Compară combinația vizibilă, kicker-ul și cazul în care board-ul joacă singur cu un oracol independent. Criteriile pentru marcajele terminale sunt urmărite separat. [Showdown](J6-UI-07-SHOWDOWN-WIN-CLARITY.md#dovezi-rămase)
+- Modifică numai cărțile ascunse într-o probă pereche și confirmă că rezultatul coach-ului și decizia rămân identice. Confirmă că cererea hint-ului păstrează revizia, stivele și jurnalul.
+- Verifică în proiecția Android că mâinile adverse rămân ascunse în joc, că recapitularea terminală dezvăluie numai ultima mână și că o mână nouă ascunde din nou cărțile adverse. Acoperă eticheta actorului și recapitularea în română și engleză, cu font mărit.
+- Verifică nativ traseul local de la selectorul de blinduri la sesiunea salvată și restaurată. Într-o mână locală, urmărește hint-ul, acțiunea manuală, întreruperea preluării și recapitularea terminală. Păstrează variațiile în probele de componentă.

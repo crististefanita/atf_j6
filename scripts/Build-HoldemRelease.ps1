@@ -5,7 +5,8 @@ param(
     [string]$DataRoot = 'C:\work\holdem_back',
     [string]$JavaHome = 'C:\tools\Java21\jdk-21.0.12.1+1',
     [string]$Sdk = 'C:\tools\whist-android-sdk',
-    [switch]$IncludeSeatMetrics
+    [switch]$IncludeSeatMetrics,
+    [switch]$IncludeSettlementAward
 )
 $ErrorActionPreference = 'Stop'
 $sourceRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
@@ -224,6 +225,40 @@ try {
             assertions=$seatReceipt.assertions.Count; screenshots=$seatReceipt.captures.Count; apkSha256=$seatReceipt.apkSha256
         }
     }
+    $settlementProofs = [ordered]@{}
+    if ($IncludeSettlementAward) {
+        $awardModes = [ordered]@{
+            settlementAward='settlement-award'
+            settlementMultiAward='settlement-multi-award'
+            settlementStaticAward='settlement-static-award'
+            settlementCompactAward='settlement-compact-award'
+        }
+        foreach ($entry in $awardModes.GetEnumerator()) {
+            $mode = $entry.Value
+            $awardEvidence = Join-Path $RunRoot "android-$mode"
+            $awardReport = "android-$mode-extent.html"
+            $awardError = $null
+            try {
+                & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') -RunRoot $RunRoot -Mode $mode -Sdk $Sdk *> (Join-Path $RunRoot "android-$mode.log")
+            } catch {
+                $awardError = $_
+            }
+            $receiptPath = Join-Path $awardEvidence 'native.json'
+            if (!(Test-Path -LiteralPath $receiptPath)) {
+                if ($awardError) { throw $awardError }
+                throw "$mode did not produce a native receipt."
+            }
+            & $java -cp $classPath $publisher (Join-Path $reports $awardReport) $awardEvidence $sanityApk
+            $award = Get-Content -Raw -LiteralPath $receiptPath | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0 -or $awardError -or $award.status -ne 'PASS' -or $award.apkSha256 -ne $sanityHash) {
+                throw "$mode qualification failed. Inspect the native receipt and Extent."
+            }
+            $settlementProofs[$entry.Key] = [ordered]@{
+                status=$award.status; api=$award.api; window=$award.window; apkSha256=$award.apkSha256
+                assertions=$award.assertions.Count; screenshots=$award.captures.Count; report=$awardReport
+            }
+        }
+    }
     $afterManifest = Get-SourceManifest $sourceRoot
     if ((ConvertTo-Json -InputObject $sourceManifest -Compress) -cne (ConvertTo-Json -InputObject $afterManifest -Compress)) {
         throw 'Source changed while qualification was running.'
@@ -249,6 +284,7 @@ try {
         runRoot=$RunRoot; completedUtc=[datetime]::UtcNow.ToString('o')
     }
     if ($IncludeSeatMetrics) { $result.qualification.seatMetrics = $seatMetrics }
+    foreach ($entry in $settlementProofs.GetEnumerator()) { $result.qualification[$entry.Key] = $entry.Value }
     $result | ConvertTo-Json -Depth 9 | Set-Content -LiteralPath (Join-Path $RunRoot 'qualification.json') -Encoding utf8NoBOM
     $exitCode = 0
 }

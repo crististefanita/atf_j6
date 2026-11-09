@@ -11,6 +11,7 @@ import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -166,21 +167,15 @@ final class HoldemTableView {
             addSeatFacts(seatView, facts, active, compact);
             addSeatAction(seatView, latestForSeat,
                     latestForSeat != null && latestForSeat.ordinal() == latestActionOrdinal, active, compact);
-<<<<<<< Updated upstream
             View framedSeat = seatView;
             if (!compact) {
                 framedSeat = new PlayerSeatView(activity, seatView, text.get(R.string.actor), active, seat, false);
                 framedSeat.findViewWithTag("seat-turn-badge:" + seat)
                         .setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             }
-=======
-            if (player.folded() || eliminated) seatView.setAlpha(.65f);
-            View framedSeat = compact ? seatView
-                    : new PlayerSeatView(activity, seatView, text.get(R.string.actor), active, seat, false);
->>>>>>> Stashed changes
             View withCards = withOpponentCards(framedSeat, player, compact, seat == frame.viewer(), seat,
                     complete, frame);
-            withCards.setTag("settlement-target:seat:" + seat);
+            seatView.setTag("settlement-target:seat:" + seat);
             seats.add(withCards);
         }
         BoardView board = board(frame, names, game, compact);
@@ -251,12 +246,6 @@ final class HoldemTableView {
     private void addSeatFacts(LinearLayout seat, List<SeatContent.Fact> facts, boolean active, boolean compact) {
         var style = HoldemTablePresentation.seatFactStyle(active, compact);
         for (var fact : facts) {
-<<<<<<< Updated upstream
-=======
-            var row = new LinearLayout(views.activity());
-            row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setPadding(0, 0, 0, 0);
->>>>>>> Stashed changes
             var label = views.text(fact.label(), style.labelSp(), style.labelColor(), false);
             var value = views.text(fact.value(), style.valueSp(), style.valueColor(), true);
             seat.addView(SeatFactRow.of(label, value), views.matchWrap());
@@ -463,19 +452,29 @@ final class HoldemTableView {
         center.addView(turn, views.matchWrap());
         var bestHand = views.text(bestHandLabel(frame), compact ? 11 : 13, Color.WHITE, true);
         bestHand.setGravity(Gravity.CENTER);
-        center.addView(bestHand, views.matchWrap());
         var blindLevel = game.isTournament()
                 ? text.get(R.string.tournament_blinds, game.blindLevelNumber(), game.blindLevel().smallBlind(),
                 game.blindLevel().bigBlind(), game.blindLevelMinutes())
                 : text.get(R.string.fixed_blinds, game.blindLevel().smallBlind(), game.blindLevel().bigBlind());
         var blinds = views.text(blindLevel, compact ? 10 : 12, ScreenViews.MUTED, false);
         blinds.setGravity(Gravity.CENTER);
-        center.addView(blinds, views.matchWrap());
-        var pot = views.text(text.get(frame.street() == Street.COMPLETE ? R.string.settled_pot : R.string.pot, frame.pot()),
+        var pot = views.text(text.get(frame.street() == Street.COMPLETE ? R.string.settled_pot : R.string.pot,
+                HoldemTablePresentation.displayedPot(frame)),
                 compact ? 15 : 20, Color.WHITE, true);
         pot.setGravity(Gravity.CENTER);
         pot.setTag("settlement-target:pot");
-        center.addView(pot, views.matchWrap());
+        TextView summary = frame.street() == Street.COMPLETE ? potAwardSummary(frame, names, compact) : null;
+        boolean prioritizeAwards = compact && summary != null;
+        if (prioritizeAwards) {
+            center.addView(pot, views.matchWrap());
+            center.addView(summary, views.matchWrap());
+        }
+        center.addView(bestHand, views.matchWrap());
+        center.addView(blinds, views.matchWrap());
+        if (!prioritizeAwards) {
+            center.addView(pot, views.matchWrap());
+            if (summary != null) center.addView(summary, views.matchWrap());
+        }
         var row = new LinearLayout(activity);
         row.setGravity(Gravity.CENTER);
         for (int index = 0; index < 5; index++) {
@@ -488,6 +487,19 @@ final class HoldemTableView {
         }
         center.addView(row, views.matchWrap());
         return new BoardView(center, turn);
+    }
+
+    private TextView potAwardSummary(HoldemTableViewState frame, List<String> displayNames, boolean compact) {
+        var awards = HoldemTablePresentation.potAwards(frame);
+        if (awards.size() < 2) return null;
+        var names = HoldemTablePresentation.physicalSeatNames(frame, displayNames);
+        var entries = new StringJoiner(" · ");
+        for (var award : awards) entries.add(text.get(R.string.pot_award_entry, names.get(award.physicalSeat()), award.chips()));
+        var summary = views.text(text.get(R.string.pot_awards, entries.toString()),
+                compact ? 10 : 12, Color.WHITE, false);
+        summary.setGravity(Gravity.CENTER);
+        summary.setTag("settlement-award-summary");
+        return summary;
     }
 
     private String actorName(HoldemTableViewState frame, List<String> names) {
@@ -625,9 +637,9 @@ final class HoldemTableView {
         if (contentRoot == null || settlementFrame == null || remainingMillis <= 0
                 || !ValueAnimator.areAnimatorsEnabled()) return new SettlementAnimation(false, () -> { });
         View target = contentRoot.findViewWithTag("settlement-target:pot");
-        if (!hasSize(target)) return new SettlementAnimation(false, () -> { });
-        var recipients = HoldemTablePresentation.awardSeats(settlementFrame);
-        if (recipients.isEmpty()) return new SettlementAnimation(false, () -> { });
+        if (!hasVisibleCenter(target)) return new SettlementAnimation(false, () -> { });
+        var awards = HoldemTablePresentation.potAwards(settlementFrame);
+        if (awards.isEmpty()) return new SettlementAnimation(false, () -> { });
         View decor = views.activity().getWindow().getDecorView();
         if (!(decor instanceof ViewGroup overlay)) return new SettlementAnimation(false, () -> { });
         int[] origin = new int[2];
@@ -636,18 +648,20 @@ final class HoldemTableView {
         overlay.getLocationOnScreen(overlayOrigin);
         float startX = origin[0] - overlayOrigin[0] + target.getWidth() / 2f;
         float startY = origin[1] - overlayOrigin[1] + target.getHeight() / 2f;
-        var motions = new ArrayList<AwardMotion>(recipients.size());
-        for (int seat : recipients) {
-            View destination = contentRoot.findViewWithTag("settlement-target:seat:" + seat);
-            if (!hasSize(destination)) continue;
-            var marker = views.text(text.get(R.string.chip_award, settlementFrame.seats().get(seat).potWon()),
+        var motions = new ArrayList<AwardMotion>(awards.size());
+        for (var award : awards) {
+            View destination = contentRoot.findViewWithTag("settlement-target:seat:" + award.physicalSeat());
+            if (!hasVisibleCenter(destination)) continue;
+            var marker = views.text(text.get(R.string.chip_award, award.chips()),
                     15, Color.WHITE, true);
             marker.setGravity(Gravity.CENTER);
+            marker.setTag("settlement-award:" + award.physicalSeat());
+            marker.setVisibility(View.INVISIBLE);
             marker.setPadding(views.dp(8), views.dp(4), views.dp(8), views.dp(4));
             marker.setBackground(views.roundedBackground(0xff99702b, 0xffefcc72, 18));
             marker.setElevation(views.dp(8));
             marker.setContentDescription(text.get(R.string.chip_award_description,
-                    settlementFrame.seats().get(seat).potWon()));
+                    award.chips()));
             overlay.addView(marker, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT));
             int[] destinationLocation = new int[2];
@@ -663,31 +677,60 @@ final class HoldemTableView {
         animator.addUpdateListener(value -> {
             float progress = (float) value.getAnimatedValue();
             for (var motion : motions) {
-                motion.marker().setTranslationX(motion.startX() - motion.marker().getWidth() / 2f
-                        + (motion.endX() - motion.startX()) * progress);
-                motion.marker().setTranslationY(motion.startY() - motion.marker().getHeight() / 2f
-                        + (motion.endY() - motion.startY()) * progress);
-                motion.marker().setScaleX(1f - .35f * progress);
-                motion.marker().setScaleY(1f - .35f * progress);
-                motion.marker().setAlpha(1f - .15f * progress);
+                var marker = motion.marker();
+                marker.setX(motion.startX() + (motion.endX() - motion.startX()) * progress - marker.getWidth() / 2f);
+                marker.setY(motion.startY() + (motion.endY() - motion.startY()) * progress - marker.getHeight() / 2f);
+                marker.setScaleX(1f - .35f * progress);
+                marker.setScaleY(1f - .35f * progress);
+                marker.setAlpha(1f - .15f * progress);
             }
         });
+        Runnable clear = () -> motions.forEach(motion -> overlay.removeView(motion.marker()));
         animator.addListener(new android.animation.AnimatorListenerAdapter() {
             private boolean cancelled;
             @Override public void onAnimationCancel(android.animation.Animator animation) { cancelled = true; }
             @Override public void onAnimationEnd(android.animation.Animator animation) {
-                for (var motion : motions) overlay.removeView(motion.marker());
-                if (settlementAnimator == animator) settlementAnimator = null;
-                if (!cancelled) completed.run();
+                if (cancelled) return;
+                // Keep the terminal position through a draw before clearing the overlay.
+                overlay.postOnAnimation(() -> {
+                    clear.run();
+                    if (settlementAnimator != animator) return;
+                    settlementAnimator = null;
+                    completed.run();
+                });
             }
         });
-        if (settlementAnimator != null) settlementAnimator.cancel();
         settlementAnimator = animator;
-        animator.start();
-        return new SettlementAnimation(true, () -> { if (settlementAnimator == animator) animator.cancel(); });
+        var firstDraw = new ViewTreeObserver.OnPreDrawListener() {
+            @Override public boolean onPreDraw() {
+                overlay.getViewTreeObserver().removeOnPreDrawListener(this);
+                if (settlementAnimator != animator) return true;
+                for (var motion : motions) {
+                    var marker = motion.marker();
+                    marker.setX(motion.startX() - marker.getWidth() / 2f);
+                    marker.setY(motion.startY() - marker.getHeight() / 2f);
+                    marker.setVisibility(View.VISIBLE);
+                }
+                overlay.postOnAnimation(() -> { if (settlementAnimator == animator) animator.start(); });
+                return true;
+            }
+        };
+        overlay.getViewTreeObserver().addOnPreDrawListener(firstDraw);
+        return new SettlementAnimation(true, () -> {
+            if (settlementAnimator != animator) return;
+            settlementAnimator = null;
+            overlay.getViewTreeObserver().removeOnPreDrawListener(firstDraw);
+            animator.cancel();
+            clear.run();
+        });
     }
 
-    private static boolean hasSize(View view) { return view != null && view.getWidth() > 0 && view.getHeight() > 0; }
+    private static boolean hasVisibleCenter(View view) {
+        if (view == null || !view.isShown()) return false;
+        var visible = new Rect();
+        return view.getLocalVisibleRect(visible) && HoldemTablePresentation.containsVisibleCenter(
+                view.getWidth(), view.getHeight(), visible.left, visible.top, visible.right, visible.bottom);
+    }
 
     private String cardDescription(int description, CardFace face) {
         return text.get(description) + " · " + face.rankLabel() + face.suitSymbol();

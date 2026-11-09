@@ -8,21 +8,57 @@
 | `PREPARED` | Sursă fixată și curată, teste trecute, APK Release semnat cu identitatea J6, instalare sanity și inventar hash complet. |
 | `PUBLISHED` | Tag-ul indică commit-ul calificat, asset-ul este atașat, iar descărcarea publică are bytes și SHA-256 verificate. |
 
-APK-urile intermediare, build-urile, cache-urile, logurile și capturile brute rămân în `C:\work\holdem_back`. Numai pachetul selectat, checksum-ul, manifestul și rapoartele Extent cu imaginile încorporate intră în `release/<versiune>/`. APK-ul și checksum-ul sunt excluse din Git; la publicare devin assets GitHub.
+APK-urile intermediare, build-urile, cache-urile, logurile și capturile brute rămân în `C:\work\holdem_back`. Dosarul ediției leagă pachetul selectat, checksum-ul, manifestul și rapoartele Extent cu imagini încorporate. APK-ul și checksum-ul rămân în afara Git și devin fișiere atașate release-ului.
 
 ## README principal și catalog
 
-În `DRAFT`, blocul `## Jocul` din README-ul principal indică numai dosarul ediției; nu publică o rută de APK. După calificare, blocul conține exact două bullets, în ordine fixă: pagina Release, apoi descărcarea directă a APK-ului pentru aceeași versiune. Acesta rămâne navigare simplă, fără stare, cerințe de autentificare, mărime, hash-uri ori explicații tehnice. Guvernanța respinge orice linie suplimentară sau text explicativ. `PREPARED` cere receipt de descărcare completă autentificată; starea și limitările rămân în dosarul ediției. `PUBLISHED` cere separat descărcarea anonimă completă.
+| Loc | Contract |
+|---|---|
+| `## Jocul` în `DRAFT` | O singură legătură, către dosarul ediției. |
+| `## Jocul` după calificare | Exact două legături pentru `currentVersion`: pagina Release și APK-ul direct, în această ordine. |
+| Dosarul ediției | Identitate, SHA-256, checksum, calificare, rapoarte și receipt-uri de distribuție. |
+| Catalog și proces | Navigare tehnică din secțiunea de documentație a README-ului principal. |
 
-Dosarul ediției păstrează calificarea, raportarea și receipt-urile. [Catalogul](../../release/README.md) este indexul tehnic, iar acest document este procesul; ambele sunt legate din secțiunea de documentație a README-ului principal. README-ul principal nu conține SHA-256 sau checksum: aceștia apar numai în dosarul versiunii și în probele de integritate.
+- Guvernanța respinge rutele pentru altă versiune și textul suplimentar în blocul `Jocul`. Starea, dimensiunea și cerințele de autentificare se explică în dosarul ediției.
+- Pentru `PREPARED`, păstrați dovada descărcării complete autentificate. Pentru `PUBLISHED`, adăugați dovada separată a descărcării anonime.
+- Includeți `## Pe scurt` în README-ul ediției și în indexul rapoartelor înainte de calcularea hash-urilor. Păstrați fișierele deja inventariate la octet și documentați clarificările generale în acest ghid.
 
-Inspecția comparativă a J4 și J5 a ghidat această structură. J5 oferă exemplul concis cu două linkuri și catalog tehnic separat. În copia J4 inspectată, README-ul principal indica `0.13.0`, dar `release/index.json` indica `0.12.0`; J6 leagă prin guvernanță versiunea, ambele URL-uri și dosarul de aceeași intrare `currentVersion`, ca acest tip de drift să blocheze calificarea.
+[Catalogul edițiilor](../../release/README.md)
 
-<<<<<<< Updated upstream
-J5 documentează un RAG read-only pentru găsirea cerințelor și a dovezilor, cu citări și proveniență. J6 implementează acum un context de impact offline, lexical și consultativ, plus o politică semver testată. Contextul nu este model semantic, nu decide porțile și nu poate deduce `PASS`; catalogul și receipt-urile rămân sursa stării. Citările consultative și verificarea referințelor locale sunt documentate în [J6-REL-05](../feedback/J6-REL-05-RELEASE-RAG-GOVERNANCE.md). Acoperirea Extent este urmărită separat în [J6-REL-04](../feedback/J6-REL-04-EXTENT-SUITE-COVERAGE.md).
-=======
-J5 documentează un RAG read-only pentru găsirea cerințelor și a dovezilor, cu citări și proveniență. J6 folosește un context de impact offline, lexical și consultativ, plus o politică semver testată. Catalogul și receipt-urile decid starea porților. [Criteriile RAG rămase](../feedback/J6-REL-05-RELEASE-RAG-GOVERNANCE.md) · [Acceptanța raportului nativ](../testing/TEST_STRATEGY.md#acceptanța-raportului-nativ)
->>>>>>> Stashed changes
+### Audit editorial și dosare de ediție
+
+| Domeniu | Ce intră | Cum tratăm constatările |
+|---|---|---|
+| Documentație activă | README-urile proiectului și modulelor, ghidurile, catalogul și documentele edițiilor aflate în pregătire. | Orice constatare J0 rămâne de rezolvat înainte de calificare. |
+| Dovezi de ediție | Fișierele din dosarul `PREPARED` sau `PUBLISHED` inventariate individual în `release-validation.json`. Regula se aplică și dosarului ediției curente. | Păstrați fișierele la octet. Separați numai observațiile editoriale existente enumerate în catalog, după verificarea căii, lungimii și SHA-256. |
+
+Rulați verificările J0 pe arborele complet și păstrați rezultatul brut. În rezumat, raportați separat observațiile active și pe cele editoriale deja consemnate în dosarele sigilate.
+
+- O observație nouă sau un link rupt blochează acceptanța documentului afectat. Un fișier lipsă ori o abatere de integritate blochează folosirea dovezii respective și se raportează separat.
+- Pentru o ediție nouă, verificați titlul, secțiunea `Pe scurt`, proza și legăturile din README-ul ediției și din indexul rapoartelor înainte de inventariere.
+- Clarificările de proces se fac în documentația activă. Starea, hash-urile, rapoartele și legăturile dintre dovezile ediției rămân în dosarul ei.
+
+[Catalogul și lista observațiilor păstrate](../../release/README.md#versiuni)
+
+## Contextul RAG consultativ
+
+Runnerul scrie în dosarul extern un context consultativ pentru diferența față de ediția precedentă. `CONTEXT_READY` indică surse și suite sugerate.
+
+- `ReleaseImpactRag` ordonează lexical documentele și suitele afectate de fișierele modificate, adăugate sau șterse.
+- În documentele normative, puneți `<!-- rag:contract identificator -->` imediat după valoarea din cod inline.
+- În feedbackul activ, folosiți `<!-- rag:observed identificator -->` pentru aceeași regulă și unitate. Comparația citește commitul candidatului.
+
+| Semnal | Ce verifică reviewerul |
+|---|---|
+| `DOCUMENT_CONTRADICTION` | Documente normative care declară valori diferite pentru aceeași regulă. |
+| `STALE_FEEDBACK` | O observație activă care diferă de un contract coerent. |
+| `MISSING_FEEDBACK_LINK` și `MISSING_FEEDBACK_ANCHOR` | Un fișier sau o ancoră Markdown locală din feedback care lipsește din sursa candidatului. |
+
+- **Citări.** Fiecare referință identifică fișierul, liniile, fragmentul, commitul și digestul. Manifestul leagă contextul de calificare, iar dosarul ediției poate păstra copia JSON verificabilă.
+- **Trasee propuse.** `suggestedNativeJourneys` citează căile din diff, opțiunea de rulare, commitul și hash-ul inventarului. `companionModes` enumeră probele native suplimentare ale aceleiași opțiuni.
+- **Dovada execuției.** Reviewerul confirmă selecția. Receipt-ul, hash-ul APK-ului și raportul cu capturi verifică rularea efectivă.
+
+[Teste pentru contextul de impact](../../holdem-app/src/test/java/ro/atf/j6/release/ReleaseImpactRagTest.java)
 
 ## Semnare J6
 
@@ -42,34 +78,78 @@ Promovați doar dintr-un commit curat. Pregătiți un dosar extern nou și un re
 $version = (Get-Content -Raw .\release\index.json | ConvertFrom-Json).currentVersion
 $run = "C:\work\holdem_back\release-runs\j6-$version-<id-unic>"
 $maven = 'C:\work\holdem_back\infrastructure\cache\maven'
+$sourceCommit = (git rev-parse HEAD).Trim()
 .\scripts\Build-HoldemRelease.ps1 -RunRoot $run -MavenRepository $maven
 ```
 
-Runnerul fixează commit-ul, confruntă hash-urile snapshot-ului, rulează `mvn clean test`, Android JVM, lint și variantele Android `sanity`/`release` în copia externă. Ambele sunt semnate cu identitatea J6; numai `sanity` este debuggable și acceptă seed-ul fixture-ului. APK-ul distribuibil rămâne `debuggable=false`. Build-ul verifică semnătura, certificatul J6, alinierea, package/version/SDK și flag-ul debug. Pe emulatorul rezervat execută turneul reproductibil în `sanity` și navigarea de intrare în APK-ul `release` exact. Receipt-urile includ hash-ul APK-ului instalat și sunt publicate în Extent, împreună cu acțiunile, aserțiunile și capturile PNG transmise de instrumentare. Publicarea verifică raportul HTML cu un profil declarat pentru scenariile reale și compară fiecare captură încorporată cu octeții PNG originali, exact o dată. Orice test lipsă, skip, FAIL, drift, instalare ocupată ori hash diferit oprește calificarea.
+| Etapă | Ce verifică runnerul |
+|---|---|
+| Sursă | Fixează commitul și confruntă hash-urile copiei externe. |
+| Componente | Rulează `mvn clean test`, Android JVM și lint. Publică rapoarte Extent separate pentru Maven și Android JVM. |
+| APK | Construiește `sanity` și `release` cu identitatea J6. Verifică semnătura, certificatul, alinierea, pachetul, versiunea, SDK-ul și flag-ul debug. |
+| Emulator rezervat | Rulează turneul reproductibil în `sanity`, care acceptă seed-ul fixture-ului, și smoke-ul de instalare și navigare pe APK-ul `release` exact, cu `debuggable=false`. |
+| Raportare | `ReportArtifactInspector` verifică inventarul și structura Extent. Receipt-ul leagă APK-ul instalat de acțiuni, aserțiuni și capturile PNG originale, fiecare încorporată o singură dată. |
 
-<<<<<<< Updated upstream
-Runnerul publică rapoarte Extent separate pentru componentele Maven, componentele Android JVM, turneul pe APK-ul sanity și proba de instalare pe APK-ul Release. `ReportArtifactInspector` verifică inventarul și structura fiecărui raport. Un caz lipsă, duplicat, sărit sau eșuat blochează calificarea. Dosarul ediției leagă rapoartele selectate de manifest, iar copia externă păstrează XML-urile și capturile originale. [Catalogul edițiilor](../../release/README.md)
+- Testele lipsă, duplicate, sărite sau eșuate, diferențele de hash și emulatorul ocupat blochează calificarea.
+- Manifestul ediției leagă rapoartele selectate. Dosarul extern păstrează XML-urile și capturile originale.
+
+[Catalogul edițiilor](../../release/README.md)
 
 Pentru o ediție care schimbă lizibilitatea chenarelor, adăugați `-IncludeSeatMetrics` la runner. Acesta cere Android Accessibility Suite pe emulator și include dovada Extent pentru viewport-ul compact și TalkBack în aceeași calificare. [Strategia de testare Android](../testing/TEST_STRATEGY.md#interfața-android-locală)
-=======
-Runnerul publică separat `maven-component-suites-extent.html` și `android-component-suites-extent.html` din inventarul JUnit versionat. Fiecare raport este inspectat cu `ReportArtifactInspector`; raportul cu inventory/case mismatch, suite lipsă/duplicată, test `SKIP` sau diagnostic eșuat nu poate trece poarta. XML-ul JUnit rămâne numai în copia externă. `android-tournament-extent.html` și `android-release-smoke-extent.html` conțin numai E2E Android nativ, cu receipts/capturi; componentele JVM nu se mai amestecă în ele. Snapshotul sincronizat din 2026-11-08 a trecut 16/16 suite Maven (97 teste), 5/5 suite Android JVM (44 teste) și tournament sanity API 28 (64 aserțiuni, 8 capturi). Rapoartele celor trei domenii au fost generate în TMP și inspectate. Acesta nu este raport de calificare `v0.1.1` și nu mută artefacte în dosarul ei.
->>>>>>> Stashed changes
 
-Output-ul `qualification.json` și rapoartele din `$run\reports` sunt sursa pentru dosarul ediției. Guvernanța offline din `ReleaseGovernanceTest` verifică numele, starea, forma README-ului principal, legăturile documentației, rutele, integritatea pachetului, politica Git și compatibilitatea API-urilor Java folosite de codul inclus în APK cu `minSdk`. Testele de guvernanță publică rapoarte Extent și le inspectează cu profilul declarat; păstrați numai rapoartele relevante ediției. Sanity-ul nativ este necesar pentru API-urile runtime care nu sunt semnalate de compilator sau Lint. Guvernanța de descărcare se execută separat numai după publicare; nu se maschează cu un rezultat local.
+Pentru o ediție care schimbă decontarea, premiul sau animația lui, includeți `-IncludeSettlementAward`. Pe același APK sanity, runnerul execută cele patru probe:
+
+| Traseu | Contract | Câmp în calificare |
+|---|---|---|
+| `settlement-award` | Premiu și restituire la același loc | `settlementAward` |
+| `settlement-multi-award` | Split și side pot, cu marker la fiecare loc | `settlementMultiAward` |
+| `settlement-static-award` | Nume, sume și continuare cu animațiile oprite | `settlementStaticAward` |
+| `settlement-compact-award` | Rezumat complet și marker doar la chenarul vizibil | `settlementCompactAward` |
+
+Fiecare câmp leagă hash-ul APK-ului, receipt-ul și raportul `android-<traseu>-extent.html`. Un receipt incomplet sau un hash diferit blochează calificarea. Când există un receipt de eșec, runnerul păstrează Extent cu cauza.
+
+- **Dosarul ediției.** Folosiți `qualification.json` și rapoartele din `$run\reports`. Selectați rapoartele relevante ediției.
+- **Guvernanța offline.** `ReleaseGovernanceTest` verifică numele, starea, README-ul principal, legăturile, rutele, inventarul dovezilor, receipt-urile, politica Git și compatibilitatea cu `minSdk`. Rulează din checkout curat, fără APK și checksum local, și publică rapoarte Extent inspectate.
+- **Runtime și distribuție.** Sanity-ul verifică separat compatibilitatea care se vede doar la execuție. Descărcarea se verifică prin ruta de distribuție după publicare.
+
+### Compatibilitatea la API-ul Android minim
+
+Guvernanța verifică sursele Java incluse în APK pentru metode cunoscute ca incompatibile cu `minSdk`, inclusiv din colecții, conversii text și formatare hexazecimală. Proba de execuție la nivelul minim verifică separat codul încărcat de Android. La eșec, păstrați diagnosticul de instrumentare și logcat în dosarul extern. [Criteriul runtime restant](../feedback/J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md)
 
 ## Promovare și descărcare
 
 `ReleaseGovernanceTest` verifică legăturile locale din dosarul ediției și octeții inventarului de dovezi. Proba anonimă citește URL-ul din secțiunea `Jocul` a README-ului și îl compară cu ruta canonică a versiunii înainte de GET.
 
 1. Copiați APK-ul semnat și `.sha256` din `$run` în `release/<versiune>/`; selectați rapoartele Extent relevante și încorporați capturile, fără copii PNG redundante.
-2. Completați `release-validation.json` cu APK bytes/SHA/certificat, commit-ul sursă, calificarea și hash-urile documentelor. Marcați `PREPARED` numai după reverificarea fișierului copiat.
-3. Commit-ul sursă și tag-ul `v<versiune>` identifică exact binarul. Commit-ul ulterior al dovezilor poate actualiza catalogul și linkurile, dar nu mută tag-ul.
-4. Atașați APK-ul și checksum-ul la GitHub Release, publicați și comparați asset-urile cu manifestul.
-5. Cu catalogul în `PREPARED`, rulați `scripts/Test-PublishedHoldemDownload.ps1`. Clientul HTTP nu trimite cookies, Authorization sau credentiale implicite; verifică redirect-ul GitHub, statusul final, lungimea completă, SHA-256 și semnătura ZIP/APK în copia externă. Copiați numai receipt-ul JSON în dosarul ediției și completați `publicDownload` după PASS. Dacă descărcarea anonimă e blocată, testați separat o descărcare autentificată completă: browserul semnat-in sau endpointul API Releases. Înregistrați metoda reală în `authenticatedBrowserDownload` sau `authenticatedAssetDownload`, fără secrete sau URL semnat; numai o potrivire exactă a octeților și hash-ului permite rutele din README în `PREPARED`. README-ul principal afișează numai cele două rute; limitarea este documentată în catalogul ediției. Numai descărcarea anonimă completă permite `PUBLISHED`.
+2. Verificați copia care va fi încărcată față de `qualification.json` din rularea calificată și față de versiunea și commit-ul selectate pentru tag. Folosiți raportul Extent din afara checkout-ului. Un fișier lipsă, un checksum necorespunzător sau o identitate diferită opresc promovarea.
+
+   ```powershell
+   $candidate = ".\release\$version"
+   .\scripts\Test-HoldemPromotion.ps1 -CandidateDirectory $candidate `
+       -Qualification "$run\qualification.json" -Version $version -SourceCommit $sourceCommit `
+       -Report "$run\promotion-extent.html"
+   ```
+
+   `$sourceCommit` este commitul fixat înainte de calificare. Folosiți la upload copia verificată de poartă.
+
+   - Poarta compară octeții, SHA-256 și checksum-ul cu receipt-ul de calificare. Confirmă că smoke-ul instalării a folosit același APK.
+   - `-BuildSource` permite o construcție externă explicită la inspectarea unei calificări mai vechi.
+
+3. Completați `release-validation.json` cu identitatea APK-ului, commit-ul sursă, calificarea și hash-urile documentelor. Păstrați raportul Extent al porții în dosarul extern al rulării.
+4. Commit-ul sursă și tag-ul `v<versiune>` identifică exact binarul. Commit-ul ulterior al dovezilor poate actualiza catalogul și linkurile, dar nu mută tag-ul.
+5. Atașați APK-ul verificat și checksum-ul la GitHub Release, publicați și confruntați asset-urile cu manifestul. După o descărcare autentificată completă, păstrați receipt-ul, marcați ediția `PREPARED` și aliniați linkurile din README.
+6. Cu catalogul în `PREPARED`, rulați `scripts/Test-PublishedHoldemDownload.ps1`. Clientul verifică anonim ruta din README, redirect-ul, statusul final, lungimea completă, SHA-256 și octeții de identificare ZIP/APK.
+   - După PASS, păstrați receipt-ul în `publicDownload` și marcați `PUBLISHED`.
+   - Dacă proba anonimă e blocată, păstrați `PREPARED` cu `authenticatedBrowserDownload` sau `authenticatedAssetDownload`.
+   - Consemnați metoda și ruta canonică în receipt, fără credențiale sau URL semnat.
 
 Pagina de Release și endpointul de download sunt distincte de `release/<versiune>/`, care rămâne catalogul tehnic și dovada locală.
+
 ## Diagnostic HTTP 404 pentru GitHub Release
 
-Un `404` la asset nu demonstrează singur că APK-ul lipsește. Înainte de orice reîncărcare, rulează cererea anonimă fără cookies, `Authorization` sau credentiale implicite și compară profilul proprietarului, repo-ul, pagina Release, API-ul public al Release-ului și URL-ul direct APK. Apoi verifică separat, autentificat, `private=false`, `disabled=false`, Release `draft=false`, asset `uploaded` și mărimea; descarcă asset-ul prin API cu `Accept: application/octet-stream` și compară toți bytes/SHA-256.
+| Probă | Ce comparați |
+|---|---|
+| Anonimă | Profilul proprietarului, repo-ul, pagina Release, API-ul public și URL-ul direct al APK-ului. Clientul rulează fără cookies, `Authorization` sau credențiale implicite. |
+| Autentificată | Repo public și activ, release publicat, asset `uploaded` și mărime. Descărcați integral cu `Accept: application/octet-stream` și confruntați SHA-256. |
 
-Dacă API-ul autentificat arată repo public și asset complet, dar profilul, repo-ul și Release-ul întorc anonim `404`, oprește promovarea în `PUBLISHED`. Înregistrează ambele probe fără token sau URL-uri semnate și cere GitHub să verifice vizibilitatea proprietarului/conținutului. Nu schimba numele APK-ului, nu îl oglindi pe alt host și nu înlocui Release-ul cu o rută Raw: acestea nu repară vizibilitatea contului. GitHub documentează că o restricție poate ascunde URL-ul profilului și vizibilitatea în căutare ([troubleshooting](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/preventing-unauthorized-access#troubleshooting)); restricțiile de vizibilitate pot fi contestate prin [Appeal and Reinstatement](https://docs.github.com/en/site-policy/acceptable-use-policies/github-appeal-and-reinstatement).
+Dacă probele anonime primesc `404` la nivel de profil, repo și release, iar proba autentificată confirmă assetul complet, păstrați starea `PREPARED`. Înregistrați cele două probe fără tokenuri sau URL-uri semnate și cereți GitHub să verifice vizibilitatea. Păstrați tagul, binarul și ruta canonică în timpul investigației. [Diagnostic GitHub](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/preventing-unauthorized-access#troubleshooting) · [Revizuirea restricțiilor](https://docs.github.com/en/site-policy/acceptable-use-policies/github-appeal-and-reinstatement)

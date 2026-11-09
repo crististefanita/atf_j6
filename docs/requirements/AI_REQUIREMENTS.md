@@ -41,40 +41,54 @@ Folosește regret minimization, abstractizare de acțiuni și board-uri, evaluar
 Distribuția cărților adversarilor rămâne uniformă între combinațiile necunoscute. Acțiunile și poziția publice ajustează pragurile; istoricul de shove este un semnal limitat de agresivitate, nu o estimare de range. Prin urmare, aceasta este o **estimare de bază împotriva cărților aleatoare**, nu un solver și nu o estimare completă de range.
 
 ```mermaid
-flowchart TD
-    OBS[Observația actorului] --> DECK[Elimină cărțile proprii și board-ul cunoscut]
-    DECK --> MC[Eșantionează adversari activi și board-ul rămas]
-    MC --> EQ[Equity medie, win/tie și eroare standard]
-    OBS --> CTX[Pot odds, adversari activi, acțiuni publice, locuri care mai pot acționa]
-    EQ --> RISK[Prag de continuare ponderat]
-    CTX --> RISK
-    RISK --> ACT{Acțiune legală}
+flowchart LR
+    OBS[Observația actorului] -->|filtrează| DECK[Elimină cărțile proprii și board-ul cunoscut]
+    DECK -->|alimentează| MC[Eșantionează adversari activi și board-ul rămas]
+    MC -->|estimează| EQ[Equity medie, win/tie și eroare standard]
+    OBS -->|descrie| CTX[Pot odds, adversari activi, acțiuni publice, locuri care mai pot acționa]
+    EQ -->|se compară cu| RISK[Prag de continuare ponderat]
+    CTX -->|ajustează| RISK
+    RISK -->|orientează| ACT{Acțiune legală}
     ACT -->|equity sub prag| FOLD[Fold sau check]
     ACT -->|equity peste prag| CALL[Call numai dacă prețul e justificat]
     ACT -->|edge suplimentar| RAISE[Raise/bet ca fracție din pot]
 ```
 
-Pragul de call pornește de la `ceil(min(toCall, heroStack) / (pot + min(toCall, heroStack)))` și adaugă marja modului cash/turneu, câte un adaos pentru fiecare adversar în plus, agresiunile adversarilor pe strada curentă, poziția și penalizarea de incertitudine `z × standardError`. În YAML, `uncertaintyZHundredths: 164` reprezintă `z = 1,64`. Acțiunile proprii nu sunt numărate drept agresiune adversă. Marjele se plafonează înainte de comparație pentru a evita pragurile imposibile.
+<details>
+<summary><strong>Legendă — observație și prag</strong></summary>
 
-La un preț existent, call-ul cere depășirea pragului; raise-ul cere și `raiseEdgePercent`, plus o marjă suplimentară în poturi cu mai mulți adversari. Fără preț, valoarea minimă de bet este ajustată cu numărul adversarilor, agresiunile publice, poziția și modul de joc. Sizing-ul crește odată cu avantajul estimat, dar se limitează la o fracție configurată din pot și evită all-in-ul implicit. Modul de turneu aplică o marjă simplă de risc; el **nu** calculează ICM sau valoarea reală a premiilor. Motorul de decontare calculează separat straturile poturilor, însă estimatorul de decizie încă nu proiectează simulările pe aceste straturi.
+- **Eșantionarea** estimează equity din cărțile necunoscute.
+- **Contextul public** ajustează pragul de continuare.
+- **Acțiunea** este aleasă numai dintre opțiunile legale.
 
-Toate ponderile de context se află în `equityDecision.contextWeights` din YAML. Fișierul [candidatului equity](../../config/j6-policy-equity.yaml) folosește un eșantion mai mare decât configurația mixtă. Parserul respinge chei lipsă sau suplimentare, iar versiunea din fiecare acțiune include bugetul, modul, pragurile și ponderile folosite.
+</details>
+
+| Decizie | Calcul și limite |
+|---|---|
+| Call | Pentru un call pozitiv, `c = min(toCall, heroStack)`. Pragul pornește de la `ceil(100 × c / (pot + c))` și adaugă marjele de mod, adversari, poziție, agresiune, presiune, stivă și incertitudine. Intervalul final este 0–98%. |
+| Raise | Cere pragul de call plus `raiseEdgePercent` și marja pentru adversari suplimentari, până la 99%. Mărimea crește cu avantajul estimat în limitele legale și ale stivei. |
+| Bet | Când prețul este zero, pragul de valoare ține cont de adversari, agresiune, poziție și mod. Mărimea este limitată la o fracție configurată din pot și la stiva efectivă. |
+
+- **Incertitudine.** `uncertaintyZHundredths: 164` înseamnă `z = 1,64`. Componenta de prag este `ceil(z × standardError × 100)`, în puncte procentuale. Agresiunile proprii sunt excluse.
+- **Configurare.** `equityDecision.contextWeights` declară ponderile. Parserul verifică setul exact de chei, iar versiunea deciziei identifică bugetul, modul, pragurile și ponderile. [Profil equity cu buget mărit](../../config/j6-policy-equity.yaml)
+- **Limită de model.** Riscul de turneu este o marjă configurată. ICM, valoarea premiilor și equity pe straturile potului rămân în afara estimatorului.
 
 ### Riscul public de stack și all-in
 
-În modul turneu, aceeași observație expune blind-ul mare, contribuțiile și frecvențele publice agregate pe locurile fizice active. O oportunitate este o decizie preflop cu stiva rămasă **peste 2 și cel mult 10 blind-uri mari** și cu `ALL_IN` legal peste prețul de call; call-ul forțat cu stivă prea mică nu intră în numitor. Numitorul grupează oportunitățile de open-shove și re-shove din acest interval; nu este un model al unei singure poziții sau al unui singur tip de adversar. Contoarele se actualizează numai după încheierea mâinii, deci nicio decizie nu vede acțiunile ulterioare din mâna sa. Pentru raise-ul curent, profilul short-stack este determinat din suma all-in-ului din istoricul public, adică stiva rămasă când adversarul a acționat, fără blind-urile deja plătite.
+- **Oportunitate.** În turneu, locul fizic intră în numitor pentru o decizie preflop cu stiva rămasă peste 2 și cel mult 10 blinduri mari și cu un `ALL_IN` legal peste prețul call-ului. Open-shove și re-shove intră împreună, iar call-ul all-in rămâne în afara numitorului.
+- **Moment.** Contoarele devin vizibile după terminarea mâinii. La raise-ul all-in curent, stiva rămasă este suma acțiunii publice, după blindurile deja plătite.
+- **Loc.** `HoldemObservation` separă indexul compact al motorului de `physicalHeroSeat`, folosit în jurnal. Ordinea postflop exclude locurile foldate și fără jetoane, cu fallback la poziția din observație dacă lipsește harta publică.
 
-Pentru un loc cu `n` oportunități și `r` raise-uri all-in, priorul YAML `p₀` și tăria priorului `k` dau posteriorul smoothed `p = (r + p₀·k) / (n + k)`. Ponderea dovezii urcă liniar până la încălzirea configurată: `w = min(1, n / warmup)`. Pentru fiecare autor al unui raise all-in curent eligibil, ajustarea brută este `(p₀ − p) · sensibilitate · w`; se face media numai peste autorii curenți cu istoric măsurat, se rotunjește o singură dată, apoi se aplică plafonul simetric YAML. Astfel, o frecvență observată peste prior reduce pragul de call, iar una sub prior îl crește. Lipsa istoricului păstrează pragul de bază. Priorul, tăria, încălzirea, sensibilitatea și plafonul sunt configurabile în YAML.
+| Pas | Efect asupra pragului de call |
+|---|---|
+| Estimare | Pentru `n` oportunități și `r` raise-uri all-in, posteriorul este `p = (r + p₀·k) / (n + k)`, din priorul YAML `p₀` și tăria `k`. |
+| Încălzire | Ponderea dovezii crește până la `w = min(1, n / warmup)`. |
+| Agregare | Calculează `(p₀ − p) · sensibilitate · w` pentru fiecare autor curent eligibil cu istoric. Media se rotunjește o singură dată și se aplică plafonul simetric YAML. |
+| Interpretare | O frecvență peste prior reduce pragul. O frecvență sub prior îl crește. Fără istoric măsurat, ajustarea este zero. |
 
-Acest agregat este un semnal de disponibilitate publică de a împinge din stack scurt, nu o probabilitate de bluff sau o estimare a cărților. El nu condiționează încă frecvența de poziție, prețul potului, mărimea mesei ori profilul adversarului; aceste contexte pot avea rate de shove diferite și cer ablații separate înainte de a activa ponderi distincte. Politica păstrează distribuția uniformă a cărților necunoscute și nu deduce ranguri din frecvență.
-
-Aceeași observație folosește istoricul public al străzii pentru adaosul de risc după un preț mare sau un all-in care a ridicat prețul. Separat, estimează dacă un call ar consuma pragul configurat al stivei și dacă un adversar nefoldat poate acoperi contribuția actorului. Un stack de cel mult zece blind-uri mari activează discountul de urgență. Aceste ponderi au efect numai în turneu; situațiile fără call nu primesc penalizare de eliminare. În modul cash, istoricul de shove al turneelor este ignorat chiar dacă apare într-o observație reutilizată.
-
-Aceste semnale **nu** deduc încă probabilități de cărți din stilul individual al adversarului, ICM, premii, bounty sau equity exactă pe straturi. O frecvență de shove este doar evidență publică a disponibilității de a împinge dintr-un stack scurt; nu dezvăluie cărțile și nu spune singură dacă următorul shove este bluff sau valoare. „Poate acoperi” este o verificare a stivelor și contribuțiilor publice; nu spune dacă acel adversar va plăti și nu garantează că este corect să riști eliminarea. Adaosurile de prag sunt aproximări explicit plafonate, testate separat de simularea Monte Carlo.
-
-Experimentul pereche folosește variante YAML declarate în lineup. O comparație de ablație păstrează aceleași ponderi și dezactivează o singură regulă pentru a izola contribuția ei; controlul pentru istoricul de shove diferă de varianta activă doar prin sensibilitatea acelei ponderi. Ambele joacă simultan împotriva unor roluri distincte și sunt rotite prin locuri și poziții de buton pe seed-uri identice. Comparația agregă mai întâi rotațiile din fiecare seed, apoi tratează seed-ul ca unitate independentă. Încrederea statistică nu se mărește doar pentru că au fost rulate mai multe rotații ale aceluiași seed.
-
-`HoldemObservation` expune separat indexul compact folosit de motor și `physicalHeroSeat`, identitatea publică stabilă necesară interpretării jurnalului. Pentru poziția postflop, politica elimină din ordinea de acțiune locurile care au dat fold și locurile fără jetoane. Când istoria publică nu oferă harta locurilor, folosește fallback-ul de poziție din observație.
+- **Presiune și eliminare.** Istoricul străzii semnalează un preț mare sau un all-in care l-a ridicat. În turneu, penalizarea de eliminare cere un call care angajează pragul configurat al stivei și un adversar activ care poate acoperi contribuția. La cel mult 10 blinduri mari se aplică discountul de urgență.
+- **Domeniu.** Cash ignoră istoricul de shove de turneu. Frecvența publică descrie disponibilitatea de a împinge din stivă scurtă, iar cărțile necunoscute rămân distribuite uniform. Modelarea după poziție, preț, mărimea mesei, adversar, premii sau bounty cere măsurători separate.
+- **Ablație.** Lineup-ul păstrează aceleași ponderi și schimbă numai sensibilitatea istoricului între control și varianta activă. Ambele joacă împotriva acelorași roluri și se rotesc prin locuri și poziții pe seed-uri identice. Agregați rotațiile în interiorul seed-ului înainte de a calcula incertitudinea.
 
 ## Acceptanță
 
@@ -89,17 +103,21 @@ O politică nouă se acceptă numai dacă:
 
 ## Politică mixtă de bluff pentru laborator
 
-`BLUFF-MIXED-0.1` este o politică experimentală de explorare, nu o evaluare de rang și nu o promisiune de joc optim. Configurația din [YAML-ul politicilor](../../config/j6-policy.yaml) stabilește frecvența și lățimea pozițiilor târzii. Bluff-ul este eligibil numai postflop, cu As vizibil pe board, fără As și fără pereche proprie cu board-ul, după ce acțiunile publice de pe strada curentă au fost check, în poziție târzie și când motorul oferă o deschidere legală. Atunci alege deschiderea minimă cu frecvența deterministă configurată. În celelalte situații delegă baseline-ului TAG. Nu bluffează prin acțiunea `BET` când actorul se confruntă cu un preț; acolo folosește acțiunile legale alese de fallback.
+Politica experimentală `BLUFF-MIXED-0.1` explorează o deschidere minimă după check, cu frecvență și fereastră de poziție configurate. [YAML-ul politicilor](../../config/j6-policy.yaml)
 
-Amestecul determinist face replay-ul reproductibil și oferă o frecvență măsurabilă între observațiile eligibile. Este un trigger bazat pe semnal vizibil simplu; nu modelează încă range-ul adversarilor, fold equity, textura completă a board-ului sau istoricul de call. Prin urmare, cohortele măsoară efectul acestei explorări împotriva unor stiluri fixe, nu demonstrează că frecvența este optimă. Rapoartele trebuie să separe frecvența bluff-urilor, chips/hand, drawdown-ul și rezultatele pe fiecare profil adversar; o creștere izolată a câștigurilor nu validează regula.
+- **Eligibilitate.** Postflop, As pe board, două cărți proprii de ranguri diferite, fără As în mână și fără potrivire cu rangurile de pe board. Actorul este în poziție târzie, istoricul străzii conține cel puțin un check și nicio altă acțiune, iar `BET` este legal.
+- **Decizie.** Pe o observație eligibilă, o valoare deterministă decide dacă politica alege bet-ul minim. Restul cazurilor trec la TAG, inclusiv când există un preț de call.
+- **Evaluare.** Raportați frecvența bluff-urilor, chips/hand și drawdown pe profil adversar. Triggerul folosește semnale vizibile și nu estimează range, fold equity, textura completă a board-ului sau istoricul de call.
 
 ## Coordonata de poziție și limita informației
 
-`positionFromButton = 0` înseamnă butonul; valorile cresc pe locurile următoare în ordinea mesei. După flop, butonul acționează ultimul. O fereastră târzie de `n` locuri cuprinde butonul și cele `n - 1` locuri dinaintea lui. Dacă masa se micșorează prin eliminări, fereastra efectivă se limitează la numărul de locuri rămase.
+- `positionFromButton = 0` identifică butonul, ultimul actor după flop în ordinea inițială. Valorile cresc în ordinea locurilor de la masă.
+- Fereastra târzie include butonul și cele `n − 1` locuri dinaintea lui, plafonată la numărul de locuri rămase.
 
 Politica primește numai `HoldemObservation`: propriile două cărți, board-ul public până la strada curentă, miza, stivele vizibile, acțiunile publice și setul de mutări legale. Seed-ul, pachetul și cărțile ascunse ale adversarilor rămân în motor și în auditor. În evaluările cu distribuții fixe, auditorul verifică proiecția la fiecare decizie, iar distribuția completă se dezvăluie numai după încheierea mâinii.
 
-Numărul adversarilor folosit la equity este cel al jucătorilor care nu au dat fold; un adversar all-in rămâne în distribuția de cărți și în cota potului. Pentru calculul poziției de acțiune, locurile all-in nu mai sunt considerate actori. Istoricul este folosit numai pentru informații publice; politica nu citește seed-ul sau cărțile ascunse.
+- Pentru equity, adversarii nefoldați rămân eligibili în estimare, inclusiv când sunt all-in.
+- Ordinea de acțiune exclude locurile all-in. Politica primește istoricul public și vede doar cărțile proprii și board-ul deja deschis.
 
 ## Stiluri comparate în laborator
 
@@ -117,34 +135,59 @@ Numărul adversarilor folosit la equity este cel al jucătorilor care nu au dat 
 Politica separă deschiderea de continuarea agresiunii în istoricul **străzii curente**:
 
 ```mermaid
-flowchart TD
-    TURN[Observația actorului] --> AGG{Există BET/RAISE anterior pe strada curentă?}
+flowchart LR
+    TURN[Observația actorului] -->|verifică| AGG{Există BET/RAISE anterior pe strada curentă?}
     AGG -->|Nu| OPEN[Frecvența open, ajustată pentru poziție]
     AGG -->|Da| RERAISE[Frecvența de raise]
-    OPEN --> LEGAL[Selectează numai o acțiune legală]
-    RERAISE --> LEGAL
-    LEGAL --> CALL{Preț de call în plafon?}
+    OPEN -->|propune| LEGAL[Selectează numai o acțiune legală]
+    RERAISE -->|propune| LEGAL
+    LEGAL -->|verifică| CALL{Preț de call în plafon?}
     CALL -->|Da| MATCH[Call]
     CALL -->|Nu| FOLD[Fold dacă este legal]
 ```
 
-Prima mărire preflop este un open când istoricul nu conține încă un raise preflop; nu se confundă cu re-raise-ul blindurilor sau al unui raise anterior. Un BET fără preț folosește frecvența open. După o agresiune publică pe strada curentă, o nouă mărire folosește frecvența `raiseFrequencyPercent`. Acțiunile de pe străzile încheiate nu schimbă clasificarea străzii noi.
+<details>
+<summary><strong>Legendă — deschidere și re-raise</strong></summary>
 
-`latePositionAdjustmentPercent` se adună la frecvența open în buton și cutoff și se scade în pozițiile timpurii, cu limitare la intervalul 0–100. Fereastra de poziție târzie este cele două locuri care acționează cel mai târziu postflop. Ajustarea schimbă numai probabilitatea deterministă de a deschide; ea nu schimbă frecvența de re-raise sau plafonul de call. Pragul este calculat din observația actorului și din seed-ul mâinii, astfel încât replay-ul aceleiași observații să producă aceeași acțiune.
+- **Open** folosește frecvența ajustată pentru poziție.
+- **Re-raise** se aplică după agresiune pe strada curentă.
+- **Call** rămâne condiționat de preț și opțiunile legale.
 
-`maxCallPotPercent` compară suma necesară pentru call cu potul vizibil înaintea call-ului. Un call scump nu devine justificat doar fiindcă politica a deschis anterior. Deschiderea și re-raise-ul rămân limitate la suma minimă legală în politica de bază.
+</details>
+
+| Semnal | Comportament |
+|---|---|
+| Open | Prima mărire preflop fără raise anterior, sau un `BET` fără preț, folosește frecvența de deschidere. |
+| Re-raise | După agresiune pe strada curentă, politica folosește `raiseFrequencyPercent`. Clasificarea pornește din nou pe strada următoare. |
+| Poziție | `latePositionAdjustmentPercent` crește frecvența de open pentru buton și cutoff, o scade în rest și plafonează rezultatul la 0–100%. |
+| Call | `maxCallPotPercent` compară suma de plătit cu potul înainte de call. |
+| Mărime | Politica de bază deschide sau mărește cu suma minimă legală. |
+
+Frecvențele de open și re-raise folosesc o valoare deterministă calculată din observația actorului. Ajustarea pozițională se aplică numai la open. [Politica loose-aggressive](../../holdem-ai/src/main/java/ro/atf/holdem/ai/LooseAggressivePolicy.java)
 
 ## Sizing relativ la pot
 
-`PotSizedPolicy` este un înveliș experimental peste o politică de acțiune. Pentru BET calculează mărimea din potul curent; pentru RAISE calculează incrementul din potul după call, apoi adaugă call-ul la contribuția acțiunii. Un rezultat sub mărimea de bază nu micșorează acțiunea legală existentă. Un rezultat peste plafonul legal sau care ar consuma toată stiva este respins, iar politica revine la acțiunea de bază; nu transformă tacit un sizing într-un all-in.
+| Caz | Ce calculează `PotSizedPolicy` |
+|---|---|
+| `BET` | Mărimea pleacă de la fracția configurată din potul curent și respectă minimul legal. |
+| `RAISE` | Calculează incrementul din potul după call și adaugă suma de call la acțiune. |
+| Limită | Păstrează mărimea de bază dacă rezultatul o micșorează, depășește maximul legal sau consumă întreaga stivă. |
 
-Configurațiile `betPotPercent` de 50, 100 și 150 sunt instrumente de comparație, nu trepte de dificultate și nu estimări ale equity-ului. Un BET mai mare poate obține mai multe fold-uri observate, dar acestea nu demonstrează că adversarul a foldat din cauza acelei mărimi, că mâna a fost profitabilă sau că strategia are EV pozitiv. Evaluatorul notează separat mărimea raportată la pot, fold-win-ul mâinii și evoluția stivei. Datele sunt grupate după poziție, mărimea mesei și profilul de blind-uri; seed-urile repetate la rotația butonului sunt perechi intenționate, nu eșantioane independente.
+- **Configurații.** `betPotPercent: 0` dezactivează învelișul. Valorile 50, 100 și 150 compară sizing-ul în cohortele `sized` și `legacy-pot`. În `config/policy-tuning/` sunt și variante conservatoare, neutre pozițional și agresive.
+- **Control.** Mențineți aceleași seed-uri, mărimi de masă, niveluri și locuri. Înlocuiți candidatul cu TAG sau cu varianta de control declarată. `bluff-always` servește doar proba declanșatorului.
+- **Interpretare.** Raportați separat mărimea relativă la pot, câștigul prin fold și evoluția stivei. Stratificați după poziție, mărimea mesei și profilul blindurilor. Pentru estimarea EV sunt necesare date suplimentare față de fold-uri și victorii observate.
+- **Trasabilitate.** Versiunea din jurnal include parametrii YAML care influențează decizia.
 
-Versiunea de policy din jurnal include valorile YAML care influențează decizia. Astfel, două variante cu aceeași clasă Java, dar frecvențe sau sizing diferite, nu apar ca aceeași politică în audit.
+## Lecții pentru evaluarea unei politici
 
-În proba controlată, `bluff-always` ridică temporar frecvența la 100% doar ca să testeze accesibilitatea trigger-ului. Nu este profil de produs și nu intră în comparația turneelor.
+| Întrebare | Metodă |
+|---|---|
+| Din ce a rezultat decizia? | Păstrează observația publică, acțiunile legale, versiunea și hash-ul YAML. Auditorul verifică separat distribuția și decontarea, inclusiv eligibilitatea în fiecare pot. |
+| Ce aduce o regulă nouă? | Compară candidatul cu un control care schimbă o singură pondere. Rulează ambele variante cu aceleași distribuții, buget și adversari. Numără deciziile unde ponderea schimbă efectiv pragul sau acțiunea. |
+| Cât contează poziția și sizing-ul? | Rotește actorul și butonul pe aceeași distribuție. Compară separat deschiderea și re-raise-ul, precum și pariurile raportate la pot și la stiva efectivă. |
+| Când merită promovată? | Separă reglajul de holdout, agregă rotațiile per seed și raportează incertitudinea pe 4, 5 și 6 locuri. Verifică direcția efectului pe adversari diferiți și separat în cash și turneu. |
 
-Fișierele de sub `config/policy-tuning/` definesc variante conservatoare, neutre pozițional, agresive și cu sizing relativ la pot de 50/100/150%. `betPotPercent: 0` dezactivează învelișul de sizing; valorile pozitive sunt folosite de cohortele `sized` și `legacy-pot`. Se compară cu aceleași seed-uri, mărimi de masă, niveluri și locuri candidate înlocuite cu TAG sau cu o variantă explicită de control. O variantă nu se promovează pe câteva distribuții fixe sau pe procentul de turnee câștigate: acestea sunt probe de comportament, nu estimări stabile de EV.
+Păstrează pentru fiecare lecție un jurnal reprezentativ, verificarea independentă și proveniența necesară reluării. Rezumatele loturilor și seed-urile concrete apar în directorul extern de lucru. O greșeală stabilă intră ca test de componentă cu o distribuție minimă. [Reguli și replay](TOURNAMENT_RULES.md) · [Strategia de testare](../testing/TEST_STRATEGY.md)
 
 ## Metrici
 

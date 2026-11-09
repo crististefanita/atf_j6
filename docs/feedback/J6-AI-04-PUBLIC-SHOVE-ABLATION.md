@@ -6,7 +6,9 @@
 
 **Owner:** Evaluarea strategiilor în arena J6
 
-Perechea `equity-history-control` / `equity-history-aware` izolează sensibilitatea istoricului. Lotul de stres din `<external-evidence-root>/strategy-shove-history-ablation-20261107` are 16 seed-uri independente. Diferențele de victorii sunt −2,3 pp la 4 locuri, −5,5 pp la 5 și +9,2 pp la 6. Extensia de opt seed-uri la 6 locuri are +6,3 pp cu eroare standard de 8,5 pp. Proveniența lotului marchează `sourceDirty=true`. [Contractul semnalului public](../requirements/AI_REQUIREMENTS.md)
+Perechea `equity-history-control` / `equity-history-aware` izolează sensibilitatea istoricului. Lotul de stres din `<external-evidence-root>/strategy-shove-history-ablation-20261107` are 16 seed-uri independente. Efectul diferă între mărimile mesei.
+
+Studiul extern păstrează rezultatele pe cohorte și proveniența `sourceDirty=true`. [Contractul semnalului public](../requirements/AI_REQUIREMENTS.md)
 
 ## Criterii de închidere
 

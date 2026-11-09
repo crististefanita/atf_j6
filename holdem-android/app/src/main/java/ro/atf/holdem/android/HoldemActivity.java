@@ -420,13 +420,7 @@ public final class HoldemActivity extends Activity {
         if (completed) autoFinishingHand = false;
         boolean automatedHumanTurn = autoFinishingHand && frame.actor() == frame.viewer() && !completed;
         settlementPending = completed;
-<<<<<<< Updated upstream
         var names = displayNames(current);
-=======
-        int seats = frame.seats().size();
-        var names = displayNames(current);
-        int nextDealer = seats == 2 ? frame.bigBlind() : frame.dealer();
->>>>>>> Stashed changes
         var table = new HoldemTableView(views, this::text);
         var labels = table.show(frame, names, current, this::home, () -> {
             if (!activityResumed || sceneRevision != renderedScene || game != current
@@ -556,23 +550,6 @@ public final class HoldemActivity extends Activity {
         var table = current.view();
         var names = displayNames(current);
         var physicalNames = HoldemTablePresentation.physicalSeatNames(table, names);
-<<<<<<< Updated upstream
-=======
-        TournamentLeaderboard.State leaderboardState = null;
-        if (current.isTournament()) {
-            try {
-                var ranks = current.finishingRanks();
-                var placements = new ArrayList<TournamentLeaderboard.Placement>(ranks.size());
-                for (int seat = 0; seat < ranks.size(); seat++)
-                    placements.add(new TournamentLeaderboard.Placement(current.playerId(seat),
-                            physicalNames.get(seat), ranks.get(seat)));
-                leaderboardState = leaderboard.record(current.tournamentId(), placements).state();
-            } catch (java.io.IOException | RuntimeException failure) {
-                android.util.Log.e("HoldemLab", "Tournament result could not be recorded", failure);
-                Toast.makeText(this, text(R.string.leaderboard_error), Toast.LENGTH_LONG).show();
-            }
-        }
->>>>>>> Stashed changes
         views.addText(page, text(R.string.tournament_summary, current.handNumber(), table.seats().get(table.viewer()).stack()),
                 16, ScreenViews.MUTED, false, 10, 0);
         if (leaderboardState != null) addTournamentStandings(page, current, leaderboardState, physicalNames);

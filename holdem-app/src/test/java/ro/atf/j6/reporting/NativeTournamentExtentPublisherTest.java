@@ -126,6 +126,48 @@ class NativeTournamentExtentPublisherTest {
         assertAuditedFailure(publish(temp, receipt, "01-compact-seat-metrics.png"), "uniform raster");
     }
 
+    @Test void settlementAwardReceiptCannotPassWithoutMeasuredArrival(@TempDir Path temp) throws Exception {
+        var receipt = smokeReceipt().put("journey", "settlement-award");
+        receipt.putArray("captures").add("01-award-departure.png").add("02-award-arrival.png").add("03-separate-payout.png");
+        var checks = receipt.putArray("assertions");
+        for (String name : List.of("The seeded fixture resumes at the heads-up decision",
+                "The all-in settles the resumed hand", "The paid pot excludes the unmatched return",
+                "The pot marker starts at the pot center",
+                "The sole moving marker carries only the pot award",
+                "The winning seat receives a pot award and an unmatched return",
+                "The winner shows separate readable and accessible payout rows")) {
+            checks.add(assertion(name, true));
+        }
+        assertAuditedFailure(publish(temp, receipt), "The pot marker reaches the winning seat frame");
+    }
+
+    @Test void disabledAnimationReceiptCannotPassWithoutTheNamedAwardSummary(@TempDir Path temp) throws Exception {
+        var receipt = smokeReceipt().put("journey", "settlement-static-award");
+        receipt.putArray("captures").add("01-static-awards.png");
+        var checks = receipt.putArray("assertions");
+        for (String name : List.of("Android animator policy matches the journey",
+                "Side pot settles after the all-in", "Side pot shows the total distributed pot",
+                "Disabled animation creates no award markers", "Side pot seat rows expose every exact award",
+                "Disabled animation leaves continuation usable")) {
+            checks.add(assertion(name, true));
+        }
+        assertAuditedFailure(publish(temp, receipt), "Side pot names and amounts remain in visible text");
+    }
+
+    @Test void compactAwardReceiptCannotPassWithoutTheHiddenMarkerCheck(@TempDir Path temp) throws Exception {
+        var receipt = smokeReceipt().put("journey", "settlement-compact-award");
+        receipt.putArray("captures").add("01-compact-departure.png").add("02-compact-arrival.png").add("03-compact-summary.png");
+        var checks = receipt.putArray("assertions");
+        for (String name : List.of("The compact award journey uses a short window with enlarged text",
+                "Android animator policy matches the journey", "Compact side pot settles after the all-in",
+                "The compact viewport keeps one recipient fully outside", "The compact award starts at the pot center",
+                "The compact award reaches only the visible recipient", "The visible marker carries the exact award",
+                "Compact side pot names and amounts remain in visible text", "Compact side pot seat rows expose every exact award")) {
+            checks.add(assertion(name, true));
+        }
+        assertAuditedFailure(publish(temp, receipt), "The hidden recipient never creates a marker");
+    }
+
     private static ObjectNode smokeReceipt() {
         var receipt = JSON.createObjectNode().put("journey", "release-smoke").put("status", "PASS")
                 .put("error", "").put("api", 28).put("window", "392 × 626 dp").put("density", 320).put("fontScale", 1);

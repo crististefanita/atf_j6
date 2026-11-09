@@ -1,37 +1,25 @@
 # Arhitectură J6
 
+## Pe scurt
+
+Motorul Hold’em deține regulile și legalitatea. Politicile decid din observația actorului, arena execută simulările offline, iar Android gestionează sesiunea interactivă.
+
 ```text
-                 +----------------------+
-                 |      holdem-app      |
-                 | CLI / operator       |
-                 +----------+-----------+
-                            |
-              +-------------+--------------+
-              |                            |
-       +------v------+              +------v------+
-       | holdem-arena |              | holdem-online|
-       | cash + MTT   |              | WS adapter   |
-       +------+-------+              +------+-------+
-              |                             |
-              +-------------+---------------+
-                            |
-                    +-------v--------+
-                    |   holdem-ai    |
-                    | policies/equity|
-                    +-------+--------+
-                            |
-                    +-------v--------+
-                    |  holdem-core   |
-                    | rules/state    |
-                    +----------------+
+Dependențe directe Maven
+holdem-app    → holdem-core, holdem-ai, holdem-online
+holdem-arena  → holdem-core, holdem-ai
+holdem-ai     → holdem-core
+holdem-online → holdem-core
 ```
+
+Consola pornește o decizie locală și poate inspecta configurația online. Arena are propriile puncte de intrare pentru cash și turnee.
 
 ## Limite de dependențe
 
 - `holdem-core` nu depinde de AI, rețea sau UI;
 - `holdem-ai` consumă `Observation`, nu `FullState`;
 - `holdem-arena` poate folosi starea completă intern pentru simulare, dar filtrează observația înainte de policy;
-- `holdem-online` convertește wire messages în `Observation` și `ActionRequest`;
+- `holdem-online` descrie endpointul, prezența credentialului și modul `dry-run`. Conexiunea și adaptarea mesajelor sunt contracte pentru o etapă viitoare.
 - `holdem-app` orchestrează, dar nu introduce reguli de poker.
 
 ## Interfața Android locală
@@ -42,10 +30,19 @@ flowchart LR
     Session -->|"stare și acțiuni permise"| App["holdem-android · app"]
     App -->|"acțiune pentru turul curent"| Session
     Session -->|"aplicare validată"| Core
-    Library["Card Table · AAR și JAR din J4"] --> App
+    Library["Card Table · AAR și JAR"] -->|furnizează componente| App
 ```
 
-Gradle compilează sursele `holdem-core` pentru Java 17. Motorul expune o vedere imutabilă pentru un loc fix. Sesiunea leagă fiecare comandă de identitatea mâinii și revizia turului, apoi trece prin același validator și pentru răspunsurile adversarilor. În turneu, `Tournament` păstrează stivele și alege următorul dealer dintre locurile cu jetoane. Sesiunea Android persistă fiecare acțiune acceptată împreună cu actorul fizic, seed-ul și timpul de start al rundelor. La restaurare, replay-ul aplică din nou fiecare acțiune numai când motorul confirmă actorul și legalitatea; checkpoint-ul invalid nu este expus ca joc. La suspendare, timerul turneului se oprește, iar mutările AI rămân read-only până când Activity revine și revalidează tokenul; la revenire scena confirmată se redesenează. UI rotește locurile în jurul jucătorului propriu și colorează locul activ. La decontare, cărțile rămân pentru recapitulare, iar un marker de premiu se deplasează de la pot către locurile beneficiare. [Integrarea și frontiera bibliotecii](../../holdem-android/README.md)
+<details>
+<summary><strong>Legendă — sesiunea Android</strong></summary>
+
+- **Motor** validează mutarea și avansează starea.
+- **Sesiune** leagă comanda de mână, tură și revizie.
+- **Interfață** prezintă actorul, cărțile vizibile și premiile de la decontare.
+
+</details>
+
+Gradle compilează sursele comune ale motorului și politicii pentru Java 17. La restaurare, sesiunea reia jurnalul în ordine și verifică actorul și legalitatea fiecărei mutări. La suspendare, Activity oprește ceasul și salvează checkpoint-ul. [Integrarea Android](../../holdem-android/README.md)
 
 ```mermaid
 sequenceDiagram
@@ -66,6 +63,15 @@ sequenceDiagram
     Engine-->>UI: sesiune restaurată sau eroare explicită
 ```
 
+<details>
+<summary><strong>Legendă — salvare și reluare</strong></summary>
+
+- **Tokenul turei** identifică mutarea pentru revizia acceptată.
+- **Checkpoint-ul** păstrează actorii, mutările și metadatele de replay.
+- **Restaurarea** revalidează mutările înainte să afișeze masa.
+
+</details>
+
 ## Reducer și replay
 
 Motorul trebuie modelat ca reducer:
@@ -84,15 +90,24 @@ Regulile de joc, bugetul AI, profilele de adversari și transportul se configure
 
 ```mermaid
 flowchart LR
-    YAML[Profil de joc și YAML de politică] --> CASH[CashTableArena · blind-uri fixe]
-    YAML --> MTT[TournamentArena · ceas și eliminări]
-    CASH --> OBS[HoldemObservation publică]
-    MTT --> OBS
-    OBS --> AI[Equity MC + reguli contextuale]
-    AI --> ACT[Acțiune verificată de motor]
-    ACT --> TRACE[Jurnal reproductibil]
-    TRACE --> AUDIT[Audit independent + comparație pereche]
+    YAML[Profil de joc și YAML de politică] -->|configurează| CASH[CashTableArena · blind-uri fixe]
+    YAML -->|configurează| MTT[TournamentArena · ceas și eliminări]
+    CASH -->|proiectează| OBS[HoldemObservation publică]
+    MTT -->|proiectează| OBS
+    OBS -->|informează| AI[Equity MC + reguli contextuale]
+    AI -->|propune| ACT[Acțiune verificată de motor]
+    ACT -->|intră în| TRACE[Jurnal reproductibil]
+    TRACE -->|permite| AUDIT[Audit independent + comparație pereche]
 ```
+
+<details>
+<summary><strong>Legendă — simulare și audit</strong></summary>
+
+- **Configurația** fixează regulile, lineup-ul și parametrii.
+- **Observația** expune numai informația permisă actorului.
+- **Jurnalul** permite verificarea separată a simulării și decontării.
+
+</details>
 
 `CashTableArena` reține stivele între mâini, nu mărește blind-urile și oprește sesiunea la limita de mâini ori când rămâne un singur loc finanțat. `TournamentArena` folosește nivelurile YAML și oprește după victoria unui singur jucător. Ambele folosesc același motor de mână și portul `DecisionPolicy`; diferența de structură nu se amestecă în politica AI.
 

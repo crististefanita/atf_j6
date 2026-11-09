@@ -6,7 +6,9 @@
 
 **Owner:** Politicile și arena Hold’em J6
 
-Estimatorul Monte Carlo eșantionează uniform mâinile necunoscute. Ponderile contextuale schimbă pragul, iar estimatorul nu modelează range-uri individuale sau cota pe straturile potului. Holdout-urile existente dau rezultate mixte în funcție de mărimea mesei și poziție. În Android, adversarii rămân pe check/call, iar politica contextuală servește coach-ul și preluarea. [Contractul AI](../requirements/AI_REQUIREMENTS.md) · [Evaluarea în arenă](../requirements/TOURNAMENT_RULES.md)
+Estimatorul Monte Carlo eșantionează uniform mâinile necunoscute. Ponderile contextuale schimbă pragul, iar estimatorul nu modelează range-uri individuale sau cota pe straturile potului. Holdout-urile existente dau rezultate mixte în funcție de mărimea mesei și poziție.
+
+În Android, adversarii rămân pe check/call, iar politica contextuală servește coach-ul și preluarea. [Contractul AI](../requirements/AI_REQUIREMENTS.md) · [Evaluarea în arenă](../requirements/TOURNAMENT_RULES.md)
 
 ## Criterii de închidere
 

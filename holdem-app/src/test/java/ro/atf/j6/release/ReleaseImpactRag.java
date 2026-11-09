@@ -170,6 +170,23 @@ public final class ReleaseImpactRag {
             row.put("inventorySha256", suiteInventoryDigest);
             row.put("indexedCommit", head);
         });
+        ArrayNode nativeSuggestions = result.putArray("suggestedNativeJourneys");
+        for (JsonNode journey : suites.path("native")) {
+            var matches = new ArrayList<String>();
+            for (JsonNode path : journey.path("impactPaths")) {
+                if (impactPaths.contains(path.asText())) matches.add(path.asText());
+            }
+            if (matches.isEmpty()) continue;
+            ObjectNode row = nativeSuggestions.addObject();
+            row.put("mode", journey.path("mode").asText());
+            row.put("releaseSwitch", journey.path("switch").asText());
+            if (journey.path("companionModes").isArray()) row.set("companionModes", journey.path("companionModes"));
+            row.put("inventoryPath", "config/release-test-suites.json");
+            row.put("inventorySha256", suiteInventoryDigest);
+            row.put("indexedCommit", head);
+            var matchedPaths = row.putArray("matchingChanges");
+            matches.forEach(matchedPaths::add);
+        }
         ArrayNode findings = result.putArray("documentFindings");
         ReleaseDocumentReview.appendFindings(findings, snapshot.claims(), head, ReleaseImpactRag::redact);
         Set<String> tracked = new HashSet<>(Arrays.asList(git(root, "ls-files", "-z").split("\0")));

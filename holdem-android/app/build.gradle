@@ -19,12 +19,16 @@ android {
         applicationId 'ro.atf.holdem.android'
         minSdk 26
         targetSdk 36
-        versionCode 9
-        versionName '0.3.1'
+        versionCode 10
+        versionName '0.4.0'
         testApplicationId 'ro.atf.holdem.android.test'
         testInstrumentationRunner 'ro.atf.holdem.android.TournamentSanity'
     }
     testBuildType 'sanity'
+    sourceSets {
+        test.java.srcDir 'src/testSupport/java'
+        androidTest.java.srcDir 'src/testSupport/java'
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17

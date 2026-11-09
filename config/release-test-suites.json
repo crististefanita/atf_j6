@@ -14,6 +14,7 @@
     { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.TournamentStrategyArenaTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.libraries.PlatformLibraryAdoptionTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseGovernanceTest" },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleasePromotionGateTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.ComponentSuiteExtentPublisherTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.NativeTournamentExtentPublisherTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseImpactRagTest" },
@@ -25,5 +26,23 @@
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.LocalHoldemGameTest" },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.LocalHoldemTournamentTest" },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.TournamentLeaderboardTest" }
+  ],
+  "native": [
+    {
+      "mode": "settlement-award",
+      "switch": "-IncludeSettlementAward",
+      "companionModes": ["settlement-multi-award", "settlement-static-award", "settlement-compact-award"],
+      "impactPaths": [
+        "holdem-core/src/main/java/ro/atf/holdem/core/HoldemHand.java",
+        "holdem-core/src/main/java/ro/atf/holdem/core/PotSettlement.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTablePresentation.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java",
+        "holdem-android/app/src/androidTest/java/ro/atf/holdem/android/SettlementAwardObservation.java",
+        "holdem-android/app/src/testSupport/java/ro/atf/holdem/android/SettlementAwardFixture.java",
+        "holdem-android/app/src/main/res/values/strings.xml",
+        "holdem-android/app/src/main/res/values-ro/strings.xml"
+      ]
+    }
   ]
 }

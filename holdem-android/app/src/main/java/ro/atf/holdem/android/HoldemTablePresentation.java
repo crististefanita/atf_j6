@@ -19,19 +19,17 @@ import java.util.stream.Collectors;
 final class HoldemTablePresentation {
     private HoldemTablePresentation() { }
 
-<<<<<<< Updated upstream
     static final int FULL_CARD_SCALE = 100;
     static final int MIN_CARD_SCALE = 70;
     static final int ACTION_TARGET_DP = 48;
     static final float ACTION_FACE_INSET = .1875f;
 
-=======
->>>>>>> Stashed changes
     record ActionRow(int ordinal, int physicalSeat, String player, Street street, BettingAction.Kind kind,
                      int amount, int totalContribution) { }
     record SeatFactStyle(int labelSp, int valueSp, int labelColor, int valueColor) { }
     enum SeatMetricKind { STACK, COMMITTED, WON, RETURNED }
     record SeatMetric(SeatMetricKind kind, int amount) { }
+    record PotAward(int physicalSeat, int chips) { }
     record LedgerStyle(int textSp, int textColor, int borderColor) { }
     record SeatActionStyle(int textSp, int textColor, int backgroundColor, int borderColor) { }
 
@@ -74,7 +72,6 @@ final class HoldemTablePresentation {
 
     static SeatFactStyle seatFactStyle(boolean active, boolean compact) {
         return new SeatFactStyle(8, compact ? 9 : 10,
-<<<<<<< Updated upstream
                 active ? 0xff5d675b : 0xffa9ccb8,
                 active ? 0xff29362e : 0xffd3efe2);
     }
@@ -91,12 +88,6 @@ final class HoldemTablePresentation {
         return labelPx + gapPx + valuePx > widthPx;
     }
 
-=======
-                active ? 0xff788274 : 0xff9fc0ad,
-                active ? 0xff29362e : 0xffd3efe2);
-    }
-
->>>>>>> Stashed changes
     static SeatActionStyle seatActionStyle(boolean compact, boolean latest, boolean active) {
         return new SeatActionStyle(compact ? 8 : 9,
                 latest ? 0xfff0d486 : active ? 0xff29362e : 0xffd3efe2,
@@ -170,10 +161,22 @@ final class HoldemTablePresentation {
         return seat.potWon() > 0 && seat.handEvaluation() != null && seat.handEvaluation().bestFive().contains(card);
     }
 
-    static List<Integer> awardSeats(HoldemTableViewState frame) {
-        var seats = new ArrayList<Integer>();
-        for (int seat = 0; seat < frame.seats().size(); seat++)
-            if (frame.seats().get(seat).potWon() > 0) seats.add(seat);
-        return List.copyOf(seats);
+    static boolean containsVisibleCenter(int width, int height, int left, int top, int right, int bottom) {
+        float centerX = width / 2f;
+        float centerY = height / 2f;
+        return width > 0 && height > 0 && left <= centerX && centerX < right && top <= centerY && centerY < bottom;
+    }
+
+    static int displayedPot(HoldemTableViewState frame) {
+        return frame.street() == Street.COMPLETE ? potAwards(frame).stream().mapToInt(PotAward::chips).sum() : frame.pot();
+    }
+
+    static List<PotAward> potAwards(HoldemTableViewState frame) {
+        var awards = new ArrayList<PotAward>();
+        for (int seat = 0; seat < frame.seats().size(); seat++) {
+            int chips = frame.seats().get(seat).potWon();
+            if (chips > 0) awards.add(new PotAward(seat, chips));
+        }
+        return List.copyOf(awards);
     }
 }

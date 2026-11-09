@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.3.1",
-  "previousVersion": "0.3.0",
-  "changeClass": "PATCH_FIX",
-  "changeRationale": "Corectează verificarea consultativă a referințelor locale din feedback și actualizează documentația pe baza sursei live.",
-  "state": "PREPARED",
+  "currentVersion": "0.4.0",
+  "previousVersion": "0.3.1",
+  "changeClass": "COMPATIBLE_FEATURE",
+  "changeRationale": "Prezintă câștigătorii și sumele decontării inclusiv pe masa compactă sau fără animații și adaugă verificarea pachetului înainte de promovare.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.3.1"
+    "0.4.0"
   ]
 }

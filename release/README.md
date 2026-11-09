@@ -2,21 +2,39 @@
 
 ## Pe scurt
 
-Acest director indexează edițiile Android. Dosarul unei versiuni deține identitatea binarului, starea publicării și dovezile specifice acelei ediții.
+Acest catalog separă ghidurile de lucru de dosarele care atestă o ediție Android. `index.json` selectează ediția curentă, iar manifestul ediției consemnează starea și identitatea pachetului.
+
+## Documentație activă
+
+- [Procesul de release](../docs/release/ATF_Release.md) deține regulile de build, semnare, promovare și descărcare.
+- [Auditul editorial și dosarele de ediție](../docs/release/ATF_Release.md#audit-editorial-și-dosare-de-ediție) definește criteriile de verificare pentru ghiduri, candidați și dovezi sigilate.
+- [Indexul ediției curente](index.json) selectează versiunea pe care trebuie să o indice linkurile din README-ul principal.
 
 ## Versiuni
 
+Dosarele de mai jos păstrează dovezile edițiilor. Când un fișier este inventariat, SHA-256 și lungimea din manifest îi fixează conținutul, inclusiv pentru ediția selectată în catalog.
+
 | Versiune | Documentație | Identitatea pachetului |
 |---|---|---|
+| 0.4.0 | [Dosarul candidatului](0.4.0/README.md) · `DRAFT` | [Manifestul candidatului](0.4.0/release-validation.json) |
 | 0.3.1 | [Dosarul ediției](0.3.1/README.md) · `PREPARED` | [Manifestul ediției](0.3.1/release-validation.json) |
 | 0.3.0 | [Dosarul ediției](0.3.0/README.md) · `PREPARED` | [Manifestul ediției](0.3.0/release-validation.json) |
-| 0.2.2 | [Dosarul ediției](0.2.2/README.md) · `PREPARED` | [Manifestul ediției](0.2.2/release-validation.json) |
-| 0.2.1 | [Dosarul ediției](0.2.1/README.md) · `PREPARED` | [Manifestul ediției](0.2.1/release-validation.json) |
-| 0.2.0 | [Dosarul ediției](0.2.0/README.md) · `PREPARED` | [Manifestul ediției](0.2.0/release-validation.json) |
-| 0.1.1 | [Dosarul ediției](0.1.1/README.md) · `PREPARED` | [Manifestul de validare](0.1.1/release-validation.json) |
-| 0.1.0 | [Dosarul ediției](0.1.0/README.md) | [Manifestul de validare](0.1.0/release-validation.json) |
 
-[`index.json`](index.json) selectează versiunea curentă și starea ei. Nu duplicați în acest index numărul testelor, hash-urile sau rezultatele unei verificări.
+<details>
+<summary><strong>Observații editoriale în dosarele sigilate</strong></summary>
+
+J0 continuă să raporteze aceste observații. Atribuirea la istoric cere fișierul, regula și linia din tabel, plus verificarea lungimii și a SHA-256 în manifestul ediției.
+
+| Ediție | `README.md` | `reports/README.md` |
+|---|---|---|
+| 0.3.0 | `DOC-README-OVERALL` la 1 | `DOC-README-OVERALL` la 1 |
+| 0.3.1 | `DOC-README-OVERALL` la 1 | `DOC-README-OVERALL` la 1 |
+
+</details>
+
+### Ediții retrase
+
+Seriile 0.1.x și 0.2.x sunt retrase din distribuția curentă. Tagurile și istoricul Git păstrează proveniența edițiilor.
 
 ## Stări de publicare
 

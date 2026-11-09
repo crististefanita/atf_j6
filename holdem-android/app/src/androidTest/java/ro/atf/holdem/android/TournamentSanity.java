@@ -1,5 +1,6 @@
 package ro.atf.holdem.android;
 
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.app.Instrumentation;
 import android.app.UiAutomation;
@@ -13,11 +14,13 @@ import android.graphics.drawable.InsetDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.view.Choreographer;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityWindowInfo;
@@ -26,6 +29,7 @@ import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import ro.atf.holdem.core.ActionType;
 import ro.atf.holdem.core.HoldemTableViewState;
 import ro.atf.holdem.core.Street;
 
@@ -75,6 +79,15 @@ public final class TournamentSanity extends Instrumentation {
                 loseOnTheOpeningAllIn();
             } else if (journey.equals("release-smoke")) {
                 releaseEntryNavigation();
+            } else if (journey.equals("settlement-award")) {
+                inspectSettlementAward();
+            } else if (journey.equals("settlement-multi-award")) {
+                inspectMultipleAwards(SettlementAwardFixture.SPLIT, true);
+                inspectMultipleAwards(SettlementAwardFixture.SIDE, true);
+            } else if (journey.equals("settlement-static-award")) {
+                inspectMultipleAwards(SettlementAwardFixture.SIDE, false);
+            } else if (journey.equals("settlement-compact-award")) {
+                inspectCompactAward();
             } else if (journey.equals("settlement-resume")) {
                 resumeNextHandDuringSettlement();
                 resumeResultDuringSettlement();
@@ -359,11 +372,7 @@ public final class TournamentSanity extends Instrumentation {
 
     private void assertTournamentStandingsHavePlayerNames() throws Exception {
         var rows = collect(node -> value(node.getText()).startsWith("#")
-<<<<<<< Updated upstream
                 && value(node.getText()).contains(" · Points "));
-=======
-                && value(node.getText()).contains(" points"));
->>>>>>> Stashed changes
         var observed = new ArrayList<String>(rows.size());
         for (var row : rows) observed.add(value(row.getText()));
         boolean named = observed.size() == 4 && observed.stream().allMatch(row -> {
@@ -751,6 +760,255 @@ public final class TournamentSanity extends Instrumentation {
         return getTargetContext().getSharedPreferences("leaderboard-profile-sanity", 0);
     }
 
+    private void inspectSettlementAward() throws Exception {
+        var sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir()));
+        var game = LocalHoldemGame.tournament(4, 1);
+        playFixtureAction(game, ActionType.CALL);
+        for (int street = 0; street < 3; street++) playFixtureAction(game, ActionType.CHECK);
+        game.nextHandAtElapsedSeconds(0);
+        playFixtureAction(game, ActionType.ALL_IN);
+        game.nextHandAtElapsedSeconds(0);
+        sessions.save(game, false);
+        actions.put("Restore seed 1 after two legal prior hands, just before the heads-up all-in");
+
+        var activity = launchHoldem();
+        var probe = new SettlementAwardObservation[1];
+        try {
+            tap("Continue saved game");
+            see("The seeded fixture resumes at the heads-up decision", "Hand 3 · Preflop");
+            runOnMainSync(() -> probe[0] = new SettlementAwardObservation((ViewGroup) activity.getWindow().getDecorView(), List.of(3)));
+            tap("All-in · 7900");
+            see("The all-in settles the resumed hand", "Hand 3 · Settled");
+            see("The paid pot excludes the unmatched return", "Pot paid · 160");
+            boolean arrived = probe[0].awaitArrival();
+            // Preserve frames already observed even if a subsequent assertion fails.
+            runOnMainSync(probe[0]::stop);
+            var departure = probe[0].departure();
+            var arrival = probe[0].arrival();
+            Bitmap departureImage = probe[0].takeDepartureImage();
+            Bitmap arrivalImage = probe[0].takeArrivalImage();
+            if (departureImage != null) emitCapture("01-award-departure", departureImage);
+            if (arrivalImage != null) emitCapture("02-award-arrival", arrivalImage);
+            check("The pot marker starts at the pot center", "within 2 px of the pot center", String.valueOf(departure),
+                    departure != null && departure.atPot());
+            check("The pot marker reaches the winning seat frame", "within 2 px of seat 3 center", String.valueOf(probe[0].latest()),
+                    arrived && arrival != null && arrival.atSeats());
+            check("The sole moving marker carries only the pot award", "one +160 marker",
+                    departure.markerCount() + " " + departure.labels() + " → " + arrival.markerCount() + " " + arrival.labels(),
+                    departure.markerCount() == 1 && arrival.markerCount() == 1
+                            && departure.labels().equals(List.of("3 +160")) && arrival.labels().equals(List.of("3 +160")));
+
+            var saved = sessions.load().resumed().game().view();
+            var winner = saved.seats().get(3);
+            check("The winning seat receives a pot award and an unmatched return", "160 won + 7840 returned = 8000",
+                    winner.potWon() + " won + " + winner.returned() + " returned = " + winner.stack());
+            var observed = new ArrayList<String>();
+            runOnMainSync(() -> {
+                var box = seatFrame(activity.getWindow().getDecorView(), 3);
+                if (box == null) return;
+                for (int child = 0; child < box.getChildCount(); child++) {
+                    if (!(box.getChildAt(child) instanceof SeatFactRow row)) continue;
+                    var label = (TextView) row.getChildAt(0);
+                    var amount = (TextView) row.getChildAt(1);
+                    String fact = label.getText() + " " + amount.getText();
+                    if (fits(label) && fits(amount) && value(box.getContentDescription()).contains(fact))
+                        observed.add(fact);
+                }
+            });
+            check("The winner shows separate readable and accessible payout rows", "Stack 8000, Won 160, Returned 7840",
+                    String.join(", ", observed));
+            capture("03-separate-payout");
+        } finally {
+            runOnMainSync(() -> {
+                if (probe[0] != null) probe[0].close();
+                activity.finish();
+            });
+        }
+    }
+
+    private static void playFixtureAction(LocalHoldemGame game, ActionType kind) {
+        while (game.hasPassiveTurn()) game.advancePassiveAction(game.turn());
+        var legal = game.view().legalActions().stream().filter(action -> action.type() == kind).findFirst().orElseThrow();
+        game.play(game.turn(), new LocalHoldemGame.Move(kind, legal.amount()));
+        while (game.hasPassiveTurn()) game.advancePassiveAction(game.turn());
+    }
+
+
+    private void checkAnimationPolicy(boolean expected) throws Exception {
+        float scale = Settings.Global.getFloat(getTargetContext().getContentResolver(),
+                Settings.Global.ANIMATOR_DURATION_SCALE, 1f);
+        var enabled = new boolean[1];
+        long deadline = SystemClock.uptimeMillis() + 2000;
+        do {
+            runOnMainSync(() -> enabled[0] = ValueAnimator.areAnimatorsEnabled());
+            if (enabled[0] == expected) break;
+            SystemClock.sleep(25);
+        } while (SystemClock.uptimeMillis() < deadline);
+        check("Android animator policy matches the journey", "scale " + (expected ? 1f : 0f) + ", enabled " + expected,
+                "scale " + scale + ", enabled " + enabled[0]);
+    }
+
+    private void inspectMultipleAwards(SettlementAwardFixture fixture, boolean animated) throws Exception {
+        var game = fixture.beforeAllIn();
+        new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir())).save(game, false);
+        String name = fixture == SettlementAwardFixture.SPLIT ? "Split pot" : "Side pot";
+        actions.put("Restore " + name.toLowerCase(Locale.ROOT) + " fixture before the decisive all-in");
+        var activity = launchHoldem();
+        var probe = new SettlementAwardObservation[1];
+        var winners = fixture.awards.stream().map(HoldemTablePresentation.PotAward::physicalSeat)
+                .collect(java.util.stream.Collectors.toList());
+        try {
+            tap("Continue saved game");
+            if (fixture == SettlementAwardFixture.SPLIT || !animated) checkAnimationPolicy(animated);
+            runOnMainSync(() -> probe[0] = new SettlementAwardObservation((ViewGroup) activity.getWindow().getDecorView(), winners));
+            tap("All-in · " + fixture.allInChips);
+            see(name + " settles after the all-in", "Hand " + game.handNumber() + " · Settled");
+            see(name + " shows the total distributed pot", "Pot paid · 8000");
+            if (animated) checkMultipleFlights(probe[0], fixture, name);
+            else {
+                capture("01-static-awards");
+                runOnMainSync(probe[0]::stop);
+                check("Disabled animation creates no award markers", "no markers", probe[0].sawMarker() ? "marker created" : "no markers");
+            }
+            checkAwardText(activity, fixture, name);
+            if (animated && fixture == SettlementAwardFixture.SIDE) capture("05-side-payout");
+            if (!animated) {
+                tap("New hand");
+                see("Disabled animation leaves continuation usable", "Hand " + (game.handNumber() + 1) + " · Preflop");
+            }
+        } finally {
+            runOnMainSync(() -> {
+                if (probe[0] != null) probe[0].close();
+                activity.finish();
+            });
+            waitForIdleSync();
+        }
+    }
+
+    private void inspectCompactAward() throws Exception {
+        var fixture = SettlementAwardFixture.SIDE;
+        var game = fixture.beforeAllIn();
+        new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir())).save(game, false);
+        actions.put("Restore side pot fixture before all-in on the short display");
+        var activity = launchHoldem();
+        var probe = new SettlementAwardObservation[1];
+        try {
+            var config = activity.getResources().getConfiguration();
+            check("The compact award journey uses a short window with enlarged text", "at most 320 x 340 dp, font 2.0",
+                    config.screenWidthDp + " x " + config.screenHeightDp + " dp, font " + config.fontScale,
+                    config.screenWidthDp <= 320 && config.screenHeightDp <= 340 && config.fontScale == 2f);
+            tap(revealTaggedControl(activity, "continue-game"));
+            checkAnimationPolicy(true);
+            runOnMainSync(() -> probe[0] = new SettlementAwardObservation(
+                    (ViewGroup) activity.getWindow().getDecorView(), List.of(2)));
+            tap(revealTaggedControl(activity, "ALL_IN"));
+            see("Compact side pot settles after the all-in", "Hand 3 · Settled");
+
+            boolean arrived = probe[0].awaitArrival();
+            runOnMainSync(probe[0]::stop);
+            var departure = probe[0].departure();
+            var arrival = probe[0].arrival();
+            Bitmap departureImage = probe[0].takeDepartureImage();
+            Bitmap arrivalImage = probe[0].takeArrivalImage();
+            if (departureImage != null) emitCapture("01-compact-departure", departureImage);
+            if (arrivalImage != null) emitCapture("02-compact-arrival", arrivalImage);
+            awaitRenderedFrame("03-compact-summary");
+            var summaryImage = new Bitmap[1];
+            runOnMainSync(() -> summaryImage[0] = probe[0].drawWindow());
+            emitCapture("03-compact-summary", summaryImage[0]);
+
+            checkCompactSeatVisibility(activity);
+            check("The compact award starts at the pot center", "within 2 px of the pot center",
+                    String.valueOf(departure), departure != null && departure.atPot());
+            check("The compact award reaches only the visible recipient", "seat 2 within 2 px of its center",
+                    String.valueOf(probe[0].latest()), arrived && arrival != null && arrival.atSeats());
+            check("The hidden recipient never creates a marker", "[settlement-award:2]", probe[0].markerTags().toString());
+            check("The visible marker carries the exact award", "[2 +7840]",
+                    arrival.labels().toString());
+            checkAwardText(activity, fixture, "Compact side pot");
+        } finally {
+            runOnMainSync(() -> {
+                if (probe[0] != null) probe[0].close();
+                activity.finish();
+            });
+        }
+    }
+
+    private void checkCompactSeatVisibility(Activity activity) throws Exception {
+        var facts = new String[1];
+        var correct = new boolean[1];
+        runOnMainSync(() -> {
+            var root = activity.getWindow().getDecorView();
+            var viewport = root.<View>findViewWithTag("holdem-game-viewport");
+            var visible = root.<View>findViewWithTag("settlement-target:seat:2");
+            var hidden = root.<View>findViewWithTag("settlement-target:seat:3");
+            var clipped = new Rect();
+            boolean centerVisible = visible != null && visible.getLocalVisibleRect(clipped)
+                    && clipped.contains(visible.getWidth() / 2, visible.getHeight() / 2);
+            boolean fullyHidden = hidden != null && hidden.getHeight() > 0 && !hidden.getGlobalVisibleRect(new Rect());
+            boolean scrollable = viewport != null && viewport.canScrollVertically(1);
+            facts[0] = "seat 2 center visible=" + centerVisible + ", seat 3 fully outside=" + fullyHidden + ", scrollable=" + scrollable;
+            correct[0] = centerVisible && fullyHidden && scrollable;
+        });
+        check("The compact viewport keeps one recipient fully outside", "seat 2 visible, seat 3 outside, scrollable", facts[0], correct[0]);
+    }
+
+    private void checkMultipleFlights(SettlementAwardObservation probe, SettlementAwardFixture fixture, String name) throws Exception {
+        boolean arrived = probe.awaitArrival();
+        runOnMainSync(probe::stop);
+        var departure = probe.departure();
+        var arrival = probe.arrival();
+        Bitmap departureImage = probe.takeDepartureImage();
+        Bitmap arrivalImage = probe.takeArrivalImage();
+        boolean split = fixture == SettlementAwardFixture.SPLIT;
+        if (departureImage != null) emitCapture(split ? "01-split-departure" : "03-side-departure", departureImage);
+        if (arrivalImage != null) emitCapture(split ? "02-split-arrival" : "04-side-arrival", arrivalImage);
+        check(name + " markers start together at the pot", "every marker within 2 px of the pot center",
+                String.valueOf(departure), departure != null && departure.atPot());
+        check(name + " markers reach their own seat frames", "every marker within 2 px of its recipient",
+                String.valueOf(probe.latest()), arrived && arrival != null && arrival.atSeats());
+        var expected = fixture.awards.stream().map(award -> award.physicalSeat() + " +" + award.chips())
+                .collect(java.util.stream.Collectors.toList());
+        check(name + " markers carry exact awards once per recipient", expected.toString(),
+                departure.labels() + " → " + arrival.labels(),
+                departure.markerCount() == expected.size() && arrival.markerCount() == expected.size()
+                        && departure.labels().equals(expected) && arrival.labels().equals(expected));
+    }
+
+    private void checkAwardText(Activity activity, SettlementAwardFixture fixture, String name) throws Exception {
+        var expected = new ArrayList<String>();
+        var readableRows = new ArrayList<Integer>();
+        var observed = new String[]{"missing or clipped summary"};
+        runOnMainSync(() -> {
+            var root = activity.getWindow().getDecorView();
+            for (var award : fixture.awards) {
+                var seat = seatFrame(root, award.physicalSeat());
+                if (seat == null) continue;
+                String description = value(seat.getContentDescription());
+                expected.add(description.split(", ", 2)[0] + " +" + award.chips());
+                for (int index = 0; index < seat.getChildCount(); index++) {
+                    if (!(seat.getChildAt(index) instanceof SeatFactRow row)) continue;
+                    var label = (TextView) row.getChildAt(0);
+                    var amount = (TextView) row.getChildAt(1);
+                    if ("Won".contentEquals(label.getText()) && Integer.toString(award.chips()).contentEquals(amount.getText())
+                            && fits(label) && fits(amount) && description.contains(", Won " + award.chips())) {
+                        readableRows.add(award.physicalSeat());
+                    }
+                }
+            }
+            TextView summary = root.findViewWithTag("settlement-award-summary");
+            var visible = new Rect();
+            if (summary != null && summary.getGlobalVisibleRect(visible) && visible.width() == summary.getWidth()
+                    && visible.height() == summary.getHeight() && fits(summary))
+                observed[0] = value(summary.getText());
+        });
+        check(name + " names and amounts remain in visible text", "Pot awards · " + String.join(" · ", expected), observed[0],
+                expected.size() == fixture.awards.size() && observed[0].equals("Pot awards · " + String.join(" · ", expected)));
+        check(name + " seat rows expose every exact award",
+                fixture.awards.stream().map(award -> Integer.toString(award.physicalSeat())).collect(java.util.stream.Collectors.joining(", ")),
+                readableRows.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(", ")));
+    }
+
     private void resumeNextHandDuringSettlement() throws Exception {
         var activity = openTournament();
         Activity recreated = null;
@@ -1020,6 +1278,13 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private void capture(String name) throws Exception {
+        awaitRenderedFrame(name);
+        var image = ui.takeScreenshot();
+        if (image == null) throw new AssertionError("Could not capture " + name);
+        emitCapture(name, image);
+    }
+
+    private void awaitRenderedFrame(String name) throws Exception {
         // Accessibility can expose the new tree before the compositor presents the new screen.
         var nextDraw = new CountDownLatch(1);
         runOnMainSync(() -> {
@@ -1028,8 +1293,9 @@ public final class TournamentSanity extends Instrumentation {
         });
         if (!nextDraw.await(3, TimeUnit.SECONDS)) throw new AssertionError("No rendered frame for " + name);
         ui.waitForIdle(200, 4000);
-        var image = ui.takeScreenshot();
-        if (image == null) throw new AssertionError("Could not capture " + name);
+    }
+
+    private void emitCapture(String name, Bitmap image) throws Exception {
         byte[] png;
         try (var stream = new ByteArrayOutputStream()) {
             if (!image.compress(Bitmap.CompressFormat.PNG, 100, stream)) throw new AssertionError("Could not write " + name);

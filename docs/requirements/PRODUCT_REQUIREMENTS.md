@@ -46,13 +46,22 @@ J6 trebuie să permită dezvoltarea și evaluarea unui AI de No-Limit Texas Hold
 
 Primul increment reutilizează meniul, selectorul de limbă, editorul numelui, geometria mesei, chenarele și mâna centrată din J4/J5. Limba implicită este engleza; româna se poate selecta din meniu.
 
-<<<<<<< Updated upstream
-Masa locală arată cărțile proprii, cărțile comunitare, potul, jetoanele, contribuțiile și rolurile. În timpul mâinii, cărțile adverse nu sunt afișate; după decontare sunt dezvăluite pentru recapitulare, inclusiv cele ale jucătorilor care au dat fold. Un marcaj textual Fold persistă pe locul retras până la următoarea mână. Eticheta centrală identifică explicit actorul; indicatorul combinației folosește doar cărțile proprii și board-ul public. Coach-ul AI oferă o acțiune legală, explică estimările disponibile și nu aplică mutarea. Butonul de preluare joacă mâna locală curentă prin aceeași validare a motorului. Politica nu primește niciodată cărțile adverse; proiecția de recapitulare le expune interfeței numai după decontarea terminală a mâinii. [Contractul interfeței](../../holdem-android/README.md) · [Criteriile mâinii interactive](../feedback/J6-UI-01-INTERACTIVE-TABLE.md) · [Coach și recapitulare](../feedback/J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md)
-=======
-Masa locală arată cărțile proprii, cărțile comunitare, potul, jetoanele, contribuțiile și rolurile. În timpul mâinii, cărțile adverse rămân cu fața în jos; după decontare sunt dezvăluite pentru recapitulare, inclusiv cele ale jucătorilor care au dat fold. Un marcaj textual Fold persistă pe locul retras până la următoarea mână. Eticheta centrală identifică explicit actorul; indicatorul combinației folosește doar cărțile proprii și board-ul public. Coach-ul AI oferă o acțiune legală, explică estimările disponibile și nu aplică mutarea. Butonul de preluare joacă mâna locală curentă prin aceeași validare a motorului. Politica nu primește niciodată cărțile adverse; proiecția de recapitulare le expune interfeței numai după decontarea terminală a mâinii. [Contractul interfeței](../../holdem-android/README.md) · [Contractul mâinii](../../holdem-android/README.md#contractul-mâinii) · [Coach și recapitulare](../feedback/J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md)
->>>>>>> Stashed changes
+| Funcție | Contract local |
+|---|---|
+| Masa | Arată cărțile proprii și comunitare, potul, jetoanele, contribuțiile și rolurile. Eticheta centrală identifică actorul, iar marcajul Fold rămâne până la mâna următoare. |
+| Combinația curentă | Se calculează din cărțile proprii și board-ul public. |
+| Coach și preluare | Coach-ul recomandă o acțiune legală și explică estimările disponibile. Comanda de preluare joacă mâna curentă prin validatorul motorului. |
+| Recapitulare | Dezvăluie cărțile adverse, inclusiv ale locurilor foldate, după decontarea terminală. Politica primește doar observația actorului. |
 
-Turneul local pornește la 4–6 locuri. La creare, jucătorul alege blindurile să crească la fiecare 1, 2, 3 sau 5 minute; implicit este 1 minut. Nivelul se aplică de la următoarea mână după expirarea intervalului. Eliminarea unui loc continuă să avanseze nivelul conform regulilor turneului. La fiecare plată, stivele decid cine continuă și ce locuri sunt eliminate. Locul uman rămâne fix când se schimbă dealerul sau masa ajunge heads-up. Ecranul terminal păstrează dezvăluirea ultimei mâini și arată rezultatul turneului. [Turneu și reluare](../../holdem-android/README.md#turneu-și-reluare)
+[Contractul interfeței](../../holdem-android/README.md) · [Coach și recapitulare](../feedback/J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md)
+
+Turneul local pornește cu 4–6 jucători. Intervalul blindurilor se alege la creare dintre 1, 2, 3 și 5 minute, cu 1 minut implicit.
+
+- Expirarea intervalului și eliminările se reflectă în nivelul mâinii următoare.
+- La decontare, stivele decid cine continuă. Locul uman rămâne fix la schimbarea dealerului și în heads-up.
+- Ecranul terminal păstrează cărțile ultimei mâini și arată rezultatul turneului.
+
+[Turneu și reluare](../../holdem-android/README.md#turneu-și-reluare)
 
 ### Claritatea rezultatului mâinii
 
@@ -60,23 +69,20 @@ Turneul local pornește la 4–6 locuri. La creare, jucătorul alege blindurile 
 - Când o mână s-a încheiat și este disponibil `New hand`, păstrați cărțile proprii, board-ul, cărțile dezvăluite și evidențierea combinației pe masă până la apăsarea explicită. Nu le ascundeți după un timer și nu avansați automat; resume-ul trebuie să restaureze aceeași recapitulare.
 - Pentru showdown, recapitularea identifică cele mai bune cinci cărți ale fiecărui jucător eligibil și evidențiază discret combinația aleasă. O victorie prin fold este etichetată drept uncontested și nu primește o combinație de cărți inventată.
 - Semnalul vizual al premiului ajunge la fiecare loc beneficiar conform decontării motorului, inclusiv split și poturi secundare. Mișcarea premiului este separată de colectarea cărților.
+- Chenarul afișează separat premiul din pot și restituirea pariului neacoperit, inclusiv când același loc primește ambele sume. Sumarul potului include numai premiile. Un loc care primește numai restituire nu primește marker de premiu. Valorile se păstrează după restaurarea mâinii.
 - Captionul combinației este scurt și discret; `Hand complete` nu se repetă în centrul unei mese deja închise. Cărțile terminale rămân vizibile până la acțiunea explicită `New hand` sau rezultatul de turneu.
 - [Criteriile de showdown și animare](../feedback/J6-UI-07-SHOWDOWN-WIN-CLARITY.md)
 
 ### Continuarea în timpul decontării
 
-O comandă de continuare acceptată în timpul animației salvează destinația în checkpoint. După întrerupere, reluarea deschide mâna sau rezultatul salvat. Dacă scrierea eșuează, utilizatorul rămâne la masa terminală și poate reîncerca. [Starea integrării](../feedback/J6-UI-06-RESUMABLE-TURNS-AND-SETTLEMENT.md)
+O comandă de continuare acceptată în timpul animației salvează destinația în checkpoint. După întrerupere, reluarea deschide mâna sau rezultatul salvat. Dacă scrierea eșuează, utilizatorul rămâne la masa terminală și poate reîncerca. [Contractul reluării](../../holdem-android/README.md#turneu-și-reluare)
 
 ### Clasamentul turneelor
 
 - Aplicația oferă un clasament local, cumulativ, al punctelor obținute în turnee. Totalurile se grupează după un ID stabil al participantului, nu după aliasul afișat la masă.
 - Fiecare rezultat terminal intră o singură dată în registrul local, după ID-ul stabil al participantului. Topul arată punctele cumulate, turneele jucate și cea mai bună clasare; egalitățile de puncte împart același rang. Tabela este derulabilă și nu pretinde sincronizare online.
-<<<<<<< Updated upstream
 - Redenumirea profilului actualizează eticheta intrării identificate prin același ID. Rangul, punctele, turneele și intrările celorlalți participanți se păstrează, inclusiv după restartul procesului.
 - Punctele se calculează cu `rotunjire(100 × (N − rang_mediu) / (N − 1))`, unde `N` este numărul participanților. La o eliminare simultană, rangul mediu este media locurilor ocupate. O schimbare a curbei cere versiune nouă și migrarea explicită a totalurilor. [Verificările clasamentului](../testing/TEST_STRATEGY.md#interfața-android-locală)
-=======
-- Punctele unui turneu se calculează ca `round(100 × (N − rangMediu) / (N − 1))`, unde `N` este numărul de participanți. La egalitate, `rangMediu` este media locurilor ocupate de grup. Registrul deduplică rezultatele după ID-ul turneului, iar clasamentul afișează numele curent al profilului după ID-ul stabil al jucătorului. [Starea integrării](../feedback/J6-UI-08-TOURNAMENT-LEADERBOARD.md)
->>>>>>> Stashed changes
 
 ### Istoricul pariurilor
 

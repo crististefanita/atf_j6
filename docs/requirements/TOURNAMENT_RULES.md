@@ -1,6 +1,10 @@
 # Sesiuni Hold’em la o singură masă
 
-[Profilul YAML de turneu](../../config/j6-tournaments.yaml) declară mesele de 4, 5 și 6 locuri, stiva inițială și nivelurile. `TournamentArena` gestionează timpul, eliminările și creșterea blind-urilor. `CashTableArena` oferă sesiuni fără turneu, cu stive persistente și blind-uri fixe. Ambele folosesc același motor de mână și aceleași reguli de plată.
+[Profilul YAML de turneu](../../config/j6-tournaments.yaml) declară mesele de 4, 5 și 6 locuri, stiva inițială și nivelurile.
+
+- `TournamentArena` gestionează timpul, eliminările și creșterea blindurilor.
+- `CashTableArena` păstrează stivele și blindurile fixe între mâini.
+- Ambele folosesc același motor de mână și aceleași reguli de plată.
 
 ## Reguli de turneu
 
@@ -22,43 +26,70 @@ flowchart LR
     NEXT -->|actualizează stivele| TOURNAMENT[Mâna următoare]
 ```
 
+<details>
+<summary><strong>Legendă — de la blinduri la decontare</strong></summary>
+
+- **Nivelul** fixează blindurile până la finalul mâinii.
+- **Motorul** calculează opțiunile legale pentru actorul curent.
+- **Decontarea** actualizează stivele înaintea următoarei mâini.
+
+</details>
+
 Toate sumele de acțiune sunt jetoanele pe care actorul le pune **acum**. Preflop, blindul mare stabilește prețul nominal și pasul inițial de raise. După flop, valoarea `minimumOpen` stabilește prima deschidere completă.
 
-Un all-in sub pasul minim poate crește prețul fără să redeschidă singur raise-ul unui jucător care a acționat deja. Pentru acel jucător, creșterile cumulate ale prețului de la ultima acțiune trebuie să atingă mărimea ultimului raise complet. Pragul este evaluat la rândul lui; o creștere scurtă ulterioară nu anulează redeschiderea deja câștigată. La decontare, poturile se separă după contribuții și fiecare pot se acordă numai locurilor eligibile. Surplusul neacoperit se returnează, iar jetonul indivizibil merge la primul câștigător eligibil în sens orar după buton.
+| Situație | Regulă |
+|---|---|
+| Raise all-in scurt | Poate crește prețul. Pentru un actor care a acționat, dreptul de raise se redeschide când creșterea cumulată de la ultima sa acțiune atinge ultimul pas complet. |
+| Momentul verificării | Motorul verifică pragul la tura actorului. O creștere scurtă ulterioară păstrează dreptul deja redeschis. |
+| Call parțial | Actorul plătește cel mult stiva rămasă și poate câștiga straturile acoperite de contribuția lui. Un loc foldat poate finanța un strat. |
+| Decontare | Contribuțiile determină straturile, iar eligibilitatea determină beneficiarii. Surplusul neacoperit se returnează. Jetonul indivizibil merge la primul câștigător eligibil în sens orar după buton. |
 
-Un call folosește cel mult stiva rămasă. Când stiva nu ajunge pentru prețul curent, jucătorul rămâne eligibil doar pentru straturile acoperite de contribuția lui. Un jucător care a dat fold poate finanța un strat fără a fi eligibil să-l câștige.
-
-Regulile de licitare, heads-up și împărțire au ca referință [Poker Tournament Directors Association](https://www.pokertda.com/view-poker-tda-rules/). Nivelurile, ritmul și creșterea la eliminare sunt convențiile laboratorului.
+Nivelurile, ritmul și creșterea la eliminare sunt convențiile laboratorului. Pentru licitare, heads-up și împărțire, consultați [regulile Poker Tournament Directors Association](https://www.pokertda.com/view-poker-tda-rules/).
 
 ## Reproducere offline
 
-După `mvn test`, rulați `ro.atf.holdem.arena.TournamentArena` cu directoarele `target/classes` din core, AI și arena și JAR-ul SnakeYAML din depozitul Maven. Argumentele sunt calea profilului YAML, calea nouă a jurnalului, numărul de turnee pentru fiecare mărime de masă, seed-ul inițial opțional, stilul candidat (`mixed`, `bluff`, `calling`, `loose`, `sized`, `pressure`, `equity`, variante `legacy-*` sau `control`) și calea opțională către YAML-ul unei variante de politică. CLI-ul simulează 12 secunde pe mână și păstrează aceiași adversari de referință: TAG, calling station și pressure. Cohorta `control` înlocuiește numai locul candidat cu TAG, păstrând seed-urile, nivelurile, adversarii și locurile.
+După `mvn test`, porniți `TournamentArena` cu clasele core, AI și arena și cu JAR-ul SnakeYAML din cache-ul Maven. CLI-ul simulează 12 secunde per mână.
 
-Ambele cohorte citesc setările de frecvență și poziție din YAML-ul ales. `bluff` folosește trigger-ul postflop, `calling` verifică răspunsul pasiv, `pressure` aplică presiune minimă legală, iar `loose` folosește frecvențele și plafonul de call din `looseAggressive`. `mixed` rămâne alias pentru `bluff`. Rulează fiecare candidat și `control` cu același interval de seed; păstrează jurnalele separat, auditează fiecare și folosește `node scripts/compare-tournament-cohorts.cjs <candidat> <control>` pentru sumar. Comparația este de laborator cu varianță mare; procentul de victorii nu dovedește singur creșterea EV-ului.
+### Candidatul și controlul
 
-Variantele de reglaj pentru loose-aggressive sunt declarate în `config/policy-tuning/`: conservatoare, echilibrată și agresivă. Într-o comparație se schimbă numai YAML-ul candidatului; seed-urile, profilul de turneu, pozițiile candidate și setul de adversari rămân aceleași.
+| Argument CLI | Rol |
+|---|---|
+| Profil YAML, jurnal nou și număr de turnee | Fixează regulile, ieșirea și numărul de turnee pentru fiecare mărime de masă. |
+| Seed, stil și YAML de politică | Permit replay și alegerea ponderilor candidatului. YAML-ul se încarcă și când se specifică offsetul. |
+| `buttonOffset` | Rotește primul buton pe același flux de seed-uri. Candidatul și controlul folosesc același offset. |
 
-CLI-ul acceptă un al șaptelea argument opțional `buttonOffset`. El rotește butonul inițial, păstrând neschimbat seed-ul generatorului de pachete. Acesta este un contrafactual de poziție pentru turneul complet: ordinea de amestec rămâne aceeași, iar rotația mută cărțile între locurile fizice. Candidatul și controlul trebuie să folosească același offset. `scripts/run-button-position-tournaments.ps1` poate selecta cohortele pressure, loose și sizing 50/100/150 pentru offseturile 0–5, în profilurile standard și stres; `scripts/audit-button-rotations.cjs` confirmă același flux de deal-uri și acoperirea fiecărui buton inițial.
+- **Stiluri.** Folosiți `bluff` sau aliasul `mixed` pentru explorare postflop, `calling` pentru joc pasiv, `pressure` pentru presiune minimă legală și `loose` pentru frecvențele și plafonul din `looseAggressive`. `sized` aplică mărimile relative la pot.
+- **Pereche.** `control` înlocuiește locurile candidate cu TAG. `equity` folosește Monte Carlo contextual pe aceleași locuri, alături de adversarii de referință TAG, calling station și pressure.
+- **Replay și reglaj.** `legacy`, `legacy-loose`, `legacy-pot` și `legacy-equity` refac cohorta istorică. Pentru un reglaj loose-aggressive, schimbați numai YAML-ul din `config/policy-tuning/`, păstrând seed-urile, nivelurile, locurile și adversarii.
+- **Jurnal.** Fiecare decizie leagă poziția, strada, potul, prețul de call și stiva dinaintea acțiunii de versiunea parametrilor. Auditați fiecare jurnal și rulați `node scripts/compare-tournament-cohorts.cjs <candidat> <control>`.
 
-Argumentul de stil poate selecta `mixed`, `bluff`, `calling`, `loose`, `sized`, `pressure`, `equity` sau `control`. Variantele `legacy`, `legacy-loose`, `legacy-pot` și `legacy-equity` reproduc cohorta veche pentru replay și ablații pereche; nu sunt profiluri de produs. YAML-ul politicii este încărcat indiferent dacă argumentele opționale includ sau nu offsetul de buton. Jurnalul fiecărei decizii păstrează poziția, strada, potul, suma de call și stiva observate înainte de acțiune, împreună cu versiunea completă a parametrilor policy.
+### Rotația rolurilor și a butonului
 
-`TournamentStrategyArena` folosește [configurația strictă de lineup](../../config/j6-strategy-lineups.yaml) pentru a plasa roluri AI diferite la aceeași masă și a roti atribuirea fiecărui rol prin locuri. Jurnalul `STRATEGY` leagă rolul de locul fizic pentru fiecare turneu. Jurnalul deciziei păstrează și blind-ul mare, locurile active, stivele și contribuțiile vizibile, locurile foldate, acțiunile all-in anterioare clasificate ca raise sau call, statisticile publice istorice și acțiunile legale. Nu include mâinile ascunse ori seed-ul dealerului în observația politicii.
+- `run-button-position-tournaments.ps1` compară pressure, loose și sizing 50/100/150 la offseturile 0–5, în profilurile standard și de stres. `audit-button-rotations.cjs` verifică fluxul de seed-uri, perechile și acoperirea pozițiilor. Când mutați butonul, cărțile se redistribuie între locurile fizice.
+- `TournamentStrategyArena` validează [lineup-ul strict](../../config/j6-strategy-lineups.yaml), rotește rolurile și le leagă de locuri în evenimentele `STRATEGY`. Pentru același seed și același offset, rotația rolurilor păstrează distribuția.
+- `config/j6-strategy-lineups-shortstack.yaml` include rolul adversarial cu plafon de 8 blinduri mari. El împinge preflop cu pereche de nouari sau mai mare, A-T sau mai bun ori K-Q, dacă all-in-ul este legal. În rest revine la TAG. Testele verifică declanșarea, fallback-ul și schema lineup-ului pentru 4–6 locuri.
+- `run-strategy-rotation-tournaments.ps1` rulează toate rotațiile rolurilor și butonului în profilul standard și de stres. Folosiți `-LineupFile`, `-SeatCounts`, `-ProfileNames` și `-SeedsPerSeatCount` pentru a selecta matricea.
 
-`config/j6-strategy-lineups-shortstack.yaml` definește o cohortă adversarială pentru rolul `short-stack-shove`, cu prag maxim configurat de 8 big blind-uri. Politica împinge numai preflop cu perechi de nouari sau mai mari, A-T sau mai bine, ori K-Q; folosește all-in numai dacă acea acțiune exactă este legală, iar în celelalte stări revine la TAG. Este rol de testare a răspunsurilor, nu politică implicită a jocului și nu dovadă de EV. Testele unitare verifică atât trigger-ele, cât și fallback-ul; `TournamentStrategyArenaTest` verifică schema lineup-ului distinct pentru mesele de 4–6 locuri.
+| Opțiune sau dovadă | Condiție |
+|---|---|
+| `-Append` | Refolosește un jurnal numai după un nou audit independent. O urmă incompletă sau invalidă oprește rularea. |
+| `-MavenRepository` | Identifică depozitul extern pentru SnakeYAML. |
+| `-SourceCommit` și `-SourceDirty` | Pentru o copie fără `.git`, consemnează commitul complet și marcajul modificărilor necomise. |
+| Auditor și sumarizator | `audit-tournament.cjs` reconstruiește stivele, contribuțiile, poziția, call-ul, legalitatea, all-in-urile și decontarea. `summarize-strategy-rotation-tournaments.cjs` agregă stivele și răspunsurile după rol, poziție și seed. |
 
-`scripts/run-strategy-rotation-tournaments.ps1` rulează pentru fiecare seed toate rotațiile rolurilor și pozițiilor inițiale ale butonului, atât în profilul standard, cât și în cel cu blind-uri accelerate. `-LineupFile config/j6-strategy-lineups-shortstack.yaml` selectează cohorta adversarială; `-SeatCounts`, `-ProfileNames` și `-SeedsPerSeatCount` îi restrâng matricea, iar `-Append` reutilizează o urmă existentă numai după un audit independent nou; o urmă incompletă sau invalidă oprește rularea. Intervalele de seed și numărul de clustere independente se calculează din numele urmelor, astfel încât loturile adăugate cu dimensiuni diferite să nu fie raportate ca un singur lot uniform. `-MavenRepository` indică explicit cache-ul extern care furnizează SnakeYAML. Pentru un snapshot extern fără `.git`, `-SourceCommit` fixează commitul complet de 40 de caractere, iar `-SourceDirty` marchează explicit o sursă cu modificări necomise. În interiorul aceluiași seed și offset de buton, atribuirea rolurilor se schimbă, dar fluxul de deal-uri rămâne identic. `audit-tournament.cjs` reconstruiește independent stack-urile, contribuțiile, poziția, call-ul, legalitatea, acțiunile all-in și settlement-ul. `summarize-strategy-rotation-tournaments.cjs` agregă traiectoria de stack și răspunsurile contextuale pe rol, poziție și seed. Rotațiile sunt măsurători repetate; ele nu trebuie raportate ca turnee statistice independente.
+### Istoricul public și interpretarea
 
-`equity` înlocuiește numai locurile candidate cu politica Monte Carlo în modul turneu; `control` păstrează TAG în aceleași locuri. `legacy-equity` face aceeași substituție în cadrul cohortelor legacy. Acțiunile candidate conțin bugetul și ponderile YAML folosite, iar `audit-tournament.cjs` validează jurnalele înainte de comparație.
-
-`PublicOpponentTendency` înregistrează, pe loc fizic și în interiorul turneului, raise-urile all-in preflop care aveau o stivă rămasă `>2` și `<=10 BB` și o opțiune legală de raise. La all-in-ul curent se folosește suma acțiunii din istoricul public, nu stiva de la începutul mâinii după blind-uri. Contoarele se actualizează după terminarea mâinii; nu influențează o decizie anterioară din aceeași mână. Frecvența nu reprezintă un range de cărți: politica equity o folosește doar pentru ajustarea limitată la ±4 puncte a marjei de call când înfruntă un astfel de adversar. Priorul și sensibilitatea sunt configurabile în `equityDecision.contextWeights`, iar profilul equity baseline dezactivează sensibilitatea. `audit-tournament.cjs --require-public-shove-history` reconstruiește independent oportunitățile din acțiunile legale și verifică istoricul înaintea fiecărei decizii; testele nu validează EV ori strategie optimă.
-
-Rotația butonului schimbă poziția inițială a fiecărui loc, dar păstrează fluxul de seed-uri al mâinilor. Pentru comparație, candidatul și controlul trebuie să folosească același seed, aceeași mărime de masă, același profil și același offset. Sumarul exclude offseturile care repetă poziții în mese mai mici. Numărul de expuneri pe poziție nu este automat un număr de turnee independente.
-
-Metricile de fold după o acțiune agresivă sunt temporale: arată că fold-uri au urmat unei agresiuni în aceeași mână. Nu stabilesc ce bet a provocat fold-ul și nu măsoară singure fold equity sau EV. Pentru interpretare se citesc împreună cu mărimea relativă la pot, câștigurile fără showdown, evoluția stivei și rezultatele pe poziții.
+- **Context.** Jurnalul deciziei consemnează blindul mare, locurile active, stivele, contribuțiile, fold-urile, all-in-urile clasificate ca raise sau call, statisticile publice și acțiunile legale. Politica vede doar observația actorului.
+- **Shove.** `PublicOpponentTendency` măsoară oportunitățile pe loc fizic, pentru o stivă preflop de peste 2 și cel mult 10 BB, cu raise all-in legal. Contoarele se actualizează după decontare, iar raise-ul curent este clasificat din suma acțiunii. Profilul baseline are sensibilitatea zero. [Calcul și configurare](AI_REQUIREMENTS.md#riscul-public-de-stack-și-all-in)
+- **Audit.** `audit-tournament.cjs --require-public-shove-history` reconstruiește oportunitățile din acțiunile legale și confruntă istoricul anterior fiecărei decizii.
+- **Unitatea statistică.** Comparați candidat și control la același seed, profil, număr de locuri și offset. Sumarul elimină offseturile redundante la mesele mici și grupează loturile după intervalele de seed. Rotațiile aceluiași seed rămân măsurători pereche.
+- **Fold.** Un fold care urmează unei agresiuni arată succesiunea acțiunilor. Pentru interpretare, comparați mărimea relativă la pot, câștigurile fără showdown, evoluția stivei și poziția. Estimarea fold equity sau EV cere dovezi suplimentare.
 
 ### Rotația aceleiași distribuții
 
-`PositionRotationExperiment` rulează aceleași cărți private pentru fiecare loc fizic, același board și același stack, apoi mută butonul prin toate cele șase poziții. Candidatele TAG, calling, pressure, loose, bluff și equity joacă numai pe `HoldemObservation`; varianta `bluff-always` este doar un control de accesibilitate al trigger-ului. Auditorul verifică legalitatea mutărilor și proiecția fiecărei decizii, apoi compară stiva finală cu TAG în același loc. Adversarii de control sunt calling stations, astfel încât limpurile și secvențele de check să poată fi observate fără informație ascunsă.
+- **Distribuție controlată.** `PositionRotationExperiment` păstrează cărțile private, board-ul și stivele pe loc fizic și rotește butonul prin șase poziții.
+- **Politici.** TAG, calling, pressure, loose, bluff și equity primesc `HoldemObservation`. Calling stations sunt adversarii de referință. `bluff-always` exercită declanșatorul.
+- **Oracol.** Auditorul verifică observația și legalitatea fiecărei mutări. Comparația de stivă folosește TAG în același loc.
 
 ```powershell
 $run = Join-Path 'C:\work\holdem_back' ('position-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -99,23 +130,39 @@ Rulați `node scripts/audit-tournament.cjs <jurnal> --require-layers` pentru un 
 
 ## Provocări de decontare și redeschidere
 
-[Setul YAML de provocări](../../config/j6-allin-challenges.yaml) descrie stări de masă deterministe, nu rezultate injectate în turneu. Testul din `holdem-arena` construiește mâna prin motorul real, verifică actorul și meniul legal înaintea fiecărei acțiuni, apoi compară straturile de pot, eligibilitatea, câștigătorii, ordinea jetoanelor impare și conservarea stivei. Distribuirea specifică de șase locuri exercită patru all-in-uri scurte, o redeschidere cumulată, patru straturi împărțite la egalitate și straturi laterale cu resturi impare. Jurnalele acestor provocări pot fi exportate prin proprietatea Maven `j6.challenge.trace` și verificate separat cu `node scripts/audit-allin-challenge.cjs <jurnal>`.
+[Setul YAML de provocări](../../config/j6-allin-challenges.yaml) declară mâini deterministe jucate prin motorul real.
+
+- Testul verifică actorul și meniul legal înaintea fiecărei acțiuni.
+- Fixture-ul de șase locuri acoperă patru all-in-uri scurte, redeschiderea cumulată, patru straturi împărțite la egalitate și jetoanele impare din poturile secundare.
+- Oracolul compară straturile, eligibilitatea, câștigătorii, ordinea jetoanelor impare și conservarea stivelor.
+- Exportați jurnalul cu `j6.challenge.trace` și verificați-l cu `node scripts/audit-allin-challenge.cjs <jurnal>`.
 
 Provocările testează fragmente precise de reguli. Cohortele CLI rămân turnee complete, cu niveluri, eliminări și politici mixte; rezultatul cohortelor nu înlocuiește verificarea deterministă a unei reguli.
 
 ## Sesiune cash fără turneu
 
-O sesiune cash păstrează stiva de la o mână la următoarea și folosește aceeași structură de blind-uri la fiecare mână. Nu există ceas de nivel, creștere după timp sau eliminare turneistică; locurile cu stivă zero nu mai intră în mâinile următoare, iar sesiunea se încheie la limita configurată sau când rămâne un singur loc finanțat. Arena acceptă 2–6 locuri, stack-uri inițiale și un seed reproductibil. Jurnalul păstrează pentru fiecare mână dealerul, blind-urile, seed-ul de deal și stivele după plată.
+- **Masa.** `CashTableArena` acceptă 2–6 locuri, stive inițiale și seed reproductibil. Blindurile rămân fixe.
+- **Continuarea.** Stivele trec în mâna următoare. Locurile cu zero jetoane ies din rotație, iar sesiunea se încheie la limita de mâini sau când rămâne un singur loc finanțat.
+- **Jurnalul.** Păstrează dealerul, blindurile, seed-ul distribuției și stivele după plată.
 
 ```mermaid
 flowchart LR
-    FIXED[Blind-uri fixe] --> HAND[Mână validată de HoldemHand]
-    HAND --> STACKS[Stive persistente]
-    STACKS --> FUNDED{Cel puțin doi finanțați și sub limita de mâini?}
+    FIXED[Blind-uri fixe] -->|definesc prețul| HAND[Mână validată de HoldemHand]
+    HAND -->|decontează| STACKS[Stive persistente]
+    STACKS -->|determină| FUNDED{Cel puțin doi finanțați și sub limita de mâini?}
     FUNDED -->|Da| BUTTON[Următorul dealer finanțat]
-    BUTTON --> HAND
+    BUTTON -->|pornește| HAND
     FUNDED -->|Nu| DONE[Închide sesiunea]
 ```
+
+<details>
+<summary><strong>Legendă — sesiune cash</strong></summary>
+
+- **Blindurile** au aceeași valoare la fiecare mână.
+- **Stivele** se transferă în mâna următoare.
+- **Limita** oprește sesiunea la numărul de mâini configurat sau când rămâne un singur loc finanțat.
+
+</details>
 
 Rulați comparația pereche din rădăcina proiectului după ce `mvn test` a compilat modulele:
 

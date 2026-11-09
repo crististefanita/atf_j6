@@ -49,11 +49,37 @@ public class LocalHoldemTournamentTest {
         assertEquals(List.of(0, 0, 40, 20), headsUp.seats().stream().map(seat -> seat.contributed()).collect(Collectors.toList()));
         playAllIn(game, 7900);
         assertEquals(List.of(0, 0, 0, 8000), stacks(game));
-        assertEquals(8000, totalPayout(game));
+        var finalSeat = game.view().seats().get(3);
+        assertEquals(160, finalSeat.potWon());
+        assertEquals(7840, finalSeat.returned());
+        assertEquals(160, HoldemTablePresentation.displayedPot(game.view()));
+        assertEquals(List.of(new HoldemTablePresentation.PotAward(3, 160)),
+                HoldemTablePresentation.potAwards(game.view()));
+        assertEquals(List.of(
+                new HoldemTablePresentation.SeatMetric(HoldemTablePresentation.SeatMetricKind.STACK, 8000),
+                new HoldemTablePresentation.SeatMetric(HoldemTablePresentation.SeatMetricKind.WON, 160),
+                new HoldemTablePresentation.SeatMetric(HoldemTablePresentation.SeatMetricKind.RETURNED, 7840)),
+                HoldemTablePresentation.seatMetrics(LocalHoldemGame.restore(game.save()).view().seats().get(3), true));
         assertEquals(5, game.view().board().size());
         assertEquals(2, game.view().ownCards().size());
         assertEquals(LocalHoldemGame.Outcome.WON, game.outcome());
         assertThrows(IllegalArgumentException.class, game::nextHand);
+    }
+
+    @Test public void splitAndSidePotsKeepExactAwardsOnTheirPhysicalSeatsAfterReplay() {
+        for (var fixture : SettlementAwardFixture.values()) {
+            var game = fixture.settled();
+            var frame = game.view();
+            assertEquals(Street.COMPLETE, frame.street());
+            assertEquals(fixture.awards, HoldemTablePresentation.potAwards(frame));
+            assertEquals(8000, HoldemTablePresentation.displayedPot(frame));
+            assertEquals(fixture.awards, HoldemTablePresentation.potAwards(LocalHoldemGame.restore(game.save()).view()));
+            var first = frame.seats().get(fixture.awards.get(0).physicalSeat());
+            var second = frame.seats().get(fixture.awards.get(1).physicalSeat());
+            assertEquals(fixture == SettlementAwardFixture.SPLIT, first.handEvaluation().score() == second.handEvaluation().score());
+            assertEquals(fixture == SettlementAwardFixture.SPLIT, first.contributed() == second.contributed());
+            assertEquals(0, frame.seats().stream().mapToInt(seat -> seat.returned()).sum());
+        }
     }
 
     @Test public void losingAllInStopsTheSessionWithoutDiscardingTheFinalBoard() {

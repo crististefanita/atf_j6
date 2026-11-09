@@ -1,15 +1,6 @@
 package ro.atf.j6.release;
 
-import atf.reporting.audit.AssertionAuditRun;
-import atf.reporting.audit.AssertionAuditReport;
-import atf.reporting.configuration.ReportingSettings;
 import atf.reporting.contract.AtfAssertion;
-import atf.reporting.contract.AtfReportStatus;
-import atf.reporting.extent.session.ExtentReportSession;
-import atf.reporting.artifact.ReportArtifactInspector;
-import atf.reporting.artifact.ReportArtifactProfile;
-import atf.reporting.model.timing.ReportPhaseTiming;
-import atf.reporting.security.SensitiveDataRedactor;
 import atf.testkit.AtfComponentTest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,7 +36,7 @@ class ReleaseGovernanceTest {
         assertTrue(checks.stream().allMatch(AtfAssertion::passed), () -> checks.toString());
     }
 
-    @Test void currentReleaseStateMatchesSourceBinaryPolicyAndMainNavigation() throws Exception {
+    @Test void currentReleaseStateMatchesCheckoutEvidenceAndMainNavigation() throws Exception {
         Path root = projectRoot();
         var checks = new ArrayList<AtfAssertion>();
         Throwable failure = null;
@@ -56,11 +47,49 @@ class ReleaseGovernanceTest {
             checks.add(new AtfAssertion("Release metadata can be read", "valid source and release metadata",
                     problem.getClass().getSimpleName() + ": " + problem.getMessage(), false));
         }
-        publish(root, "J6ReleaseGovernance", "Current version, APK, and download route", checks);
+        publish(root, "J6ReleaseGovernance", "Checkout version, dossier evidence and download route", checks);
         assertTrue(failure == null && !checks.isEmpty() && checks.stream().allMatch(AtfAssertion::passed),
                 () -> checks.stream().filter(check -> !check.passed()).map(check -> check.name() + " expected "
                         + check.expected() + " actual " + check.actual()).toList().toString());
     }
+
+    @Test void checkoutEvidenceIsIndependentOfLocalApkAndRejectsContradictoryReceipts() throws Exception {
+        String url = "https://github.com/crististefanita/atf_j6/releases/download/v1.2.3/HoldemLab-1.2.3.apk";
+        String sha = "a".repeat(64);
+        var prepared = JSON.createObjectNode();
+        prepared.putObject("release").put("apkBytes", 512).put("sha256", sha).put("debuggable", false);
+        var receipt = JSON.createObjectNode().put("verified", true).put("httpStatus", 200)
+                .put("assetUrl", url).put("bytes", 512).put("sha256", sha);
+        prepared.set("authenticatedAssetDownload", receipt.deepCopy().put("credentialMode", "authenticated GitHub REST API"));
+        var published = prepared.deepCopy();
+        published.set("publicDownload", receipt.deepCopy().put("credentialMode", "anonymous"));
+        var draft = JSON.createObjectNode();
+        draft.putObject("release").putNull("apkBytes").putNull("sha256");
+        var checks = new ArrayList<AtfAssertion>();
+        recordEvidenceCase(checks, "Draft needs no local APK", "DRAFT", draft, url, null);
+        recordEvidenceCase(checks, "Prepared uses authenticated evidence", "PREPARED", prepared, url, null);
+        recordEvidenceCase(checks, "Published uses anonymous evidence", "PUBLISHED", published, url, null);
+        recordEvidenceCase(checks, "Authenticated receipt cannot stand in for anonymous download", "PUBLISHED",
+                prepared, url, "PUBLISHED requires a complete anonymous download");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) prepared.get("authenticatedAssetDownload")).put("sha256", "b".repeat(64));
+        recordEvidenceCase(checks, "Authenticated receipt with the wrong hash is rejected", "PREPARED",
+                prepared, url, "PREPARED requires an authenticated download receipt");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) published.get("publicDownload")).put("assetUrl", url.replace("1.2.3", "1.2.2"));
+        recordEvidenceCase(checks, "Anonymous receipt for a different version is rejected", "PUBLISHED",
+                published, url, "PUBLISHED requires a complete anonymous download");
+        publish(projectRoot(), "J6CheckoutEvidenceGovernance", "Offline dossier states without APK files", checks);
+        assertTrue(checks.stream().allMatch(AtfAssertion::passed), () -> checks.toString());
+    }
+
+    private static void recordEvidenceCase(List<AtfAssertion> checks, String label, String state,
+                                           JsonNode dossier, String url, String expectedFailure) {
+        var observed = new ArrayList<AtfAssertion>();
+        verifyReleaseEvidence(state, dossier, url, observed);
+        String failures = String.join(", ", observed.stream().filter(check -> !check.passed())
+                .map(AtfAssertion::name).toList());
+        add(checks, label, expectedFailure == null ? "" : expectedFailure, failures);
+    }
+
 
     @Test void downloadRoutesAreStateGatedAndMatchTheCurrentVersion() throws Exception {
         Path root = projectRoot();
@@ -300,14 +329,7 @@ class ReleaseGovernanceTest {
         add(checks, "Release root avoids Raw and folder downloads", "no raw or source-folder URL",
                 mainReadme.contains("raw.githubusercontent.com") || mainReadme.contains("release/" + version + "/" + packageName)
                         ? "unqualified route present" : "no raw or source-folder URL");
-        boolean browserReceiptMatches = matchesAuthenticatedDownload(validation.path("authenticatedBrowserDownload"), identity);
-        boolean assetReceiptMatches = matchesAuthenticatedDownload(validation.path("authenticatedAssetDownload"), identity);
-        boolean authenticatedDownloadMatches = browserReceiptMatches || assetReceiptMatches;
-        boolean authenticatedPreparedDownload = state.equals("PREPARED") && authenticatedDownloadMatches;
-        if (state.equals("PREPARED") && (mainReadme.contains(releaseUrl) || mainReadme.contains(apkUrl))) {
-            add(checks, "PREPARED links have a complete authenticated download receipt", "verified bytes and digest",
-                    authenticatedDownloadMatches ? "verified bytes and digest" : "missing or mismatched authenticated receipt");
-        }
+        boolean authenticatedPreparedDownload = state.equals("PREPARED") && hasAuthenticatedDownload(validation, apkUrl);
         add(checks, "README has the current release page", published || authenticatedPreparedDownload ? releaseUrl : "no release route",
                 (published || authenticatedPreparedDownload) && mainReadme.contains(releaseUrl) ? releaseUrl
                         : !published && !authenticatedPreparedDownload && !mainReadme.contains("github.com/crististefanita/atf_j6/releases/")
@@ -335,23 +357,11 @@ class ReleaseGovernanceTest {
                         && !markdownSection(androidGuide, "## Verificare locală").isBlank()
                         ? "Android owner section" : "missing owner link or section");
 
-        Path apk = folder.resolve(packageName);
+        verifyReleaseEvidence(state, validation, apkUrl, checks);
         if (state.equals("DRAFT")) {
-            add(checks, "DRAFT contains no APK", "absent", Files.exists(apk) ? "present" : "absent");
-            add(checks, "DRAFT claims no APK bytes", "null", identity.path("apkBytes").isNull()
-                    && identity.path("sha256").isNull() ? "null" : "binary identity claimed");
             add(checks, "DRAFT has no download pointer", "no direct APK link",
                     Files.readString(folder.resolve("README.md")).contains(".apk)") ? "direct link present" : "no direct APK link");
         } else {
-            byte[] bytes = Files.readAllBytes(apk);
-            String digest = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
-            checks.add(new AtfAssertion("Prepared APK has bytes", "positive size", Integer.toString(bytes.length),
-                    bytes.length > 0));
-            add(checks, "Manifest APK size matches", Integer.toString(bytes.length), Long.toString(identity.path("apkBytes").asLong(-1)));
-            add(checks, "Manifest APK SHA-256 matches", digest, identity.path("sha256").asText());
-            add(checks, "Release APK is not debuggable", "false", identity.path("debuggable").asText());
-            String sum = Files.readString(folder.resolve(packageName + ".sha256")).trim();
-            add(checks, "Checksum file identifies this APK", digest + "  " + packageName, sum);
             var seen = new HashSet<String>();
             for (var entry : validation.path("integrity").path("files")) {
                 String relative = entry.path("path").asText();
@@ -366,15 +376,35 @@ class ReleaseGovernanceTest {
             add(checks, "Linked Extent reports appear in the evidence inventory", "all recorded",
                     reportsRecorded ? "all recorded" : "missing integrity record");
         }
-        if (published) {
+    }
+
+    static void verifyReleaseEvidence(String state, JsonNode validation, String apkUrl, List<AtfAssertion> checks) {
+        JsonNode identity = validation.path("release");
+        if (state.equals("DRAFT")) {
+            add(checks, "DRAFT claims no APK identity", "null bytes and SHA-256",
+                    identity.path("apkBytes").isNull() && identity.path("sha256").isNull()
+                            ? "null bytes and SHA-256" : "binary identity claimed or missing manifest fields");
+            return;
+        }
+        add(checks, "Dossier records a qualified APK identity", "positive size and SHA-256",
+                identity.path("apkBytes").isIntegralNumber() && identity.path("apkBytes").canConvertToLong()
+                        && identity.path("apkBytes").asLong() > 0 && identity.path("sha256").asText().matches("[a-f0-9]{64}")
+                        ? "positive size and SHA-256" : "invalid size or digest");
+        add(checks, "Release APK is not debuggable", "false", identity.path("debuggable").asText());
+        if (state.equals("PREPARED")) {
+            add(checks, "PREPARED requires an authenticated download receipt", "verified canonical asset with exact bytes and SHA-256",
+                    hasAuthenticatedDownload(validation, apkUrl)
+                            ? "verified canonical asset with exact bytes and SHA-256" : "unverified or mismatched receipt");
+        }
+        if (state.equals("PUBLISHED")) {
             JsonNode download = validation.path("publicDownload");
-            add(checks, "Public download was checked successfully", "200 and exact APK identity",
-                    download.path("httpStatus").asInt() == 200
-                            && download.path("sha256").asText().equals(identity.path("sha256").asText())
-                            && download.path("bytes").asLong() == identity.path("apkBytes").asLong()
-                            ? "200 and exact APK identity" : "unverified or mismatched download");
+            add(checks, "PUBLISHED requires a complete anonymous download", "HTTP 200 for the verified canonical asset",
+                    matchesDownload(download, identity, apkUrl) && download.path("httpStatus").asInt(-1) == 200
+                            && download.path("credentialMode").asText().startsWith("anonymous")
+                            ? "HTTP 200 for the verified canonical asset" : "unverified, non-anonymous or mismatched receipt");
         }
     }
+
 
     private static List<Path> verifyEditionLinks(Path root, Path document, List<AtfAssertion> checks) throws Exception {
         var targets = new ArrayList<Path>();
@@ -406,22 +436,7 @@ class ReleaseGovernanceTest {
         Path output = Path.of(System.getProperty("atf.test.reportDirectory", "target/atf-reports"));
         Files.createDirectories(output);
         Path reportPath = output.resolve(testClass + "-" + System.currentTimeMillis() + ".html");
-        AtfReportStatus status = checks.stream().allMatch(AtfAssertion::passed) ? AtfReportStatus.PASS : AtfReportStatus.FAIL;
-        var settings = ReportingSettings.defaults();
-        var redactor = new SensitiveDataRedactor();
-        try (var run = new AssertionAuditRun(new ExtentReportSession(reportPath, settings, redactor), redactor, settings);
-             var invocation = run.open(new AssertionAuditReport.Identity(testClass, "ro.atf.j6.release",
-                     scenario, "release", List.of("component", "governance", "offline")))) {
-            invocation.phase("TEST BODY", checks, status, "", new ReportPhaseTiming(java.time.Duration.ofMillis(1), 1));
-            invocation.complete(status);
-        }
-        var profile = new ReportArtifactProfile(ReportArtifactProfile.Renderer.EXTENT, List.of(
-                new ReportArtifactProfile.Scenario(testClass, scenario,
-                        status, List.of(new ReportArtifactProfile.Phase("TEST BODY", status,
-                        List.of(new ReportArtifactProfile.Assertions("Component assertions",
-                                checks.stream().map(check -> new ReportArtifactProfile.Comparison(check.name(), check.passed())).toList())))))));
-        var inspection = ReportArtifactInspector.inspect(reportPath, profile);
-        assertTrue(inspection.isCompliant(), () -> inspection.violations().toString());
+        ReleaseAuditExtent.write(reportPath, testClass, scenario, checks);
     }
 
     private static boolean hasMainReleaseGuide(String readme, String version, String state) {
@@ -445,8 +460,17 @@ class ReleaseGovernanceTest {
                 && countOccurrences(section, githubReleases) == 2;
     }
 
-    private static boolean matchesAuthenticatedDownload(JsonNode receipt, JsonNode identity) {
-        return receipt.path("verified").asBoolean()
+    private static boolean hasAuthenticatedDownload(JsonNode validation, String apkUrl) {
+        JsonNode identity = validation.path("release");
+        return List.of(validation.path("authenticatedBrowserDownload"), validation.path("authenticatedAssetDownload"))
+                .stream().anyMatch(receipt -> receipt.path("credentialMode").asText().startsWith("authenticated ")
+                        && matchesDownload(receipt, identity, apkUrl));
+    }
+
+    private static boolean matchesDownload(JsonNode receipt, JsonNode identity, String apkUrl) {
+        return receipt.path("verified").isBoolean() && receipt.path("verified").asBoolean()
+                && receipt.path("assetUrl").asText().equals(apkUrl)
+                && receipt.path("bytes").isIntegralNumber() && receipt.path("bytes").canConvertToLong()
                 && receipt.path("bytes").asLong(-1) == identity.path("apkBytes").asLong(-2)
                 && receipt.path("sha256").asText().equals(identity.path("sha256").asText());
     }

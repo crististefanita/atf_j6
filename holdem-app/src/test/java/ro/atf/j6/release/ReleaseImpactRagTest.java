@@ -352,6 +352,35 @@ class ReleaseImpactRagTest {
         assertTrue(architecture > 0 && paths.indexOf(unchanged) > architecture, paths.toString());
     }
 
+    @Test void nativeRecommendationCitesTheAffectedContractWithoutDeclaringExecution(@TempDir Path temp) throws Exception {
+        Path root = project(temp, "0.3.1", "holdem-android", "ro.atf.holdem.android.HoldemTablePresentationComponentTest");
+        Path inventory = root.resolve("config/release-test-suites.json");
+        var contract = JSON.readTree(inventory.toFile());
+        String view = "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java";
+        var journey = ((com.fasterxml.jackson.databind.node.ObjectNode) contract).putArray("native").addObject()
+                .put("mode", "settlement-award").put("switch", "-IncludeSettlementAward");
+        journey.putArray("impactPaths").add(view);
+        journey.putArray("companionModes").add("settlement-multi-award").add("settlement-static-award").add("settlement-compact-award");
+        JSON.writeValue(inventory.toFile(), contract);
+        String base = commit(root, "base");
+        write(root, "holdem-android/README.md", "# Unrelated Android guide\n");
+        String unrelated = commit(root, "unrelated documentation");
+        var noJourney = ReleaseImpactRag.review(root, "0.3.0", base, unrelated, "0.3.1", temp.resolve("unrelated.json"));
+        assertEquals(0, noJourney.path("suggestedNativeJourneys").size());
+        write(root, view, "class HoldemTableView { int settlementAward; }\n");
+        String head = commit(root, "touch settlement contract");
+        var review = ReleaseImpactRag.review(root, "0.3.0", unrelated, head, "0.3.1", temp.resolve("settlement.json"));
+        var suggestion = review.path("suggestedNativeJourneys").get(0);
+        assertEquals(1, review.path("suggestedNativeJourneys").size());
+        assertEquals("settlement-award", suggestion.path("mode").asText());
+        assertEquals("-IncludeSettlementAward", suggestion.path("releaseSwitch").asText());
+        assertEquals(journey.path("companionModes"), suggestion.path("companionModes"));
+        assertEquals(head, suggestion.path("indexedCommit").asText());
+        assertEquals(view, suggestion.path("matchingChanges").get(0).asText());
+        assertEquals(ReleaseImpactRag.digest(Files.readAllBytes(inventory)), suggestion.path("inventorySha256").asText());
+        assertAdvisory(review);
+    }
+
     private static Path project(Path temp, String version, String module, String testClass) throws Exception {
         Path root = temp.resolve("project");
         Files.createDirectories(root);

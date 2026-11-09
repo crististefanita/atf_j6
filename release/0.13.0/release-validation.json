@@ -14,13 +14,139 @@
   },
   "publication": {
     "state": "DRAFT",
-    "sourceCommit": null,
-    "apkBuildCommit": null,
-    "tag": null,
+    "sourceCommit": "8010c05dabfcd28673583a555755950ee93428cf",
+    "apkBuildCommit": "8010c05dabfcd28673583a555755950ee93428cf",
+    "tag": "v0.13.0",
     "releaseId": null,
     "githubReleaseUrl": null,
     "githubState": null,
     "githubPublishedAt": null,
     "assets": []
-  }
+  },
+  "qualification": {
+    "status": "PASS",
+    "tests": 212,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "details": {
+      "maven": {
+        "suites": 19,
+        "tests": 128.0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "mavenComponentExtent": {
+        "path": "maven-component-suites-extent.html",
+        "suites": 19,
+        "tests": 128.0
+      },
+      "androidJvm": {
+        "suites": 7,
+        "tests": 84.0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "androidComponentExtent": {
+        "path": "android-component-suites-extent.html",
+        "suites": 7,
+        "tests": 84.0
+      },
+      "releaseImpactContext": {
+        "path": "release-impact-context.json",
+        "contextState": "CONTEXT_READY",
+        "advisoryOnly": true,
+        "sha256": "9ec4e68b13405a23e5c0b1e72198a22cfee7c8dc8191669b444d974f89cb1b3b"
+      },
+      "versionPolicy": {
+        "previousVersion": "0.12.0",
+        "changeClass": "COMPATIBLE_FEATURE",
+        "candidateVersion": "0.13.0",
+        "rationale": "Înlocuiește obiectivul Ușor duplicat cu prima dezvăluire, recompensată indiferent de câștigarea potului; calibrarea și testele de componentă confirmă regula."
+      },
+      "lint": {
+        "status": "PASS",
+        "warnings": []
+      },
+      "tournamentSanity": {
+        "status": "PASS",
+        "api": 28,
+        "assertions": 101,
+        "screenshots": 12,
+        "apkSha256": "c720e204dfadd199b7290afafd3fd8155397ed7c1ec8942e11183e6e673bf2f6"
+      },
+      "releaseInstallSmoke": {
+        "status": "PASS",
+        "api": 28,
+        "assertions": 54,
+        "screenshots": 8,
+        "apkSha256": "bfff6a910586821d6462a7af5ce6109cec7bb17918cbb385088b44d932c10978"
+      }
+    }
+  },
+  "integrity": {
+    "algorithm": "SHA-256",
+    "files": [
+      {
+        "path": "qualification.json",
+        "bytes": 4631,
+        "sha256": "1924d95c2400654dada22d195290683d9b33a79f645fd63b8d522052d053ee3a"
+      },
+      {
+        "path": "README.md",
+        "bytes": 677,
+        "sha256": "d1c8317b20772d1a3b594d725a25596de1bda3bdc6ab83c8bbd7305810f63e92"
+      },
+      {
+        "path": "release-evidence-audit.json",
+        "bytes": 621,
+        "sha256": "218a8bf382ddf6ba73ff7c19604de2bb9acb339a02175ca468bd055b7ee856f6"
+      },
+      {
+        "path": "release-impact-context.json",
+        "bytes": 42204,
+        "sha256": "9ec4e68b13405a23e5c0b1e72198a22cfee7c8dc8191669b444d974f89cb1b3b"
+      },
+      {
+        "path": "release-notes.md",
+        "bytes": 353,
+        "sha256": "a7eeaf92736c937fe11dfd01f94667c5efc99e1180af0ea692975ed8b84035c5"
+      },
+      {
+        "path": "reports/android-component-suites-extent.html",
+        "bytes": 2492763,
+        "sha256": "14d31f8ef4e90570ff29f3925b6ca0a86adc9fd4afd1ad506f19457475936a5b"
+      },
+      {
+        "path": "reports/android-release-smoke-extent.html",
+        "bytes": 3811628,
+        "sha256": "125151eb03c7d3a9b95b6b650a99670b006bb4f76fb74544cdbd6baa77d43a13"
+      },
+      {
+        "path": "reports/android-tournament-extent.html",
+        "bytes": 4800236,
+        "sha256": "66829aa365421bef214ac5c596c02a258da0c8a69ca05d2276a65c73994c71cf"
+      },
+      {
+        "path": "reports/maven-component-suites-extent.html",
+        "bytes": 2606016,
+        "sha256": "358d9cc114115205634e7b1ee8227d9a2ae9b12ba97cb1e28b7ff3ffdbcf5aa0"
+      },
+      {
+        "path": "reports/promotion-extent.html",
+        "bytes": 2413376,
+        "sha256": "447e3f3c56786f2c20c561b257234d35fa3474565679e0fc5a6a2a9ef505b722"
+      },
+      {
+        "path": "reports/README.md",
+        "bytes": 873,
+        "sha256": "f2b8fbafdd7ceb9727dafb6d774fd9878a3052a30c7f6d5abbe9ab9334735809"
+      }
+    ]
+  },
+  "authenticatedAssetDownload": null,
+  "authenticatedChecksumDownload": null,
+  "authenticatedBrowserDownload": null
 }

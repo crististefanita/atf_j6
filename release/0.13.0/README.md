@@ -2,12 +2,16 @@
 
 ## Pe scurt
 
-Înlocuiește obiectivul Ușor care repeta prima victorie cu „Prima dezvăluire”. Participarea la showdown se creditează și când jucătorul pierde potul; câștigul prin fold nu contează ca dezvăluire.
+Înlocuiește obiectivul Ușor care repeta prima victorie cu „Ajungi prima dată la dezvăluirea cărților”. Progresul se acordă când ajungi la showdown, chiar dacă pierzi potul; un pot câștigat prin fold nu este showdown.
 
 ## Dosar
 
 - [Manifestul ediției](release-validation.json)
+- [Calificarea RAG](qualification.json)
+- [Auditul integrității runului](release-evidence-audit.json)
 - [Note de versiune](release-notes.md)
 - [Indexul rapoartelor](reports/README.md)
 
-Ediția este în pregătire; APK-ul și distribuția vor fi înregistrate după calificare.
+## Distribuție
+
+Ediția este în pregătire. După publicarea release-ului, manifestul va înregistra asset-urile și verificarea descărcării autentificate.

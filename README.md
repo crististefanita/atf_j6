@@ -12,7 +12,8 @@ ATF J6 este un laborator pentru dezvoltarea și evaluarea locală a unui joc No-
 
 ## Jocul
 
-- **[Hold'em Lab 0.8.0 — dosarul ediției](release/0.8.0/README.md)**
+- **[Hold'em Lab 0.8.0 — documentația release-ului](https://github.com/crististefanita/atf_j6/releases/tag/v0.8.0)**
+- **[Descarcă APK-ul Hold'em Lab 0.8.0](https://github.com/crististefanita/atf_j6/releases/download/v0.8.0/HoldemLab-0.8.0.apk)**
 
 ## Bucla locală
 

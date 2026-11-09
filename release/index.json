@@ -5,7 +5,7 @@
   "previousVersion": "0.7.0",
   "changeClass": "REFACTOR_ONLY",
   "changeRationale": "Limitează citirea antetului APK și folosește o singură serializare pentru dovada descărcării.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.8.0"

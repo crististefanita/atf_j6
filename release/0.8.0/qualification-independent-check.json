@@ -1,0 +1,52 @@
+{
+  "sourceCommit": "5a5d73a3cea549c017438bdeaefa085f9a1a546a",
+  "apkSha256": "3e68b9b7ea3a5f3cb2f28702c3e16a8c6ba38a699f4bc7a4f2a4672af0886abf",
+  "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
+  "ragCitationsVerified": 15,
+  "ragSuites": [
+    {
+      "class": "ro.atf.holdem.android.HoldemSessionRepositoryComponentTest",
+      "tests": 12,
+      "sha256": "36d67def8bc4fd5708b81f13342bca0a5012561a97ae059e11c590f1f34db560"
+    },
+    {
+      "class": "ro.atf.holdem.android.HoldemTablePresentationComponentTest",
+      "tests": 17,
+      "sha256": "06e460bb7c78517355ac49df7bb041fc22f7c7080d3119a934c7a245a8e9e678"
+    },
+    {
+      "class": "ro.atf.holdem.android.LocalHoldemTournamentTest",
+      "tests": 8,
+      "sha256": "d5551df58cfe36a151e18f6db4ebd2027bf6362503691aa75a10ee1657dc807e"
+    },
+    {
+      "class": "ro.atf.holdem.android.TournamentLeaderboardTest",
+      "tests": 13,
+      "sha256": "b2b87dfb251bea9541cc33dc682363126425ffd06f1572eee73958e95e870b97"
+    },
+    {
+      "class": "ro.atf.holdem.android.LocalHoldemGameTest",
+      "tests": 11,
+      "sha256": "6174beddd28acd0014f511d9662d9ed509f8905b945b70708d0f0693a06a562f"
+    },
+    {
+      "class": "ro.atf.j6.release.ReleaseVersionPolicyTest",
+      "tests": 3,
+      "sha256": "461fdbb8235fa8394a39b8919ac7954fd508187eabcd847e8b68392eb01ace8e"
+    },
+    {
+      "class": "ro.atf.j6.release.ReleasePromotionGateTest",
+      "tests": 6,
+      "sha256": "253a16ca70080abea6f15402cedb08c7943965dad7739b684d460204cb7fae6d"
+    },
+    {
+      "class": "ro.atf.j6.release.DocumentationGovernanceTest",
+      "tests": 1,
+      "sha256": "c811a361d631dac5c41d22703ab887c390a5482fffeed8d6d8db0351cba0c5ed"
+    }
+  ],
+  "assertions": 7,
+  "inlineOriginalPngs": 2,
+  "api": 28,
+  "extentSha256": "d0e572362c49e152824d6c94e3003195343d94a493ce0e228f11ee3697db012c"
+}

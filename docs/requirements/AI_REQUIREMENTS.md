@@ -214,6 +214,23 @@ Pentru calificare, separă loturile de estimare, verificare a reacțiilor și tu
 - Raportează acoperirea pentru fiecare etapă și direcție. Un număr mare de turnee poate produce puține situații eligibile de re-raise.
 - Verifică avantajul contra adversarilor agresivi pe stive scurte și adânci. Reexecută acțiunile și verifică limitele față de starea publică.
 
+#### Re-raise mai mic evaluat până la decontare
+
+Laboratorul poate reduce un re-raise de control deja ales, într-o situație preflop cu un singur adversar. Fiecare profil fixează pasul maxim și fracția maximă din stiva efectivă. Sunt eligibile și sumele de control care acoperă exact adversarul, dacă suma redusă îi lasă jetoane și respectă minimul legal.
+
+| Pas | Ce măsurăm |
+|---|---|
+| Pereche | Reia același prefix și același pachet cu fiecare sumă. Ambii jucători continuă cu politicile de control până la decontare. |
+| Reacție | Estimează `P(reacție ∣ stare, sumă)` pentru fold, call și re-raise. Separă prețul, stiva efectivă și ordinea măririlor înainte de agregare. |
+| Valoare | Pentru fiecare reacție observată, calculează media jetoanelor nete de la decizie până la decontare, în blinduri mari. Valoarea ofertei este suma mediilor condiționate, ponderate cu probabilitățile reacțiilor. O reacție absentă are contribuție zero și medie neobservată. |
+| Tranziție | Grupează perechile după ambele reacții. De pildă, `fold → call` compară aceleași situații înainte și după schimbarea sumei, inclusiv jocul ulterior și returnarea jetoanelor neacoperite. |
+| Calificare | Fixează suportul minim pe seed-uri distincte, regula de selecție și criteriile competitive înainte de rulare. Calibrează pe un lot, validează valoarea pe altul și compară victoriile într-un al treilea. |
+
+Pentru o clasă de cărți `H` și o reacție `R`, auditorul poate calcula `P(H ∣ R, stare, sumă)` din frecvența reacției în clasa `H`, înmulțită cu frecvența clasei înainte de reacție și împărțită la frecvența reacției. Un call poate selecta altă distribuție de mâini la fiecare ofertă. Diferența pereche până la decontare compară ofertele în aceleași stări.
+
+- **Informații.** Politica folosește numai cărțile proprii și starea publică. Auditorul poate folosi cărțile ascunse pentru a explica selecția după decontarea ambelor ramuri.
+- **Valoare aleatorie comună.** Repetă diagnosticul primei reacții cu aceeași valoare aleatorie la ambele oferte. Suma rămâne vizibilă pentru calculul prețului și al acțiunilor legale. Compară rezultatul cu reacția în care generatorul folosește istoricul fiecărei oferte.
+
 #### Inițiativa și poziția
 
 - **Inițiativă.** Prima mărire stabilește un preț nou. În simulare, compară call-ul și raise-ul din aceeași stare a primului actor și măsoară reacția imediată.

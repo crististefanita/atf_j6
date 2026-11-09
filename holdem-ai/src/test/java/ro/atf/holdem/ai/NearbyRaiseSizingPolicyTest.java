@@ -67,6 +67,54 @@ class NearbyRaiseSizingPolicyTest {
         assertEquals(Scope.FIRST_RAISE, Scope.forSpot(afterLimp));
     }
 
+    @Test void reductionCanLeaveAnOpponentFundedWhenTheControlExactlyCoversTheStack() {
+        var hand = afterShortOpeningRaise();
+        var observation = hand.observeActor();
+        var limits = new NearbyRaiseSizing.Limits(100, 25, 12, 90);
+        var pair = NearbyRaiseSizing.lowerReraise(observation, 100, limits);
+
+        assertEquals(Scope.RERAISE, Scope.forSpot(pair.key().spot()));
+        assertEquals(Direction.DOWN, pair.key().direction());
+        assertEquals(100, pair.effectiveStack());
+        assertEquals(80, pair.reference().opponentPrice());
+        assertEquals(88, pair.alternate().amount());
+        assertEquals(68, pair.alternate().opponentPrice());
+
+        var covered = afterShortOpeningRaise();
+        covered.act(covered.actor(), ActionType.RAISE, pair.reference().amount());
+        assertEquals(covered.observeActor().heroStack(), covered.observeActor().toCall());
+        assertNull(PreflopResponseModel.facedRaise(covered.observeActor()));
+        hand.act(hand.actor(), ActionType.RAISE, pair.alternate().amount());
+        assertEquals(12, hand.observeActor().heroStack() - hand.observeActor().toCall());
+        assertEquals(pair.alternate().spot(), PreflopResponseModel.facedRaise(hand.observeActor()));
+    }
+
+    @Test void reductionPreservesTheLegalMinimumAndAbstainsOutsideItsReraiseScope() {
+        var limits = new NearbyRaiseSizing.Limits(200, 35, 20, 90);
+        var hand = afterShortOpeningRaise();
+        var observation = hand.observeActor();
+        int min = hand.legal().stream().filter(a -> a.type() == ActionType.RAISE).findFirst().orElseThrow().minAmount();
+        assertEquals(min, NearbyRaiseSizing.lowerReraise(observation, min + 1, limits).alternate().amount());
+        assertNull(NearbyRaiseSizing.lowerReraise(observation, min, limits));
+        assertNull(NearbyRaiseSizing.lowerReraise(observation, 101, limits));
+        assertNull(NearbyRaiseSizing.lowerReraise(observation, 100, LIMITS));
+        assertNull(NearbyRaiseSizing.lowerReraise(headsUp(1000).observeActor(), 50, limits));
+    }
+
+    @Test void matchedFoldsReturnUncalledChipsAtBothSizes() {
+        var limits = new NearbyRaiseSizing.Limits(200, 35, 20, 90);
+        var original = afterShortOpeningRaise();
+        var state = original.observeActor();
+        var pair = NearbyRaiseSizing.lowerReraise(state, 100, limits);
+        for (var offer : List.of(pair.reference(), pair.alternate())) {
+            var branch = afterShortOpeningRaise();
+            int hero = branch.actor();
+            branch.act(hero, ActionType.RAISE, offer.amount());
+            branch.act(branch.actor(), ActionType.FOLD, 0);
+            assertEquals(state.pot(), branch.stacks().get(hero) - state.heroStack());
+        }
+    }
+
     @Test void requiresPairedSupportAndChoosesOnlyAQuoteWithAnAdvantage() {
         var hand = headsUp(1000);
         var observation = hand.observeActor();
@@ -134,5 +182,11 @@ class NearbyRaiseSizingPolicyTest {
         deck.add(1, aces.getFirst());
         deck.add(3, aces.getLast());
         return new HoldemHand(1, List.of(1000, opponentStack), 0, new BlindLevel(10, 20, 20), deck);
+    }
+
+    private static HoldemHand afterShortOpeningRaise() {
+        var hand = new HoldemHand(1, List.of(120, 1000), 0, new BlindLevel(10, 20, 20), HoldemHand.shuffledDeck(21));
+        hand.act(hand.actor(), ActionType.RAISE, 30);
+        return hand;
     }
 }

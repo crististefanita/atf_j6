@@ -118,20 +118,30 @@ public record PreflopResponseModel(int minSamples, int priorStrength, int foldWe
     record Quote(Spot spot, int opponentPrice, int effectiveStack) {}
 
     static Quote quote(HoldemObservation observation, int amount) {
+        return quote(observation, amount, false);
+    }
+
+    static Quote quote(HoldemObservation observation, int amount, boolean includeCover) {
         var context = context(observation);
         if (context == null || amount <= observation.toCall()) return null;
         var paid = observation.visibleContributions();
         long price = (long) paid.get(observation.heroSeat()) + amount - paid.get(context.opponent);
-        Spot response = spot(observation, context, context.opponent, price, context.nextRaise);
-        if (response == null) return null;
+        int stack = observation.visibleStacks().get(context.opponent);
+        if (price <= 0 || price > stack || price == stack && !includeCover) return null;
         long capacity = (long) observation.visibleStacks().get(context.opponent)
                 + paid.get(context.opponent) - paid.get(observation.heroSeat());
-        return new Quote(response, Math.toIntExact(price), (int) Math.min(observation.heroStack(), capacity));
+        return new Quote(responseSpot(observation, context, context.opponent, price, context.nextRaise),
+                Math.toIntExact(price), (int) Math.min(observation.heroStack(), capacity));
     }
 
     private static Spot spot(HoldemObservation obs, PublicContext context, int responder, long price, Sequence sequence) {
         int stack = obs.visibleStacks().get(responder);
         if (price <= 0 || price >= stack) return null;
+        return responseSpot(obs, context, responder, price, sequence);
+    }
+
+    private static Spot responseSpot(HoldemObservation obs, PublicContext context, int responder, long price, Sequence sequence) {
+        int stack = obs.visibleStacks().get(responder);
         int other = responder == obs.heroSeat() ? context.opponent : obs.heroSeat();
         int distance = 1 + Math.floorMod(responder - context.bigBlind - 1, obs.playerCount());
         int otherDistance = 1 + Math.floorMod(other - context.bigBlind - 1, obs.playerCount());

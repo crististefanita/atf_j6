@@ -29,7 +29,7 @@ public record NearbyRaiseSizing(Scope scope, Limits limits, int minPairedSamples
             if (deltaPercentOfBigBlind < 1 || deltaPercentOfBigBlind > 200
                     || deltaPercentOfReference < 1 || deltaPercentOfReference > 50
                     || deltaPercentOfEffectiveStack < 1 || deltaPercentOfEffectiveStack > 20
-                    || maxPercentOfEffectiveStack < 1 || maxPercentOfEffectiveStack > 75)
+                    || maxPercentOfEffectiveStack < 1 || maxPercentOfEffectiveStack > 90)
                 throw new IllegalArgumentException("Invalid nearby raise limits");
         }
     }
@@ -62,6 +62,8 @@ public record NearbyRaiseSizing(Scope scope, Limits limits, int minPairedSamples
     public NearbyRaiseSizing {
         Objects.requireNonNull(scope, "scope");
         Objects.requireNonNull(limits, "limits");
+        if (limits.maxPercentOfEffectiveStack() > 75)
+            throw new IllegalArgumentException("Bidirectional nearby sizing is capped at 75% of effective stack");
         if (minPairedSamples < 1) throw new IllegalArgumentException("Nearby quotes require paired evidence");
         observations = Map.copyOf(observations);
         if (observations.isEmpty() || observations.keySet().stream().anyMatch(key -> Scope.forSpot(key.spot()) != scope))
@@ -74,9 +76,7 @@ public record NearbyRaiseSizing(Scope scope, Limits limits, int minPairedSamples
         if (origin == null) return List.of();
         int effective = origin.effectiveStack();
         int maximum = Math.min(Math.min(cap, legal.maxAmount()), percent(effective, limits.maxPercentOfEffectiveStack()));
-        int delta = Math.min(percent(obs.bigBlind(), limits.deltaPercentOfBigBlind()),
-                Math.min(percent(reference, limits.deltaPercentOfReference()),
-                        percent(effective, limits.deltaPercentOfEffectiveStack())));
+        int delta = delta(obs.bigBlind(), reference, effective, limits);
         if (reference > maximum || delta == 0) return List.of();
         var result = new ArrayList<QuotePair>(2);
         var baseline = new RaiseEvSizing.Offer(reference, origin.opponentPrice(), origin.spot());
@@ -85,6 +85,30 @@ public record NearbyRaiseSizing(Scope scope, Limits limits, int minPairedSamples
         addQuote(result, obs, baseline, lower, Direction.DOWN, effective);
         addQuote(result, obs, baseline, upper, Direction.UP, effective);
         return List.copyOf(result);
+    }
+
+    /** Quotes one legal reduction for settlement probes, including a control that exactly covers the opponent. */
+    public static QuotePair lowerReraise(HoldemObservation obs, int reference, Limits limits) {
+        if (obs.toCall() <= 0 || reference >= obs.heroStack()) return null;
+        var legal = obs.legalActions().stream().filter(action -> action.type() == ActionType.RAISE)
+                .findFirst().orElse(null);
+        if (legal == null || reference <= legal.minAmount() || reference > legal.maxAmount()) return null;
+        var origin = PreflopResponseModel.quote(obs, reference, true);
+        if (origin == null || Scope.forSpot(origin.spot()) != Scope.RERAISE) return null;
+        int effective = origin.effectiveStack();
+        int lower = Math.max(legal.minAmount(), reference - delta(obs.bigBlind(), reference, effective, limits));
+        if (lower == reference || lower > percent(effective, limits.maxPercentOfEffectiveStack())) return null;
+        var alternate = PreflopResponseModel.quote(obs, lower);
+        if (alternate == null) return null;
+        return new QuotePair(new Key(origin.spot(), Direction.DOWN),
+                new RaiseEvSizing.Offer(reference, origin.opponentPrice(), origin.spot()),
+                new RaiseEvSizing.Offer(lower, alternate.opponentPrice(), alternate.spot()), effective);
+    }
+
+    private static int delta(int bigBlind, int reference, int effective, Limits limits) {
+        return Math.min(percent(bigBlind, limits.deltaPercentOfBigBlind()),
+                Math.min(percent(reference, limits.deltaPercentOfReference()),
+                        percent(effective, limits.deltaPercentOfEffectiveStack())));
     }
 
     private static int percent(int chips, int percentage) {

@@ -138,6 +138,24 @@ public class GameplayAchievementsComponentTest {
         while (game.hasPassiveTurn()) game.advancePassiveAction(game.turn());
     }
 
+    @Test public void existingStandaloneTableCreditsTheInstallationProfileAfterUpgrade() {
+        LocalHoldemGame winner = null;
+        for (int seed = 1; seed <= 12 && winner == null; seed++) {
+            var game = new LocalHoldemGame(2, seed);
+            var call = game.view().legalActions().stream()
+                    .filter(action -> action.type() == ActionType.CALL).findFirst().orElseThrow();
+            playAndAdvance(game, ActionType.CALL, call.amount());
+            while (game.view().street() != Street.COMPLETE) playAndAdvance(game, ActionType.CHECK, 0);
+            if (game.view().seats().get(game.view().viewer()).potWon() > 0) winner = game;
+        }
+        assertNotNull("cohort must contain a cash hand won by the viewer", winner);
+        var achievements = new GameplayAchievements(new MemoryStorage(), "installed-profile");
+        achievements.recordSettled(winner);
+        achievements.recordSettled(LocalHoldemGame.restore(winner.save()));
+        assertEquals(1, achievements.count("installed-profile", POT));
+        assertEquals(0, achievements.count("local-human", POT));
+    }
+
     @Test public void failedBatchCanBeRetriedWithoutPartialCredit() {
         var storage = new MemoryStorage();
         var achievements = new GameplayAchievements(storage);

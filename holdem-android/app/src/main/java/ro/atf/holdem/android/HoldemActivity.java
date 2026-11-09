@@ -76,8 +76,8 @@ public final class HoldemActivity extends Activity {
         profile = getSharedPreferences("holdem-profile", MODE_PRIVATE);
         sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(getFilesDir()));
         leaderboard = new TournamentLeaderboardRepository(new AtomicFileTournamentLeaderboardStorage(getFilesDir()));
-        progress = new HoldemProgressStore(sessions, leaderboard, GameplayAchievementFile.local(this));
-        stablePlayerId();
+        progress = new HoldemProgressStore(sessions, leaderboard,
+                GameplayAchievementFile.local(this, stablePlayerId()));
         romanian = profile.getBoolean(LANGUAGE, false);
         views = new ScreenViews(this, tag -> tag, HoldemActivity::protect);
         if (Build.VERSION.SDK_INT >= 33) {

@@ -26,8 +26,14 @@ final class GameplayAchievements {
     }
 
     private final Storage storage;
+    private final String currentProfile;
 
     GameplayAchievements(Storage storage) {
+        this(storage, null);
+    }
+
+    GameplayAchievements(Storage storage, String currentProfile) {
+        this.currentProfile = currentProfile;
         this.storage = storage;
     }
 
@@ -50,7 +56,13 @@ final class GameplayAchievements {
                 ? "table:" + game.displayNameSeed() + ":" + frame.dealer()
                 : tournament + ":" + game.handNumber();
         int rank = game.outcome() == null ? 0 : game.finishingRanks().get(frame.viewer());
-        recordSettled(game.playerId(frame.viewer()), hand, tournament, rank, frame);
+        String owner = game.playerId(frame.viewer());
+        if (tournament == null && currentProfile != null
+                && ("local-human".equals(owner) || "legacy-human".equals(owner))) {
+            // Old standalone hands predate profile IDs. They belong to this installation's profile.
+            owner = currentProfile;
+        }
+        recordSettled(owner, hand, tournament, rank, frame);
     }
 
     synchronized void recordSettled(String profile, String hand, String tournament, int rank, HoldemTableViewState frame) {

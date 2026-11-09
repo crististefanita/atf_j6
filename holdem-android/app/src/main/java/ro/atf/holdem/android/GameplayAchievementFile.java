@@ -23,8 +23,8 @@ final class GameplayAchievementFile implements GameplayAchievements.Storage {
         file = new AtomicFile(new File(directory, "gameplay-achievements.json"));
     }
 
-    static GameplayAchievements local(Context context) {
-        return new GameplayAchievements(new GameplayAchievementFile(context.getFilesDir()));
+    static GameplayAchievements local(Context context, String profile) {
+        return new GameplayAchievements(new GameplayAchievementFile(context.getFilesDir()), profile);
     }
 
     @Override public Map<GameplayAchievements.Metric, Set<String>> read(String profile) {

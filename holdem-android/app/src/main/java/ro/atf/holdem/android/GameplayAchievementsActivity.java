@@ -35,7 +35,7 @@ public final class GameplayAchievementsActivity extends Activity {
             return;
         }
         if (saved != null) tier = AchievementCatalog.Tier.valueOf(saved.getString("tier", tier.name()));
-        achievements = GameplayAchievementFile.local(this);
+        achievements = GameplayAchievementFile.local(this, profile);
         views = new ScreenViews(this, label -> label, ignored -> {});
         views.applyTableWindowChrome();
         var root = new LinearLayout(this);

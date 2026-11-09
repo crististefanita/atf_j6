@@ -130,6 +130,30 @@ public final class HoldemTablePresentationComponentTest {
         return new HoldemTablePresentation.SeatMetric(HoldemTablePresentation.SeatMetricKind.valueOf(kind), amount);
     }
 
+    @Test public void achievementsTextAndTableButtonsStayReadableAgainstTheirActualFills() {
+        // TablePalette.TABLE_FELT is Color.rgb(23, 79, 60) in the Android library.
+        int felt = 0xff174f3c;
+        assertTrue(contrast(felt, AchievementPresentation.TEXT) >= 7);
+        assertTrue(contrast(felt, AchievementPresentation.SECONDARY_TEXT) >= 7);
+        assertTrue(contrast(felt, AchievementPresentation.ACCENT_TEXT) >= 7);
+        assertTrue(contrast(HoldemTableButton.PRIMARY_FILL, HoldemTableButton.PRIMARY_TEXT) >= 4.5);
+        assertTrue(contrast(HoldemTableButton.SECONDARY_FILL, HoldemTableButton.SECONDARY_TEXT) >= 4.5);
+        assertTrue(contrast(pressedFill(HoldemTableButton.PRIMARY_FILL), HoldemTableButton.PRIMARY_TEXT) >= 4.5);
+        assertTrue(contrast(pressedFill(HoldemTableButton.SECONDARY_FILL), HoldemTableButton.SECONDARY_TEXT) >= 4.5);
+    }
+
+    private static int pressedFill(int fill) {
+        int overlay = HoldemTableButton.PRESS_OVERLAY;
+        int alpha = overlay >>> 24;
+        int result = 0xff000000;
+        for (int shift = 0; shift <= 16; shift += 8) {
+            int surface = (fill >>> shift) & 255;
+            int press = (overlay >>> shift) & 255;
+            result |= ((surface * (255 - alpha) + press * alpha + 127) / 255) << shift;
+        }
+        return result;
+    }
+
     private static double contrast(int first, int second) {
         double a = luminance(first), b = luminance(second);
         return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);

@@ -1,5 +1,9 @@
 package ro.atf.holdem.android;
 
+import static ro.atf.holdem.android.AchievementPresentation.ACCENT_TEXT;
+import static ro.atf.holdem.android.AchievementPresentation.SECONDARY_TEXT;
+import static ro.atf.holdem.android.AchievementPresentation.TEXT;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -22,17 +26,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import ro.cardtable.ui.screens.ScreenViews;
+import ro.cardtable.ui.theme.TablePalette;
+
 public final class AchievementsActivity extends Activity {
     static final String PROFILE_ID = "achievement-profile";
-    private static final int SURFACE = 0xff18352e;
-    private static final int SELECTED = 0xff306a58;
-    private static final int TEXT = 0xfff1faf5;
-    private static final int SECONDARY = 0xffbad2c7;
-    private static final int ACCENT = 0xffa9e1c7;
 
     private final Button[] tabs = new Button[AchievementCatalog.Tier.values().length];
     private final int[] firstRows = new int[tabs.length];
     private final int[] offsets = new int[tabs.length];
+    private ScreenViews views;
     private AchievementCatalog catalog;
     private AchievementProgress progress;
     private AchievementCatalog.Tier tier = AchievementCatalog.Tier.EASY;
@@ -61,7 +64,9 @@ public final class AchievementsActivity extends Activity {
         }
         var root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(0xff0f2520);
+        views = new ScreenViews(this, label -> label, ignored -> {});
+        views.applyTableWindowChrome();
+        root.setBackgroundColor(TablePalette.TABLE_FELT);
         int padding = dp(16);
         root.setPadding(padding, padding, padding, padding);
         root.setOnApplyWindowInsetsListener((view, insets) -> {
@@ -79,7 +84,7 @@ public final class AchievementsActivity extends Activity {
         if (android.os.Build.VERSION.SDK_INT >= 28) heading.setAccessibilityHeading(true);
         heading.setText(R.string.achievements);
         root.addView(heading);
-        summary = label(14, SECONDARY);
+        summary = label(14, SECONDARY_TEXT);
         root.addView(summary);
 
         try (var asset = getAssets().open("J6-PROD-01-ACHIEVEMENT-CATALOG.csv");
@@ -123,14 +128,17 @@ public final class AchievementsActivity extends Activity {
         var playable = new CheckBox(this);
         playable.setText(R.string.achievement_playable);
         playable.setTextColor(TEXT);
+        playable.setButtonTintList(new android.content.res.ColorStateList(
+                new int[][] {new int[] {android.R.attr.state_checked}, new int[0]},
+                new int[] {ACCENT_TEXT, SECONDARY_TEXT}));
         onlyPlayable = saved != null && saved.getBoolean("only-playable");
         playable.setChecked(onlyPlayable);
         root.addView(playable);
-        var empty = label(14, SECONDARY);
+        var empty = label(14, SECONDARY_TEXT);
         empty.setText(R.string.achievement_empty);
         root.addView(empty);
         list = new ListView(this);
-        list.setDivider(new android.graphics.drawable.ColorDrawable(0xff29463c));
+        list.setDivider(new android.graphics.drawable.ColorDrawable(0xff477562));
         list.setDividerHeight(dp(1));
         list.setEmptyView(empty);
         root.addView(list, new LinearLayout.LayoutParams(-1, 0, 1));
@@ -189,7 +197,7 @@ public final class AchievementsActivity extends Activity {
         for (var item : AchievementCatalog.Tier.values()) {
             Button tab = tabs[item.ordinal()];
             tab.setSelected(item == tier);
-            tab.setBackgroundTintList(android.content.res.ColorStateList.valueOf(item == tier ? SELECTED : SURFACE));
+            HoldemTableButton.apply(views, tab, item == tier);
         }
         adapter.notifyDataSetChanged();
         int position = Math.min(firstRows[tier.ordinal()], rows.size() - 1);
@@ -215,9 +223,9 @@ public final class AchievementsActivity extends Activity {
     }
 
     private final class AchievementRowView extends LinearLayout {
-        private final TextView family = label(13, ACCENT);
+        private final TextView family = label(13, ACCENT_TEXT);
         private final TextView title = label(16, TEXT);
-        private final TextView state = label(13, SECONDARY);
+        private final TextView state = label(13, SECONDARY_TEXT);
 
         AchievementRowView() {
             super(AchievementsActivity.this);
@@ -240,7 +248,7 @@ public final class AchievementsActivity extends Activity {
             title.setText(getString(R.string.achievement_title, entry.context(), entry.stage()));
             state.setText(status(row));
             state.setTextColor(row.status() == AchievementPresentation.Status.COMPLETE
-                    ? ACCENT : SECONDARY);
+                    ? ACCENT_TEXT : SECONDARY_TEXT);
         }
     }
     private void showDetails(AchievementCatalog.Entry entry) {
@@ -323,7 +331,7 @@ public final class AchievementsActivity extends Activity {
         var view = new Button(this);
         view.setText(text);
         view.setTextColor(TEXT);
-        view.setBackgroundTintList(android.content.res.ColorStateList.valueOf(SURFACE));
+        HoldemTableButton.apply(views, view, false);
         return view;
     }
 

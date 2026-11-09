@@ -2,11 +2,8 @@ package ro.atf.holdem.android;
 
 import android.animation.ValueAnimator;
 import android.app.AlertDialog;
-import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Rect;
-import android.graphics.drawable.InsetDrawable;
-import android.graphics.drawable.RippleDrawable;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
@@ -230,7 +227,7 @@ final class HoldemTableView {
                     decisionControls.forEach(control -> control.setEnabled(false));
                     autoPlay.run();
                 });
-                compactActionFace(takeover, false);
+                HoldemTableButton.apply(views, takeover, false);
                 content.addView(takeover, views.matchWrap());
             }
         }
@@ -758,7 +755,7 @@ final class HoldemTableView {
                 if (sized) requestAmount(opener, title, option, compact, submit);
                 else submit.test(new LocalHoldemGame.Move(option.type(), option.amount()));
             });
-            compactActionFace(button, primary);
+            HoldemTableButton.apply(views, button, primary);
             if (compact) {
                 button.setPadding(views.dp(4), 0, views.dp(4), 0);
                 button.setIncludeFontPadding(false);
@@ -778,21 +775,6 @@ final class HoldemTableView {
         }
     }
 
-    private void compactActionFace(Button button, boolean primary) {
-        int left = button.getPaddingLeft();
-        int top = button.getPaddingTop();
-        int right = button.getPaddingRight();
-        int bottom = button.getPaddingBottom();
-        float inset = HoldemTablePresentation.ACTION_FACE_INSET;
-        var face = views.roundedBackground(primary ? 0xFF30694E : 0xFF205443,
-                primary ? 0xFF77AF8D : 0xFF609180, 12);
-        var pressed = new RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), face, null);
-        button.setBackground(new InsetDrawable(pressed, 0f, inset, 0f, inset));
-        button.setTextColor(primary ? Color.WHITE : 0xFFDDF4E9);
-        button.setStateListAnimator(null);
-        button.setPadding(left, top, right, bottom);
-        button.setMinimumHeight(views.dp(HoldemTablePresentation.ACTION_TARGET_DP));
-    }
 
     private void requestAmount(View opener, String title, LegalAction option, boolean compact,
                                Predicate<LocalHoldemGame.Move> submit) {

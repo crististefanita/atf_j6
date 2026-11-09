@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.Map;
 import ro.atf.holdem.ai.ContextualEquityPolicy;
+import ro.atf.holdem.ai.NearbyRaiseSizing;
 import ro.atf.holdem.ai.PreflopResponseModel;
 import ro.atf.holdem.ai.RaiseEvSizing;
 import org.yaml.snakeyaml.LoaderOptions;
@@ -166,13 +167,42 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
 
     private static RaiseEvSizing.Settings raiseEv(Map<?, ?> hard) {
         if (!hard.containsKey("raiseEv")) return null;
-        if (!(hard.get("raiseEv") instanceof Map<?, ?> ev)
-                || !ev.keySet().equals(java.util.Set.of("calledEquityDiscountPp", "minEdgePercentOfBigBlind", "potPercents"))
+        if (!(hard.get("raiseEv") instanceof Map<?, ?> ev))
+            throw new IllegalArgumentException("Expected exact raiseEv settings");
+        if (ev.keySet().equals(java.util.Set.of("calledEquityDiscountPp", "minEdgePercentOfBigBlind", "nearby")))
+            return new RaiseEvSizing.Settings(integer(ev, "calledEquityDiscountPp"),
+                    integer(ev, "minEdgePercentOfBigBlind"), java.util.List.of(), nearby(ev.get("nearby")));
+        if (!ev.keySet().equals(java.util.Set.of("calledEquityDiscountPp", "minEdgePercentOfBigBlind", "potPercents"))
                 || !(ev.get("potPercents") instanceof java.util.List<?> percents)
                 || !percents.stream().allMatch(Integer.class::isInstance))
             throw new IllegalArgumentException("Expected exact raiseEv settings");
         return new RaiseEvSizing.Settings(integer(ev, "calledEquityDiscountPp"), integer(ev, "minEdgePercentOfBigBlind"),
                 percents.stream().map(Integer.class::cast).toList());
+    }
+
+    private static NearbyRaiseSizing nearby(Object value) {
+        if (!(value instanceof Map<?, ?> near)
+                || !near.keySet().equals(java.util.Set.of("scope", "deltaPercentOfBigBlind", "deltaPercentOfReference",
+                        "deltaPercentOfEffectiveStack", "maxPercentOfEffectiveStack", "minPairedSamples", "observations"))
+                || !(near.get("scope") instanceof String scope)
+                || !(near.get("observations") instanceof Map<?, ?> observations))
+            throw new IllegalArgumentException("Expected exact nearby raise settings");
+        var counts = new java.util.HashMap<NearbyRaiseSizing.Key, NearbyRaiseSizing.PairedCounts>();
+        for (var entry : observations.entrySet()) {
+            if (!(entry.getKey() instanceof String key) || !(entry.getValue() instanceof Map<?, ?> row)
+                    || !row.keySet().equals(java.util.Set.of("opportunities", "referenceFolds", "referenceRaises",
+                            "alternateFolds", "alternateRaises")))
+                throw new IllegalArgumentException("Invalid nearby raise observation");
+            int opportunities = integer(row, "opportunities");
+            counts.put(NearbyRaiseSizing.Key.fromKey(key), new NearbyRaiseSizing.PairedCounts(
+                    new PreflopResponseModel.Counts(opportunities, integer(row, "referenceFolds"), integer(row, "referenceRaises")),
+                    new PreflopResponseModel.Counts(opportunities, integer(row, "alternateFolds"), integer(row, "alternateRaises"))));
+        }
+        var limits = new NearbyRaiseSizing.Limits(integer(near, "deltaPercentOfBigBlind"),
+                integer(near, "deltaPercentOfReference"), integer(near, "deltaPercentOfEffectiveStack"),
+                integer(near, "maxPercentOfEffectiveStack"));
+        return new NearbyRaiseSizing(NearbyRaiseSizing.Scope.valueOf(scope), limits,
+                integer(near, "minPairedSamples"), counts);
     }
 
     private static PreflopResponseModel responseModel(Map<?, ?> hard) {

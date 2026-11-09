@@ -63,7 +63,10 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                 throw new IllegalArgumentException("Invalid Hard pressure thresholds");
             if (responseModel != null && raiseContext == null)
                 throw new IllegalArgumentException("Response model requires a separate raise context");
-            if (raiseEv != null && (responseModel == null || responseModel.foldWeight() != 0 || responseModel.raiseWeight() != 0))
+            if (raiseEv != null && raiseEv.nearby() != null && (raiseContext == null || responseModel != null))
+                throw new IllegalArgumentException("Nearby raise EV requires a raise context and its own paired responses");
+            if (raiseEv != null && raiseEv.nearby() == null
+                    && (responseModel == null || responseModel.foldWeight() != 0 || responseModel.raiseWeight() != 0))
                 throw new IllegalArgumentException("Raise EV requires response probabilities without threshold weights");
         }
     }
@@ -194,12 +197,14 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         this.contextWeights = Objects.requireNonNull(contextWeights, "contextWeights");
         this.hardPressure = hardPressure;
         var responseModel = hardPressure == null ? null : hardPressure.responseModel();
-        if (responseModel != null && gameMode != GameMode.TOURNAMENT)
-            throw new IllegalArgumentException("Response model requires tournament mode");
         var ev = hardPressure == null ? null : hardPressure.raiseEv();
+        if ((responseModel != null || ev != null) && gameMode != GameMode.TOURNAMENT)
+            throw new IllegalArgumentException("Response model requires tournament mode");
         this.responseVersion = (responseModel == null ? "" : "-response." + responseModel.version())
                 + (ev == null ? "" : "-ev." + ev.calledEquityDiscountPp() + "." + ev.minEdgePercentOfBigBlind()
-                        + "." + ev.potPercents().stream().map(String::valueOf).collect(Collectors.joining(".")));
+                        + "." + (ev.nearby() == null
+                                ? ev.potPercents().stream().map(String::valueOf).collect(Collectors.joining("."))
+                                : "near." + ev.nearby().version()));
     }
 
     @Override
@@ -240,7 +245,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                     raiseThreshold = Math.min(99, raiseThreshold + raiseContext.commitmentMargin());
                 int amount = raiseAmount(observation, raise, equity - raiseThreshold, cap, raiseContext != null);
                 var model = raiseContext == null ? null : hardPressure.responseModel();
-                var ev = model == null ? null : hardPressure.raiseEv();
+                var ev = raiseContext == null ? null : hardPressure.raiseEv();
                 if (model != null && ev == null && amount > 0 && amount <= uncommittedRaiseCap(observation, raiseContext)) {
                     var spot = PreflopResponseModel.proposedRaise(observation, amount);
                     var response = spot == null ? null : model.estimate(spot);
@@ -256,10 +261,10 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                 if (amount > 0 && equity >= raiseThreshold) {
                     if (ev != null) {
                         int sizingCap = Math.min(cap, uncommittedRaiseCap(observation, raiseContext));
-                        var offers = RaiseEvSizing.offers(observation, raise, sizingCap, amount, ev);
                         double conservativeEquity = estimate.expectedShare()
                                 - contextWeights.uncertaintyZHundredths() / 100.0 * estimate.standardError();
-                        var comparison = RaiseEvSizing.compare(observation, offers, conservativeEquity, model, ev);
+                        var comparison = RaiseEvSizing.select(observation, raise, sizingCap, amount,
+                                conservativeEquity, model, ev);
                         if (comparison != null) {
                             var reference = comparison.reference();
                             var selected = comparison.selected();

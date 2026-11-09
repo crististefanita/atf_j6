@@ -56,7 +56,8 @@ hardPressure:
   # Reducere maximă pentru call-ul preflop de cel mult două blinduri mari.
   cheapPreflopDiscount: 3
   # Profilurile de evaluare pot adăuga responseModel și pot izola ponderile foldWeight și raiseWeight.
-  # Blocul opțional raiseEv compară sume folosind un responseModel cu ambele ponderi la zero.
+  # Profilurile de laborator pot adăuga raiseEv cu potPercents și responseModel fără ponderi de prag.
+  # Varianta raiseEv.nearby folosește perechi proprii și se califică separat pe FIRST_RAISE sau RERAISE.
   fullPotEquity: 76
   doublePotEquity: 86
   triplePotEquity: 94

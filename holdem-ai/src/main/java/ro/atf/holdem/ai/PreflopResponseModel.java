@@ -86,9 +86,13 @@ public record PreflopResponseModel(int minSamples, int priorStrength, int foldWe
         observations.forEach((spot, counts) -> canonical.put(spot.key(), counts));
         String settings = minSamples + ":" + priorStrength + ":" + foldWeight + ":" + raiseWeight + ":" + maxAdjustment
                 + (penalizeRaisesOnly ? ":penalty" : "");
+        return fingerprint(settings + canonical);
+    }
+
+    static String fingerprint(String canonical) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest((settings + canonical).getBytes(StandardCharsets.UTF_8));
+                    .digest(canonical.getBytes(StandardCharsets.UTF_8));
             var hex = new StringBuilder(24);
             for (int i = 0; i < 12; i++) {
                 hex.append(Character.forDigit((digest[i] & 0xff) >>> 4, 16));
@@ -111,7 +115,7 @@ public record PreflopResponseModel(int minSamples, int priorStrength, int foldWe
         return quote == null ? null : quote.spot();
     }
 
-    record Quote(Spot spot, int opponentPrice) {}
+    record Quote(Spot spot, int opponentPrice, int effectiveStack) {}
 
     static Quote quote(HoldemObservation observation, int amount) {
         var context = context(observation);
@@ -119,7 +123,10 @@ public record PreflopResponseModel(int minSamples, int priorStrength, int foldWe
         var paid = observation.visibleContributions();
         long price = (long) paid.get(observation.heroSeat()) + amount - paid.get(context.opponent);
         Spot response = spot(observation, context, context.opponent, price, context.nextRaise);
-        return response == null ? null : new Quote(response, Math.toIntExact(price));
+        if (response == null) return null;
+        long capacity = (long) observation.visibleStacks().get(context.opponent)
+                + paid.get(context.opponent) - paid.get(observation.heroSeat());
+        return new Quote(response, Math.toIntExact(price), (int) Math.min(observation.heroStack(), capacity));
     }
 
     private static Spot spot(HoldemObservation obs, PublicContext context, int responder, long price, Sequence sequence) {

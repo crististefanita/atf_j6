@@ -10,16 +10,33 @@ import ro.atf.holdem.core.LegalAction;
 
 /** Compares bounded heads-up preflop raise amounts in chips from the current decision. */
 public final class RaiseEvSizing {
-    public record Settings(int calledEquityDiscountPp, int minEdgePercentOfBigBlind, List<Integer> potPercents) {
+    public record Settings(int calledEquityDiscountPp, int minEdgePercentOfBigBlind, List<Integer> potPercents,
+                           NearbyRaiseSizing nearby) {
+        public Settings(int calledEquityDiscountPp, int minEdgePercentOfBigBlind, List<Integer> potPercents) {
+            this(calledEquityDiscountPp, minEdgePercentOfBigBlind, potPercents, null);
+        }
+
         public Settings {
             potPercents = List.copyOf(potPercents);
             if (calledEquityDiscountPp < 0 || calledEquityDiscountPp > 25
                     || minEdgePercentOfBigBlind < 1 || minEdgePercentOfBigBlind > 200
-                    || potPercents.isEmpty() || potPercents.size() > 5
+                    || potPercents.isEmpty() != (nearby != null) || potPercents.size() > 5
                     || potPercents.stream().anyMatch(percent -> percent < 25 || percent > 200)
                     || !potPercents.equals(potPercents.stream().distinct().sorted().toList()))
                 throw new IllegalArgumentException("Invalid raise EV settings");
         }
+    }
+
+    static Comparison select(HoldemObservation observation, LegalAction legal, int cap, int reference,
+                             double conservativeEquity, PreflopResponseModel response, Settings settings) {
+        var nearby = settings.nearby();
+        if (nearby == null)
+            return compare(observation, offers(observation, legal, cap, reference, settings),
+                    conservativeEquity, response, settings);
+        double calledEquity = Math.max(0, conservativeEquity - settings.calledEquityDiscountPp() / 100.0);
+        double margin = observation.bigBlind() * (settings.minEdgePercentOfBigBlind() / 100.0);
+        return nearby.compare(observation, NearbyRaiseSizing.quotes(observation, legal, cap, reference, nearby.limits()),
+                calledEquity, margin);
     }
 
     public record Offer(int amount, int opponentPrice, PreflopResponseModel.Spot spot) {}

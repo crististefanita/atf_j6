@@ -179,7 +179,7 @@ Cele două profiluri folosesc aceiași numărători calibrați. La calificare, f
 
 #### Valoarea estimată a mărimii unui raise
 
-`hardPressure.raiseEv` este opțional și folosește `responseModel` cu ponderile de prag la zero. Candidatul intervine când Hard a ales deja un raise preflop heads-up, cu preț pozitiv.
+`hardPressure.raiseEv` este opțional. Candidatul poate modifica suma când Hard a ales deja un raise preflop heads-up, cu preț pozitiv. Configurația cu `potPercents` folosește `responseModel` cu ponderile de prag la zero.
 
 | Pas | Contract |
 |---|---|
@@ -192,6 +192,27 @@ Cele două profiluri folosesc aceiași numărători calibrați. La calificare, f
 Valoarea este un scor în jetoane pentru dimensionare. Equity la call este aproximată, iar jocul ulterior și premiile de turneu rămân în afara scorului. [Valoarea așteptată pe ramuri](https://blog.gtowizard.com/what-is-expected-value-in-poker/)
 
 Pentru diagnostic, reluarea offline poate continua ramura de call până la showdown, cu check pe străzile rămase și același pachet. Raportează separat cota observată, valoarea imediată în jetoane și rezultatul turneului. Datele oracolului rămân în analiza offline.
+
+#### Comparația sumelor apropiate de control
+
+Configurația alternativă `raiseEv.nearby` folosește frecvențele proprii din perechi de oferte. Profilul de arenă selectează o singură etapă prin `scope`.
+
+- `FIRST_RAISE` acoperă prima mărire, inclusiv după limp dacă există un preț pozitiv.
+- `RERAISE` cere o mărire anterioară în istoricul public al mâinii.
+
+| Element | Regulă |
+|---|---|
+| Stivă efectivă | Minimum dintre stiva rămasă a actorului și stiva rămasă a adversarului, ajustată cu diferența contribuțiilor publice pe strada curentă. Astfel, plafonul este exprimat în jetoane de adăugat de actor. |
+| Oferte | Calculează câte o sumă mai mică și mai mare. Pasul este cel mai mic dintre procentele configurate din blindul mare, suma de control și stiva efectivă, rotunjite în jos. Încadrează ofertele între minimul legal și plafonul dat de maximul legal, limita Hard de angajare și procentul maxim din stiva efectivă. O sumă de control peste plafon rămâne neschimbată. |
+| Numărători | Reia prefixul aceleiași mâini pentru control și ofertă. Cheia numărătorilor combină etapa, poziția, clasa de preț și stiva adversarului pentru suma de control, plus direcția ajustării. Un rând include același număr de oportunități pentru ambele oferte. |
+| Alegere | Verifică `minPairedSamples` pentru fiecare pereche. Compară fiecare ofertă cu controlul din aceeași pereche și alege câștigul estimat cel mai mare, peste marja configurată. Pragurile de call și raise rămân cele ale Hard. |
+
+Configurația `nearby` se folosește separat de `potPercents` și `responseModel`. Jurnalul deciziei păstrează suma de referință, scorul în jetoane pentru referință și alegere, frecvențele estimate pentru alegere și amprenta profilului.
+
+Pentru calificare, separă loturile de estimare, verificare a reacțiilor și turnee competitive.
+
+- Raportează acoperirea pentru fiecare etapă și direcție. Un număr mare de turnee poate produce puține situații eligibile de re-raise.
+- Verifică avantajul contra adversarilor agresivi pe stive scurte și adânci. Reexecută acțiunile și verifică limitele față de starea publică.
 
 #### Inițiativa și poziția
 

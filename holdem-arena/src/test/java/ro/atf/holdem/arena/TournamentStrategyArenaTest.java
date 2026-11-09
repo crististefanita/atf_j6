@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import ro.atf.holdem.ai.NearbyRaiseSizing;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TournamentStrategyArenaTest {
@@ -22,6 +23,38 @@ class TournamentStrategyArenaTest {
     }
 
     @TempDir Path temp;
+
+    @Test void nearbyRaiseYamlUsesItsOwnEvidenceForExactlyOneStage() throws Exception {
+        String active = Files.readString(config("policy-tuning/j6-policy-hard-pressure.yaml")).stripTrailing();
+        String block = """
+
+                  raiseEv:
+                    calledEquityDiscountPp: 8
+                    minEdgePercentOfBigBlind: 20
+                    nearby:
+                      scope: FIRST_RAISE
+                      deltaPercentOfBigBlind: 100
+                      deltaPercentOfReference: 25
+                      deltaPercentOfEffectiveStack: 5
+                      maxPercentOfEffectiveStack: 35
+                      minPairedSamples: 24
+                      observations:
+                        OPEN.late.cheap.funded.UP: {opportunities: 40, referenceFolds: 5, referenceRaises: 12, alternateFolds: 8, alternateRaises: 9}
+                """;
+        var path = temp.resolve("nearby-raise.yaml");
+        var profile = TournamentPolicyConfig.load(Files.writeString(path, active + block)).hardPressure();
+        assertNull(profile.responseModel());
+        assertEquals(NearbyRaiseSizing.Scope.FIRST_RAISE, profile.raiseEv().nearby().scope());
+        assertEquals(new NearbyRaiseSizing.Limits(100, 25, 5, 35), profile.raiseEv().nearby().limits());
+        assertEquals(12, profile.raiseEv().nearby().observations().values().iterator().next().reference().raises());
+        for (String invalid : List.of(block.replace("OPEN.late", "RERAISE.late"),
+                block.replace("funded.UP", "funded.LARGER"), block.replace("Stack: 35", "Stack: 90"),
+                block.replace("alternateFolds: 8", "alternateFolds: 39"),
+                block.replace("    nearby:", "    potPercents: [50, 100]\n    nearby:"))) {
+            Files.writeString(path, active + invalid);
+            assertThrows(IllegalArgumentException.class, () -> TournamentPolicyConfig.load(path));
+        }
+    }
 
     @Test void optionalResponseModelRequiresValidPublicCellsAndExactKeys() throws Exception {
         String active = Files.readString(config("policy-tuning/j6-policy-hard-pressure.yaml")).stripTrailing();

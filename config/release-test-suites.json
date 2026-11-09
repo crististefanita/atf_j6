@@ -13,7 +13,7 @@
     { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.TournamentArenaTest" },
     { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.TournamentStrategyArenaTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.libraries.PlatformLibraryAdoptionTest" },
-    { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseGovernanceTest" },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseGovernanceTest", "impactPaths": ["scripts/Test-PublishedHoldemDownload.ps1"] },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.DocumentationGovernanceTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleasePromotionGateTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.ComponentSuiteExtentPublisherTest" },

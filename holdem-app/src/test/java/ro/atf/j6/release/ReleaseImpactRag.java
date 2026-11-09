@@ -166,16 +166,17 @@ public final class ReleaseImpactRag {
             row.put("module", suite.module());
             row.put("testClass", suite.testClass());
             row.put("relevanceScore", suite.score());
+            if (!suite.matchingChanges().isEmpty()) {
+                ArrayNode matchedPaths = row.putArray("matchingChanges");
+                suite.matchingChanges().forEach(matchedPaths::add);
+            }
             row.put("inventoryPath", "config/release-test-suites.json");
             row.put("inventorySha256", suiteInventoryDigest);
             row.put("indexedCommit", head);
         });
         ArrayNode nativeSuggestions = result.putArray("suggestedNativeJourneys");
         for (JsonNode journey : suites.path("native")) {
-            var matches = new ArrayList<String>();
-            for (JsonNode path : journey.path("impactPaths")) {
-                if (impactPaths.contains(path.asText())) matches.add(path.asText());
-            }
+            List<String> matches = matchingImpactPaths(journey, impactPaths);
             if (matches.isEmpty()) continue;
             ObjectNode row = nativeSuggestions.addObject();
             row.put("mode", journey.path("mode").asText());
@@ -302,12 +303,24 @@ public final class ReleaseImpactRag {
             Map<String, Integer> terms = new HashMap<>();
             addTokens(terms, module + " " + testClass, 1);
             int score = terms.entrySet().stream().mapToInt(entry -> entry.getValue() * query.getOrDefault(entry.getKey(), 0)).sum();
-            if (score > 0) rows.add(new RankedSuite(module, testClass, score, suitePriority(module, testClass, changes)));
+            List<String> matchingChanges = matchingImpactPaths(suite, changes);
+            if (score > 0 || !matchingChanges.isEmpty()) {
+                rows.add(new RankedSuite(module, testClass, score, suitePriority(module, testClass, changes), matchingChanges));
+            }
         }
-        rows.sort(Comparator.comparingInt(RankedSuite::priority).reversed()
+        rows.sort(Comparator.comparing((RankedSuite suite) -> suite.matchingChanges().isEmpty())
+                .thenComparing(Comparator.comparingInt(RankedSuite::priority).reversed())
                 .thenComparing(Comparator.comparingInt(RankedSuite::score).reversed())
                 .thenComparing(RankedSuite::module).thenComparing(RankedSuite::testClass));
         return List.copyOf(rows);
+    }
+
+    private static List<String> matchingImpactPaths(JsonNode entry, List<String> changes) {
+        List<String> matches = new ArrayList<>();
+        for (JsonNode path : entry.path("impactPaths")) {
+            if (changes.contains(path.asText())) matches.add(path.asText());
+        }
+        return matches;
     }
 
     private static int suitePriority(String module, String testClass, List<String> changes) {
@@ -383,5 +396,5 @@ public final class ReleaseImpactRag {
     private record SourceChunk(String path, String heading, int startLine, int endLine, String sourceSha256,
                                String chunkSha256, String text, String feedbackState, Set<String> terms) { }
     private record RankedChunk(SourceChunk chunk, int score, int priority) { }
-    private record RankedSuite(String module, String testClass, int score, int priority) { }
+    private record RankedSuite(String module, String testClass, int score, int priority, List<String> matchingChanges) { }
 }

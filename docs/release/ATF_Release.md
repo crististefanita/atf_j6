@@ -44,7 +44,8 @@ Rulați verificările J0 pe arborele complet și păstrați rezultatul brut. În
 
 Runnerul scrie în dosarul extern un context consultativ pentru diferența față de ediția precedentă. `CONTEXT_READY` indică surse și suite sugerate.
 
-- `ReleaseImpactRag` ordonează lexical documentele și suitele afectate de fișierele modificate, adăugate sau șterse.
+- `ReleaseImpactRag` caută documente și suite pornind de la fișierele modificate, adăugate sau șterse.
+- Pentru o suită care verifică un fișier din alt modul sau un script, declarați calea exactă în `impactPaths` din inventarul suitelor. O potrivire are prioritate față de relevanța lexicală și apare în `matchingChanges`, lângă digestul inventarului.
 - În documentele normative, puneți `<!-- rag:contract identificator -->` imediat după valoarea din cod inline.
 - În feedbackul activ, folosiți `<!-- rag:observed identificator -->` pentru aceeași regulă și unitate. Comparația citește commitul candidatului.
 
@@ -146,8 +147,8 @@ Auditul citește manifestul calificării și verifică APK-ul, checksum-ul, inte
    - `-BuildSource` permite o construcție externă explicită la inspectarea unei calificări mai vechi.
 
 3. Completați `release-validation.json` cu identitatea APK-ului, commit-ul sursă, calificarea și hash-urile documentelor. Păstrați raportul Extent al porții în dosarul extern al rulării.
-4. Commit-ul sursă și tag-ul `v<versiune>` identifică exact binarul. Commit-ul ulterior al dovezilor poate actualiza catalogul și linkurile, dar nu mută tag-ul.
-5. Atașați APK-ul verificat și checksum-ul la GitHub Release, publicați și confruntați asset-urile cu manifestul. După o descărcare autentificată completă, păstrați receipt-ul, marcați ediția `PREPARED` și aliniați linkurile din README.
+4. Commit-ul sursă și tag-ul `v<versiune>` identifică exact binarul. Împingeți commitul calificat și tag-ul împreună. Verificați pe remote commitul indicat de tag.
+5. Atașați APK-ul verificat și checksum-ul la GitHub Release, publicați și confruntați asset-urile cu manifestul. După o descărcare autentificată completă, păstrați receipt-ul, marcați ediția `PREPARED` și aliniați linkurile din README. Împingeți commitul separat al dovezilor, apoi citiți README-ul de pe branchul remote. Comparați pagina Release și URL-ul APK-ului cu metadatele GitHub și păstrați separat rezultatul descărcării directe și pe cel prin API.
 6. Cu catalogul în `PREPARED`, rulați `scripts/Test-PublishedHoldemDownload.ps1`. Clientul verifică anonim ruta din README, redirect-ul, statusul final, lungimea completă, SHA-256 și octeții de identificare ZIP/APK.
    - Clientul verifică și fișierul checksum de la ruta aceleiași ediții. După PASS, păstrați ambele dovezi, `publicDownload` și `publicChecksumDownload`, apoi marcați `PUBLISHED`.
    - Dacă proba anonimă e blocată, păstrați `PREPARED` cu `authenticatedBrowserDownload` sau `authenticatedAssetDownload`.

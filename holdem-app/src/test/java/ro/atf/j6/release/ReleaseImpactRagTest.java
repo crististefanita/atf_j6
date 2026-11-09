@@ -4,6 +4,7 @@ import atf.testkit.AtfComponentTest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -23,6 +24,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @AtfComponentTest
 class ReleaseImpactRagTest {
     private static final ObjectMapper JSON = new ObjectMapper();
+
+    @Test
+    void prioritizesDeclaredDistributionSuiteWithoutLexicalOverlap(@TempDir Path temp) throws Exception {
+        String suite = "ro.atf.j6.release.ReleaseGovernanceTest";
+        String script = "scripts/verify-artifact.ps1";
+        Path root = project(temp, "0.3.0", "holdem-android", "ro.atf.holdem.android.LocalHoldemGameTest");
+        addSuite(root, "maven", "publishing-tools", suite);
+        Path inventory = root.resolve("config/release-test-suites.json");
+        JsonNode contract = JSON.readTree(inventory.toFile());
+        ((ObjectNode) contract.path("maven").get(0))
+                .putArray("impactPaths").add(script);
+        JSON.writeValue(inventory.toFile(), contract);
+        String base = commit(root, "baseline");
+        write(root, script, "exit 0\n");
+        write(root, "holdem-android/app/build.gradle", "versionCode 3\n");
+        String candidate = commit(root, "artifact transport");
+
+        JsonNode review = ReleaseImpactRag.review(root, "0.2.2", base, candidate, "0.3.0", temp.resolve("context.json"));
+
+        JsonNode first = review.path("suggestedTestSuites").get(0);
+        assertEquals(suite, first.path("testClass").asText());
+        assertEquals(0, first.path("relevanceScore").asInt());
+        assertEquals(script, first.path("matchingChanges").get(0).asText());
+    }
 
     @Test
     void retrievesVersionedFeedbackAndTestCitationsWithoutTouchingReleaseState(@TempDir Path temp) throws Exception {
@@ -357,7 +382,7 @@ class ReleaseImpactRagTest {
         Path inventory = root.resolve("config/release-test-suites.json");
         var contract = JSON.readTree(inventory.toFile());
         String view = "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java";
-        var journey = ((com.fasterxml.jackson.databind.node.ObjectNode) contract).putArray("native").addObject()
+        var journey = ((ObjectNode) contract).putArray("native").addObject()
                 .put("mode", "settlement-award").put("switch", "-IncludeSettlementAward");
         journey.putArray("impactPaths").add(view);
         journey.putArray("companionModes").add("settlement-multi-award").add("settlement-static-award").add("settlement-compact-award");

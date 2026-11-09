@@ -55,6 +55,7 @@ hardPressure:
   bigBlindValueRaise: false
   # Reducere maximă pentru call-ul preflop de cel mult două blinduri mari.
   cheapPreflopDiscount: 3
+  # Profilurile de evaluare pot adăuga blocul opțional responseModel.
   fullPotEquity: 76
   doublePotEquity: 86
   triplePotEquity: 94

@@ -23,6 +23,32 @@ class TournamentStrategyArenaTest {
 
     @TempDir Path temp;
 
+    @Test void optionalResponseModelRequiresValidPublicCellsAndExactKeys() throws Exception {
+        String active = Files.readString(config("policy-tuning/j6-policy-hard-pressure.yaml")).stripTrailing();
+        assertNull(TournamentPolicyConfig.load(config("policy-tuning/j6-policy-hard-pressure.yaml"))
+                .hardPressure().responseModel());
+        String block = """
+
+                  responseModel:
+                    minSamples: 32
+                    priorStrength: 30
+                    foldWeight: 16
+                    raiseWeight: 24
+                    maxAdjustment: 4
+                    observations:
+                      OPEN.late.cheap.funded: {opportunities: 40, folds: 21, raises: 9}
+                """;
+        Path path = temp.resolve("hard-response.yaml");
+        var model = TournamentPolicyConfig.load(Files.writeString(path, active + block)).hardPressure().responseModel();
+        assertEquals(32, model.minSamples());
+        assertEquals(40, model.observations().values().iterator().next().opportunities());
+        for (String invalid : List.of(block.replace("folds: 21", "folds: 32"),
+                block.replace("OPEN.late", "OPEN.middle"), block.replace("raiseWeight", "raiseBias"))) {
+            Files.writeString(path, active + invalid);
+            assertThrows(IllegalArgumentException.class, () -> TournamentPolicyConfig.load(path));
+        }
+    }
+
     @Test void hardRaiseWeightsAreIndependentAndRejectIncompleteOrUnknownKeys() throws Exception {
         String legacy = Files.readString(config("policy-tuning/j6-policy-hard-pressure.yaml"))
                 .replaceAll("(?ms)^  raiseContext:.*\\z", "").stripTrailing();

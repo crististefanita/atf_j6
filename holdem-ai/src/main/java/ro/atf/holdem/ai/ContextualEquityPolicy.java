@@ -30,7 +30,8 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
     }
 
     public record HardPressure(int cheapPreflopDiscount, int fullPotEquity, int doublePotEquity, int triplePotEquity,
-                               boolean bigBlindValueRaise, RaiseContext raiseContext) {
+                               boolean bigBlindValueRaise, RaiseContext raiseContext,
+                               PreflopResponseModel responseModel) {
         public static final HardPressure TOURNAMENT = new HardPressure(3, 76, 86, 94, false,
                 new RaiseContext(8, 5, 2, 3, 3, 6, 8, 75));
 
@@ -43,11 +44,19 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
             this(cheapPreflopDiscount, fullPotEquity, doublePotEquity, triplePotEquity, bigBlindValueRaise, null);
         }
 
+        public HardPressure(int cheapPreflopDiscount, int fullPotEquity, int doublePotEquity, int triplePotEquity,
+                            boolean bigBlindValueRaise, RaiseContext raiseContext) {
+            this(cheapPreflopDiscount, fullPotEquity, doublePotEquity, triplePotEquity, bigBlindValueRaise,
+                    raiseContext, null);
+        }
+
         public HardPressure {
             if (cheapPreflopDiscount < 0 || cheapPreflopDiscount > 12
                     || fullPotEquity < 70 || doublePotEquity <= fullPotEquity
                     || triplePotEquity <= doublePotEquity || triplePotEquity > 100)
                 throw new IllegalArgumentException("Invalid Hard pressure thresholds");
+            if (responseModel != null && raiseContext == null)
+                throw new IllegalArgumentException("Response model requires a separate raise context");
         }
     }
 
@@ -145,6 +154,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
     private final ContextWeights contextWeights;
     private final GameMode gameMode;
     private final HardPressure hardPressure;
+    private final String responseVersion;
 
     public ContextualEquityPolicy(int samples, int cashRiskMarginPercent, int tournamentRiskMarginPercent,
                                   int raiseEdgePercent, int valueBetThresholdPercent, GameMode gameMode) {
@@ -175,6 +185,10 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         this.gameMode = Objects.requireNonNull(gameMode, "gameMode");
         this.contextWeights = Objects.requireNonNull(contextWeights, "contextWeights");
         this.hardPressure = hardPressure;
+        var responseModel = hardPressure == null ? null : hardPressure.responseModel();
+        if (responseModel != null && gameMode != GameMode.TOURNAMENT)
+            throw new IllegalArgumentException("Response model requires tournament mode");
+        this.responseVersion = responseModel == null ? "" : "-response." + responseModel.version();
     }
 
     @Override
@@ -213,10 +227,21 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                         raiseContext, equity, raiseThreshold);
                 if (raiseContext != null && raise.minAmount() > uncommittedRaiseCap(observation, raiseContext))
                     raiseThreshold = Math.min(99, raiseThreshold + raiseContext.commitmentMargin());
+                int amount = raiseAmount(observation, raise, equity - raiseThreshold, cap, raiseContext != null);
+                var model = raiseContext == null ? null : hardPressure.responseModel();
+                if (model != null && amount > 0 && amount <= uncommittedRaiseCap(observation, raiseContext)) {
+                    var spot = PreflopResponseModel.proposedRaise(observation, amount);
+                    var response = spot == null ? null : model.estimate(spot);
+                    if (response != null) {
+                        raiseThreshold = Bounds.clamp(raiseThreshold + response.adjustment(), 0, 99);
+                        metrics += String.format(Locale.ROOT,
+                                " responseSpot=%s responseFold=%.1f%% responseRaise=%.1f%% responseN=%d responseAdjustment=%+d",
+                                spot.key(), 100 * response.fold(), 100 * response.raise(), response.observations(),
+                                response.adjustment());
+                    }
+                }
                 metrics += " raiseRequired=" + raiseThreshold + "% raiseCap=" + cap;
-                int amount = equity < raiseThreshold ? 0 : raiseAmount(observation, raise, equity - raiseThreshold,
-                        cap, raiseContext != null);
-                if (amount > 0) return decision(ActionType.RAISE, amount,
+                if (amount > 0 && equity >= raiseThreshold) return decision(ActionType.RAISE, amount,
                         metrics + "; raise only with equity edge and a non-all-in pot fraction");
             }
             LegalAction call = find(legal, ActionType.CALL);
@@ -694,7 +719,8 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                 + (hardPressure == null ? "" : "-hard2." + hardPressure.cheapPreflopDiscount()
                         + "." + hardPressure.fullPotEquity() + "." + hardPressure.doublePotEquity()
                         + "." + hardPressure.triplePotEquity() + (hardPressure.bigBlindValueRaise() ? "-bb-option" : "")
-                        + (hardPressure.raiseContext() == null ? "" : "-split." + hardPressure.raiseContext().version())),
+                        + (hardPressure.raiseContext() == null ? "" : "-split." + hardPressure.raiseContext().version()))
+                + responseVersion,
                 explanation);
     }
 

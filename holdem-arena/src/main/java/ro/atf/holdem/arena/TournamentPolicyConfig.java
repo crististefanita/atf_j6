@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.Map;
 import ro.atf.holdem.ai.ContextualEquityPolicy;
+import ro.atf.holdem.ai.PreflopResponseModel;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -150,6 +151,7 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
         var keys = new java.util.HashSet<>(hard.keySet());
         keys.remove("bigBlindValueRaise");
         keys.remove("raiseContext");
+        keys.remove("responseModel");
         if (!keys.equals(required))
             throw new IllegalArgumentException("Expected exact hardPressure settings");
         Object bigBlindValueRaise = hard.containsKey("bigBlindValueRaise") ? hard.get("bigBlindValueRaise") : false;
@@ -157,7 +159,26 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
             throw new IllegalArgumentException("Expected boolean bigBlindValueRaise");
         return new ContextualEquityPolicy.HardPressure(integer(hard, "cheapPreflopDiscount"),
                 integer(hard, "fullPotEquity"), integer(hard, "doublePotEquity"), integer(hard, "triplePotEquity"),
-                enabled, raiseContext(hard));
+                enabled, raiseContext(hard), responseModel(hard));
+    }
+
+    private static PreflopResponseModel responseModel(Map<?, ?> hard) {
+        if (!hard.containsKey("responseModel")) return null;
+        if (!(hard.get("responseModel") instanceof Map<?, ?> model)
+                || !model.keySet().equals(java.util.Set.of("minSamples", "priorStrength", "foldWeight",
+                    "raiseWeight", "maxAdjustment", "observations"))
+                || !(model.get("observations") instanceof Map<?, ?> observations))
+            throw new IllegalArgumentException("Expected exact responseModel settings and observations");
+        var counts = new java.util.HashMap<PreflopResponseModel.Spot, PreflopResponseModel.Counts>();
+        for (var entry : observations.entrySet()) {
+            if (!(entry.getKey() instanceof String key) || !(entry.getValue() instanceof Map<?, ?> row)
+                    || !row.keySet().equals(java.util.Set.of("opportunities", "folds", "raises")))
+                throw new IllegalArgumentException("Invalid responseModel observation");
+            counts.put(PreflopResponseModel.Spot.fromKey(key), new PreflopResponseModel.Counts(
+                    integer(row, "opportunities"), integer(row, "folds"), integer(row, "raises")));
+        }
+        return new PreflopResponseModel(integer(model, "minSamples"), integer(model, "priorStrength"),
+                integer(model, "foldWeight"), integer(model, "raiseWeight"), integer(model, "maxAdjustment"), counts);
     }
 
     private static ContextualEquityPolicy.RaiseContext raiseContext(Map<?, ?> hard) {

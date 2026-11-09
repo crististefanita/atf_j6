@@ -151,6 +151,23 @@ O schimbare de decizie trebuie să păstreze legalitatea, reproductibilitatea ș
 
 Scorul Brier compară probabilitățile de acțiune cu răspunsurile observate. Equity estimează separat cota din pot pe cărțile vizibile. Un model de răspuns evaluat în arenă rămâne o ipoteză până la o comparație separată în politica de joc.
 
+#### Candidat pentru răspunsul la raise
+
+`hardPressure.responseModel` este un bloc YAML opțional de evaluare. Profilul fără bloc folosește pragul de raise obișnuit.
+
+| Pas | Contract |
+|---|---|
+| Situație | Preflop, la preț pozitiv, cu un singur adversar activ care poate plăti suma propusă și păstra jetoane. Raise-ul trebuie să rămână sub pragul de angajare al actorului. |
+| Context | Încadrează suma efectivă de plătit pentru adversar și stiva lui în blinduri mari. Din acțiunile publice separă prima mărire, mărirea după limp și re-raise-ul. Poziția este relativă la ordinea preflop a celor doi jucători activi. |
+| Estimare | Numără fold-urile și măririle în situații comparabile, inclusiv all-in-urile care măresc. Sub `minSamples`, păstrează decizia de control. Pentru o celulă susținută, apropie frecvențele de grupul cu același preț și aceeași clasă de stivă. |
+| Decizie | Un fold estimat peste reper poate coborî pragul de raise. Un re-raise estimat peste reper îl poate ridica. Ajustarea este plafonată, iar suma propusă și pragul de call se calculează independent. |
+| Calificare | Folosește turnee distincte pentru estimarea frecvențelor, validarea probabilităților și comparația competitivă. Compară câștigurile în perechi și verifică legalitatea și reluarea jurnalelor. |
+
+Jurnalul înregistrează cheia situației, cele două probabilități, numărul de observații și ajustarea. Versiunea politicii include amprenta setărilor și a numărătorilor.
+
+- Pentru fiecare reacție, probabilitatea estimată este `(număr local + priorStrength × probabilitatea grupului) / (observații locale + priorStrength)`.
+- Pragul de raise primește ajustarea rotunjită `foldWeight × (foldGrup − foldLocal) + raiseWeight × (raiseLocal − raiseGrup)`. Aici valorile locale sunt estimările după regularizare. Se aplică plafonul simetric `maxAdjustment`.
+
 ## Politică mixtă de bluff pentru laborator
 
 Politica experimentală `BLUFF-MIXED-0.1` explorează o deschidere minimă după check, cu frecvență și fereastră de poziție configurate. [YAML-ul politicilor](../../config/j6-policy.yaml)

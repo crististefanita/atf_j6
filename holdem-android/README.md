@@ -81,6 +81,7 @@ gradle.beforeProject { project ->
 |---|---|
 | `settlement-award` | În heads-up, același loc primește premiul și restituirea. Raportul păstrează valorile separate și cadrele de plecare, sosire și decontare ale markerului. |
 | `settlement-multi-award` | Fiecare beneficiar primește propriul marker, atât la split, cât și la pot secundar. |
+| `seat-metrics` | La șase locuri, perechile întoarse sunt aliniate sub chenarele de pe fiecare rând, inclusiv perechea jucătorului local. |
 | `settlement-static-award` | Cu animațiile oprite, masa păstrează numele, sumele și comanda pentru mâna următoare. |
 | `settlement-compact-award` | Pe fereastra de 320 × 328 dp, cu font 200%, rezumatul păstrează și premiul locului din afara ferestrei. Raportul verifică markerul locului vizibil și cadrele animației. |
 

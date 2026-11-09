@@ -688,6 +688,7 @@ public final class TournamentSanity extends Instrumentation {
             var settled = awaitSeatSettlement();
             check("Hand settles after the opening all-in", "COMPLETE", settled == null ? "checkpoint unavailable" : settled.street().name());
             inspectSeatFacts(activity, true);
+            inspectSettledHandAlignment(activity, settled);
             int winner = 0;
             for (int seat = 1; seat < settled.seats().size(); seat++)
                 if (settled.seats().get(seat).potWon() > settled.seats().get(winner).potWon()) winner = seat;
@@ -787,6 +788,41 @@ public final class TournamentSanity extends Instrumentation {
         for (int line = 0; line < layout.getLineCount(); line++)
             if (layout.getEllipsisCount(line) != 0 || layout.getLineMax(line) > layout.getWidth() + 1f) return false;
         return true;
+    }
+
+    private void inspectSettledHandAlignment(Activity activity, HoldemTableViewState frame) throws Exception {
+        var errors = new ArrayList<String>();
+        runOnMainSync(() -> {
+            View root = activity.getWindow().getDecorView();
+            var rows = CompactSeatRows.forSeats(6);
+            for (int[] row : List.of(rows.top(), rows.bottom())) {
+                Integer rowTop = null;
+                for (int displaySeat : row) {
+                    int seat = frame.physicalSeat(displaySeat);
+                    View nameFrame = root.findViewWithTag("settlement-target:seat:" + seat);
+                    LinearLayout hand = root.findViewWithTag("settlement-hand:seat:" + seat);
+                    if (nameFrame == null || hand == null || hand.getChildCount() != 2) {
+                        errors.add("seat " + seat + " missing a measured pair");
+                        continue;
+                    }
+                    int[] nameOrigin = new int[2];
+                    int[] handOrigin = new int[2];
+                    nameFrame.getLocationOnScreen(nameOrigin);
+                    hand.getLocationOnScreen(handOrigin);
+                    boolean expectedVisible = seat == frame.viewer() ? !frame.ownCards().isEmpty()
+                            : frame.seats().get(seat).dealtCards() && frame.seats().get(seat).shownCards().size() == 2;
+                    if (handOrigin[1] != nameOrigin[1] + nameFrame.getHeight()
+                            || (rowTop != null && handOrigin[1] != rowTop)
+                            || (hand.getVisibility() == View.VISIBLE) != expectedVisible) {
+                        errors.add("seat " + seat + " frame bottom " + (nameOrigin[1] + nameFrame.getHeight())
+                                + ", pair top " + handOrigin[1] + ", row top " + rowTop);
+                    }
+                    rowTop = handOrigin[1];
+                }
+            }
+        });
+        check("Six settled hands align below their seat frames, including the viewer",
+                "aligned pairs", errors.isEmpty() ? "aligned pairs" : String.join("; ", errors));
     }
 
     private void focusSeatMetrics(Activity activity) throws Exception {

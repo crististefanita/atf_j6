@@ -5,7 +5,7 @@
   "previousVersion": "0.6.0",
   "changeClass": "COMPATIBLE_FEATURE",
   "changeRationale": "Apropie controalele de sub mâna jucătorului și verifică spațiul la execuție.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.7.0"

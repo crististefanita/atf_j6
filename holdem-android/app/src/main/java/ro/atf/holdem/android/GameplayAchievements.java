@@ -12,9 +12,9 @@ import ro.atf.holdem.core.Street;
 /** Projects settled poker results into independent, bounded progress counters. */
 final class GameplayAchievements {
     enum Metric {
-        POT(3), SHOWDOWN_POT(3), UNCONTESTED_POT(1), TOURNAMENT_POT(5),
-        PODIUM(1), TITLE(3), SIX_SEAT_TITLE(2), STRAIGHT_OR_BETTER(1),
-        FULL_HOUSE_OR_BETTER(1), SOLE_HIGH_CARD_POT(1), MULTIWAY_TOURNAMENT_UNCONTESTED(5);
+        POT(3), TOURNAMENT_POT(5), BIG_BLIND_POT(1), TOURNAMENT_FINISHED(1),
+        PODIUM(2), TITLE(3), SIX_SEAT_TITLE(2), STRAIGHT_OR_BETTER(2),
+        FULL_HOUSE_OR_BETTER(2), SOLE_HIGH_CARD_POT(1), MULTIWAY_SHOWDOWN_POT(12);
 
         final int cap;
         Metric(int cap) { this.cap = cap; }
@@ -55,7 +55,7 @@ final class GameplayAchievements {
         String hand = tournament == null
                 ? "table:" + game.displayNameSeed() + ":" + frame.dealer()
                 : tournament + ":" + game.handNumber();
-        int rank = game.outcome() == null ? 0 : game.finishingRanks().get(frame.viewer());
+        int rank = game.settledRank();
         String owner = game.playerId(frame.viewer());
         if (tournament == null && currentProfile != null
                 && ("local-human".equals(owner) || "legacy-human".equals(owner))) {
@@ -73,13 +73,11 @@ final class GameplayAchievements {
         if (seat.potWon() > 0) {
             credit(recorded, Metric.POT, hand, updates);
             if (tournament != null) credit(recorded, Metric.TOURNAMENT_POT, hand, updates);
+            if (frame.viewer() == frame.bigBlind()) credit(recorded, Metric.BIG_BLIND_POT, hand, updates);
             var evaluation = seat.handEvaluation();
-            if (evaluation == null) {
-                credit(recorded, Metric.UNCONTESTED_POT, hand, updates);
-                if (tournament != null && frame.seats().stream().filter(HoldemTableViewState.Seat::dealtCards).count() >= 3)
-                    credit(recorded, Metric.MULTIWAY_TOURNAMENT_UNCONTESTED, hand, updates);
-            } else {
-                credit(recorded, Metric.SHOWDOWN_POT, hand, updates);
+            if (evaluation != null) {
+                long showdownPlayers = frame.seats().stream().filter(player -> player.handEvaluation() != null).count();
+                if (showdownPlayers >= 3) credit(recorded, Metric.MULTIWAY_SHOWDOWN_POT, hand, updates);
                 var category = evaluation.category();
                 if (category.compareTo(HandRank.Category.STRAIGHT) >= 0)
                     credit(recorded, Metric.STRAIGHT_OR_BETTER, hand, updates);
@@ -90,8 +88,9 @@ final class GameplayAchievements {
                     credit(recorded, Metric.SOLE_HIGH_CARD_POT, hand, updates);
             }
         }
-        if (tournament != null && rank >= 1 && rank <= 3) {
-            credit(recorded, Metric.PODIUM, tournament, updates);
+        if (tournament != null && rank >= 1 && rank <= frame.seats().size()) {
+            credit(recorded, Metric.TOURNAMENT_FINISHED, tournament, updates);
+            if (rank <= 3) credit(recorded, Metric.PODIUM, tournament, updates);
             if (rank == 1) {
                 credit(recorded, Metric.TITLE, tournament, updates);
                 if (frame.seats().size() == 6) credit(recorded, Metric.SIX_SEAT_TITLE, tournament, updates);

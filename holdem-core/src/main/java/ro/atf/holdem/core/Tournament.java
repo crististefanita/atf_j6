@@ -83,17 +83,23 @@ public final class Tournament {
         markChampion(settled);
     }
 
+    /** The viewer's final rank when locked by a settled hand, including shared places. */
+    public int settledRank(int seat) {
+        Objects.checkIndex(seat, rules.seats());
+        if (finishingRanks[seat] != 0) return finishingRanks[seat];
+        if (current == null || current.street() != Street.COMPLETE) return 0;
+        var settled = current.stacks();
+        int rank = eliminationRank(settled);
+        if (settled.get(seat) > 0) return rank == 2 ? 1 : 0;
+        return stacks.get(seat) > 0 ? rank : 0;
+    }
+
+    private static int eliminationRank(List<Integer> settled) {
+        return 1 + (int) settled.stream().filter(stack -> stack > 0).count();
+    }
+
     private void recordEliminations(List<Integer> settled) {
-        int aliveAtStart = 0;
-        int newlyEliminated = 0;
-        for (int seat = 0; seat < stacks.size(); seat++) {
-            if (stacks.get(seat) > 0) {
-                aliveAtStart++;
-                if (settled.get(seat) == 0) newlyEliminated++;
-            }
-        }
-        if (newlyEliminated == 0) return;
-        int rank = aliveAtStart - newlyEliminated + 1;
+        int rank = eliminationRank(settled);
         for (int seat = 0; seat < stacks.size(); seat++)
             if (stacks.get(seat) > 0 && settled.get(seat) == 0) finishingRanks[seat] = rank;
     }

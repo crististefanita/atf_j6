@@ -54,7 +54,7 @@ Pentru reguli tactice, verifică acțiunea în contextul disponibil înainte de 
 <details>
 <summary>Model de catalog YAML pentru un proiect nou</summary>
 
-Un catalog mic poate rămâne un tabel tipizat în cod. Dacă regulile sunt editate separat, validează la încărcare câmpurile și leagă fiecare metrică de un evaluator înregistrat. Exemplul descrie schema, nu este un fișier încărcat de Hold’em.
+Un catalog mic poate rămâne un tabel tipizat în cod. Dacă regulile sunt editate separat, validează la încărcare câmpurile și leagă fiecare metrică de un evaluator înregistrat. Exemplul descrie o schemă generică. Hold’em folosește un catalog YAML în subsetul JSON, din care Gradle generează catalogul Android. [Catalogul Hold’em](../../../config/j6-achievements.yaml)
 
 ```yaml
 schemaVersion: 1

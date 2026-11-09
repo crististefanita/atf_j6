@@ -111,6 +111,10 @@ final class LocalHoldemGame {
         return new LocalHoldemGame(seats, dealer, seed, false, 1, System::nanoTime, humanPlayerId, "", false);
     }
 
+    static Tournament.Rules tournamentRules(int seats, int blindLevelMinutes) {
+        return new Tournament.Rules(seats, STARTING_STACK, blindLevelMinutes * 60L, TOURNAMENT_BLINDS);
+    }
+
     static LocalHoldemGame tournament(int seats, long seed) {
         return tournament(seats, seed, 1);
     }
@@ -159,8 +163,7 @@ final class LocalHoldemGame {
         this.monotonicNanos = Objects.requireNonNull(monotonicNanos, "monotonicNanos");
         dealSeeds = new Random(seed);
         tournament = tournamentMode
-                ? new Tournament(new Tournament.Rules(seats, STARTING_STACK, blindLevelMinutes * 60L,
-                        TOURNAMENT_BLINDS), dealer)
+                ? new Tournament(tournamentRules(seats, blindLevelMinutes), dealer)
                 : null;
         advisor = new ContextualEquityPolicy(ADVISOR_SAMPLES, 2, 8, 18, 60,
                 tournamentMode ? ContextualEquityPolicy.GameMode.TOURNAMENT : ContextualEquityPolicy.GameMode.CASH);
@@ -218,6 +221,8 @@ final class LocalHoldemGame {
     synchronized List<Integer> finishingRanks() {
         return tournament == null ? List.of() : tournament.finishingRanks();
     }
+
+    synchronized int settledRank() { return tournament == null ? 0 : tournament.settledRank(human); }
 
     synchronized int handNumber() { return rounds.size(); }
 

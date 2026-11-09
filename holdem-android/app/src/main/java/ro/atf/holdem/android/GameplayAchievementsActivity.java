@@ -116,7 +116,7 @@ public final class GameplayAchievementsActivity extends Activity {
             row.setOrientation(LinearLayout.VERTICAL);
             row.setPadding(dp(4), dp(8), dp(4), dp(8));
             var title = label(16, AchievementPresentation.TEXT);
-            title.setText(milestone.label());
+            title.setText(getString(milestone.label(), milestone.target()));
             row.addView(title);
             int current = milestone.progress(counts);
             boolean earned = current == milestone.target();

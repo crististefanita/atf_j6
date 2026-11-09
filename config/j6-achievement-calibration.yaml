@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "secondsPerHand": 20,
+  "seatCounts": [4, 5, 6],
+  "runs": [
+    {"stage":"calibration", "mode":"product", "count":150, "firstSeed":42000},
+    {"stage":"calibration", "mode":"mixed", "count":150, "firstSeed":43000},
+    {"stage":"holdout", "mode":"product", "count":180, "firstSeed":72000},
+    {"stage":"holdout", "mode":"mixed", "count":180, "firstSeed":73000}
+  ]
+}

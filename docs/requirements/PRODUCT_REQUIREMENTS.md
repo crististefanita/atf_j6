@@ -115,18 +115,17 @@ O comandă de continuare acceptată în timpul animației salvează destinația 
 
 ## Realizări și antrenament
 
-Meniul **Realizări** arată cinci obiective pe nivel, cu progres local pe profil. Ordinea este de lectură: o mână sau un turneu poate avansa mai multe obiective simultan. **Exerciții de antrenament** păstrează separat catalogul și răspunsurile existente.
+Meniul **Realizări** arată cinci obiective pe nivel. Ordinea sugerează de unde să începi, iar o mână sau un turneu poate avansa mai multe obiective simultan. Exercițiile și răspunsurile lor rămân în **Antrenament**.
 
 | Nivel | Primul obiectiv | Alte criterii |
 |---|---|---|
-| Ușor | Câștigă o mână de poker. | Pot fără dezvăluire, pot la dezvăluire, mână de turneu și trei mâini distincte. |
-| Mediu | Câștigă un turneu. | Podium, trei câștiguri la dezvăluire, chintă sau mai bine la dezvăluire și cinci mâini de turneu. |
-| Greu | Câștigă trei turnee distincte. | Singurul beneficiar al poturilor cu o carte mare la dezvăluire, două titluri la mese de șase, full sau mai bine și cinci câștiguri fără dezvăluire în mâini de turneu cu minimum trei jucători distribuiți. |
+| Ușor | Câștigă o mână de poker. | Prima mână de turneu câștigată, un pot din blindul mare, trei mâini câștigate și încheierea propriei participări într-un turneu. |
+| Mediu | Câștigă un turneu. | Cinci mâini câștigate în turnee, trei victorii la dezvăluire cu minimum trei participanți, două victorii cu chintă sau mai bine și două podiumuri. |
+| Greu | Câștigă trei turnee distincte. | Carte mare ca unic beneficiar al poturilor, două victorii cu full sau mai bine, 12 victorii la dezvăluire cu minimum trei participanți și două titluri la mese pornite cu șase jucători. |
 
-- O mână se califică la decontare când profilul primește jetoane dintr-un pot. Un pot împărțit sau secundar poate conta; restituirea unui pariu nu contează.
-- Pentru carte mare, combinația finală nu conține nicio pereche și niciun alt jucător nu primește o parte din poturi.
-- Titlul cere locul întâi într-un turneu încheiat. Două deschideri ale aceluiași rezultat nu dau credit dublu.
+- O mână se califică dacă profilul primește jetoane dintr-un pot la decontare. O restituire nu contează. Un pot secundar sau împărțit poate conta o singură dată pentru mâna respectivă.
+- La o dezvăluire cu minimum trei participanți se numără doar jucătorii ale căror cărți sunt evaluate. Criteriul de carte mare cere ca jucătorul să fie singurul beneficiar al poturilor.
+- Participarea și podiumul se acordă când locul devine definitiv, chiar dacă adversarii continuă. Un loc al treilea împărțit contează. Titlul cere locul întâi, iar obiectivul de șase folosește dimensiunea de la începutul turneului.
+- Progresul este local pe profil și se deduplică după ID-ul mâinii sau al turneului. Se poate reconcilia sesiunea salvată. Clasamentul agregat și răspunsurile din Antrenament nu reconstruiesc partidele vechi.
 
-Progresul pornește de la rezultatele observate după actualizare. Sesiunea încă salvată poate fi reconciliată la reluare; clasamentul agregat și răspunsurile din Antrenament nu reconstruiesc partidele vechi.
-
-[Ghid de proiectare reutilizabil](../design/achievements/README.md) · [Testele realizărilor](../testing/TEST_STRATEGY.md#realizări-de-joc)
+Catalogul YAML definește ID-urile, nivelul, ordinea, metrica și pragul. Textele localizate folosesc aceleași praguri la afișare. [Regulile executabile](../../config/j6-achievements.yaml) · [Ghid de proiectare](../design/achievements/README.md) · [Verificarea realizărilor](../testing/TEST_STRATEGY.md#realizări-de-joc)

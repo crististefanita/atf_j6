@@ -50,6 +50,75 @@ android {
     }
 }
 
+
+abstract class GenerateGameplayAchievementCatalog extends DefaultTask {
+    @InputFile
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract RegularFileProperty getRulesFile()
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDirectory()
+
+    @TaskAction
+    void generate() {
+        // The project uses the JSON subset of YAML for this shared Android and Node catalog.
+        def catalog = new JsonSlurper().parse(rulesFile.get().asFile)
+        def tiers = ['EASY', 'MEDIUM', 'HARD']
+        if (catalog.keySet() != ['schemaVersion', 'tiers'].toSet() || catalog.schemaVersion != 1 ||
+                catalog.tiers.keySet() != tiers.toSet()) {
+            throw new GradleException('Invalid achievement catalog schema or tier set')
+        }
+        def ids = [] as Set
+        def labels = [] as Set
+        def rules = [] as Set
+        def cases = tiers.collect { tier ->
+            def milestones = catalog.tiers[tier]
+            if (!(milestones instanceof List) || !(milestones.size() in [5, 6])) {
+                throw new GradleException("Invalid achievement count for $tier")
+            }
+            def entries = milestones.collect { row ->
+                if (row.keySet() != ['id', 'metric', 'target', 'label'].toSet() ||
+                        !(row.id ==~ /[a-z][a-z0-9-]*/) || !(row.metric ==~ /[A-Z][A-Z0-9_]*/) ||
+                        !(row.target instanceof Integer) || row.target < 1 ||
+                        !(row.label ==~ /gameplay_achievement_[a-z0-9_]+/) ||
+                        !ids.add(row.id) || !labels.add(row.label) ||
+                        !rules.add([row.metric, row.target])) {
+                    throw new GradleException("Invalid or duplicate achievement in $tier: $row")
+                }
+                "new Milestone(\"$row.id\", Metric.$row.metric, $row.target, R.string.$row.label)"
+            }
+            "            case $tier -> List.of(\n                    " + entries.join(',\n                    ') + ');'
+        }.join('\n')
+        def file = outputDirectory.get().file('ro/atf/holdem/android/GameplayAchievementCatalogData.java').asFile
+        file.parentFile.mkdirs()
+        file.setText("""package ro.atf.holdem.android;
+
+import java.util.List;
+import ro.atf.holdem.android.GameplayAchievementCatalog.Milestone;
+import ro.atf.holdem.android.GameplayAchievements.Metric;
+
+final class GameplayAchievementCatalogData {
+    private GameplayAchievementCatalogData() {}
+
+    static List<Milestone> forTier(AchievementCatalog.Tier tier) {
+        return switch (tier) {
+$cases
+        };
+    }
+}
+""", 'UTF-8')
+    }
+}
+def generateGameplayAchievementCatalog = tasks.register('generateGameplayAchievementCatalog', GenerateGameplayAchievementCatalog) {
+    rulesFile.set(rootProject.file('../config/j6-achievements.yaml'))
+    outputDirectory.set(layout.buildDirectory.dir('generated/sources/gameplayAchievements/java'))
+}
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.java.addGeneratedSourceDirectory(generateGameplayAchievementCatalog) { it.outputDirectory }
+    }
+}
+
 def verifyLanguageBundlePolicy = tasks.register('verifyLanguageBundlePolicy') {
     doLast {
         if (android.bundle.language.enableSplit != false) {

@@ -26,8 +26,8 @@ public class GameplayAchievementsComponentTest {
         var easy = GameplayAchievementCatalog.forTier(AchievementCatalog.Tier.EASY);
         assertEquals(POT, easy.get(0).metric());
         assertEquals(1, easy.get(0).progress(achievements.counts("p")));
-        assertEquals(0, easy.get(1).progress(achievements.counts("p")));
-        assertEquals(1, easy.get(2).progress(achievements.counts("p")));
+        assertEquals(1, easy.get(1).progress(achievements.counts("p")));
+        assertEquals(0, easy.get(2).progress(achievements.counts("p")));
         assertEquals(1, easy.get(3).progress(achievements.counts("p")));
         assertEquals(1, achievements.count("p", SOLE_HIGH_CARD_POT));
         assertEquals(0, achievements.count("p", TITLE));
@@ -36,8 +36,8 @@ public class GameplayAchievementsComponentTest {
         var wonByFolds = settled(0, seat(80, 20, null), seat(0, 0, null), 4);
         achievements.recordSettled("p", "t:2", "t", 0, wonByFolds);
         assertEquals(1, easy.get(1).progress(achievements.counts("p")));
-        assertEquals(2, easy.get(4).progress(achievements.counts("p")));
-        assertEquals(1, achievements.count("p", MULTIWAY_TOURNAMENT_UNCONTESTED));
+        assertEquals(2, easy.get(3).progress(achievements.counts("p")));
+        assertEquals(0, achievements.count("p", MULTIWAY_SHOWDOWN_POT));
     }
 
     @Test public void noCreditForOpenHandRefundOrOpponentWin() {
@@ -49,7 +49,7 @@ public class GameplayAchievementsComponentTest {
         achievements.recordSettled("p", "t:2", "t", 1, open);
         assertEquals(0, achievements.count("p", POT));
         assertEquals(0, achievements.count("p", TITLE));
-        assertEquals(0, achievements.count("p", UNCONTESTED_POT));
+        assertEquals(0, achievements.count("p", BIG_BLIND_POT));
     }
 
     @Test public void highCardRequiresShowdownAndSolePotRecipient() {
@@ -59,7 +59,7 @@ public class GameplayAchievementsComponentTest {
         achievements.recordSettled("p", "t:1", "t", 0, settled(0, seat(25, 0, highCard), seat(25, 0, highCard), 4));
         achievements.recordSettled("p", "t:2", "t", 0, settled(0, seat(50, 0, pair), seat(0, 0, null), 4));
         achievements.recordSettled("p", "t:3", "t", 0, settled(0, seat(50, 0, null), seat(0, 0, null), 4));
-        assertEquals(2, achievements.count("p", SHOWDOWN_POT));
+        assertEquals(3, achievements.count("p", POT));
         assertEquals(0, achievements.count("p", SOLE_HIGH_CARD_POT));
 
         achievements.recordSettled("p", "t:4", "t", 0, settled(0, seat(50, 0, highCard), seat(0, 30, null), 4));
@@ -102,11 +102,11 @@ public class GameplayAchievementsComponentTest {
 
         restarted.recordSettled("p", "b:5", "b", 1, fourSeats);
         assertEquals(2, hard.get(0).progress(restarted.counts("p")));
-        assertEquals(1, hard.get(2).progress(restarted.counts("p")));
+        assertEquals(1, hard.get(4).progress(restarted.counts("p")));
         restarted.recordSettled("p", "c:9", "c", 1, sixSeats);
         restarted.recordSettled("p", "d:3", "d", 1, sixSeats);
         assertEquals(3, hard.get(0).progress(restarted.counts("p")));
-        assertEquals(2, hard.get(2).progress(restarted.counts("p")));
+        assertEquals(2, hard.get(4).progress(restarted.counts("p")));
         assertEquals(0, hard.get(1).progress(restarted.counts("p")));
     }
 
@@ -169,7 +169,72 @@ public class GameplayAchievementsComponentTest {
         achievements.recordSettled("p", "t:1", "t", 1, hand);
         assertEquals(1, achievements.count("p", POT));
         assertEquals(1, achievements.count("p", TITLE));
-        assertEquals(1, achievements.count("p", SHOWDOWN_POT));
+        assertEquals(1, achievements.count("p", TOURNAMENT_FINISHED));
+    }
+
+    @Test public void allCatalogEntriesUnlockAtTheirOwnThresholdInPublishedOrder() {
+        assertMilestones(AchievementCatalog.Tier.EASY, List.of(
+                "first-pot:POT:1", "first-tournament-pot:TOURNAMENT_POT:1", "big-blind-pot:BIG_BLIND_POT:1",
+                "three-pots:POT:3", "finish-tournament:TOURNAMENT_FINISHED:1"));
+        assertMilestones(AchievementCatalog.Tier.MEDIUM, List.of(
+                "first-title:TITLE:1", "tournament-pots:TOURNAMENT_POT:5", "multiway-showdowns:MULTIWAY_SHOWDOWN_POT:3",
+                "straight-or-better:STRAIGHT_OR_BETTER:2", "tournament-podiums:PODIUM:2"));
+        assertMilestones(AchievementCatalog.Tier.HARD, List.of(
+                "three-titles:TITLE:3", "high-card:SOLE_HIGH_CARD_POT:1", "full-house-or-better:FULL_HOUSE_OR_BETTER:2",
+                "multiway-showdown-series:MULTIWAY_SHOWDOWN_POT:12", "six-seat-titles:SIX_SEAT_TITLE:2"));
+    }
+
+    private static void assertMilestones(AchievementCatalog.Tier tier, List<String> expected) {
+        var milestones = GameplayAchievementCatalog.forTier(tier);
+        var keys = milestones.stream().map(rule -> rule.id() + ":" + rule.metric() + ":" + rule.target())
+                .collect(java.util.stream.Collectors.toList());
+        assertEquals(expected, keys);
+        for (var rule : milestones) {
+            assertEquals(rule.id(), 0, rule.progress(Map.of()));
+            assertEquals(rule.id(), rule.target() - 1, rule.progress(Map.of(rule.metric(), rule.target() - 1)));
+            assertEquals(rule.id(), rule.target(), rule.progress(Map.of(rule.metric(), rule.target())));
+            assertEquals(rule.id(), rule.target(), rule.progress(Map.of(rule.metric(), rule.target() + 1)));
+        }
+    }
+
+    @Test public void blindAndMultiwayCreditUseActualSeatAndShowdownParticipation() {
+        var achievements = memory();
+        var winner = seat(80, 0, evaluation("As Ad Ah 5c 5d"));
+        var runnerUp = seat(0, 0, evaluation("Ks Kd Qh Jc 8d"));
+        var third = seat(0, 0, evaluation("Qs Qd Jh 8c 5d"));
+        var folded = new HoldemTableViewState.Seat(0, 0, true, 0, 0, 0, true, List.of(), null);
+        var headsUpShowdown = new HoldemTableViewState(2, -1, 0, 1, 0, Street.COMPLETE, 80, List.of(),
+                List.of(), List.of(runnerUp, folded, winner, folded), List.of());
+        achievements.recordSettled("p", "a:1", "a", 0, headsUpShowdown);
+        assertEquals(0, achievements.count("p", BIG_BLIND_POT));
+        assertEquals(0, achievements.count("p", MULTIWAY_SHOWDOWN_POT));
+
+        var multiway = new HoldemTableViewState(2, -1, 0, 1, 2, Street.COMPLETE, 80, List.of(),
+                List.of(), List.of(runnerUp, third, winner, folded), List.of());
+        for (int hand = 2; hand <= 14; hand++) achievements.recordSettled("p", "a:" + hand, "a", 0, multiway);
+        assertEquals(1, achievements.count("p", BIG_BLIND_POT));
+        assertEquals(12, achievements.count("p", MULTIWAY_SHOWDOWN_POT));
+        assertEquals(2, achievements.count("p", STRAIGHT_OR_BETTER));
+        assertEquals(2, achievements.count("p", FULL_HOUSE_OR_BETTER));
+    }
+
+    @Test public void finishingAndPodiumAreDistinctEvenWithoutWinningTheFinalHand() {
+        var achievements = memory();
+        var lost = settled(0, seat(0, 0, null), seat(80, 0, null), 4);
+        achievements.recordSettled("p", "a:1", null, 1, lost);
+        achievements.recordSettled("p", "b:1", "b", 5, lost);
+        assertEquals(0, achievements.count("p", TOURNAMENT_FINISHED));
+
+        achievements.recordSettled("p", "b:2", "b", 4, lost);
+        assertEquals(1, achievements.count("p", TOURNAMENT_FINISHED));
+        assertEquals(0, achievements.count("p", PODIUM));
+        achievements.recordSettled("p", "c:2", "c", 3, lost);
+        achievements.recordSettled("p", "c:2", "c", 3, lost);
+        assertEquals(1, achievements.count("p", PODIUM));
+        achievements.recordSettled("p", "d:3", "d", 2, lost);
+        assertEquals(2, achievements.count("p", PODIUM));
+        assertEquals(0, achievements.count("p", TITLE));
+        assertEquals(0, achievements.count("p", POT));
     }
 
     static GameplayAchievements memory() { return new GameplayAchievements(new MemoryStorage()); }

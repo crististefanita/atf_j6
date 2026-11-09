@@ -445,6 +445,7 @@ class HoldemRulesTest {
         var tournament = new Tournament(new Tournament.Rules(4, 100, 60, levels), 0);
         var first = tournament.startHand(59, 42);
         assertEquals(0, first.levelIndex());
+        assertEquals(0, tournament.settledRank(0));
         var hand = first.hand();
         assertThrows(IllegalStateException.class, () -> tournament.startHand(60, 43));
         assertEquals(BLINDS, hand.level());
@@ -460,9 +461,17 @@ class HoldemRulesTest {
             while (allIn.actor() >= 0) allIn.act(allIn.actor(), ALL_IN, allIn.observeActor().heroStack());
             long alive = knockout.stacks().stream().filter(n -> n > 0).count();
             if (alive > 1 && alive < 4) {
+                var stacks = knockout.stacks();
+                for (int seat = 0; seat < stacks.size(); seat++) {
+                    assertEquals(stacks.get(seat) == 0 ? alive + 1 : 0, knockout.settledRank(seat));
+                }
+                assertTrue(knockout.finishingRanks().stream().allMatch(rank -> rank == 0));
                 var next = knockout.startHand(60, 100);
                 assertEquals(4 - alive, next.eliminated());
                 assertEquals(5 - alive, next.levelIndex());
+                for (int seat = 0; seat < stacks.size(); seat++) {
+                    assertEquals(stacks.get(seat) == 0 ? alive + 1 : 0, knockout.settledRank(seat));
+                }
                 return;
             }
         }
@@ -483,6 +492,9 @@ class HoldemRulesTest {
         assertNotNull(tournament, "A deterministic all-in hand must produce a unique champion");
         assertNotNull(actual);
         Tournament completed = tournament;
+        for (int seat = 0; seat < actual.stacks().size(); seat++) {
+            assertEquals(actual.stacks().get(seat) == 0 ? 2 : 1, completed.settledRank(seat));
+        }
         completed.finish();
         var ranks = completed.finishingRanks();
         int champion = actual.stacks().indexOf(400);

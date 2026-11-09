@@ -79,11 +79,18 @@ Aceste teste demonstrează contractul și direcția pragurilor; nu demonstrează
 
 ### Realizări de joc
 
-- Suita de componentă verifică decontarea, restituirile, poturile împărțite, combinația de carte mare, clasarea și pragurile pentru turnee distincte. Un rezultat eligibil poate avansa simultan obiective din niveluri diferite.
-- Proba cu un turneu local încheiat verifică faptul că reluarea păstrează profilul și identitatea rezultatului fără credit dublu. Banca de exerciții are o suită separată.
-- Smoke-ul de prezentare urmărește meniul Realizări, cele trei taburi și legătura către Exerciții de antrenament. Un profil de test poate afișa progres parțial; proba nu ține locul validării rezultatului la motor.
+- Testele de componentă verifică ordinea, pragul fiecărui obiectiv, poturile secundare sau împărțite, blindul fizic, participanții la dezvăluire și progresul deduplicat. Motorul verifică momentul când se fixează locul într-un turneu, inclusiv locurile împărțite.
+- Calibrarea rulează aceleași reguli de turneu la mese de 4, 5 și 6 locuri. Cohorta de produs folosește consilierul și adversarii pasivi ai aplicației. Cohorta mixtă rotește cinci politici. Rezultatele finale se verifică pe semințe distincte de cele folosite la ajustare.
+- Raportul arată rata de obținere după 1, 3, 6 și 12 turnee și mediana mâinii între sesiunile care au obținut obiectivul. Turneele care ating limita de observare rămân în numitor. Pentru cele de șase locuri se numără doar sesiunile eligibile.
+- Proba vizuală urmărește deschiderea meniului, nivelurile, progresul și legătura către Antrenament.
 
-[Contractul realizărilor](../requirements/PRODUCT_REQUIREMENTS.md#realizări-și-antrenament) · [Suita de componentă](../../holdem-android/app/src/test/java/ro/atf/holdem/android/GameplayAchievementsComponentTest.java)
+De la rădăcina proiectului, rulați cu JDK 21, Node și PowerShell. Dosarul de ieșire trebuie să fie nou și în afara arborelui Git.
+
+```powershell
+.\scripts\run-achievement-calibration.ps1 -OutputDirectory C:\work\holdem_back\achievement-calibration
+```
+
+[Planul cohortelor](../../config/j6-achievement-calibration.yaml) · [Suita Android](../../holdem-android/app/src/test/java/ro/atf/holdem/android/GameplayAchievementsComponentTest.java)
 
 ### Alegerea nivelului de test
 

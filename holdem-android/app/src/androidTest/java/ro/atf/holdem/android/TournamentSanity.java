@@ -252,7 +252,7 @@ public final class TournamentSanity extends Instrumentation {
         tap("Împarte cărțile");
         await("Mărește");
         assertActionLanguage(activity, "Romanian", "Mărește", "Lasă AI-ul");
-        capture("06-stable-table-romanian-preflop");
+        capture("05d-stable-table-romanian-preflop");
 
         var actors = new java.util.HashSet<String>();
         List<Rect> fixed = null;
@@ -271,7 +271,7 @@ public final class TournamentSanity extends Instrumentation {
                 samples++;
                 if (current.action() != null) tap(current.action());
                 else if (!opponentCaptured) {
-                    capture("07-stable-table-romanian-opponent");
+                    capture("05e-stable-table-romanian-opponent");
                     opponentCaptured = true;
                 }
             }
@@ -287,7 +287,7 @@ public final class TournamentSanity extends Instrumentation {
                         + HoldemTablePresentation.displayedPot(settled),
                 settled != null && settled.street() == ro.atf.holdem.core.Street.COMPLETE
                         && settled.board().size() == 5 && HoldemTablePresentation.displayedPot(settled) > 0);
-        capture("08-stable-table-romanian-settled");
+        capture("05f-stable-table-romanian-settled");
 
         tap(HoldemActivity.localizedContext(activity).getString(R.string.home));
         tap("interface-language");
@@ -296,7 +296,7 @@ public final class TournamentSanity extends Instrumentation {
         tap("Deal cards");
         await("Raise");
         assertActionLanguage(activity, "English", "Raise", "Let AI play");
-        capture("09-stable-table-english-preflop");
+        capture("05g-stable-table-english-preflop");
     }
 
     private void assertActionLanguage(Activity activity, String locale, String raise, String autoplay) throws Exception {

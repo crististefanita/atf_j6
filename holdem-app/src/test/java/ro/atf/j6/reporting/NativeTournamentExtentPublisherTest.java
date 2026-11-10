@@ -233,7 +233,7 @@ class NativeTournamentExtentPublisherTest {
                 .add("03-achievements-easy.png").add("04-achievements-medium.png").add("05-achievements-hard.png")
                 .add("05a-achievements-romanian-easy.png").add("05b-achievements-romanian-medium.png")
                 .add("05c-achievements-romanian-hard.png")
-                .add("06-stable-table-romanian-preflop.png").add("07-stable-table-romanian-opponent.png").add("08-stable-table-romanian-settled.png").add("09-stable-table-english-preflop.png");
+                .add("05d-stable-table-romanian-preflop.png").add("05e-stable-table-romanian-opponent.png").add("05f-stable-table-romanian-settled.png").add("05g-stable-table-english-preflop.png");
         var assertions = receipt.putArray("assertions");
         for (String name : List.of("Release APK opens the branded home menu", "Release APK opens hand setup",
                 "Hand setup returns to the home menu", "Release APK opens tournament setup",

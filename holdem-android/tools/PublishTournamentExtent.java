@@ -54,10 +54,10 @@ class PublishTournamentExtent {
             "01-release-hand-setup.png", "02-release-tournament-setup.png", "03-achievements-easy.png",
             "04-achievements-medium.png", "05-achievements-hard.png", "05a-achievements-romanian-easy.png",
             "05b-achievements-romanian-medium.png", "05c-achievements-romanian-hard.png",
-            "06-stable-table-romanian-preflop.png",
-            "07-stable-table-romanian-opponent.png",
-            "08-stable-table-romanian-settled.png",
-            "09-stable-table-english-preflop.png");
+            "05d-stable-table-romanian-preflop.png",
+            "05e-stable-table-romanian-opponent.png",
+            "05f-stable-table-romanian-settled.png",
+            "05g-stable-table-english-preflop.png");
     private static final List<String> SETTLEMENT_ASSERTIONS = List.of(
             "Next hand tap accepted during settlement", "Activity recreation opens exactly hand two", "Next hand persisted once",
             "Result tap accepted during settlement", "Result persisted before reopening",

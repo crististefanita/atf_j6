@@ -5,7 +5,7 @@
   "previousVersion": "0.13.0",
   "changeClass": "COMPATIBLE_FEATURE",
   "changeRationale": "Adaugă adversari cu stiluri distincte în turneele Hard și verifică masa de șase locuri pe APK-ul semnat.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.14.0"

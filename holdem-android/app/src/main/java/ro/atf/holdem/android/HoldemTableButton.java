@@ -16,11 +16,18 @@ final class HoldemTableButton {
     private HoldemTableButton() {}
 
     static void apply(ScreenViews views, Button button, boolean primary) {
+        apply(views, button, primary, HoldemTablePresentation.ACTION_FACE_INSET);
+    }
+
+    static void applyTableAction(ScreenViews views, Button button, boolean primary) {
+        apply(views, button, primary, HoldemTablePresentation.TABLE_ACTION_FACE_INSET);
+    }
+
+    private static void apply(ScreenViews views, Button button, boolean primary, float inset) {
         int left = button.getPaddingLeft();
         int top = button.getPaddingTop();
         int right = button.getPaddingRight();
         int bottom = button.getPaddingBottom();
-        float inset = HoldemTablePresentation.ACTION_FACE_INSET;
         var face = views.roundedBackground(primary ? PRIMARY_FILL : SECONDARY_FILL,
                 primary ? 0xff77af8d : 0xff609180, 12);
         var pressed = new RippleDrawable(ColorStateList.valueOf(PRESS_OVERLAY), face, null);

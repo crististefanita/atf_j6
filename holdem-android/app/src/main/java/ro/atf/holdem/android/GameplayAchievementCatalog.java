@@ -5,6 +5,7 @@ import java.util.Map;
 
 /** Display order within each tier. Each milestone progresses independently. */
 final class GameplayAchievementCatalog {
+    enum Tier { EASY, MEDIUM, HARD }
     record Milestone(String id, GameplayAchievements.Metric metric, int target, int label, boolean plural) {
         Milestone {
             if (target < 1 || target > metric.cap) throw new IllegalArgumentException("Invalid achievement target: " + id);
@@ -17,7 +18,7 @@ final class GameplayAchievementCatalog {
 
     private GameplayAchievementCatalog() {}
 
-    static List<Milestone> forTier(AchievementCatalog.Tier tier) {
+    static List<Milestone> forTier(Tier tier) {
         return GameplayAchievementCatalogData.forTier(tier);
     }
 }

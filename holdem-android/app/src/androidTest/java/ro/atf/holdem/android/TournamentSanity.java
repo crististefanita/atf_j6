@@ -188,6 +188,7 @@ public final class TournamentSanity extends Instrumentation {
             tap("Main menu");
             inspectNewAchievementCatalog();
             inspectRomanianAchievementLabels();
+            inspectStableTableHand(activity);
         } finally {
             runOnMainSync(activity::finish);
         }
@@ -222,11 +223,8 @@ public final class TournamentSanity extends Instrumentation {
         achievementRow("Win 2 tournaments that started with six players", "Progress · 0/2");
         tap("Hard");
         capture("05-achievements-hard");
-        tap("Training exercises");
-        see("Training opens separately from gameplay achievements", "Training exercises");
-        tap("Back");
-        see("Back returns from training to gameplay achievements", "Achievements");
-        achievementRow("Win 3 different tournaments", "Progress · 0/3");
+        check("Gameplay achievements omit training in English", "absent",
+                find("Training exercises") == null ? "absent" : "visible");
         tap("Back");
     }
 
@@ -244,7 +242,109 @@ public final class TournamentSanity extends Instrumentation {
         openAchievementTier("Grele");
         achievementRow("Câștigă 12 mâini la dezvăluire cu cel puțin trei jucători rămași", "Progres · 0/12");
         capture("05c-achievements-romanian-hard");
+        check("Gameplay achievements omit training in Romanian", "absent",
+                find("Exerciții de antrenament") == null ? "absent" : "visible");
         tap("Înapoi");
+    }
+
+    private void inspectStableTableHand(Activity activity) throws Exception {
+        tap("Joacă un turneu");
+        tap("Împarte cărțile");
+        await("Mărește");
+        assertActionLanguage(activity, "Romanian", "Mărește", "Lasă AI-ul");
+        capture("06-stable-table-romanian-preflop");
+
+        var actors = new java.util.HashSet<String>();
+        List<Rect> fixed = null;
+        boolean opponentCaptured = false;
+        int samples = 0;
+        String drift = "";
+        long deadline = SystemClock.uptimeMillis() + 35000;
+        while (SystemClock.uptimeMillis() < deadline) {
+            var current = tableSample(activity);
+            if (current != null && current.settled()) break;
+            if (current != null) {
+                actors.add(current.actor());
+                if (fixed == null) fixed = current.bounds();
+                if (!fixed.equals(current.bounds()) && drift.isEmpty())
+                    drift = current.actor() + ": " + fixed + " → " + current.bounds();
+                samples++;
+                if (current.action() != null) tap(current.action());
+                else if (!opponentCaptured) {
+                    capture("07-stable-table-romanian-opponent");
+                    opponentCaptured = true;
+                }
+            }
+            SystemClock.sleep(90);
+        }
+        check("Pot, messages and seats keep the same bounds through live turns",
+                "identical pixel bounds across the human and other actors",
+                drift.isEmpty() ? samples + " frames, " + actors.size() + " actors" : drift,
+                drift.isEmpty() && samples >= 6 && actors.size() >= 3 && opponentCaptured);
+        var settled = awaitSeatSettlement();
+        check("A complete hand started from setup reaches showdown", "complete, five board cards, paid pot",
+                settled == null ? "no session" : settled.street() + ", " + settled.board().size() + ", "
+                        + HoldemTablePresentation.displayedPot(settled),
+                settled != null && settled.street() == ro.atf.holdem.core.Street.COMPLETE
+                        && settled.board().size() == 5 && HoldemTablePresentation.displayedPot(settled) > 0);
+        capture("08-stable-table-romanian-settled");
+
+        tap(HoldemActivity.localizedContext(activity).getString(R.string.home));
+        tap("interface-language");
+        tap("English");
+        tap("Play a tournament");
+        tap("Deal cards");
+        await("Raise");
+        assertActionLanguage(activity, "English", "Raise", "Let AI play");
+        capture("09-stable-table-english-preflop");
+    }
+
+    private void assertActionLanguage(Activity activity, String locale, String raise, String autoplay) throws Exception {
+        var labels = new ArrayList<String>();
+        runOnMainSync(() -> {
+            var root = activity.getWindow().getDecorView();
+            for (String tag : List.of("FOLD", "RAISE", "ai-finish-hand")) {
+                TextView button = root.findViewWithTag(tag);
+                if (button != null && button.isShown()) labels.add(button.getText().toString());
+            }
+        });
+        check(locale + " table uses localized compact actions", List.of("Fold", raise, autoplay).toString(),
+                labels.toString());
+    }
+
+    private record TableSample(String actor, List<Rect> bounds, String action, boolean settled) {}
+
+    private TableSample tableSample(Activity activity) {
+        var sample = new TableSample[1];
+        runOnMainSync(() -> {
+            var root = activity.getWindow().getDecorView();
+            TextView turn = root.findViewWithTag("turn-status");
+            if (turn == null) return;
+            if (!turn.isShown()) {
+                sample[0] = new TableSample("", List.of(), null, true);
+                return;
+            }
+            var bounds = new ArrayList<Rect>();
+            for (String tag : List.of("turn-status", "best-hand-status", "settlement-target:pot",
+                    "settlement-target:seat:0", "settlement-target:seat:1",
+                    "settlement-target:seat:2", "settlement-target:seat:3")) {
+                var view = root.findViewWithTag(tag);
+                if (view == null || view.getWidth() <= 0 || view.isLayoutRequested()) return;
+                int[] origin = new int[2];
+                view.getLocationOnScreen(origin);
+                bounds.add(new Rect(origin[0], origin[1], origin[0] + view.getWidth(), origin[1] + view.getHeight()));
+            }
+            String action = null;
+            for (String tag : List.of("CALL", "CHECK")) {
+                TextView button = root.findViewWithTag(tag);
+                if (button != null && button.isShown() && button.isEnabled()) {
+                    action = button.getText().toString();
+                    break;
+                }
+            }
+            sample[0] = new TableSample(turn.getText().toString(), bounds, action, false);
+        });
+        return sample[0];
     }
 
     private void inspectEarnedAchievementProgress() throws Exception {
@@ -498,9 +598,9 @@ public final class TournamentSanity extends Instrumentation {
                 var visibleBounds = new Rect();
                 if (!view.isClickable() || !view.getGlobalVisibleRect(visibleBounds)
                         || visibleBounds.width() < minimum || visibleBounds.height() < minimum
-                        || Math.abs(visible - height * .625) > 2) invalid.add(tag);
+                        || Math.abs(visible - height * .8125) > 2) invalid.add(tag);
             }
-            int expectedGap = Math.round(1.5f * activity.getResources().getDisplayMetrics().density);
+            int expectedGap = Math.round(.75f * activity.getResources().getDisplayMetrics().density);
             for (var pair : List.of(List.of("FOLD", "CALL"), List.of("RAISE", "ALL_IN"))) {
                 var first = root.findViewWithTag(pair.get(0));
                 var second = root.findViewWithTag(pair.get(1));
@@ -514,7 +614,7 @@ public final class TournamentSanity extends Instrumentation {
             }
         });
         check("Opening action buttons retain their tap bounds with shorter backgrounds",
-                "Fold, Call, Raise and All-in have 48 dp touch bounds, 62.5% visual height and 1.5 dp horizontal gap",
+                "Fold, Call, Raise and All-in have 48 dp touch bounds, 81.25% visual height and 0.75 dp horizontal gap",
                 String.join(", ", sizes) + (invalid.isEmpty() ? "" : " · invalid " + invalid), invalid.isEmpty());
     }
 

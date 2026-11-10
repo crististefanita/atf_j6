@@ -107,7 +107,8 @@
     <string name="ai_hint">AI %5$s sugerează %1$s · echitate %2$s · preț pot %3$s · prag %4$s · n=%6$s · ±%7$s</string>
     <string name="ai_hint_compact">AI · %1$s · echitate %2$s · preț pot %3$s</string>
     <string name="ai_hint_description">Politica %5$s sugerează %1$s. Echitate estimată %2$s. Preț pot %3$s. Echitate necesară %4$s. Eșantioane %6$s. Eroare standard %7$s.</string>
-    <string name="ai_finish_hand">Lasă AI-ul să termine mâna</string>
+    <string name="ai_finish_hand">Lasă AI-ul</string>
+    <string name="ai_finish_hand_description">Lasă AI-ul să termine mâna</string>
     <string name="ai_playing">AI-ul joacă această mână…</string>
     <string name="ai_action_error">AI-ul nu a putut termina mâna. Poți continua jocul curent.</string>
     <string name="opponent_cards">Cărțile jucătorului</string>
@@ -126,27 +127,6 @@
     <string name="achievement_medium">Medii</string>
     <string name="achievement_hard">Grele</string>
     <string name="achievement_error">Datele realizărilor nu au putut fi citite sau salvate.</string>
-    <string name="achievement_summary">Deblocate (%1$d / %2$d)</string>
-    <string name="achievement_title">%1$s · %2$d</string>
-    <string name="achievement_ready">Disponibilă</string>
-    <string name="achievement_done">Deblocată</string>
-    <string name="achievement_locked">Necesită etapa anterioară</string>
-    <string name="achievement_lots">Loturi promovate (%1$d / %2$d)</string>
-    <string name="achievement_score">Răspunsuri corecte (%1$d / %2$d)</string>
-    <string name="achievement_criteria">Răspunsuri corecte pe lot (%1$d / %2$d). Loturi necesare (%3$d).</string>
-    <string name="achievement_prerequisite">Necesită %1$s · etapa %2$d</string>
-    <string name="achievement_practice">Exersează</string>
-    <string name="achievement_question">Pot eligibil în jetoane înainte de call (%1$d). Costul call-ului în jetoane (%2$d). Echitate (%3$d%%). Ce valoare așteptată are call-ul? Presupune că nu urmează pariuri sau comisioane.</string>
-    <string name="achievement_profit">Pozitivă</string>
-    <string name="achievement_even">Zero</string>
-    <string name="achievement_loss">Negativă</string>
-    <string name="achievement_correct">Corect</string>
-    <string name="achievement_incorrect">Încearcă următorul exercițiu</string>
-    <string name="achievement_explanation">%1$s. Echitatea de echilibru este %2$.1f%%.</string>
-    <string name="achievement_lot_score">Rezolvate (%1$d / %2$d) · Corecte (%3$d)</string>
-    <string name="achievement_next">Următorul</string>
-    <string name="achievement_playable">Disponibile pentru exersare</string>
-    <string name="achievement_empty">Finalizează etapa anterioară pentru a debloca următorul exercițiu.</string>
     <string-array name="achievement_families">
         <item>Poziție</item>
         <item>Showdown</item>
@@ -169,7 +149,6 @@
         <item>Turnee</item>
         <item>Analiza mâinii</item>
     </string-array>
-    <string name="achievement_training">Exerciții de antrenament</string>
     <string name="gameplay_achievement_earned">Obținută · %1$d/%2$d</string>
     <string name="gameplay_achievement_progress">Progres · %1$d/%2$d</string>
     <string name="gameplay_achievement_first_pot">Câștigă o mână de poker</string>

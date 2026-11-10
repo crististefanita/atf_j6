@@ -92,7 +92,7 @@ Testele curente acoperă ordinea actorilor, sizing-ul minim, menținerea stării
 - Testele de componentă verifică ordinea, pragul fiecărui obiectiv, poturile secundare sau împărțite, blindul fizic, participanții la dezvăluire și progresul deduplicat. Motorul verifică momentul când se fixează locul într-un turneu, inclusiv locurile împărțite.
 - Calibrarea realizărilor rulează la 4, 5 și 6 locuri cu coach-ul și adversarii Normal. Loturile de reglaj și verificare folosesc seed-uri distincte.
 - Raportul arată rata de obținere după 1, 3, 6 și 12 turnee și mediana mâinii între sesiunile care au obținut obiectivul. Turneele care ating limita de observare rămân în numitor. Pentru cele de șase locuri se numără doar sesiunile eligibile.
-- Proba vizuală urmărește deschiderea meniului, nivelurile, progresul și legătura către Antrenament.
+- Proba vizuală urmărește în română și engleză deschiderea meniului, cele trei niveluri, progresul din joc și absența exercițiilor din Realizări.
 
 De la rădăcina proiectului, rulați cu JDK 21, Node și PowerShell. Setați `HOLDEM_DATA_ROOT` la directorul extern de date. Dosarul de ieșire trebuie să fie nou.
 

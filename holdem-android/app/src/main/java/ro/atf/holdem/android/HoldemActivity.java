@@ -2,6 +2,7 @@ package ro.atf.holdem.android;
 
 import android.app.Activity;
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.pm.ApplicationInfo;
@@ -218,7 +219,7 @@ public final class HoldemActivity extends Activity {
         views.addButton(page, text(R.string.play_hand), "play-hand", true, () -> setup(false), false);
         views.addButton(page, text(R.string.achievements), "achievements", true,
                 () -> startActivity(new android.content.Intent(this, GameplayAchievementsActivity.class)
-                        .putExtra(AchievementsActivity.PROFILE_ID, stablePlayerId())), false);
+                        .putExtra(GameplayAchievementsActivity.PROFILE_ID, stablePlayerId())), false);
         views.addText(page, text(R.string.training_summary), 14, ScreenViews.MUTED, false, 10, 0);
     }
 
@@ -655,12 +656,20 @@ public final class HoldemActivity extends Activity {
         return trimmed.isEmpty() ? text(R.string.you) : trimmed;
     }
 
-    // The in-app language picker ships both locales in one APK; the bundle policy below keeps translations together.
-    @SuppressLint("AppBundleLocaleChanges")
     private String text(int id, Object... arguments) {
-        var configuration = new Configuration(getResources().getConfiguration());
+        return localizedContext(this, romanian).getString(id, arguments);
+    }
+
+    static Context localizedContext(Context base) {
+        return localizedContext(base, base.getSharedPreferences("holdem-profile", MODE_PRIVATE).getBoolean(LANGUAGE, false));
+    }
+
+    // Both locales ship in the same APK.
+    @SuppressLint("AppBundleLocaleChanges")
+    private static Context localizedContext(Context base, boolean romanian) {
+        var configuration = new Configuration(base.getResources().getConfiguration());
         configuration.setLocale(romanian ? Locale.forLanguageTag("ro") : Locale.ENGLISH);
-        return createConfigurationContext(configuration).getString(id, arguments);
+        return base.createConfigurationContext(configuration);
     }
 
     static void protect(View root) {

@@ -8,16 +8,21 @@ import android.widget.TextView;
 /** Keeps both facts readable at the actual seat width and Android font scale. */
 final class SeatFactRow extends LinearLayout {
     private final int gap;
+    private final int reservedDigitsWidth;
 
-    SeatFactRow(Context context) {
+    private SeatFactRow(Context context, int reservedDigitsWidth) {
         super(context);
+        this.reservedDigitsWidth = reservedDigitsWidth;
         gap = Math.round(4 * context.getResources().getDisplayMetrics().density);
         setGravity(Gravity.CENTER_VERTICAL);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
     }
 
-    static SeatFactRow of(TextView label, TextView value) {
-        var row = new SeatFactRow(label.getContext());
+    static SeatFactRow of(TextView label, TextView value, int reservedDigits) {
+        float widestDigit = 0;
+        for (char digit = '0'; digit <= '9'; digit++)
+            widestDigit = Math.max(widestDigit, value.getPaint().measureText(String.valueOf(digit)));
+        var row = new SeatFactRow(label.getContext(), (int) Math.ceil(reservedDigits * widestDigit));
         value.setGravity(Gravity.END);
         row.addView(label, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1));
         row.addView(value, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
@@ -32,7 +37,7 @@ final class SeatFactRow extends LinearLayout {
     private void arrangeFacts(TextView label, TextView value, int widthSpec) {
         boolean stacked = MeasureSpec.getMode(widthSpec) != MeasureSpec.UNSPECIFIED
                 && HoldemTablePresentation.stackSeatFact(MeasureSpec.getSize(widthSpec),
-                        textWidth(label), textWidth(value), gap);
+                        textWidth(label), Math.max(reservedDigitsWidth, textWidth(value)), gap);
         var labelParams = (LayoutParams) label.getLayoutParams();
         labelParams.width = stacked ? LayoutParams.MATCH_PARENT : 0;
         labelParams.weight = stacked ? 0 : 1;

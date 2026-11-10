@@ -105,6 +105,7 @@ final class HoldemTableView {
         }
         var title = views.text(compact && !game.isTournament() ? street : fullTitle, compact ? 16 : 18, Color.WHITE, true);
         if (compact && !game.isTournament()) title.setContentDescription(fullTitle);
+        singleLine(title);
         title.setPadding(views.dp(10), 0, 0, 0);
         header.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         TextView winChance = null;
@@ -121,6 +122,7 @@ final class HoldemTableView {
         var seatFrame = new PlayerSeatFrame(activity, compact);
         var seats = new ArrayList<View>(names.size());
         var latestActions = HoldemTablePresentation.latestActionsByPhysicalSeat(frame, names);
+        int reservedDigits = complete ? 0 : HoldemTablePresentation.chipFieldDigits(frame.seats());
         int latestActionOrdinal = frame.bettingActions().isEmpty() ? -1
                 : frame.bettingActions().get(frame.bettingActions().size() - 1).ordinal();
         for (int display = 0; display < names.size(); display++) {
@@ -164,9 +166,10 @@ final class HoldemTableView {
             var seatView = seatFrame.buildInlineFacts(seatContent,
                     compact ? 1 : Math.max(0, policy.seatVerticalPaddingDp() - 1));
             if (Build.VERSION.SDK_INT >= 28) seatView.setScreenReaderFocusable(true);
-            addSeatFacts(seatView, facts, active, compact);
+            singleLine(seatView.findViewWithTag("seat-name:" + seat));
+            addSeatFacts(seatView, facts, active, compact, reservedDigits);
             addSeatAction(seatView, latestForSeat,
-                    latestForSeat != null && latestForSeat.ordinal() == latestActionOrdinal, active, compact);
+                    latestForSeat != null && latestForSeat.ordinal() == latestActionOrdinal, active, compact, !complete);
             View framedSeat = seatView;
             if (!compact) {
                 framedSeat = new PlayerSeatView(activity, seatView, text.get(R.string.actor), active, seat, false);
@@ -203,35 +206,36 @@ final class HoldemTableView {
             boolean finished = game.outcome() != null;
             views.addButton(content, text.get(finished ? R.string.tournament_result : R.string.new_hand),
                     finished ? "tournament-result" : "new-hand", true, newHand, true);
-        } else if (automatedHumanTurn) {
-            advice = views.text(text.get(R.string.ai_playing), compact ? 12 : 13, ScreenViews.MUTED, false);
-            advice.setGravity(Gravity.CENTER);
-            advice.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-            content.addView(advice, views.matchWrap());
         } else {
+            boolean humanTurn = frame.actor() == frame.viewer();
+            boolean manual = humanTurn && !automatedHumanTurn;
+            var adviceSlot = views.text(text.get(automatedHumanTurn ? R.string.ai_playing : R.string.ai_thinking),
+                    compact ? 12 : 13, ScreenViews.MUTED, false);
+            adviceSlot.setGravity(Gravity.CENTER);
+            adviceSlot.setLines(HoldemTablePresentation.ADVICE_LINES);
+            adviceSlot.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            adviceSlot.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+            adviceSlot.setVisibility(humanTurn ? View.VISIBLE : View.INVISIBLE);
+            content.addView(adviceSlot, views.matchWrap());
+            if (manual) advice = adviceSlot;
+
             var decisionControls = new ArrayList<View>();
-            if (frame.actor() == frame.viewer()) {
-                advice = views.text(text.get(R.string.ai_thinking), compact ? 12 : 13, ScreenViews.MUTED, false);
-                advice.setGravity(Gravity.CENTER);
-                advice.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-                content.addView(advice, views.matchWrap());
-            }
-            actions(content, frame.legalActions(), compact, submit, decisionControls);
-            if (frame.actor() == frame.viewer()) {
-                var takeover = views.actionButton(text.get(R.string.ai_finish_hand), "ai-finish-hand", true,
-                        () -> { }, false, compact ? 12 : 13);
-                TextView adviceView = advice;
-                takeover.setOnClickListener(ignored -> {
-                    board.turnStatus().setText(text.get(R.string.ai_playing));
-                    board.turnStatus().setContentDescription(text.get(R.string.ai_playing));
-                    if (adviceView != null) adviceView.setText(text.get(R.string.ai_playing));
-                    takeover.setEnabled(false);
-                    decisionControls.forEach(control -> control.setEnabled(false));
-                    autoPlay.run();
-                });
-                HoldemTableButton.apply(views, takeover, false);
-                content.addView(takeover, views.matchWrap());
-            }
+            actions(content, manual ? frame.legalActions() : List.of(), compact, submit, decisionControls);
+            var takeover = views.actionButton(text.get(R.string.ai_finish_hand), "ai-finish-hand", true,
+                    () -> { }, false, compact ? 12 : 13);
+            takeover.setContentDescription(text.get(R.string.ai_finish_hand_description));
+            takeover.setVisibility(manual ? View.VISIBLE : View.INVISIBLE);
+            takeover.setOnClickListener(ignored -> {
+                board.turnStatus().setText(text.get(R.string.ai_playing));
+                board.turnStatus().setContentDescription(text.get(R.string.ai_playing));
+                adviceSlot.setText(text.get(R.string.ai_playing));
+                takeover.setEnabled(false);
+                decisionControls.forEach(control -> control.setEnabled(false));
+                autoPlay.run();
+            });
+            HoldemTableButton.applyTableAction(views, takeover, false);
+            content.addView(takeover, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    views.dp(HoldemTablePresentation.ACTION_TARGET_DP)));
         }
         return new Labels(advice, winChance);
     }
@@ -242,25 +246,31 @@ final class HoldemTableView {
                 : text.get(R.string.win_chance_description, percent));
     }
 
-    private void addSeatFacts(LinearLayout seat, List<SeatContent.Fact> facts, boolean active, boolean compact) {
+    private static void singleLine(TextView label) {
+        label.setSingleLine(true);
+        label.setEllipsize(android.text.TextUtils.TruncateAt.END);
+    }
+
+    private void addSeatFacts(LinearLayout seat, List<SeatContent.Fact> facts, boolean active, boolean compact,
+                              int reservedDigits) {
         var style = HoldemTablePresentation.seatFactStyle(active, compact);
         for (var fact : facts) {
             var label = views.text(fact.label(), style.labelSp(), style.labelColor(), false);
             var value = views.text(fact.value(), style.valueSp(), style.valueColor(), true);
-            seat.addView(SeatFactRow.of(label, value), views.matchWrap());
+            seat.addView(SeatFactRow.of(label, value, reservedDigits), views.matchWrap());
         }
     }
 
     private void addSeatAction(LinearLayout seat, HoldemTablePresentation.ActionRow row,
-                              boolean latest, boolean active, boolean compact) {
-        if (row == null) return;
+                              boolean latest, boolean active, boolean compact, boolean reserve) {
+        if (row == null && !reserve) return;
         var style = HoldemTablePresentation.seatActionStyle(compact, latest, active);
-        String label = text.get(R.string.seat_latest_action, row.ordinal(),
+        String label = row == null ? "" : text.get(R.string.seat_latest_action, row.ordinal(),
                 text.get(seatActionLabel(row.kind())), row.amount());
         var badge = views.text(label, style.textSp(), style.textColor(), true);
-        badge.setTag("latest-seat-action:" + row.physicalSeat());
-        badge.setSingleLine(true);
-        badge.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        if (row == null) badge.setVisibility(View.INVISIBLE);
+        else badge.setTag("latest-seat-action:" + row.physicalSeat());
+        singleLine(badge);
         badge.setGravity(Gravity.CENTER);
         badge.setPadding(views.dp(3), views.dp(1), views.dp(3), views.dp(1));
         badge.setContentDescription(null);
@@ -462,11 +472,14 @@ final class HoldemTableView {
         var turn = views.text(frame.actor() < 0 ? "" : text.get(R.string.turn_status, actor), compact ? 11 : 14,
                 frame.actor() == frame.viewer() ? 0xfff0d486 : ScreenViews.MUTED, true);
         turn.setTag("turn-status");
+        singleLine(turn);
         turn.setGravity(Gravity.CENTER);
         if (frame.actor() < 0) turn.setVisibility(View.GONE);
         turn.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         center.addView(turn, views.matchWrap());
         var bestHand = views.text(bestHandLabel(frame), compact ? 11 : 13, Color.WHITE, true);
+        bestHand.setTag("best-hand-status");
+        singleLine(bestHand);
         bestHand.setGravity(Gravity.CENTER);
         var blindLevel = game.isTournament()
                 ? text.get(R.string.tournament_blinds, game.blindLevelNumber(), game.blindLevel().smallBlind(),
@@ -474,6 +487,7 @@ final class HoldemTableView {
                 : text.get(R.string.fixed_blinds, game.blindLevel().smallBlind(), game.blindLevel().bigBlind());
         var blinds = views.text(blindLevel, compact ? 10 : 12, ScreenViews.MUTED, false);
         blinds.setGravity(Gravity.CENTER);
+        singleLine(blinds);
         var pot = views.text(text.get(frame.street() == Street.COMPLETE ? R.string.settled_pot : R.string.pot,
                 HoldemTablePresentation.displayedPot(frame)),
                 compact ? 15 : 20, Color.WHITE, true);
@@ -538,7 +552,6 @@ final class HoldemTableView {
     }
 
     private void addBettingLedger(LinearLayout parent, HoldemTableViewState frame, List<String> names, boolean compact) {
-        if (frame.bettingActions().isEmpty()) return;
         var section = new LinearLayout(views.activity());
         section.setOrientation(LinearLayout.VERTICAL);
         section.setPadding(views.dp(8), views.dp(2), views.dp(8), views.dp(2));
@@ -586,6 +599,7 @@ final class HoldemTableView {
             title.setSelected(expanded);
             if (expanded) history.post(() -> history.fullScroll(View.FOCUS_DOWN));
         });
+        if (frame.bettingActions().isEmpty()) section.setVisibility(View.INVISIBLE);
         parent.addView(section, views.matchWrap());
     }
 
@@ -754,13 +768,16 @@ final class HoldemTableView {
 
     private void actions(LinearLayout parent, List<LegalAction> legal, boolean compact,
                          Predicate<LocalHoldemGame.Move> submit, List<View> decisionControls) {
-        LinearLayout row = null;
+        int rowCount = HoldemTablePresentation.actionRowCount(legal.size());
+        var rows = new ArrayList<LinearLayout>(rowCount);
+        int targetHeight = views.dp(HoldemTablePresentation.ACTION_TARGET_DP);
+        for (int index = 0; index < rowCount; index++) {
+            var row = new LinearLayout(views.activity());
+            row.setBaselineAligned(false);
+            parent.addView(row, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, targetHeight));
+            rows.add(row);
+        }
         for (int i = 0; i < legal.size(); i++) {
-            if (i % 2 == 0) {
-                row = new LinearLayout(views.activity());
-                if (compact) row.setBaselineAligned(false);
-                parent.addView(row, views.matchWrap());
-            }
             var option = legal.get(i);
             boolean sized = option.minAmount() != option.maxAmount();
             String title = text.get(actionLabel(option));
@@ -774,25 +791,20 @@ final class HoldemTableView {
                 if (sized) requestAmount(opener, title, option, compact, submit);
                 else submit.test(new LocalHoldemGame.Move(option.type(), option.amount()));
             });
-            HoldemTableButton.apply(views, button, primary);
-            if (compact) {
-                button.setPadding(views.dp(4), 0, views.dp(4), 0);
-                button.setIncludeFontPadding(false);
-                button.setMaxLines(1);
-                button.setAutoSizeTextTypeUniformWithConfiguration(11, 14, 1, android.util.TypedValue.COMPLEX_UNIT_SP);
-            }
+            HoldemTableButton.applyTableAction(views, button, primary);
+            button.setPadding(views.dp(4), 0, views.dp(4), 0);
+            button.setIncludeFontPadding(false);
+            button.setMaxLines(1);
+            button.setAutoSizeTextTypeUniformWithConfiguration(11, 14, 1, android.util.TypedValue.COMPLEX_UNIT_SP);
             decisionControls.add(button);
-            var box = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-            int verticalMargin = views.dp(compact ? 0 : 1);
+            var box = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f);
             float density = views.activity().getResources().getDisplayMetrics().density;
             var margins = HoldemTablePresentation.actionMargins(density, i % 2 == 0, i + 1 < legal.size());
-            box.setMargins(0, verticalMargin, 0, verticalMargin);
             box.setMarginStart(margins.start());
             box.setMarginEnd(margins.end());
-            row.addView(button, box);
+            rows.get(i / 2).addView(button, box);
         }
     }
-
 
     private void requestAmount(View opener, String title, LegalAction option, boolean compact,
                                Predicate<LocalHoldemGame.Move> submit) {

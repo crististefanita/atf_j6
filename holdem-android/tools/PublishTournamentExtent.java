@@ -35,7 +35,12 @@ class PublishTournamentExtent {
             "Achievement progress: Win 3 different hands", "Achievement progress: Win 3 different tournaments");
     private static final List<String> RELEASE_SMOKE_ASSERTIONS = List.of("Release APK opens the branded home menu",
             "Release APK opens hand setup", "Hand setup returns to the home menu", "Release APK opens tournament setup",
-            "Achievements opens from the main menu", "Training opens separately from gameplay achievements",
+            "Achievements opens from the main menu", "Gameplay achievements omit training in English",
+            "Gameplay achievements omit training in Romanian",
+            "Romanian table uses localized compact actions",
+            "English table uses localized compact actions",
+            "Pot, messages and seats keep the same bounds through live turns",
+            "A complete hand started from setup reaches showdown",
             "Achievement progress: Reach your first showdown",
             "Achievement progress: Ajungi prima dată la dezvăluirea cărților",
             "Achievement progress: Câștigă 3 mâini diferite", "Achievement progress: Câștigă 5 mâini în turnee",
@@ -48,7 +53,11 @@ class PublishTournamentExtent {
     private static final List<String> RELEASE_SMOKE_CAPTURES = List.of(
             "01-release-hand-setup.png", "02-release-tournament-setup.png", "03-achievements-easy.png",
             "04-achievements-medium.png", "05-achievements-hard.png", "05a-achievements-romanian-easy.png",
-            "05b-achievements-romanian-medium.png", "05c-achievements-romanian-hard.png");
+            "05b-achievements-romanian-medium.png", "05c-achievements-romanian-hard.png",
+            "06-stable-table-romanian-preflop.png",
+            "07-stable-table-romanian-opponent.png",
+            "08-stable-table-romanian-settled.png",
+            "09-stable-table-english-preflop.png");
     private static final List<String> SETTLEMENT_ASSERTIONS = List.of(
             "Next hand tap accepted during settlement", "Activity recreation opens exactly hand two", "Next hand persisted once",
             "Result tap accepted during settlement", "Result persisted before reopening",

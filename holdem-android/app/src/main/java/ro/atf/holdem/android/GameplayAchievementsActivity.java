@@ -2,7 +2,6 @@ package ro.atf.holdem.android;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.ViewGroup.LayoutParams;
@@ -15,8 +14,9 @@ import ro.cardtable.ui.screens.ScreenViews;
 import ro.cardtable.ui.theme.TablePalette;
 
 public final class GameplayAchievementsActivity extends Activity {
-    private final Button[] tabs = new Button[AchievementCatalog.Tier.values().length];
-    private AchievementCatalog.Tier tier = AchievementCatalog.Tier.EASY;
+    static final String PROFILE_ID = "achievement-profile";
+    private final Button[] tabs = new Button[GameplayAchievementCatalog.Tier.values().length];
+    private GameplayAchievementCatalog.Tier tier = GameplayAchievementCatalog.Tier.EASY;
     private LinearLayout rows;
     private ScrollView scroll;
     private ScreenViews views;
@@ -24,17 +24,17 @@ public final class GameplayAchievementsActivity extends Activity {
     private String profile;
 
     @Override protected void attachBaseContext(Context base) {
-        super.attachBaseContext(AchievementsActivity.localizedContext(base));
+        super.attachBaseContext(HoldemActivity.localizedContext(base));
     }
 
     @Override protected void onCreate(Bundle saved) {
         super.onCreate(saved);
-        profile = getIntent().getStringExtra(AchievementsActivity.PROFILE_ID);
+        profile = getIntent().getStringExtra(PROFILE_ID);
         if (profile == null || profile.trim().isEmpty()) {
             finish();
             return;
         }
-        if (saved != null) tier = AchievementCatalog.Tier.valueOf(saved.getString("tier", tier.name()));
+        if (saved != null) tier = GameplayAchievementCatalog.Tier.valueOf(saved.getString("tier", tier.name()));
         achievements = GameplayAchievementFile.local(this, profile);
         views = new ScreenViews(this, label -> label, ignored -> {});
         views.applyTableWindowChrome();
@@ -57,7 +57,7 @@ public final class GameplayAchievementsActivity extends Activity {
         var bar = new LinearLayout(this);
         root.addView(bar);
         int[] labels = {R.string.achievement_easy, R.string.achievement_medium, R.string.achievement_hard};
-        for (var group : AchievementCatalog.Tier.values()) {
+        for (var group : GameplayAchievementCatalog.Tier.values()) {
             var tab = button(labels[group.ordinal()]);
             tab.setTextSize(13);
             tab.setMinWidth(0);
@@ -78,10 +78,6 @@ public final class GameplayAchievementsActivity extends Activity {
         rows.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(rows);
 
-        var training = button(R.string.achievement_training);
-        training.setOnClickListener(view -> startActivity(new Intent(this, AchievementsActivity.class)
-                .putExtra(AchievementsActivity.PROFILE_ID, profile)));
-        root.addView(training);
     }
 
     @Override protected void onResume() {
@@ -95,7 +91,7 @@ public final class GameplayAchievementsActivity extends Activity {
     }
 
     private void render() {
-        for (var group : AchievementCatalog.Tier.values()) {
+        for (var group : GameplayAchievementCatalog.Tier.values()) {
             var tab = tabs[group.ordinal()];
             tab.setSelected(group == tier);
             HoldemTableButton.apply(views, tab, group == tier);

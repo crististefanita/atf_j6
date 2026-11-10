@@ -23,7 +23,10 @@ final class HoldemTablePresentation {
     static final int MIN_CARD_SCALE = 70;
     static final int ACTION_TARGET_DP = 48;
     static final float ACTION_FACE_INSET = .1875f;
-    private static final float ACTION_PAIR_GAP_DP = 1.5f;
+    static final float TABLE_ACTION_FACE_INSET = ACTION_FACE_INSET / 2;
+    static final int ACTION_ROWS = 2;
+    static final int ADVICE_LINES = 2;
+    private static final float ACTION_PAIR_GAP_DP = .75f;
     private static final int ACTION_EDGE_MARGIN_DP = 3;
 
     record ActionMargins(int start, int end) {}
@@ -34,6 +37,16 @@ final class HoldemTablePresentation {
         int leadingHalf = gap / 2;
         return firstInRow ? new ActionMargins(edge, hasPartner ? leadingHalf : edge)
                 : new ActionMargins(gap - leadingHalf, edge);
+    }
+
+    static int actionRowCount(int legalActions) {
+        return Math.max(ACTION_ROWS, (legalActions + 1) / 2);
+    }
+
+    static int chipFieldDigits(List<HoldemTableViewState.Seat> seats) {
+        long chips = 0;
+        for (var seat : seats) chips += (long) seat.stack() + seat.contributed();
+        return Long.toString(chips).length();
     }
 
     record ActionRow(int ordinal, int physicalSeat, String player, Street street, BettingAction.Kind kind,

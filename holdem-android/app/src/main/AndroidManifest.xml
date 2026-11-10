@@ -3,7 +3,6 @@
         android:icon="@drawable/ic_holdem" android:allowBackup="false" android:fullBackupContent="@xml/profile_backup"
         android:dataExtractionRules="@xml/profile_transfer">
         <activity android:name=".GameplayAchievementsActivity" android:exported="false" />
-        <activity android:name=".AchievementsActivity" android:exported="false" />
         <activity android:name=".HoldemActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

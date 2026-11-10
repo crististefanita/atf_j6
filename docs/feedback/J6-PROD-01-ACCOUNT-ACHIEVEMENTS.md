@@ -4,7 +4,7 @@
 
 **P2 · De validat cu jucători.** Catalogul grupează obiectivele în funcție de rezultatele de la masă. Dificultatea relativă rămâne o ipoteză până vedem cum avansează profilurile în sesiuni reale.
 
-[Contractul implementat](../requirements/PRODUCT_REQUIREMENTS.md#realizări-și-antrenament) · [Metoda de proiectare](../design/achievements/README.md)
+[Contractul implementat](../requirements/PRODUCT_REQUIREMENTS.md#realizări) · [Metoda de proiectare](../design/achievements/README.md)
 
 ## Criterii de acceptanță
 

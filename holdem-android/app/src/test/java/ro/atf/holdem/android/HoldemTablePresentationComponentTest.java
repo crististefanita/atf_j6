@@ -135,13 +135,28 @@ public final class HoldemTablePresentationComponentTest {
             int edge = Math.round(3 * density);
             var left = HoldemTablePresentation.actionMargins(density, true, true);
             var right = HoldemTablePresentation.actionMargins(density, false, false);
-            assertEquals(Math.round(1.5f * density), left.end() + right.start());
+            assertEquals(Math.round(.75f * density), left.end() + right.start());
             assertEquals(edge, left.start());
             assertEquals(edge, right.end());
             assertEquals(new HoldemTablePresentation.ActionMargins(edge, edge),
                     HoldemTablePresentation.actionMargins(density, true, false));
         }
         assertEquals(48, HoldemTablePresentation.ACTION_TARGET_DP);
+        assertEquals(HoldemTablePresentation.ACTION_FACE_INSET / 2,
+                HoldemTablePresentation.TABLE_ACTION_FACE_INSET, 0);
+    }
+
+    @Test public void actionAndSeatSlotsReserveTheSameSpaceAsTheHandProgresses() {
+        for (int legal = 0; legal <= 4; legal++)
+            assertEquals(2, HoldemTablePresentation.actionRowCount(legal));
+        assertEquals(2, HoldemTablePresentation.ADVICE_LINES);
+
+        var before = List.of(new HoldemTableViewState.Seat(990, 10, false, 0, true, List.of()),
+                new HoldemTableViewState.Seat(995, 5, false, 0, true, List.of()));
+        var after = List.of(new HoldemTableViewState.Seat(90, 910, false, 0, true, List.of()),
+                new HoldemTableViewState.Seat(995, 5, true, 0, true, List.of()));
+        assertEquals(4, HoldemTablePresentation.chipFieldDigits(before));
+        assertEquals(4, HoldemTablePresentation.chipFieldDigits(after));
     }
 
     @Test public void achievementsTextAndTableButtonsStayReadableAgainstTheirActualFills() {

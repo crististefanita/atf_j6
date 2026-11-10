@@ -2,7 +2,7 @@
 
 ## Pe scurt
 
-Realizările marchează ce a reușit jucătorul într-o partidă. Ghidul definește cum alegem obiectivele, cum le legăm de rezultatele motorului și cum verificăm progresul înainte de lansare. [Aplicarea în Hold’em](../../requirements/PRODUCT_REQUIREMENTS.md#realizări-și-antrenament) arată ce este specific jocului.
+Realizările marchează ce a reușit jucătorul într-o partidă. Ghidul definește cum alegem obiectivele, cum le legăm de rezultatele motorului și cum verificăm progresul înainte de lansare. [Aplicarea în Hold’em](../../requirements/PRODUCT_REQUIREMENTS.md#realizări) arată ce este specific jocului.
 
 ```mermaid
 flowchart LR
@@ -27,7 +27,7 @@ flowchart LR
 2. Alege pentru fiecare nivel un prim obiectiv ușor de explicat. La Ușoare, jucătorul obține primul rezultat de bază. La Medii, duce la capăt un obiectiv complet. La Grele, repetă o performanță în partide distincte sau reușește într-o situație rară și precis definită.
 3. Grupează câte 5–6 obiective în jurul unei competențe. Ordinea recomandă ce să încerce jucătorul. În grup, fiecare obiectiv poate progresa în orice ordine. Folosește prerechizite doar când un mod de joc sau un eveniment chiar nu poate exista înaintea altuia.
 4. Scrie criteriul înainte să alegi un prag: ce rezultat contează, în ce mod, pentru cine, când se confirmă și ce pare asemănător dar nu se califică.
-5. Crește catalogul numai când apare o mecanică, o alegere sau o performanță distinctă. Mai multe praguri pe același contor sunt utile când marchează etape reale; răspunsurile la exerciții apar în Antrenament.
+5. Crește catalogul numai când apare o mecanică, o alegere sau o performanță distinctă. Mai multe praguri pe același contor sunt utile când marchează etape reale. Leagă progresul de evenimente observabile în joc.
 
 | Nivel | Întrebarea de proiectare | Verificare |
 |---|---|---|

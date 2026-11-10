@@ -24,7 +24,7 @@ public class GameplayAchievementsComponentTest {
                 seat(0, 0, evaluation("Qs Jd 9h 8c 5d")), 4);
         achievements.recordSettled("p", "t:1", "t", 0, hand);
 
-        var easy = GameplayAchievementCatalog.forTier(AchievementCatalog.Tier.EASY);
+        var easy = GameplayAchievementCatalog.forTier(GameplayAchievementCatalog.Tier.EASY);
         assertEquals(POT, easy.get(0).metric());
         assertEquals(SHOWDOWN, easy.get(1).metric());
         assertEquals(1, easy.get(0).progress(achievements.counts("p")));
@@ -67,7 +67,7 @@ public class GameplayAchievementsComponentTest {
 
         assertEquals(1, achievements.count("p", SHOWDOWN));
         assertEquals(0, achievements.count("p", POT));
-        assertEquals(1, GameplayAchievementCatalog.forTier(AchievementCatalog.Tier.EASY).get(1)
+        assertEquals(1, GameplayAchievementCatalog.forTier(GameplayAchievementCatalog.Tier.EASY).get(1)
                 .progress(achievements.counts("p")));
     }
 
@@ -114,8 +114,8 @@ public class GameplayAchievementsComponentTest {
         achievements.recordSettled("p", "a:4", "a", 1, sixSeats);
         var restarted = new GameplayAchievements(storage);
         restarted.recordSettled("p", "a:4", "a", 1, sixSeats);
-        var medium = GameplayAchievementCatalog.forTier(AchievementCatalog.Tier.MEDIUM).get(0);
-        var hard = GameplayAchievementCatalog.forTier(AchievementCatalog.Tier.HARD);
+        var medium = GameplayAchievementCatalog.forTier(GameplayAchievementCatalog.Tier.MEDIUM).get(0);
+        var hard = GameplayAchievementCatalog.forTier(GameplayAchievementCatalog.Tier.HARD);
         assertEquals(1, medium.progress(restarted.counts("p")));
         assertEquals(1, hard.get(0).progress(restarted.counts("p")));
         assertEquals(1, restarted.count("p", TOURNAMENT_POT));
@@ -193,18 +193,18 @@ public class GameplayAchievementsComponentTest {
     }
 
     @Test public void allCatalogEntriesUnlockAtTheirOwnThresholdInPublishedOrder() {
-        assertMilestones(AchievementCatalog.Tier.EASY, List.of(
+        assertMilestones(GameplayAchievementCatalog.Tier.EASY, List.of(
                 "first-pot:POT:1", "first-showdown:SHOWDOWN:1", "big-blind-pot:BIG_BLIND_POT:1",
                 "three-pots:POT:3", "finish-tournament:TOURNAMENT_FINISHED:1"));
-        assertMilestones(AchievementCatalog.Tier.MEDIUM, List.of(
+        assertMilestones(GameplayAchievementCatalog.Tier.MEDIUM, List.of(
                 "first-title:TITLE:1", "tournament-pots:TOURNAMENT_POT:5", "multiway-showdowns:MULTIWAY_SHOWDOWN_POT:3",
                 "straight-or-better:STRAIGHT_OR_BETTER:2", "tournament-podiums:PODIUM:2"));
-        assertMilestones(AchievementCatalog.Tier.HARD, List.of(
+        assertMilestones(GameplayAchievementCatalog.Tier.HARD, List.of(
                 "three-titles:TITLE:3", "high-card:SOLE_HIGH_CARD_POT:1", "full-house-or-better:FULL_HOUSE_OR_BETTER:2",
                 "multiway-showdown-series:MULTIWAY_SHOWDOWN_POT:12", "six-seat-titles:SIX_SEAT_TITLE:2"));
     }
 
-    private static void assertMilestones(AchievementCatalog.Tier tier, List<String> expected) {
+    private static void assertMilestones(GameplayAchievementCatalog.Tier tier, List<String> expected) {
         var milestones = GameplayAchievementCatalog.forTier(tier);
         var keys = milestones.stream().map(rule -> rule.id() + ":" + rule.metric() + ":" + rule.target())
                 .collect(java.util.stream.Collectors.toList());

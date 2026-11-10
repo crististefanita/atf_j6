@@ -108,7 +108,8 @@
     <string name="ai_hint">AI %5$s suggests %1$s · equity %2$s · pot odds %3$s · target %4$s · n=%6$s · ±%7$s</string>
     <string name="ai_hint_compact">AI · %1$s · equity %2$s · pot odds %3$s</string>
     <string name="ai_hint_description">Policy %5$s suggests action %1$s. Estimated equity %2$s. Pot price %3$s. Required equity %4$s. Samples %6$s. Standard error %7$s.</string>
-    <string name="ai_finish_hand">Let AI finish this hand</string>
+    <string name="ai_finish_hand">Let AI play</string>
+    <string name="ai_finish_hand_description">Let AI finish this hand</string>
     <string name="ai_playing">AI is playing this hand…</string>
     <string name="ai_action_error">AI could not complete the hand. The current hand is still available.</string>
     <string name="opponent_cards">Player cards</string>
@@ -127,27 +128,6 @@
     <string name="achievement_medium">Medium</string>
     <string name="achievement_hard">Hard</string>
     <string name="achievement_error">Achievement data could not be loaded or saved.</string>
-    <string name="achievement_summary">Unlocked (%1$d / %2$d)</string>
-    <string name="achievement_title">%1$s · %2$d</string>
-    <string name="achievement_ready">Ready to practice</string>
-    <string name="achievement_done">Unlocked</string>
-    <string name="achievement_locked">Prerequisite required</string>
-    <string name="achievement_lots">Lots passed (%1$d / %2$d)</string>
-    <string name="achievement_score">Correct (%1$d / %2$d)</string>
-    <string name="achievement_criteria">Correct answers per lot (%1$d / %2$d). Required lots (%3$d).</string>
-    <string name="achievement_prerequisite">Requires %1$s · stage %2$d</string>
-    <string name="achievement_practice">Practice</string>
-    <string name="achievement_question">Eligible pot in chips before your call (%1$d). Call cost in chips (%2$d). Equity (%3$d%%). What is the expected value of calling? Assume no further betting or fees.</string>
-    <string name="achievement_profit">Positive</string>
-    <string name="achievement_even">Zero</string>
-    <string name="achievement_loss">Negative</string>
-    <string name="achievement_correct">Correct</string>
-    <string name="achievement_incorrect">Try the next one</string>
-    <string name="achievement_explanation">%1$s. Break-even equity is %2$.1f%%.</string>
-    <string name="achievement_lot_score">Answered (%1$d / %2$d) · Correct (%3$d)</string>
-    <string name="achievement_next">Next</string>
-    <string name="achievement_playable">Available to practice</string>
-    <string name="achievement_empty">Complete the prerequisite to unlock the next exercise.</string>
     <string-array name="achievement_families">
         <item>Position</item>
         <item>Showdown</item>
@@ -170,7 +150,6 @@
         <item>Tournaments</item>
         <item>Hand review</item>
     </string-array>
-    <string name="achievement_training">Training exercises</string>
     <string name="gameplay_achievement_earned">Earned · %1$d/%2$d</string>
     <string name="gameplay_achievement_progress">Progress · %1$d/%2$d</string>
     <!-- The generated gameplay catalog owns these resource references. -->

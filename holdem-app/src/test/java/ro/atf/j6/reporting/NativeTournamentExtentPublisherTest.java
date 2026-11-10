@@ -232,11 +232,17 @@ class NativeTournamentExtentPublisherTest {
         receipt.putArray("captures").add("01-release-hand-setup.png").add("02-release-tournament-setup.png")
                 .add("03-achievements-easy.png").add("04-achievements-medium.png").add("05-achievements-hard.png")
                 .add("05a-achievements-romanian-easy.png").add("05b-achievements-romanian-medium.png")
-                .add("05c-achievements-romanian-hard.png");
+                .add("05c-achievements-romanian-hard.png")
+                .add("06-stable-table-romanian-preflop.png").add("07-stable-table-romanian-opponent.png").add("08-stable-table-romanian-settled.png").add("09-stable-table-english-preflop.png");
         var assertions = receipt.putArray("assertions");
         for (String name : List.of("Release APK opens the branded home menu", "Release APK opens hand setup",
                 "Hand setup returns to the home menu", "Release APK opens tournament setup",
-                "Achievements opens from the main menu", "Training opens separately from gameplay achievements",
+                "Achievements opens from the main menu", "Gameplay achievements omit training in English",
+                "Gameplay achievements omit training in Romanian",
+                "Romanian table uses localized compact actions",
+                "English table uses localized compact actions",
+                "Pot, messages and seats keep the same bounds through live turns",
+                "A complete hand started from setup reaches showdown",
                 "Achievement progress: Reach your first showdown",
                 "Achievement progress: Ajungi prima dată la dezvăluirea cărților",
                 "Achievement progress: Câștigă 3 mâini diferite", "Achievement progress: Câștigă 5 mâini în turnee",

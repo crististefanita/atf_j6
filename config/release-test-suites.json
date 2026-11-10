@@ -31,7 +31,6 @@
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseVersionPolicyTest" }
   ],
   "android": [
-    { "module": "holdem-android", "testClass": "ro.atf.holdem.android.AchievementProgressComponentTest", "impactPaths": ["holdem-android/app/src/main/assets/training-achievements.csv", "holdem-android/app/src/main/java/ro/atf/holdem/android/AchievementCatalog.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/AchievementProgress.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/AchievementExercises.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/AchievementsActivity.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/AchievementPresentation.java"] },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.GameplayAchievementsComponentTest", "impactPaths": ["config/j6-achievements.yaml", "holdem-android/app/build.gradle", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievements.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementCatalog.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementFile.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementsActivity.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemProgressStore.java"] },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.HoldemSessionRepositoryComponentTest" },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.HoldemTablePresentationComponentTest" },

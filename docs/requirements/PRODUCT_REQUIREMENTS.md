@@ -115,9 +115,9 @@ O comandă de continuare acceptată în timpul animației salvează destinația 
 - folosirea mâinilor adverse reale în politica actorului;
 - promisiunea de profit sau recomandări de miză personală.
 
-## Realizări și antrenament
+## Realizări
 
-Meniul **Realizări** arată cinci obiective pe nivel. Ordinea sugerează de unde să începi, iar o mână sau un turneu poate avansa mai multe obiective simultan. Exercițiile și răspunsurile lor rămân în **Antrenament**.
+Meniul **Realizări** arată cinci obiective pe nivel. Ordinea sugerează de unde să începi, iar o mână sau un turneu poate avansa mai multe obiective simultan. Progresul vine din rezultatele obținute la masă.
 
 | Nivel | Primul obiectiv | Alte criterii |
 |---|---|---|
@@ -128,6 +128,6 @@ Meniul **Realizări** arată cinci obiective pe nivel. Ordinea sugerează de und
 - O mână se califică dacă profilul primește jetoane dintr-un pot la decontare. O restituire nu contează. Un pot secundar sau împărțit poate conta o singură dată pentru mâna respectivă.
 - La o dezvăluire cu minimum trei participanți se numără doar jucătorii ale căror cărți sunt evaluate. Criteriul de carte mare cere ca jucătorul să fie singurul beneficiar al poturilor.
 - Participarea și podiumul se acordă când locul devine definitiv, chiar dacă adversarii continuă. Un loc al treilea împărțit contează. Titlul cere locul întâi, iar obiectivul de șase folosește dimensiunea de la începutul turneului.
-- Progresul este local pe profil și se deduplică după ID-ul mâinii sau al turneului. Se poate reconcilia sesiunea salvată. Clasamentul agregat și răspunsurile din Antrenament nu reconstruiesc partidele vechi.
+- Progresul este local pe profil și se deduplică după ID-ul mâinii sau al turneului. Se poate reconcilia sesiunea salvată. Clasamentul agregat nu reconstruiește partidele vechi.
 
 Catalogul YAML definește ID-urile, nivelul, ordinea, metrica și pragul. Textele localizate folosesc aceleași praguri la afișare. [Regulile executabile](../../config/j6-achievements.yaml) · [Ghid de proiectare](../design/achievements/README.md) · [Verificarea realizărilor](../testing/TEST_STRATEGY.md#realizări-de-joc)

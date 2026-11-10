@@ -248,6 +248,19 @@ Pentru o clasă de cărți `H` și o reacție `R`, auditorul poate calcula `P(H 
 
 Datele ascunse intră în numărătorile offline și în oracol. La alegerea sumei, candidatul vede numai cărțile proprii, stiva, prețul și istoricul public. Când lipsesc date pentru o ofertă sau o bandă, păstrează suma de control.
 
+#### Adversari care decid după forța mâinii
+
+Adversarul de arenă `StrengthSelectivePolicy` folosește cărțile proprii, prețul și mutările legale pentru a deschide, a plăti sau a mări preflop. Stilurile schimbă pragurile. La compararea a două sume, variația pseudoaleatorie rămâne aceeași la prefix identic.
+
+| Întrebare | Probabilitate sau valoare |
+|---|---|
+| Cum reacționează adversarul? | `P(reacție ∣ stare, sumă)` pentru fold, call și re-raise, cu numărătorul și numitorul pe ofertă. |
+| Ce mâini formează range-ul? | `P(clasă de cărți ∣ reacție, stare, sumă)` pe răspunsurile observate. Raportează separat equity la showdown și valoarea netă până la decontare. |
+| Ce permite stiva? | Separă suma care acoperă adversarul de suma care îi lasă jetoane. În primul caz, probabilitatea de re-raise este zero prin regulă. |
+| Ce aduce range-ul? | Compară cu o variantă care păstrează aceleași probabilități de reacție și folosește equity uniformă. Măsoară ambele variante cu aceleași oferte și aceeași extragere. |
+
+Pentru calificarea pe stivă scurtă, numără ocaziile legale și ocaziile acoperite de calibrare pe turnee naturale. Folosește stiluri și seed-uri distincte pentru validare. Măsoară avantajul realizat pe perechi și păstrează cazurile sintetice separat de rezultatul competitiv.
+
 #### Inițiativa și poziția
 
 - **Inițiativă.** Prima mărire stabilește un preț nou. În simulare, compară call-ul și raise-ul din aceeași stare a primului actor și măsoară reacția imediată.

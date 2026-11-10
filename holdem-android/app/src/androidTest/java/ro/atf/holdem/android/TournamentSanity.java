@@ -435,7 +435,7 @@ public final class TournamentSanity extends Instrumentation {
             see("First hand reaches the flop", "Hand 1 · Flop");
             awaitWinChance("The win chance remains visible on the flop", true);
             capture("01-call-ledger-visible");
-            checkSeatActionCount("Each player keeps a visible latest action under the seat", 4);
+            checkSeatActions(activity, 4);
             seeActionForPlayer("You", "Call", 20);
             seeLatestAction("Latest seat action names the most recent player, move and running hand total",
                     "Check", 0, "contribution 20");
@@ -1503,12 +1503,23 @@ public final class TournamentSanity extends Instrumentation {
         check(name, "visible text containing " + fragment, actual, !matches.isEmpty());
     }
 
-    private void checkSeatActionCount(String name, int expected) throws Exception {
-        int visibleBadges = collect(node -> value(node.getText()).matches("^#\\d+ · .+ \\+\\d+$")).size();
+    private void checkSeatActions(Activity activity, int seatCount) throws Exception {
+        var visibleBadges = new ArrayList<String>();
+        runOnMainSync(() -> {
+            var root = activity.getWindow().getDecorView();
+            for (int seat = 0; seat < seatCount; seat++) {
+                TextView badge = root.findViewWithTag("latest-seat-action:" + seat);
+                if (badge != null && badge.getGlobalVisibleRect(new Rect())) {
+                    String label = value(badge.getText());
+                    if (label.matches("^#\\d+ · .+ \\+\\d+$")) visibleBadges.add(label);
+                }
+            }
+        });
         int accessibleSeats = collect(node -> value(node.getContentDescription()).contains(", Action #")).size();
-        check(name, Integer.toString(expected), Integer.toString(visibleBadges));
+        check("Each player keeps a visible latest action under the seat", seatCount + " visible badges",
+                visibleBadges.toString(), visibleBadges.size() == seatCount);
         check("Each player exposes its latest action in the seat description",
-                Integer.toString(expected), Integer.toString(accessibleSeats));
+                Integer.toString(seatCount), Integer.toString(accessibleSeats));
     }
 
     private void seeActionForPlayer(String player, String action, int amount) throws Exception {

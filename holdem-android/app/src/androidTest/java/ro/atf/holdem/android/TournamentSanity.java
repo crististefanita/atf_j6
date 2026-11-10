@@ -689,6 +689,7 @@ public final class TournamentSanity extends Instrumentation {
             var settled = awaitSeatSettlement();
             check("Hand settles after the opening all-in", "COMPLETE", settled == null ? "checkpoint unavailable" : settled.street().name());
             inspectSeatFacts(activity, true);
+            inspectSettledHandAlignment(activity, settled);
             int winner = 0;
             for (int seat = 1; seat < settled.seats().size(); seat++)
                 if (settled.seats().get(seat).potWon() > settled.seats().get(winner).potWon()) winner = seat;
@@ -696,6 +697,35 @@ public final class TournamentSanity extends Instrumentation {
             runOnMainSync(() -> reveal(seatFrame(activity.getWindow().getDecorView(), winningSeat)));
             actions.put("Reveal the winning seat after settlement");
             capture("02-settled-seat-metrics");
+        } finally {
+            runOnMainSync(activity::finish);
+        }
+        inspectFiveSeatShowdown();
+    }
+
+    private void inspectFiveSeatShowdown() throws Exception {
+        var activity = launchHoldem();
+        try {
+            tap("Joacă un turneu");
+            selectTableSize("5");
+            var difficultyOptions = new ArrayList<String>();
+            runOnMainSync(() -> {
+                android.widget.Spinner difficulty = activity.getWindow().getDecorView().findViewWithTag("ai-level");
+                if (difficulty == null) return;
+                for (int index = 0; index < difficulty.getCount(); index++) {
+                    difficultyOptions.add(difficulty.getItemAtPosition(index).toString());
+                }
+                difficultyOptions.add(String.valueOf(difficulty.getSelectedItem()));
+            });
+            check("Tournament setup offers Normal and Hard and defaults to Normal",
+                    "[Normal, Hard, Normal]", difficultyOptions.toString());
+            tap("Împarte cărțile");
+            see("Five-seat hand reaches preflop", "Mâna 1 · Preflop");
+            tap(revealTaggedControl(activity, "ALL_IN"));
+            var settled = awaitSeatSettlement();
+            check("Five-seat hand settles", "COMPLETE", settled == null ? "checkpoint unavailable" : settled.street().name());
+            inspectSettledHandAlignment(activity, settled);
+            capture("03-five-seat-showdown-alignment");
         } finally {
             runOnMainSync(activity::finish);
         }
@@ -726,7 +756,7 @@ public final class TournamentSanity extends Instrumentation {
         actions.put("Open the table size selector");
         var option = await(size);
         while (option != null && !option.isClickable()) option = option.getParent();
-        check("Select six seats", "click dispatched",
+        check("Select " + size + " seats", "click dispatched",
                 option != null && option.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                         ? "click dispatched" : "option unavailable");
         actions.put("Select " + size + " seats");
@@ -788,6 +818,42 @@ public final class TournamentSanity extends Instrumentation {
         for (int line = 0; line < layout.getLineCount(); line++)
             if (layout.getEllipsisCount(line) != 0 || layout.getLineMax(line) > layout.getWidth() + 1f) return false;
         return true;
+    }
+
+    private void inspectSettledHandAlignment(Activity activity, HoldemTableViewState frame) throws Exception {
+        var errors = new ArrayList<String>();
+        runOnMainSync(() -> {
+            View root = activity.getWindow().getDecorView();
+            var rows = CompactSeatRows.forSeats(frame.seats().size());
+            for (int[] row : List.of(rows.top(), rows.bottom())) {
+                Integer rowTop = null;
+                for (int displaySeat : row) {
+                    if (displaySeat == CompactSeatRows.EMPTY) continue;
+                    int seat = frame.physicalSeat(displaySeat);
+                    View nameFrame = root.findViewWithTag("settlement-target:seat:" + seat);
+                    LinearLayout hand = root.findViewWithTag("settlement-hand:seat:" + seat);
+                    if (nameFrame == null || hand == null || hand.getChildCount() != 2) {
+                        errors.add("seat " + seat + " missing a measured pair");
+                        continue;
+                    }
+                    int[] nameOrigin = new int[2];
+                    int[] handOrigin = new int[2];
+                    nameFrame.getLocationOnScreen(nameOrigin);
+                    hand.getLocationOnScreen(handOrigin);
+                    boolean expectedVisible = seat == frame.viewer() ? !frame.ownCards().isEmpty()
+                            : frame.seats().get(seat).dealtCards() && frame.seats().get(seat).shownCards().size() == 2;
+                    if (handOrigin[1] != nameOrigin[1] + nameFrame.getHeight()
+                            || (rowTop != null && handOrigin[1] != rowTop)
+                            || (hand.getVisibility() == View.VISIBLE) != expectedVisible) {
+                        errors.add("seat " + seat + " frame bottom " + (nameOrigin[1] + nameFrame.getHeight())
+                                + ", pair top " + handOrigin[1] + ", row top " + rowTop);
+                    }
+                    rowTop = handOrigin[1];
+                }
+            }
+        });
+        check(frame.seats().size() + " settled hands align below their seat frames, including the viewer",
+                "aligned pairs", errors.isEmpty() ? "aligned pairs" : String.join("; ", errors));
     }
 
     private void focusSeatMetrics(Activity activity) throws Exception {

@@ -1,5 +1,6 @@
 package ro.atf.holdem.ai;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -7,7 +8,7 @@ import ro.atf.holdem.core.*;
 
 /** Reproducible loose-aggressive style that prefers minimum legal pressure to large sizing. */
 public final class LooseAggressivePolicy implements DecisionPolicy {
-    public static final String VERSION = "LOOSE-AGGRESSIVE-0.2";
+    public static final String VERSION = "LOOSE-AGGRESSIVE-0.3";
 
     private final int openFrequencyPercent;
     private final int raiseFrequencyPercent;
@@ -31,7 +32,27 @@ public final class LooseAggressivePolicy implements DecisionPolicy {
     @Override
     public Decision decide(HoldemObservation observation) {
         Objects.requireNonNull(observation, "observation");
-        int roll = roll(observation);
+        return decide(observation, PolicySeed.rollPercent(observation));
+    }
+
+    /** Arena comparison with a shared draw for the immediate response to matched preflop raise quotes. */
+    public Decision decideWithSharedPreflopDraw(HoldemObservation observation) {
+        return decide(observation, sharedPreflopRoll(observation));
+    }
+
+    static int sharedPreflopRoll(HoldemObservation observation) {
+        var history = observation.publicActionHistory();
+        if (observation.street() != Street.PREFLOP || history.isEmpty())
+            return PolicySeed.rollPercent(observation);
+        int latest = history.size() - 1;
+        String event = history.get(latest);
+        if (!event.matches("PREFLOP \\d+ RAISE \\d+")) return PolicySeed.rollPercent(observation);
+        var matched = new ArrayList<>(history);
+        matched.set(latest, event.substring(0, event.lastIndexOf(' ') + 1) + "0");
+        return PolicySeed.rollPercent(observation, matched);
+    }
+
+    private Decision decide(HoldemObservation observation, int roll) {
         var raise = observation.legalActions().stream().filter(action -> action.type() == ActionType.RAISE)
                 .min(Comparator.comparingInt(LegalAction::minAmount)).orElse(null);
         boolean alreadyAggressed = hasAggressionThisStreet(observation);
@@ -91,12 +112,6 @@ public final class LooseAggressivePolicy implements DecisionPolicy {
         String prefix = observation.street() + " ";
         return history.subList(start, history.size()).stream().anyMatch(event -> event.startsWith(prefix)
                 && (event.matches(prefix + "\\d+ BET \\d+") || event.matches(prefix + "\\d+ RAISE \\d+")));
-    }
-
-    private static int roll(HoldemObservation observation) {
-        return Math.floorMod(Objects.hash(observation.handNumber(), observation.heroSeat(),
-                observation.positionFromButton(), observation.street(), observation.holeCards(),
-                observation.communityCards(), observation.publicActionHistory()), 100);
     }
 
     private static int percent(int value, String name) {

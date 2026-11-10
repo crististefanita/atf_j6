@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.Map;
 import ro.atf.holdem.ai.ContextualEquityPolicy;
+import ro.atf.holdem.ai.NearbyRaiseSizing;
+import ro.atf.holdem.ai.PreflopResponseModel;
+import ro.atf.holdem.ai.RaiseEvSizing;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -15,12 +18,26 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
                                      int looseLatePositionAdjustmentPercent, int equitySamples,
                                      int cashCallMarginPercent, int tournamentCallMarginPercent,
                                      int equityRaiseEdgePercent, int valueBetThresholdPercent,
-                                     ContextualEquityPolicy.ContextWeights equityContextWeights) {
+                                     ContextualEquityPolicy.ContextWeights equityContextWeights,
+                                     ContextualEquityPolicy.HardPressure hardPressure) {
     private static final int DEFAULT_EQUITY_SAMPLES = 256;
     private static final int DEFAULT_CASH_MARGIN = 2;
     private static final int DEFAULT_TOURNAMENT_MARGIN = 8;
     private static final int DEFAULT_RAISE_EDGE = 18;
     private static final int DEFAULT_VALUE_THRESHOLD = 60;
+
+    public TournamentPolicyConfig(int bluffFrequencyPercent, int latePositionWindow,
+                                  int looseOpenFrequencyPercent, int looseRaiseFrequencyPercent,
+                                  int looseMaxCallPotPercent, int looseBetPotPercent,
+                                  int looseLatePositionAdjustmentPercent, int equitySamples,
+                                  int cashCallMarginPercent, int tournamentCallMarginPercent,
+                                  int equityRaiseEdgePercent, int valueBetThresholdPercent,
+                                  ContextualEquityPolicy.ContextWeights equityContextWeights) {
+        this(bluffFrequencyPercent, latePositionWindow, looseOpenFrequencyPercent, looseRaiseFrequencyPercent,
+                looseMaxCallPotPercent, looseBetPotPercent, looseLatePositionAdjustmentPercent, equitySamples,
+                cashCallMarginPercent, tournamentCallMarginPercent, equityRaiseEdgePercent, valueBetThresholdPercent,
+                equityContextWeights, null);
+    }
 
     public TournamentPolicyConfig(int bluffFrequencyPercent, int latePositionWindow,
                                   int looseOpenFrequencyPercent, int looseRaiseFrequencyPercent,
@@ -122,10 +139,110 @@ public record TournamentPolicyConfig(int bluffFrequencyPercent, int latePosition
                     integer(weights, "shortStackShoveSensitivity"),
                     integer(weights, "shortStackShoveMaxMarginAdjustment"));
             return new TournamentPolicyConfig(frequency, window, open, raise, callPot, betPot, lateAdjustment,
-                    samples, cashMargin, tournamentMargin, raiseEdge, valueThreshold, contextWeights);
+                    samples, cashMargin, tournamentMargin, raiseEdge, valueThreshold, contextWeights, hardPressure(root));
         } catch (org.yaml.snakeyaml.error.YAMLException failure) {
             throw new IllegalArgumentException("Invalid policy YAML", failure);
         }
+    }
+
+    private static ContextualEquityPolicy.HardPressure hardPressure(Map<?, ?> root) {
+        if (!root.containsKey("hardPressure")) return null;
+        if (!(root.get("hardPressure") instanceof Map<?, ?> hard))
+            throw new IllegalArgumentException("Expected hardPressure settings");
+        var required = java.util.Set.of("cheapPreflopDiscount", "fullPotEquity", "doublePotEquity", "triplePotEquity");
+        var keys = new java.util.HashSet<>(hard.keySet());
+        keys.remove("bigBlindValueRaise");
+        keys.remove("raiseContext");
+        keys.remove("responseModel");
+        keys.remove("raiseEv");
+        if (!keys.equals(required))
+            throw new IllegalArgumentException("Expected exact hardPressure settings");
+        Object bigBlindValueRaise = hard.containsKey("bigBlindValueRaise") ? hard.get("bigBlindValueRaise") : false;
+        if (!(bigBlindValueRaise instanceof Boolean enabled))
+            throw new IllegalArgumentException("Expected boolean bigBlindValueRaise");
+        return new ContextualEquityPolicy.HardPressure(integer(hard, "cheapPreflopDiscount"),
+                integer(hard, "fullPotEquity"), integer(hard, "doublePotEquity"), integer(hard, "triplePotEquity"),
+                enabled, raiseContext(hard), responseModel(hard), raiseEv(hard));
+    }
+
+    private static RaiseEvSizing.Settings raiseEv(Map<?, ?> hard) {
+        if (!hard.containsKey("raiseEv")) return null;
+        if (!(hard.get("raiseEv") instanceof Map<?, ?> ev))
+            throw new IllegalArgumentException("Expected exact raiseEv settings");
+        if (ev.keySet().equals(java.util.Set.of("calledEquityDiscountPp", "minEdgePercentOfBigBlind", "nearby")))
+            return new RaiseEvSizing.Settings(integer(ev, "calledEquityDiscountPp"),
+                    integer(ev, "minEdgePercentOfBigBlind"), java.util.List.of(), nearby(ev.get("nearby")));
+        if (!ev.keySet().equals(java.util.Set.of("calledEquityDiscountPp", "minEdgePercentOfBigBlind", "potPercents"))
+                || !(ev.get("potPercents") instanceof java.util.List<?> percents)
+                || !percents.stream().allMatch(Integer.class::isInstance))
+            throw new IllegalArgumentException("Expected exact raiseEv settings");
+        return new RaiseEvSizing.Settings(integer(ev, "calledEquityDiscountPp"), integer(ev, "minEdgePercentOfBigBlind"),
+                percents.stream().map(Integer.class::cast).toList());
+    }
+
+    private static NearbyRaiseSizing nearby(Object value) {
+        if (!(value instanceof Map<?, ?> near)
+                || !near.keySet().equals(java.util.Set.of("scope", "deltaPercentOfBigBlind", "deltaPercentOfReference",
+                        "deltaPercentOfEffectiveStack", "maxPercentOfEffectiveStack", "minPairedSamples", "observations"))
+                || !(near.get("scope") instanceof String scope)
+                || !(near.get("observations") instanceof Map<?, ?> observations))
+            throw new IllegalArgumentException("Expected exact nearby raise settings");
+        var counts = new java.util.HashMap<NearbyRaiseSizing.Key, NearbyRaiseSizing.PairedCounts>();
+        for (var entry : observations.entrySet()) {
+            if (!(entry.getKey() instanceof String key) || !(entry.getValue() instanceof Map<?, ?> row)
+                    || !row.keySet().equals(java.util.Set.of("opportunities", "referenceFolds", "referenceRaises",
+                            "alternateFolds", "alternateRaises")))
+                throw new IllegalArgumentException("Invalid nearby raise observation");
+            int opportunities = integer(row, "opportunities");
+            counts.put(NearbyRaiseSizing.Key.fromKey(key), new NearbyRaiseSizing.PairedCounts(
+                    new PreflopResponseModel.Counts(opportunities, integer(row, "referenceFolds"), integer(row, "referenceRaises")),
+                    new PreflopResponseModel.Counts(opportunities, integer(row, "alternateFolds"), integer(row, "alternateRaises"))));
+        }
+        var limits = new NearbyRaiseSizing.Limits(integer(near, "deltaPercentOfBigBlind"),
+                integer(near, "deltaPercentOfReference"), integer(near, "deltaPercentOfEffectiveStack"),
+                integer(near, "maxPercentOfEffectiveStack"));
+        return new NearbyRaiseSizing(NearbyRaiseSizing.Scope.valueOf(scope), limits,
+                integer(near, "minPairedSamples"), counts);
+    }
+
+    private static PreflopResponseModel responseModel(Map<?, ?> hard) {
+        if (!hard.containsKey("responseModel")) return null;
+        if (!(hard.get("responseModel") instanceof Map<?, ?> model)
+                || !(model.get("observations") instanceof Map<?, ?> observations))
+            throw new IllegalArgumentException("Expected exact responseModel settings and observations");
+        var keys = new java.util.HashSet<>(model.keySet());
+        keys.remove("penalizeRaisesOnly");
+        if (!keys.equals(java.util.Set.of("minSamples", "priorStrength", "foldWeight", "raiseWeight",
+                "maxAdjustment", "observations")))
+            throw new IllegalArgumentException("Expected exact responseModel settings and observations");
+        Object penalty = model.containsKey("penalizeRaisesOnly") ? model.get("penalizeRaisesOnly") : false;
+        if (!(penalty instanceof Boolean penalizeRaisesOnly))
+            throw new IllegalArgumentException("Expected boolean penalizeRaisesOnly");
+        var counts = new java.util.HashMap<PreflopResponseModel.Spot, PreflopResponseModel.Counts>();
+        for (var entry : observations.entrySet()) {
+            if (!(entry.getKey() instanceof String key) || !(entry.getValue() instanceof Map<?, ?> row)
+                    || !row.keySet().equals(java.util.Set.of("opportunities", "folds", "raises")))
+                throw new IllegalArgumentException("Invalid responseModel observation");
+            counts.put(PreflopResponseModel.Spot.fromKey(key), new PreflopResponseModel.Counts(
+                    integer(row, "opportunities"), integer(row, "folds"), integer(row, "raises")));
+        }
+        return new PreflopResponseModel(integer(model, "minSamples"), integer(model, "priorStrength"),
+                integer(model, "foldWeight"), integer(model, "raiseWeight"), integer(model, "maxAdjustment"),
+                penalizeRaisesOnly, counts);
+    }
+
+    private static ContextualEquityPolicy.RaiseContext raiseContext(Map<?, ?> hard) {
+        if (!hard.containsKey("raiseContext")) return null;
+        if (!(hard.get("raiseContext") instanceof Map<?, ?> context)
+                || !context.keySet().equals(java.util.Set.of("baseMargin", "multiwayMargin", "positionMargin",
+                    "aggressionMargin", "largeBetMargin", "allInMargin", "commitmentMargin",
+                    "commitmentThresholdPercent")))
+            throw new IllegalArgumentException("Expected exact raiseContext settings");
+        return new ContextualEquityPolicy.RaiseContext(integer(context, "baseMargin"),
+                integer(context, "multiwayMargin"), integer(context, "positionMargin"),
+                integer(context, "aggressionMargin"), integer(context, "largeBetMargin"),
+                integer(context, "allInMargin"), integer(context, "commitmentMargin"),
+                integer(context, "commitmentThresholdPercent"));
     }
 
     public TournamentPolicyConfig {

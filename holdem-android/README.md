@@ -25,7 +25,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 - `engine` compilează sursele `holdem-core` și `holdem-ai`; Java se compilează cu JDK 21 și țintă Java 17.
 - Acțiunile afișate provin din acțiunile legale ale motorului. Suma de bet/raise este numărul de jetoane adăugate la acțiunea curentă; motorul respinge valori invalide și comenzi depășite.
 - Politica primește numai observația actorului. Dezvăluirea de după decontare ține de prezentare și nu intră în observația AI.
-- Adversarii locali de antrenament folosesc check/call; această configurație verifică flow-ul produsului, nu forța unui adversar strategic.
+- Selectorul „Nivelul adversarilor” oferă Normal și Hard. Normal folosește check/call. În Hard, stilurile se repartizează pe locuri, iar turneul cu șase jucători include un adversar Normal. Sugestiile și auto-play-ul din Hard folosesc același profil. Sesiunea păstrează dificultatea, iar sesiunile vechi fără această setare se deschid în Normal.
 
 ## Turneu și reluare
 
@@ -81,6 +81,7 @@ gradle.beforeProject { project ->
 |---|---|
 | `settlement-award` | În heads-up, același loc primește premiul și restituirea. Raportul păstrează valorile separate și cadrele de plecare, sosire și decontare ale markerului. |
 | `settlement-multi-award` | Fiecare beneficiar primește propriul marker, atât la split, cât și la pot secundar. |
+| `seat-metrics` | La cinci și la șase locuri, perechile întoarse sunt aliniate sub chenarele de pe fiecare rând, inclusiv perechea jucătorului local. |
 | `settlement-static-award` | Cu animațiile oprite, masa păstrează numele, sumele și comanda pentru mâna următoare. |
 | `settlement-compact-award` | Pe fereastra de 320 × 328 dp, cu font 200%, rezumatul păstrează și premiul locului din afara ferestrei. Raportul verifică markerul locului vizibil și cadrele animației. |
 

@@ -8,7 +8,7 @@ import ro.atf.holdem.core.*;
 
 /** Small reproducible mixed policy for exercising bets without a premium hole card. */
 public final class DeterministicBluffPolicy implements DecisionPolicy {
-    public static final String VERSION = "BLUFF-MIXED-0.1";
+    public static final String VERSION = "BLUFF-MIXED-0.2";
     private static final int DEFAULT_LATE_POSITION_FREQUENCY = 18;
     private static final int DEFAULT_LATE_POSITION_WINDOW = 2;
 
@@ -48,7 +48,7 @@ public final class DeterministicBluffPolicy implements DecisionPolicy {
 
         if (opening != null && noAce && noPrivatePair && late && visibleAce && checkedToHero
                 && observation.street() != Street.PREFLOP
-                && roll(observation) < latePositionFrequency) {
+                && PolicySeed.rollPercent(observation) < latePositionFrequency) {
             return new Decision(ActionType.BET, opening.minAmount(), VERSION,
                     "Deterministic scare-card bluff after checks, no ace in hole cards");
         }
@@ -63,12 +63,6 @@ public final class DeterministicBluffPolicy implements DecisionPolicy {
             throw new IllegalArgumentException("Invalid position window");
         int effectiveWindow = Math.min(window, playerCount);
         return positionFromButton == 0 || positionFromButton >= playerCount - effectiveWindow + 1;
-    }
-
-    private static int roll(HoldemObservation observation) {
-        return Math.floorMod(Objects.hash(observation.handNumber(), observation.heroSeat(),
-                observation.positionFromButton(), observation.street(), observation.holeCards(),
-                observation.communityCards(), observation.publicActionHistory()), 100);
     }
 
     private static boolean checkedToHero(HoldemObservation observation) {

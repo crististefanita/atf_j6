@@ -71,10 +71,10 @@ J6 consumă Core, Reporting, Console, Mock și Test Kit din perechile JAR/POM di
 
 ### Maven
 
-Dintr-un checkout curat de lucru, cu repository-ul Maven în cache-ul extern. Testele de guvernanță rulează fără un APK local. [Verificarea pachetului la promovare](docs/release/ATF_Release.md#promovare-și-descărcare) · [Calificarea Android](docs/release/ATF_Release.md#calificare-reproductibilă)
+Dintr-un checkout curat, setați `HOLDEM_MAVEN_REPOSITORY` la repository-ul Maven extern. Testele de guvernanță rulează fără un APK local. [Verificarea pachetului la promovare](docs/release/ATF_Release.md#promovare-și-descărcare) · [Calificarea Android](docs/release/ATF_Release.md#calificare-reproductibilă)
 
 ```powershell
-mvn -B -ntp "-Dmaven.repo.local=C:\work\holdem_back\infrastructure\cache\maven" test
+mvn -B -ntp "-Dmaven.repo.local=$env:HOLDEM_MAVEN_REPOSITORY" test
 ```
 
 Pentru compilare fără rularea testelor:

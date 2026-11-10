@@ -2,23 +2,29 @@ package ro.atf.holdem.android;
 
 import ro.atf.holdem.ai.ContextualEquityPolicy;
 import ro.atf.holdem.ai.Decision;
+import ro.atf.holdem.ai.DecisionPolicy;
+import ro.atf.holdem.ai.TournamentPlayStyles;
+import ro.atf.holdem.ai.TournamentPlayStyles.Style;
 import ro.atf.holdem.core.ActionType;
 import ro.atf.holdem.core.BlindLevel;
 import ro.atf.holdem.core.HoldemHand;
 import ro.atf.holdem.core.HoldemObservation;
 import ro.atf.holdem.core.HoldemTableViewState;
+import ro.atf.holdem.core.PublicShoveHistory;
 import ro.atf.holdem.core.Street;
 import ro.atf.holdem.core.Tournament;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.LongSupplier;
 
-/** Offline play with passive opponents and a fixed human viewer. */
+/** Offline play with a fixed human viewer and stable tournament opponent styles. */
 final class LocalHoldemGame {
     static final List<Integer> TABLE_SIZES = List.of(2, 4, 5, 6);
     static final List<Integer> TOURNAMENT_SIZES = List.of(4, 5, 6);
@@ -32,6 +38,7 @@ final class LocalHoldemGame {
     private static final int ADVISOR_SAMPLES = 512;
 
     enum Outcome { WON, LOST }
+    enum Difficulty { NORMAL, HARD }
     record Turn(UUID handId, int revision) {}
     record Move(ActionType action, int amount) {}
     record Action(int actor, Move move) {
@@ -43,12 +50,13 @@ final class LocalHoldemGame {
     record AiSuggestion(Move move, String policyVersion, String explanation) {}
     record Saved(int seats, int dealer, long seed, boolean tournament, int blindLevelMinutes,
                  long elapsedSeconds, List<Long> roundStartElapsedSeconds, List<List<Action>> rounds,
-                 String tournamentId, String humanPlayerId, boolean showWinChance) {
+                 String tournamentId, String humanPlayerId, boolean showWinChance, Difficulty difficulty) {
         Saved(int seats, int dealer, long seed, boolean tournament, int blindLevelMinutes,
               long elapsedSeconds, List<Long> roundStartElapsedSeconds, List<List<Action>> rounds) {
             this(seats, dealer, seed, tournament, blindLevelMinutes, elapsedSeconds, roundStartElapsedSeconds, rounds,
                     tournament ? UUID.nameUUIDFromBytes(("legacy-tournament:" + seed)
-                            .getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString() : "", "legacy-human", false);
+                            .getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString() : "", "legacy-human", false,
+                    Difficulty.NORMAL);
         }
         Saved {
             var copy = new ArrayList<List<Action>>(rounds.size());
@@ -59,7 +67,7 @@ final class LocalHoldemGame {
                     || rounds.size() != roundStartElapsedSeconds.size()
                     || elapsedSeconds < 0 || !BLIND_LEVEL_MINUTES.contains(blindLevelMinutes)
                     || tournament != hasParticipantId(tournamentId) || !hasParticipantId(humanPlayerId)
-                    || (showWinChance && !tournament)) {
+                    || difficulty == null || (!tournament && (showWinChance || difficulty == Difficulty.HARD))) {
                 throw new IllegalArgumentException("Invalid saved rounds");
             }
             long previous = -1;
@@ -85,7 +93,10 @@ final class LocalHoldemGame {
     private final LongSupplier monotonicNanos;
     private final Tournament tournament;
     private final Random dealSeeds;
-    private final ContextualEquityPolicy advisor;
+    private final DecisionPolicy advisor;
+    private final Map<Style, DecisionPolicy> hardOpponents;
+    private final Difficulty difficulty;
+    private final PublicShoveHistory shoveHistory;
     private final boolean showWinChance;
     private final List<List<Action>> rounds = new ArrayList<>();
     private final List<Long> roundStartElapsedSeconds = new ArrayList<>();
@@ -108,7 +119,8 @@ final class LocalHoldemGame {
     }
 
     static LocalHoldemGame table(int seats, int dealer, long seed, String humanPlayerId) {
-        return new LocalHoldemGame(seats, dealer, seed, false, 1, System::nanoTime, humanPlayerId, "", false);
+        return new LocalHoldemGame(seats, dealer, seed, false, 1, System::nanoTime, humanPlayerId, "", false,
+                Difficulty.NORMAL);
     }
 
     static Tournament.Rules tournamentRules(int seats, int blindLevelMinutes) {
@@ -133,19 +145,24 @@ final class LocalHoldemGame {
 
     static LocalHoldemGame tournament(int seats, long seed, int blindLevelMinutes, String humanPlayerId,
                                       boolean showWinChance) {
+        return tournament(seats, seed, blindLevelMinutes, humanPlayerId, showWinChance, Difficulty.NORMAL);
+    }
+
+    static LocalHoldemGame tournament(int seats, long seed, int blindLevelMinutes, String humanPlayerId,
+                                      boolean showWinChance, Difficulty difficulty) {
         return new LocalHoldemGame(seats, 0, seed, true, blindLevelMinutes, System::nanoTime,
-                humanPlayerId, UUID.randomUUID().toString(), showWinChance);
+                humanPlayerId, UUID.randomUUID().toString(), showWinChance, difficulty);
     }
 
     private LocalHoldemGame(int seats, int dealer, long seed, boolean tournamentMode, int blindLevelMinutes,
                             LongSupplier monotonicNanos) {
         this(seats, dealer, seed, tournamentMode, blindLevelMinutes, monotonicNanos,
-                "local-human", tournamentMode ? UUID.randomUUID().toString() : "", false);
+                "local-human", tournamentMode ? UUID.randomUUID().toString() : "", false, Difficulty.NORMAL);
     }
 
     private LocalHoldemGame(int seats, int dealer, long seed, boolean tournamentMode, int blindLevelMinutes,
                             LongSupplier monotonicNanos, String humanPlayerId, String tournamentId,
-                            boolean showWinChance) {
+                            boolean showWinChance, Difficulty difficulty) {
         if (!(tournamentMode ? TOURNAMENT_SIZES : TABLE_SIZES).contains(seats)) {
             throw new IllegalArgumentException("Unsupported training table size: " + seats);
         }
@@ -160,13 +177,19 @@ final class LocalHoldemGame {
             throw new IllegalArgumentException("Invalid tournament participant identity");
         this.blindLevelMinutes = blindLevelMinutes;
         this.showWinChance = showWinChance;
+        this.difficulty = Objects.requireNonNull(difficulty);
+        shoveHistory = difficulty == Difficulty.HARD ? new PublicShoveHistory(seats) : null;
         this.monotonicNanos = Objects.requireNonNull(monotonicNanos, "monotonicNanos");
         dealSeeds = new Random(seed);
         tournament = tournamentMode
                 ? new Tournament(tournamentRules(seats, blindLevelMinutes), dealer)
                 : null;
-        advisor = new ContextualEquityPolicy(ADVISOR_SAMPLES, 2, 8, 18, 60,
-                tournamentMode ? ContextualEquityPolicy.GameMode.TOURNAMENT : ContextualEquityPolicy.GameMode.CASH);
+        hardOpponents = difficulty == Difficulty.HARD ? hardOpponentPolicies() : Map.of();
+        advisor = difficulty == Difficulty.HARD
+                ? hardOpponents.get(TournamentPlayStyles.hardAutoPlayStyle())
+                : new ContextualEquityPolicy(ADVISOR_SAMPLES, 2, 8, 18, 60,
+                        tournamentMode ? ContextualEquityPolicy.GameMode.TOURNAMENT
+                                : ContextualEquityPolicy.GameMode.CASH);
         tournamentClockAnchorNanos = monotonicNanos.getAsLong();
         startHand();
     }
@@ -200,6 +223,7 @@ final class LocalHoldemGame {
     synchronized Turn turn() { return new Turn(handId, actions.size()); }
 
     synchronized boolean hasPassiveTurn() { return hand.actor() >= 0 && hand.actor() != human; }
+    Difficulty difficulty() { return difficulty; }
 
     synchronized boolean isTournament() { return tournament != null; }
 
@@ -279,7 +303,7 @@ final class LocalHoldemGame {
     }
 
     synchronized void advancePassiveAction(Turn expected) {
-        if (!turn().equals(expected) || !hasPassiveTurn())
+        if (difficulty != Difficulty.NORMAL || !turn().equals(expected) || !hasPassiveTurn())
             throw new IllegalArgumentException("This automated turn is no longer active");
         int actor = hand.actor();
         var response = hand.legal().stream()
@@ -288,9 +312,48 @@ final class LocalHoldemGame {
         apply(actor, new Move(response.type(), response.amount()));
     }
 
+    private static Map<Style, DecisionPolicy> hardOpponentPolicies() {
+        var policies = new EnumMap<Style, DecisionPolicy>(Style.class);
+        for (Style style : Style.values()) {
+            policies.put(style, style.policy(ADVISOR_SAMPLES));
+        }
+        return Map.copyOf(policies);
+    }
+
+    Move suggestOpponent(Turn expected) {
+        HoldemObservation observation;
+        DecisionPolicy policy;
+        synchronized (this) {
+            requireHardOpponentTurn(expected);
+            observation = observeActor();
+            policy = hardOpponents.get(TournamentPlayStyles.hardOpponentStyle(seats, human, hand.actor()));
+        }
+        Decision decision = policy.decide(observation);
+        return new Move(decision.action(), decision.amount());
+    }
+
+    synchronized void playOpponent(Turn expected, Move move) {
+        requireHardOpponentTurn(expected);
+        apply(hand.actor(), move);
+    }
+
+    private void requireHardOpponentTurn(Turn expected) {
+        if (difficulty != Difficulty.HARD || !turn().equals(expected) || !hasPassiveTurn())
+            throw new IllegalArgumentException("This Hard opponent turn is no longer active");
+    }
+
     private void apply(int actor, Move move) {
+        var before = shoveHistory == null ? null : hand.observeActor();
         hand.act(actor, move.action(), move.amount());
+        if (shoveHistory != null) {
+            shoveHistory.recordAccepted(before, move.action(), move.amount());
+            if (hand.street() == Street.COMPLETE) shoveHistory.settleHand();
+        }
         actions.add(new Action(actor, move));
+    }
+
+    private HoldemObservation observeActor() {
+        return shoveHistory == null ? hand.observeActor() : hand.observeActor(shoveHistory.snapshot());
     }
 
     AiSuggestion suggest(Turn expected) {
@@ -307,7 +370,7 @@ final class LocalHoldemGame {
     private synchronized HoldemObservation snapshotForAdvice(Turn expected) {
         if (!turn().equals(expected) || hand.actor() != human || hand.street() == Street.COMPLETE)
             throw new IllegalArgumentException("AI advice is only available for the current human turn");
-        return hand.observeActor();
+        return observeActor();
     }
 
     void autoPlayAction(Turn expected) {
@@ -321,7 +384,7 @@ final class LocalHoldemGame {
         }
     }
 
-    /** Finishes one hand by composing legal AI decisions with the existing passive-opponent policy. */
+    /** Finishes one hand by composing the human auto-play policy with the configured opponents. */
     void autoPlayHand(Turn expected) {
         synchronized (this) {
             if (!turn().equals(expected) || hand.actor() != human || hand.street() == Street.COMPLETE)
@@ -337,15 +400,17 @@ final class LocalHoldemGame {
                 if (hand.street() == Street.COMPLETE) return;
                 currentTurn = turn();
                 passive = hand.actor() != human;
-                if (passive) advancePassiveAction(currentTurn);
             }
             if (!passive) autoPlayAction(currentTurn);
+            else if (difficulty == Difficulty.HARD) playOpponent(currentTurn, suggestOpponent(currentTurn));
+            else advancePassiveAction(currentTurn);
         }
     }
 
     synchronized Saved save() {
         return new Saved(seats, initialDealer, seed, isTournament(), blindLevelMinutes,
-                elapsedTournamentSeconds(), roundStartElapsedSeconds, rounds, tournamentId, humanPlayerId, showWinChance);
+                elapsedTournamentSeconds(), roundStartElapsedSeconds, rounds, tournamentId, humanPlayerId, showWinChance,
+                difficulty);
     }
 
     static LocalHoldemGame restore(Saved saved) {
@@ -355,7 +420,7 @@ final class LocalHoldemGame {
     static LocalHoldemGame restore(Saved saved, LongSupplier monotonicNanos) {
         var game = new LocalHoldemGame(saved.seats(), saved.dealer(), saved.seed(), saved.tournament(),
                 saved.blindLevelMinutes(), monotonicNanos, saved.humanPlayerId(), saved.tournamentId(),
-                saved.showWinChance());
+                saved.showWinChance(), saved.difficulty());
         for (int index = 0; index < saved.rounds().size(); index++) {
             if (index > 0) game.nextHandAtElapsedSeconds(saved.roundStartElapsedSeconds().get(index));
             var round = saved.rounds().get(index);

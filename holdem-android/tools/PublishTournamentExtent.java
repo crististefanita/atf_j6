@@ -153,13 +153,16 @@ class PublishTournamentExtent {
             case "leaderboard-profile-restart" -> new Journey("LeaderboardProfileRestartSanity", "Rename the ranked player and restart the Android process",
                     "The current name is visible once with the original ID and points", PROFILE_RESTART_ASSERTIONS,
                     List.of("01-profile-renamed.png", "02-profile-after-restart.png"));
-            case "seat-metrics" -> new Journey("CompactSeatMetricsSanity", "Read six player seats at enlarged Android font scale",
-                    "Each seat preserves its visible and accessible amounts", List.of("Compact viewport uses enlarged text",
+            case "seat-metrics" -> new Journey("CompactSeatMetricsSanity", "Inspect five- and six-seat tables at enlarged Android font scale",
+                    "Seat amounts stay readable and revealed hands align below their frames", List.of("Compact viewport uses enlarged text",
                             "Google TalkBack service is enabled",
                             "Live seat amounts match the engine and fit", "Narrow seat facts use the stacked layout",
                             "Active seat exposes one full accessibility description", "Active seat accepts Android accessibility focus",
-                            "Settled seat amounts match the engine and fit"),
-                    List.of("01-compact-seat-metrics.png", "02-settled-seat-metrics.png"));
+                            "Settled seat amounts match the engine and fit",
+                            "6 settled hands align below their seat frames, including the viewer",
+                            "Tournament setup offers Normal and Hard and defaults to Normal",
+                            "5 settled hands align below their seat frames, including the viewer"),
+                    List.of("01-compact-seat-metrics.png", "02-settled-seat-metrics.png", "03-five-seat-showdown-alignment.png"));
             default -> throw new IllegalArgumentException("Unknown native journey " + journey);
         };
         var checks = nativeChecks(receipt, contract.assertions());

@@ -14,7 +14,7 @@ import java.util.List;
 /** Versioned, bounded checkpoint encoding; engine replay remains the final integrity check. */
 final class HoldemSessionCodec {
     private static final int MAGIC = 0x484C534A;
-    private static final int SCHEMA = 3;
+    private static final int SCHEMA = 4;
     private static final int MAX_ENCODED_CHARS = 4_000_000;
     private static final int MAX_ROUNDS = 20_000;
     private static final int MAX_ACTIONS_PER_ROUND = 2_000;
@@ -42,6 +42,7 @@ final class HoldemSessionCodec {
                 output.writeUTF(saved.tournamentId());
                 output.writeUTF(saved.humanPlayerId());
                 output.writeBoolean(saved.showWinChance());
+                output.writeBoolean(saved.difficulty() == LocalHoldemGame.Difficulty.HARD);
                 output.writeInt(saved.rounds().size());
                 for (int round = 0; round < saved.rounds().size(); round++) {
                     output.writeLong(saved.roundStartElapsedSeconds().get(round));
@@ -81,6 +82,8 @@ final class HoldemSessionCodec {
                 String tournamentId = schema >= 2 ? input.readUTF() : null;
                 String humanPlayerId = schema >= 2 ? input.readUTF() : null;
                 boolean showWinChance = schema >= 3 && input.readBoolean();
+                var difficulty = schema >= 4 && input.readBoolean()
+                        ? LocalHoldemGame.Difficulty.HARD : LocalHoldemGame.Difficulty.NORMAL;
                 if (schema >= 2 && (tournamentId.length() > 128 || humanPlayerId.isBlank() || humanPlayerId.length() > 128))
                     throw new IllegalArgumentException("Invalid checkpoint participant identity");
                 int roundCount = input.readInt();
@@ -109,7 +112,7 @@ final class HoldemSessionCodec {
                 if (input.available() != 0) throw new IllegalArgumentException("Checkpoint has trailing bytes");
                 var saved = schema >= 2
                         ? new LocalHoldemGame.Saved(seats, dealer, seed, tournament, blindLevelMinutes,
-                        elapsedSeconds, startTimes, rounds, tournamentId, humanPlayerId, showWinChance)
+                        elapsedSeconds, startTimes, rounds, tournamentId, humanPlayerId, showWinChance, difficulty)
                         : new LocalHoldemGame.Saved(seats, dealer, seed, tournament, blindLevelMinutes,
                         elapsedSeconds, startTimes, rounds);
                 return new Checkpoint(saved, showingResult);

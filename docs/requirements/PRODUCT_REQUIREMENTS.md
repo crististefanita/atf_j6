@@ -9,7 +9,7 @@ J6 trebuie să permită dezvoltarea și evaluarea unui AI de No-Limit Texas Hold
 - dezvoltatorul: construiește reguli, politici și adaptoare;
 - cercetătorul: compară politici și analizează replay-uri;
 - operatorul: pornește/oprește un bot și inspectează starea;
-- jucătorul: în faze ulterioare, folosește un coach offline, nu RTA pe site-uri restricționate.
+- jucătorul folosește coach-ul la masa locală de antrenament sau în turneu.
 
 ## P0 — obligatoriu
 
@@ -57,6 +57,7 @@ Primul increment reutilizează meniul, selectorul de limbă, editorul numelui, g
 
 Turneul local pornește cu 4–6 jucători. Intervalul blindurilor se alege la creare dintre 1, 2, 3 și 5 minute, cu 1 minut implicit.
 
+- Selectorul „Nivelul adversarilor” oferă Normal și Hard, cu Normal implicit. În Normal, adversarii dau check sau call. În Hard, adversarii au stiluri distincte, iar la șase locuri unul folosește stilul Normal. Dificultatea și alocarea stilurilor se păstrează la reluare. [Politica Hard](AI_REQUIREMENTS.md#profilul-hard-al-turneului-local)
 - Expirarea intervalului și eliminările se reflectă în nivelul mâinii următoare.
 - La decontare, stivele decid cine continuă. Locul uman rămâne fix la schimbarea dealerului și în heads-up.
 - Ecranul terminal păstrează cărțile ultimei mâini și arată rezultatul turneului.
@@ -66,6 +67,7 @@ Turneul local pornește cu 4–6 jucători. Intervalul blindurilor se alege la c
 ### Claritatea rezultatului mâinii
 
 - La dezvăluirea terminală, toate cărțile proprii afișate au aceeași dimensiune ca mâna utilizatorului în același viewport; layout-ul se adaptează fără micșorarea selectivă a cărților adverse.
+- La cinci și șase locuri, perechea fiecărui jucător este centrată sub propriul chenar. Perechile de pe același rând pornesc de la aceeași bază. Marcajul unei cărți decisive o poate ridica ușor.
 - Când o mână s-a încheiat și este disponibil `New hand`, păstrați cărțile proprii, board-ul, cărțile dezvăluite și evidențierea combinației pe masă până la apăsarea explicită. Nu le ascundeți după un timer și nu avansați automat; resume-ul trebuie să restaureze aceeași recapitulare.
 - Pentru showdown, recapitularea identifică cele mai bune cinci cărți ale fiecărui jucător eligibil și evidențiază discret combinația aleasă. O victorie prin fold este etichetată drept uncontested și nu primește o combinație de cărți inventată.
 - Semnalul vizual al premiului ajunge la fiecare loc beneficiar conform decontării motorului, inclusiv split și poturi secundare. Mișcarea premiului este separată de colectarea cărților.

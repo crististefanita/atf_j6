@@ -8,7 +8,11 @@ import ro.atf.holdem.core.*;
 
 public final class TournamentArena {
     public record Result(int winner, int hands, List<Integer> stacks) {}
-    private record ShoveDecision(int seat, boolean opportunity, boolean raisedAllIn) {}
+
+    public interface BettingObserver {
+        void accepted(HoldemObservation before, ActionType action, int amount);
+        default void settled(int handNumber) {}
+    }
 
     private TournamentArena() {}
 
@@ -19,40 +23,40 @@ public final class TournamentArena {
 
     public static Result play(Tournament.Rules rules, long seed, long secondsPerHand, int handLimit,
                               List<DecisionPolicy> policies, long buttonOffset, PrintWriter trace) {
+        return play(rules, seed, secondsPerHand, handLimit, policies, buttonOffset, trace,
+                Tournament.DealMode.STANDARD, null);
+    }
+
+    public static Result play(Tournament.Rules rules, long seed, long secondsPerHand, int handLimit,
+                              List<DecisionPolicy> policies, long buttonOffset, PrintWriter trace,
+                              Tournament.DealMode dealMode, BettingObserver observer) {
         if (secondsPerHand < 1 || handLimit < 1 || policies.size() != rules.seats())
             throw new IllegalArgumentException("Invalid arena parameters");
         policies = List.copyOf(policies);
         int firstButton = Math.floorMod(Math.floorMod(seed, rules.seats())
                 + Math.floorMod(buttonOffset, rules.seats()), rules.seats());
-        var tournament = new Tournament(rules, firstButton);
+        var tournament = new Tournament(rules, firstButton, dealMode);
         var random = new SplittableRandom(seed);
-        int[] shortStackShoveOpportunities = new int[rules.seats()];
-        int[] shortStackAllInRaises = new int[rules.seats()];
-        trace.printf("TOURNAMENT seed=%d seats=%d buttonOffset=%d firstButton=%d secondsPerHand=%d rules=%s%n",
-                seed, rules.seats(), buttonOffset, firstButton, secondsPerHand, rules);
+        var shoveHistory = new PublicShoveHistory(rules.seats());
+        if (trace != null) trace.printf("TOURNAMENT seed=%d seats=%d buttonOffset=%d firstButton=%d secondsPerHand=%d %srules=%s%n",
+                seed, rules.seats(), buttonOffset, firstButton, secondsPerHand,
+                dealMode == Tournament.DealMode.STANDARD ? "" : "dealMode=" + dealMode + " ", rules);
         for (int i = 0; i < handLimit; i++) {
             long deal = random.nextLong();
             var round = tournament.startHand(Math.multiplyExact(i, secondsPerHand), deal);
             var hand = round.hand();
-            trace.printf("HAND %d elapsed=%d eliminated=%d level=%d blinds=%s button=%d dealSeed=%d%n",
+            if (trace != null) trace.printf("HAND %d elapsed=%d eliminated=%d level=%d blinds=%s button=%d dealSeed=%d%n",
                     round.number(), round.elapsedSeconds(), round.eliminated(), round.levelIndex(),
                     hand.level(), hand.button(), deal);
-            int published = publishEvents(hand, trace, 0);
-            var handShoveDecisions = new ArrayList<ShoveDecision>();
+            int published = trace == null ? 0 : publishEvents(hand, trace, 0);
             while (hand.actor() >= 0) {
                 int seat = hand.actor();
-                HoldemObservation observation = hand.observeActor(publicTendencies(
-                        shortStackShoveOpportunities, shortStackAllInRaises));
+                HoldemObservation observation = hand.observeActor(shoveHistory.snapshot());
                 Decision decision = policies.get(seat).decide(observation);
-                boolean shoveOpportunity = observation.street() == Street.PREFLOP
-                        && PublicOpponentTendency.inProfileStackRange(observation.heroStack(), observation.bigBlind())
-                        && observation.legalActions().stream().anyMatch(action -> action.type() == ActionType.ALL_IN
-                        && action.amount() > observation.toCall());
-                boolean raisedAllIn = decision.action() == ActionType.ALL_IN
-                        && decision.amount() > observation.toCall();
-                handShoveDecisions.add(new ShoveDecision(observation.physicalHeroSeat(), shoveOpportunity, raisedAllIn));
                 hand.act(seat, decision.action(), decision.amount());
-                trace.printf("DECISION seat=%d policy=%s action=%s amount=%d reason=%s positionFromButton=%d street=%s pot=%d toCall=%d heroStack=%d activeOpponents=%d bigBlind=%d visibleSeatIds=%s visibleStacks=%s visibleContributions=%s foldedSeatIds=%s priorAllInActors=%s priorAllInEvents=%s publicOpponentTendencies=%s legalActions=%s%n",
+                shoveHistory.recordAccepted(observation, decision.action(), decision.amount());
+                if (observer != null) observer.accepted(observation, decision.action(), decision.amount());
+                if (trace != null) trace.printf("DECISION seat=%d policy=%s action=%s amount=%d reason=%s positionFromButton=%d street=%s pot=%d toCall=%d heroStack=%d activeOpponents=%d bigBlind=%d visibleSeatIds=%s visibleStacks=%s visibleContributions=%s foldedSeatIds=%s priorAllInActors=%s priorAllInEvents=%s publicOpponentTendencies=%s legalActions=%s%n",
                         seat, decision.policyVersion(), decision.action(), decision.amount(), decision.explanation(),
                         observation.positionFromButton(), observation.street(), observation.pot(), observation.toCall(),
                         observation.heroStack(), observation.activeOpponentCount(), observation.bigBlind(),
@@ -64,20 +68,16 @@ public final class TournamentArena {
                         observation.legalActions().stream().map(action -> action.type() + ":" + action.amount()
                                 + ":" + action.minAmount() + ":" + action.maxAmount())
                                 .collect(java.util.stream.Collectors.joining(",")));
-                published = publishEvents(hand, trace, published);
+                if (trace != null) published = publishEvents(hand, trace, published);
             }
-            for (var decision : handShoveDecisions) {
-                if (decision.opportunity()) {
-                    shortStackShoveOpportunities[decision.seat()]++;
-                    if (decision.raisedAllIn()) shortStackAllInRaises[decision.seat()]++;
-                }
-            }
+            shoveHistory.settleHand();
+            if (observer != null) observer.settled(round.number());
             var stacks = tournament.stacks();
-            trace.printf("STACKS %s%n", stacks);
+            if (trace != null) trace.printf("STACKS %s%n", stacks);
             if (stacks.stream().filter(n -> n > 0).count() == 1) {
                 int winner = stacks.indexOf(rules.startingStack() * rules.seats());
                 if (winner < 0) throw new IllegalStateException("Chip conservation violated");
-                trace.printf("COMPLETE winner=%d hands=%d%n", winner, round.number());
+                if (trace != null) trace.printf("COMPLETE winner=%d hands=%d%n", winner, round.number());
                 return new Result(winner, round.number(), stacks);
             }
         }
@@ -100,12 +100,6 @@ public final class TournamentArena {
         return values.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(",", "[", "]"));
     }
 
-    private static List<PublicOpponentTendency> publicTendencies(int[] opportunities, int[] raises) {
-        var result = new ArrayList<PublicOpponentTendency>(opportunities.length);
-        for (int seat = 0; seat < opportunities.length; seat++)
-            result.add(new PublicOpponentTendency(seat, opportunities[seat], raises[seat]));
-        return List.copyOf(result);
-    }
 
     private static String publicTendencies(HoldemObservation observation) {
         return observation.publicOpponentTendencies().stream()

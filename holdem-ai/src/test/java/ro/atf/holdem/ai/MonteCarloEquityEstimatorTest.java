@@ -7,6 +7,18 @@ import ro.atf.holdem.core.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MonteCarloEquityEstimatorTest {
+    @Test void defaultSeedUsesStableVisibleCardValuesAndPublicHistory() {
+        var observation = new HoldemObservation(11, 0, 2, 1, Street.FLOP,
+                List.of(card("As"), card("Ad")), List.of(card("7c"), card("9h"), card("Js")), 40,
+                0, 180, 0, List.of(180, 180), List.of(LegalAction.noAmount(ActionType.CHECK)),
+                List.of("FLOP [7c, 9h, Js]", "FLOP 1 CHECK 0"));
+        var estimator = new MonteCarloEquityEstimator();
+        long expectedSeed = 0x85a6981de16fe4c0L;
+        assertEquals(estimator.estimate(observation, 32, expectedSeed), estimator.estimate(observation, 32));
+        assertEquals(estimator.estimate(observation, 513, expectedSeed), estimator.estimate(observation, 513));
+        assertEquals(94, PolicySeed.rollPercent(observation));
+    }
+
     @Test void aBoardRoyalFlushAlwaysSplitsThePotAndIsReproducible() {
         var observation = observation(List.of(card("2c"), card("3d")),
                 List.of(card("Ah"), card("Kh"), card("Qh"), card("Jh"), card("Th")), 1);

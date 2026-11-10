@@ -70,6 +70,7 @@ final class HoldemSessionRepository {
                 && expected.dealer() == stored.dealer() && expected.tournamentId().equals(stored.tournamentId())
                 && expected.humanPlayerId().equals(stored.humanPlayerId())
                 && expected.blindLevelMinutes() == stored.blindLevelMinutes()
+                && expected.difficulty() == stored.difficulty()
                 && expected.roundStartElapsedSeconds().equals(stored.roundStartElapsedSeconds())
                 && expected.rounds().equals(stored.rounds());
     }

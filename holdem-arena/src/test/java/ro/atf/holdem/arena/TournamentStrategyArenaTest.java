@@ -7,10 +7,141 @@ import java.nio.file.Path;
 import java.util.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import ro.atf.holdem.ai.NearbyRaiseSizing;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TournamentStrategyArenaTest {
+    @Test void hardLineupAddsOnlyThePressureProfileToAnEqualBudgetControl() throws Exception {
+        var lineup = TournamentStrategyLineups.load(config("j6-strategy-lineups-hard-pressure.yaml"));
+        var control = TournamentPolicyConfig.load(projectPath(lineup.equityPolicyFiles().get("equity-stack-aware")));
+        var hard = TournamentPolicyConfig.load(projectPath(lineup.equityPolicyFiles().get("equity-hard-pressure")));
+        assertNull(control.hardPressure());
+        assertEquals(ro.atf.holdem.ai.ContextualEquityPolicy.HardPressure.TOURNAMENT, hard.hardPressure());
+        assertEquals(control.equitySamples(), hard.equitySamples());
+        assertEquals(control.equityContextWeights(), hard.equityContextWeights());
+        for (int seats : List.of(4, 5, 6)) assertTrue(lineup.forSeats(seats).contains("equity-hard-pressure"));
+    }
+
     @TempDir Path temp;
+
+    @Test void nearbyRaiseYamlUsesItsOwnEvidenceForExactlyOneStage() throws Exception {
+        String active = Files.readString(config("policy-tuning/j6-policy-hard-pressure.yaml")).stripTrailing();
+        String block = """
+
+                  raiseEv:
+                    calledEquityDiscountPp: 8
+                    minEdgePercentOfBigBlind: 20
+                    nearby:
+                      scope: FIRST_RAISE
+                      deltaPercentOfBigBlind: 100
+                      deltaPercentOfReference: 25
+                      deltaPercentOfEffectiveStack: 5
+                      maxPercentOfEffectiveStack: 35
+                      minPairedSamples: 24
+                      observations:
+                        OPEN.late.cheap.funded.UP: {opportunities: 40, referenceFolds: 5, referenceRaises: 12, alternateFolds: 8, alternateRaises: 9}
+                """;
+        var path = temp.resolve("nearby-raise.yaml");
+        var profile = TournamentPolicyConfig.load(Files.writeString(path, active + block)).hardPressure();
+        assertNull(profile.responseModel());
+        assertEquals(NearbyRaiseSizing.Scope.FIRST_RAISE, profile.raiseEv().nearby().scope());
+        assertEquals(new NearbyRaiseSizing.Limits(100, 25, 5, 35), profile.raiseEv().nearby().limits());
+        assertEquals(12, profile.raiseEv().nearby().observations().values().iterator().next().reference().raises());
+        for (String invalid : List.of(block.replace("OPEN.late", "RERAISE.late"),
+                block.replace("funded.UP", "funded.LARGER"), block.replace("Stack: 35", "Stack: 90"),
+                block.replace("alternateFolds: 8", "alternateFolds: 39"),
+                block.replace("    nearby:", "    potPercents: [50, 100]\n    nearby:"))) {
+            Files.writeString(path, active + invalid);
+            assertThrows(IllegalArgumentException.class, () -> TournamentPolicyConfig.load(path));
+        }
+    }
+
+    @Test void optionalResponseModelRequiresValidPublicCellsAndExactKeys() throws Exception {
+        String active = Files.readString(config("policy-tuning/j6-policy-hard-pressure.yaml")).stripTrailing();
+        assertNull(TournamentPolicyConfig.load(config("policy-tuning/j6-policy-hard-pressure.yaml"))
+                .hardPressure().responseModel());
+        String block = """
+
+                  responseModel:
+                    minSamples: 32
+                    priorStrength: 30
+                    foldWeight: 16
+                    raiseWeight: 24
+                    maxAdjustment: 4
+                    observations:
+                      OPEN.late.cheap.funded: {opportunities: 40, folds: 21, raises: 9}
+                """;
+        Path path = temp.resolve("hard-response.yaml");
+        var model = TournamentPolicyConfig.load(Files.writeString(path, active + block)).hardPressure().responseModel();
+        assertEquals(32, model.minSamples());
+        assertEquals(40, model.observations().values().iterator().next().opportunities());
+        assertFalse(model.penalizeRaisesOnly());
+        String penalty = block.replace("    observations:", "    penalizeRaisesOnly: true\n    observations:");
+        assertTrue(TournamentPolicyConfig.load(Files.writeString(path, active + penalty))
+                .hardPressure().responseModel().penalizeRaisesOnly());
+        for (String invalid : List.of(block.replace("folds: 21", "folds: 32"),
+                block.replace("OPEN.late", "OPEN.middle"), block.replace("raiseWeight", "raiseBias"),
+                penalty.replace("penalizeRaisesOnly: true", "penalizeRaisesOnly: 'true'"))) {
+            Files.writeString(path, active + invalid);
+            assertThrows(IllegalArgumentException.class, () -> TournamentPolicyConfig.load(path));
+        }
+        String sizing = """
+
+                  raiseEv:
+                    calledEquityDiscountPp: 8
+                    minEdgePercentOfBigBlind: 20
+                    potPercents: [50, 100, 150]
+                """;
+        String probabilitiesOnly = block.replace("foldWeight: 16", "foldWeight: 0").replace("raiseWeight: 24", "raiseWeight: 0");
+        var ev = TournamentPolicyConfig.load(Files.writeString(path, active + probabilitiesOnly + sizing))
+                .hardPressure().raiseEv();
+        assertEquals(List.of(50, 100, 150), ev.potPercents());
+        assertEquals(20, ev.minEdgePercentOfBigBlind());
+        for (String invalid : List.of(active + block + sizing, active + sizing,
+                active + probabilitiesOnly + sizing.replace("[50, 100, 150]", "[100, 50, 100]"))) {
+            Files.writeString(path, invalid);
+            assertThrows(IllegalArgumentException.class, () -> TournamentPolicyConfig.load(path));
+        }
+    }
+
+    @Test void hardRaiseWeightsAreIndependentAndRejectIncompleteOrUnknownKeys() throws Exception {
+        String legacy = Files.readString(config("policy-tuning/j6-policy-hard-pressure.yaml"))
+                .replaceAll("(?ms)^  raiseContext:.*\\z", "").stripTrailing();
+        var path = temp.resolve("hard-context.yaml");
+        assertNull(TournamentPolicyConfig.load(Files.writeString(path, legacy)).hardPressure().raiseContext());
+        String context = """
+
+                  raiseContext:
+                    baseMargin: 8
+                    multiwayMargin: 5
+                    positionMargin: 4
+                    aggressionMargin: 3
+                    largeBetMargin: 4
+                    allInMargin: 6
+                    commitmentMargin: 10
+                    commitmentThresholdPercent: 60
+                """;
+        var parsed = TournamentPolicyConfig.load(Files.writeString(path, legacy + context)).hardPressure().raiseContext();
+        assertEquals(new ro.atf.holdem.ai.ContextualEquityPolicy.RaiseContext(8, 5, 4, 3, 4, 6, 10, 60), parsed);
+        for (String invalid : List.of(context.replace("positionMargin", "position"),
+                context.replace("    positionMargin: 4\n", ""),
+                context.replace("ThresholdPercent: 60", "ThresholdPercent: 49"))) {
+            Files.writeString(path, legacy + invalid);
+            assertThrows(IllegalArgumentException.class, () -> TournamentPolicyConfig.load(path));
+        }
+    }
+
+    @Test void bigBlindValueRaiseIsOptionalAndRequiresABoolean() throws Exception {
+        String valid = Files.readString(config("policy-tuning/j6-policy-hard-pressure.yaml"))
+                .replaceAll("(?m)^  bigBlindValueRaise:.*\\R?", "").stripTrailing();
+        var path = temp.resolve("hard-pressure.yaml");
+        assertFalse(TournamentPolicyConfig.load(Files.writeString(path, valid)).hardPressure().bigBlindValueRaise());
+        assertTrue(TournamentPolicyConfig.load(Files.writeString(path, valid + "\n  bigBlindValueRaise: true\n"))
+                .hardPressure().bigBlindValueRaise());
+        Files.writeString(path, valid + "\n  bigBlindValueRaise: 'true'\n");
+        assertThrows(IllegalArgumentException.class, () -> TournamentPolicyConfig.load(path));
+    }
+
     @Test void everyRoleVisitsEverySeatAndButtonPositionForEachTableSize() throws Exception {
         var lineups = TournamentStrategyLineups.load(config("j6-strategy-lineups.yaml"));
         for (int seats = 4; seats <= 6; seats++) {

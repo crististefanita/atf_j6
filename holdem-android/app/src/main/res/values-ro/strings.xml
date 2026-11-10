@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Hold’em Lab</string>
     <string name="language">Limbă</string>
+    <string name="ai_level">Nivelul adversarilor</string>
     <string name="profile">Profil · %1$s</string>
     <string name="you">Tu</string>
     <string name="name_settings">Numele jucătorului</string>
@@ -12,7 +13,7 @@
     <string name="save_failed">Profilul nu a putut fi salvat.</string>
     <string name="play_hand">Joacă o mână</string>
     <string name="deal_hand">Împarte cărțile</string>
-    <string name="training_summary">Joacă offline. Adversarii dau check sau call.</string>
+    <string name="training_summary">Joacă offline cu adversari AI. Alege Normal sau Hard pentru turneu.</string>
     <string name="setup">Alege masa</string>
     <string name="players">Jucători</string>
     <string name="home">Meniul principal</string>

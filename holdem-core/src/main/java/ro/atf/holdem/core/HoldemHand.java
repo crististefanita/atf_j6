@@ -24,6 +24,11 @@ public final class HoldemHand {
     private Street street = Street.PREFLOP;
 
     public HoldemHand(int number, List<Integer> initial, int button, BlindLevel level, List<Card> deck) {
+        this(number, initial, button, level, deck, false);
+    }
+
+    HoldemHand(int number, List<Integer> initial, int button, BlindLevel level, List<Card> deck,
+               boolean fixedPhysicalSeats) {
         this.number = number;
         this.button = button;
         this.level = Objects.requireNonNull(level);
@@ -54,10 +59,12 @@ public final class HoldemHand {
         for (int round = 0; round < 2; round++) {
             int seat = firstDealt;
             for (int i = 0; i < seats.size(); i++) {
-                hole.get(seat).add(this.deck.get(cursor++));
+                int cardIndex = fixedPhysicalSeats ? round * stacks.length + seat : cursor++;
+                hole.get(seat).add(this.deck.get(cardIndex));
                 seat = next(seat, s -> !folded[s]);
             }
         }
+        if (fixedPhysicalSeats) cursor = 2 * stacks.length;
         post(smallBlindSeat, level.smallBlind(), "SB");
         post(bigBlindSeat, level.bigBlind(), "BB");
         price = level.bigBlind();

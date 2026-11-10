@@ -397,6 +397,25 @@ public final class HoldemTablePresentationComponentTest {
         assertFalse(HoldemTablePresentation.containsVisibleCenter(100, 80, 0, 0, 0, 0));
     }
 
+    @Test public void fiveAndSixSeatShowdownPlaceAllDealtHandsInTheSameSeatLayout() {
+        for (int count : List.of(5, 6)) {
+            var base = frame(count, -1, true);
+            var seats = new java.util.ArrayList<>(base.seats());
+            seats.set(4, new HoldemTableViewState.Seat(0, 0, false, 0, false, List.of()));
+            var settled = new HoldemTableViewState(2, -1, 0, 1, 2, Street.COMPLETE, 80,
+                    base.ownCards(), base.board(), seats, List.of());
+
+            assertTrue(HoldemTablePresentation.alignTerminalSeatHands(settled));
+            assertEquals(base.ownCards(), HoldemTablePresentation.terminalCardsAtSeat(settled, 2));
+            assertEquals(seats.get(1).shownCards(), HoldemTablePresentation.terminalCardsAtSeat(settled, 1));
+            assertTrue(HoldemTablePresentation.terminalCardsAtSeat(settled, 4).isEmpty());
+            assertFalse(HoldemTablePresentation.alignTerminalSeatHands(frame(count, 0, false)));
+            assertTrue(HoldemTablePresentation.terminalCardsAtSeat(frame(count, 0, false), 1).isEmpty());
+        }
+        assertFalse(HoldemTablePresentation.alignTerminalSeatHands(frame(4, -1, true)));
+        assertTrue(HoldemTablePresentation.terminalCardsAtSeat(frame(4, -1, true), 0).isEmpty());
+    }
+
     private static HoldemTableViewState frame(int seats, int actor, boolean settled) {
         var own = List.of(new Card(Card.Rank.ACE, Card.Suit.SPADES), new Card(Card.Rank.KING, Card.Suit.HEARTS));
         var board = settled

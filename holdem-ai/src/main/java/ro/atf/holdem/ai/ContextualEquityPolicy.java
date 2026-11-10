@@ -8,6 +8,69 @@ import ro.atf.holdem.core.*;
 public final class ContextualEquityPolicy implements DecisionPolicy {
     public enum GameMode { CASH, TOURNAMENT }
 
+    public record RaiseContext(int baseMargin, int multiwayMargin, int positionMargin, int aggressionMargin,
+                               int largeBetMargin, int allInMargin, int commitmentMargin,
+                               int commitmentThresholdPercent) {
+        public RaiseContext {
+            percent(baseMargin, "raise baseMargin");
+            percent(multiwayMargin, "raise multiwayMargin");
+            percent(positionMargin, "raise positionMargin");
+            percent(aggressionMargin, "raise aggressionMargin");
+            percent(largeBetMargin, "raise largeBetMargin");
+            percent(allInMargin, "raise allInMargin");
+            percent(commitmentMargin, "raise commitmentMargin");
+            if (commitmentThresholdPercent < 50 || commitmentThresholdPercent > 100)
+                throw new IllegalArgumentException("Raise commitmentThresholdPercent must be 50..100");
+        }
+
+        private String version() {
+            return baseMargin + "." + multiwayMargin + "." + positionMargin + "." + aggressionMargin + "."
+                    + largeBetMargin + "." + allInMargin + "." + commitmentMargin + "." + commitmentThresholdPercent;
+        }
+    }
+
+    public record HardPressure(int cheapPreflopDiscount, int fullPotEquity, int doublePotEquity, int triplePotEquity,
+                               boolean bigBlindValueRaise, RaiseContext raiseContext,
+                               PreflopResponseModel responseModel, RaiseEvSizing.Settings raiseEv) {
+        public static final HardPressure TOURNAMENT = new HardPressure(3, 76, 86, 94, false,
+                new RaiseContext(8, 5, 2, 3, 3, 6, 8, 75));
+
+        public HardPressure(int cheapPreflopDiscount, int fullPotEquity, int doublePotEquity, int triplePotEquity) {
+            this(cheapPreflopDiscount, fullPotEquity, doublePotEquity, triplePotEquity, false);
+        }
+
+        public HardPressure(int cheapPreflopDiscount, int fullPotEquity, int doublePotEquity, int triplePotEquity,
+                            boolean bigBlindValueRaise) {
+            this(cheapPreflopDiscount, fullPotEquity, doublePotEquity, triplePotEquity, bigBlindValueRaise, null);
+        }
+
+        public HardPressure(int cheapPreflopDiscount, int fullPotEquity, int doublePotEquity, int triplePotEquity,
+                            boolean bigBlindValueRaise, RaiseContext raiseContext) {
+            this(cheapPreflopDiscount, fullPotEquity, doublePotEquity, triplePotEquity, bigBlindValueRaise,
+                    raiseContext, null);
+        }
+
+        public HardPressure(int cheapPreflopDiscount, int fullPotEquity, int doublePotEquity, int triplePotEquity,
+                            boolean bigBlindValueRaise, RaiseContext raiseContext, PreflopResponseModel responseModel) {
+            this(cheapPreflopDiscount, fullPotEquity, doublePotEquity, triplePotEquity, bigBlindValueRaise,
+                    raiseContext, responseModel, null);
+        }
+
+        public HardPressure {
+            if (cheapPreflopDiscount < 0 || cheapPreflopDiscount > 12
+                    || fullPotEquity < 70 || doublePotEquity <= fullPotEquity
+                    || triplePotEquity <= doublePotEquity || triplePotEquity > 100)
+                throw new IllegalArgumentException("Invalid Hard pressure thresholds");
+            if (responseModel != null && raiseContext == null)
+                throw new IllegalArgumentException("Response model requires a separate raise context");
+            if (raiseEv != null && raiseEv.nearby() != null && (raiseContext == null || responseModel != null))
+                throw new IllegalArgumentException("Nearby raise EV requires a raise context and its own paired responses");
+            if (raiseEv != null && raiseEv.nearby() == null
+                    && (responseModel == null || responseModel.foldWeight() != 0 || responseModel.raiseWeight() != 0))
+                throw new IllegalArgumentException("Raise EV requires response probabilities without threshold weights");
+        }
+    }
+
     public record ContextWeights(int extraOpponentCallMargin, int opponentAggressionCallMargin,
                                  int raiseMarginPerExtraOpponent, int extraOpponentValueBetMargin,
                                  int earlyPositionCallMargin, int latePositionCallDiscount,
@@ -92,7 +155,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         }
     }
 
-    public static final String VERSION = "EQUITY-MC-0.3";
+    public static final String VERSION = "EQUITY-MC-0.4";
     private final MonteCarloEquityEstimator estimator = new MonteCarloEquityEstimator();
     private final int samples;
     private final int cashRiskMarginPercent;
@@ -101,6 +164,8 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
     private final int valueBetThresholdPercent;
     private final ContextWeights contextWeights;
     private final GameMode gameMode;
+    private final HardPressure hardPressure;
+    private final String responseVersion;
 
     public ContextualEquityPolicy(int samples, int cashRiskMarginPercent, int tournamentRiskMarginPercent,
                                   int raiseEdgePercent, int valueBetThresholdPercent, GameMode gameMode) {
@@ -111,6 +176,13 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
     public ContextualEquityPolicy(int samples, int cashRiskMarginPercent, int tournamentRiskMarginPercent,
                                   int raiseEdgePercent, int valueBetThresholdPercent, GameMode gameMode,
                                   ContextWeights contextWeights) {
+        this(samples, cashRiskMarginPercent, tournamentRiskMarginPercent, raiseEdgePercent,
+                valueBetThresholdPercent, gameMode, contextWeights, null);
+    }
+
+    public ContextualEquityPolicy(int samples, int cashRiskMarginPercent, int tournamentRiskMarginPercent,
+                                  int raiseEdgePercent, int valueBetThresholdPercent, GameMode gameMode,
+                                  ContextWeights contextWeights, HardPressure hardPressure) {
         if (samples < 32 || samples > 100_000) throw new IllegalArgumentException("samples must be 32..100000");
         percent(cashRiskMarginPercent, "cashRiskMarginPercent");
         percent(tournamentRiskMarginPercent, "tournamentRiskMarginPercent");
@@ -123,6 +195,16 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         this.valueBetThresholdPercent = valueBetThresholdPercent;
         this.gameMode = Objects.requireNonNull(gameMode, "gameMode");
         this.contextWeights = Objects.requireNonNull(contextWeights, "contextWeights");
+        this.hardPressure = hardPressure;
+        var responseModel = hardPressure == null ? null : hardPressure.responseModel();
+        var ev = hardPressure == null ? null : hardPressure.raiseEv();
+        if ((responseModel != null || ev != null) && gameMode != GameMode.TOURNAMENT)
+            throw new IllegalArgumentException("Response model requires tournament mode");
+        this.responseVersion = (responseModel == null ? "" : "-response." + responseModel.version())
+                + (ev == null ? "" : "-ev." + ev.calledEquityDiscountPp() + "." + ev.minEdgePercentOfBigBlind()
+                        + "." + (ev.nearby() == null
+                                ? ev.potPercents().stream().map(String::valueOf).collect(Collectors.joining("."))
+                                : "near." + ev.nearby().version()));
     }
 
     @Override
@@ -138,12 +220,13 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         var stackRisk = stackRisk(observation, contextWeights.tournamentCommitmentThresholdPercent());
         int shoveHistoryAdjustment = historicalShoveMarginAdjustment(observation, pressure);
         double equity = estimate.expectedShare() * 100.0;
-        int required = requiredEquityPercent(observation, estimate.standardError(), pressure, stackRisk,
+        int callRequired = requiredEquityPercent(observation, estimate.standardError(), pressure, stackRisk,
                 shoveHistoryAdjustment);
+        var raiseContext = gameMode == GameMode.TOURNAMENT && hardPressure != null ? hardPressure.raiseContext() : null;
         String metrics = String.format(Locale.ROOT,
                 "equity=%.1f%% win=%.1f%% tie=%.1f%% potOdds=%.1f%% required=%.1f%% samples=%d se=%.1f%% opponents=%d mode=%s pressurePotSized=%s opponentAllIn=%s shoveHistoryMargin=%+d callCommitment=%d%% covered=%s shortStack=%s",
                 equity, estimate.winProbability() * 100.0, estimate.tieProbability() * 100.0,
-                potOddsPercent(observation), (double) required, estimate.samples(),
+                potOddsPercent(observation), (double) callRequired, estimate.samples(),
                 estimate.standardError() * 100.0, observation.activeOpponentCount(), gameMode,
                 pressure.potSizedAggression(), pressure.opponentAllInAggression(), shoveHistoryAdjustment,
                 stackRisk.commitmentPercent(),
@@ -151,26 +234,72 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
 
         if (observation.toCall() > 0) {
             LegalAction raise = find(legal, ActionType.RAISE);
-            int raiseThreshold = Math.min(99, required + raiseEdgePercent
-                    + Math.max(0, observation.activeOpponentCount() - 1)
-                    * contextWeights.raiseMarginPerExtraOpponent());
-            if (raise != null && equity >= raiseThreshold) {
-                int amount = raiseAmount(observation, raise, equity - raiseThreshold);
-                if (amount > 0) return decision(ActionType.RAISE, amount,
-                        metrics + "; raise only with equity edge and a non-all-in pot fraction");
+            if (raise != null) {
+                int raiseThreshold = raiseContext == null
+                        ? Math.min(99, callRequired + raiseEdgePercent + (observation.activeOpponentCount() - 1)
+                                * contextWeights.raiseMarginPerExtraOpponent())
+                        : contextualRaiseThreshold(observation, pressure, estimate.standardError(), raiseContext);
+                int cap = raiseContext == null ? raise.maxAmount() : contextualRaiseCap(observation, raise,
+                        raiseContext, equity, raiseThreshold);
+                if (raiseContext != null && raise.minAmount() > uncommittedRaiseCap(observation, raiseContext))
+                    raiseThreshold = Math.min(99, raiseThreshold + raiseContext.commitmentMargin());
+                int amount = raiseAmount(observation, raise, equity - raiseThreshold, cap, raiseContext != null);
+                var model = raiseContext == null ? null : hardPressure.responseModel();
+                var ev = raiseContext == null ? null : hardPressure.raiseEv();
+                if (model != null && ev == null && amount > 0 && amount <= uncommittedRaiseCap(observation, raiseContext)) {
+                    var spot = PreflopResponseModel.proposedRaise(observation, amount);
+                    var response = spot == null ? null : model.estimate(spot);
+                    if (response != null) {
+                        raiseThreshold = Bounds.clamp(raiseThreshold + response.adjustment(), 0, 99);
+                        metrics += String.format(Locale.ROOT,
+                                " responseSpot=%s responseFold=%.1f%% responseRaise=%.1f%% responseN=%d responseAdjustment=%+d",
+                                spot.key(), 100 * response.fold(), 100 * response.raise(), response.observations(),
+                                response.adjustment());
+                    }
+                }
+                metrics += " raiseRequired=" + raiseThreshold + "% raiseCap=" + cap;
+                if (amount > 0 && equity >= raiseThreshold) {
+                    if (ev != null) {
+                        int sizingCap = Math.min(cap, uncommittedRaiseCap(observation, raiseContext));
+                        double conservativeEquity = estimate.expectedShare()
+                                - contextWeights.uncertaintyZHundredths() / 100.0 * estimate.standardError();
+                        var comparison = RaiseEvSizing.select(observation, raise, sizingCap, amount,
+                                conservativeEquity, model, ev);
+                        if (comparison != null) {
+                            var reference = comparison.reference();
+                            var selected = comparison.selected();
+                            metrics += String.format(Locale.ROOT,
+                                    " evReferenceAmount=%d evReferenceChips=%.3f evSelectedChips=%.3f evFold=%.1f%% evReraise=%.1f%%",
+                                    reference.offer().amount(), reference.chips(), selected.chips(),
+                                    100 * selected.fold(), 100 * selected.reraise());
+                            amount = selected.offer().amount();
+                        }
+                    }
+                    return decision(ActionType.RAISE, amount,
+                            metrics + "; raise only with equity edge and a non-all-in pot fraction");
+                }
             }
             LegalAction call = find(legal, ActionType.CALL);
-            if (call != null && equity >= required)
+            if (call != null && equity >= callRequired)
                 return decision(ActionType.CALL, call.amount(), metrics + "; call clears pot-price and risk margin");
             LegalAction shortCall = shortAllInCall(legal, observation);
-            if (shortCall != null && equity >= required)
+            if (shortCall != null && equity >= callRequired)
                 return decision(ActionType.ALL_IN, shortCall.amount(), metrics + "; match only a short all-in within pot odds");
             if (find(legal, ActionType.FOLD) != null)
                 return decision(ActionType.FOLD, 0, metrics + "; fold below contextual call threshold");
         } else {
+            LegalAction raise = find(legal, ActionType.RAISE);
+            if (raise != null && pressure.aggressionCount() == 0) {
+                int amount = hardBigBlindRaise(observation, raise, equity, estimate.standardError());
+                if (amount > 0) return decision(ActionType.RAISE, amount,
+                        metrics + "; Hard preflop value raise with the big-blind option");
+            }
             LegalAction bet = find(legal, ActionType.BET);
             int valueThreshold = valueBetThreshold(observation);
             if (bet != null && equity >= valueThreshold) {
+                int pressureBet = hardPressureBet(observation, bet, equity, estimate.standardError());
+                if (pressureBet > 0) return decision(ActionType.BET, pressureBet,
+                        metrics + "; Hard value pressure " + pressureBet / observation.pot() + "x pot");
                 int amount = betAmount(observation, bet, equity - valueThreshold);
                 if (amount > 0) return decision(ActionType.BET, amount,
                         metrics + "; value-bet fraction scales with equity edge and effective stack cap");
@@ -199,8 +328,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                 pressure.aggressionCount() * contextWeights.opponentAggressionCallMargin());
         int positionMargin = isLate(observation) ? -contextWeights.latePositionCallDiscount()
                 : contextWeights.earlyPositionCallMargin();
-        int uncertaintyMargin = (int) Math.ceil(contextWeights.uncertaintyZHundredths()
-                / 100.0 * standardError * 100.0);
+        int uncertaintyMargin = uncertaintyMargin(standardError);
         int largeBetMargin = pressure.potSizedAggression() ? contextWeights.largeBetCallMargin() : 0;
         int allInMargin = pressure.opponentAllInAggression()
                 ? contextWeights.opponentAllInCallMargin() + shoveHistoryAdjustment : 0;
@@ -208,9 +336,68 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                 ? contextWeights.tournamentEliminationRiskMargin() : 0;
         int shortStackDiscount = gameMode == GameMode.TOURNAMENT && stackRisk.shortStack()
                 ? contextWeights.tournamentShortStackCallDiscount() : 0;
-        return (int) Bounds.clamp(Math.ceil(potOdds) + baseMargin + opponentMargin
+        double required = Math.ceil(potOdds) + baseMargin + opponentMargin
                 + aggressionMargin + positionMargin + uncertaintyMargin + largeBetMargin + allInMargin
-                + eliminationMargin - shortStackDiscount, 0.0, 98.0);
+                + eliminationMargin - shortStackDiscount;
+        if (hardPressure != null && observation.street() == Street.PREFLOP && observation.toCall() > 0
+                && observation.toCall() <= 2L * observation.bigBlind() && !pressure.opponentAllInAggression()
+                && !stackRisk.coveredCommitment() && observation.toCall() < observation.heroStack()) {
+            required = Math.min(required, Math.max(Math.ceil(potOdds) + uncertaintyMargin,
+                    required - hardPressure.cheapPreflopDiscount()));
+        }
+        return (int) Bounds.clamp(required, 0.0, 98.0);
+    }
+
+    private int hardBigBlindRaise(HoldemObservation observation, LegalAction legal, double equity, double standardError) {
+        if (hardPressure == null || !hardPressure.bigBlindValueRaise() || gameMode != GameMode.TOURNAMENT
+                || observation.street() != Street.PREFLOP) return 0;
+        double conservativeEquity = equity - contextWeights.uncertaintyZHundredths() * standardError;
+        double threshold = Math.max(45.0, 100.0 / (observation.activeOpponentCount() + 1) + 20.0);
+        if (conservativeEquity < threshold) return 0;
+
+        var seats = physicalSeats(observation);
+        var folded = foldedSeats(observation);
+        int largestOpponentStack = 0;
+        for (int seat = 0; seat < observation.playerCount(); seat++) {
+            if (seat != observation.heroSeat() && !folded.contains(seats.get(seat)))
+                largestOpponentStack = Math.max(largestOpponentStack, observation.visibleStacks().get(seat));
+        }
+        int cap = Math.min(Math.min(legal.maxAmount(), observation.heroStack() - 1), largestOpponentStack);
+        if (cap < legal.minAmount()) return 0;
+        return Math.min(cap, Math.max(legal.minAmount(), observation.pot() / 2));
+    }
+
+    private int hardPressureBet(HoldemObservation observation, LegalAction legal, double equity, double standardError) {
+        if (hardPressure == null || observation.activeOpponentCount() != 1 || observation.pot() == 0
+                || (observation.street() != Street.TURN && observation.street() != Street.RIVER)) return 0;
+        double conservativeEquity = equity - contextWeights.uncertaintyZHundredths() * standardError;
+        if (conservativeEquity < hardPressure.fullPotEquity()) return 0;
+        var cards = new ArrayList<>(observation.communityCards());
+        cards.addAll(observation.holeCards());
+        if (cards.size() < 5) return 0;
+        var category = HandRank.evaluateBestOf(cards).category();
+        if (category.compareTo(HandRank.Category.TWO_PAIR) < 0) return 0;
+        long cap = Math.min(Math.min(legal.maxAmount(), observation.heroStack() - 1L), headsUpEffectiveStack(observation));
+        long triple = 3L * observation.pot();
+        if (observation.street() == Street.RIVER && conservativeEquity >= hardPressure.triplePotEquity()
+                && category.compareTo(HandRank.Category.STRAIGHT) >= 0
+                && triple >= legal.minAmount() && triple <= cap) return Math.toIntExact(triple);
+        long doubled = 2L * observation.pot();
+        if (conservativeEquity >= hardPressure.doublePotEquity() && doubled >= legal.minAmount() && doubled <= cap)
+            return Math.toIntExact(doubled);
+        return observation.pot() >= legal.minAmount() && observation.pot() <= cap ? observation.pot() : 0;
+    }
+
+    private static long headsUpEffectiveStack(HoldemObservation observation) {
+        var seats = physicalSeats(observation);
+        var folded = foldedSeats(observation);
+        long capacity = -1;
+        for (int seat = 0; seat < observation.playerCount(); seat++) {
+            if (seat == observation.heroSeat() || folded.contains(seats.get(seat))) continue;
+            if (capacity != -1) return 0;
+            capacity = (long) observation.visibleStacks().get(seat) + observation.visibleContributions().get(seat);
+        }
+        return capacity - observation.visibleContributions().get(observation.heroSeat());
     }
 
     int valueBetThreshold(HoldemObservation observation) {
@@ -232,15 +419,54 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         return Math.toIntExact(target);
     }
 
-    private int raiseAmount(HoldemObservation observation, LegalAction legal, double edge) {
+    private int contextualRaiseThreshold(HoldemObservation observation, CallPressure pressure, double standardError,
+                                         RaiseContext weights) {
+        int position = isLate(observation, true) ? -weights.positionMargin() : weights.positionMargin();
+        int opponentMargin = (observation.activeOpponentCount() - 1) * weights.multiwayMargin();
+        int aggression = Math.min(3, pressure.aggressionCount()) * weights.aggressionMargin();
+        int pricePressure = (pressure.potSizedAggression() ? weights.largeBetMargin() : 0)
+                + (pressure.opponentAllInAggression() ? weights.allInMargin() : 0);
+        return Bounds.clamp((int) Math.ceil(potOddsPercent(observation)) + uncertaintyMargin(standardError)
+                + raiseEdgePercent + weights.baseMargin() + position + opponentMargin + aggression + pricePressure,
+                0, 99);
+    }
+
+    private int uncertaintyMargin(double standardError) {
+        return (int) Math.ceil(contextWeights.uncertaintyZHundredths() / 100.0 * standardError * 100.0);
+    }
+
+    private static int contextualRaiseCap(HoldemObservation observation, LegalAction legal, RaiseContext weights,
+                                          double equity, int threshold) {
+        var seats = physicalSeats(observation);
+        var folded = foldedSeats(observation);
+        long largestOpponentCapacity = 0;
+        for (int seat = 0; seat < observation.playerCount(); seat++) {
+            int stack = observation.visibleStacks().get(seat);
+            if (seat != observation.heroSeat() && stack > 0 && !folded.contains(seats.get(seat)))
+                largestOpponentCapacity = Math.max(largestOpponentCapacity,
+                        (long) stack + observation.visibleContributions().get(seat));
+        }
+        long effective = largestOpponentCapacity - observation.visibleContributions().get(observation.heroSeat());
+        long cap = Math.min(effective, Math.min(legal.maxAmount(), observation.heroStack() - 1L));
+        if (equity < Math.min(99, threshold + weights.commitmentMargin()))
+            cap = Math.min(cap, uncommittedRaiseCap(observation, weights));
+        return (int) Math.max(0, cap);
+    }
+
+    private static int uncommittedRaiseCap(HoldemObservation observation, RaiseContext weights) {
+        return (int) (((long) observation.heroStack() * weights.commitmentThresholdPercent() - 1) / 100);
+    }
+
+    private int raiseAmount(HoldemObservation observation, LegalAction legal, double edge, int cap, boolean clamp) {
+        if (cap < legal.minAmount()) return 0;
         int callAmount = Math.min(observation.toCall(), observation.heroStack());
         long potAfterCall = (long) observation.pot() + callAmount;
         int fractionPercent = (int) Bounds.clamp(25 + Math.floor(edge), 25.0, 75.0);
         long raiseBy = Math.max((long) legal.minAmount() - callAmount,
                 potAfterCall * fractionPercent / 100);
         long target = callAmount + raiseBy;
-        if (target <= legal.minAmount()) target = legal.minAmount();
-        if (target > legal.maxAmount() || target >= observation.heroStack()) return 0;
+        if (clamp) return Math.toIntExact(Math.min(target, cap));
+        if (target > cap || target >= observation.heroStack()) return 0;
         return Math.toIntExact(target);
     }
 
@@ -359,14 +585,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
             return new StackRisk(false, false, shortStack, commitment);
 
         List<Integer> physicalSeats = physicalSeats(observation);
-        Set<Integer> folded = new HashSet<>();
-        for (String event : observation.publicActionHistory()) {
-            String[] fields = event.split(" ", -1);
-            if (fields.length == 4 && fields[2].equals("FOLD")) {
-                try { folded.add(Integer.parseInt(fields[1])); }
-                catch (NumberFormatException ignored) { /* Ignore malformed public history. */ }
-            }
-        }
+        Set<Integer> folded = foldedSeats(observation);
         int heroContribution = observation.visibleContributions().get(observation.heroSeat());
         long targetContribution = (long) heroContribution + callAmount;
         boolean canCover = false;
@@ -378,6 +597,18 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         }
         boolean coveredCommitment = commitment >= commitmentThresholdPercent && canCover;
         return new StackRisk(coveredCommitment, canCover, shortStack, commitment);
+    }
+
+    private static Set<Integer> foldedSeats(HoldemObservation observation) {
+        Set<Integer> folded = new HashSet<>();
+        for (String event : observation.publicActionHistory()) {
+            String[] fields = event.split(" ", -1);
+            if (fields.length == 4 && fields[2].equals("FOLD")) {
+                try { folded.add(Integer.parseInt(fields[1])); }
+                catch (NumberFormatException ignored) { /* Ignore malformed public history. */ }
+            }
+        }
+        return folded;
     }
 
     private static List<Integer> physicalSeats(HoldemObservation observation) {
@@ -425,6 +656,11 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
     }
 
     static boolean isLate(HoldemObservation observation) {
+        return isLate(observation, false);
+    }
+
+    private static boolean isLate(HoldemObservation observation, boolean forRaise) {
+        int fallbackWindow = forRaise ? Math.max(1, observation.playerCount() / 2) : 2;
         List<Integer> physicalSeats = null;
         for (String event : observation.publicActionHistory()) {
             if (!event.startsWith("SEATS [") || !event.endsWith("]")) continue;
@@ -442,7 +678,7 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                 || observation.heroSeat() >= physicalSeats.size()
                 || !physicalSeats.get(observation.heroSeat()).equals(observation.physicalHeroSeat()))
             return DeterministicBluffPolicy.isLatePosition(observation.positionFromButton(),
-                    observation.playerCount(), 2);
+                    observation.playerCount(), fallbackWindow);
 
         var folded = new HashSet<Integer>();
         int bigBlindPhysicalSeat = -1;
@@ -475,8 +711,9 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
         }
         int heroOrder = actingOrder.indexOf(observation.heroSeat());
         if (heroOrder < 0) return DeterministicBluffPolicy.isLatePosition(observation.positionFromButton(),
-                observation.playerCount(), 2);
-        return actingOrder.size() - heroOrder - 1 <= 1;
+                observation.playerCount(), fallbackWindow);
+        int window = forRaise ? Math.max(1, actingOrder.size() / 2) : 2;
+        return actingOrder.size() - heroOrder <= window;
     }
 
     private static LegalAction shortAllInCall(List<LegalAction> legal, HoldemObservation observation) {
@@ -513,7 +750,12 @@ public final class ContextualEquityPolicy implements DecisionPolicy {
                 + contextWeights.shortStackShovePriorOpportunities() + "."
                 + contextWeights.shortStackShoveWarmupOpportunities() + "."
                 + contextWeights.shortStackShoveSensitivity() + "."
-                + contextWeights.shortStackShoveMaxMarginAdjustment(),
+                + contextWeights.shortStackShoveMaxMarginAdjustment()
+                + (hardPressure == null ? "" : "-hard2." + hardPressure.cheapPreflopDiscount()
+                        + "." + hardPressure.fullPotEquity() + "." + hardPressure.doublePotEquity()
+                        + "." + hardPressure.triplePotEquity() + (hardPressure.bigBlindValueRaise() ? "-bb-option" : "")
+                        + (hardPressure.raiseContext() == null ? "" : "-split." + hardPressure.raiseContext().version()))
+                + responseVersion,
                 explanation);
     }
 

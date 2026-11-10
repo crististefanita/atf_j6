@@ -1,0 +1,17 @@
+schemaVersion: 1
+blindProfiles: j6-tournaments.yaml
+startingStacks: [5000, 10000]
+levelSeconds: 180
+secondsPerHand: 12
+handLimit: 1200
+heroSamples: 128
+read: {windowHands: 20, priorStrength: 8, minimumEvidence: 4, minGainPercent: 8}
+fit: {seedBase: 15010091, seedsPerCell: 4}
+validation: {seedBase: 15410091, seedsPerCell: 5}
+holdout: {seedBase: 15810091, seedsPerCell: 8}
+roles:
+  anchor: [{firstHand: 1, style: caller}]
+  east: [{firstHand: 1, style: cautious}, {firstHand: 10, style: caller}, {firstHand: 28, style: cautious}]
+  pressure: [{firstHand: 1, style: pressure}]
+  west: [{firstHand: 1, style: wide}, {firstHand: 13, style: cautious}, {firstHand: 31, style: pressure}]
+  value: [{firstHand: 1, style: selective}]

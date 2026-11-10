@@ -111,8 +111,8 @@ public final class MonteCarloEquityEstimator {
         seed = Long.rotateLeft(seed ^ observation.heroSeat(), 13);
         seed = Long.rotateLeft(seed ^ observation.activeOpponentCount(), 19);
         seed = Long.rotateLeft(seed ^ observation.street().ordinal(), 23);
-        seed = Long.rotateLeft(seed ^ observation.holeCards().hashCode(), 29);
-        seed = Long.rotateLeft(seed ^ observation.communityCards().hashCode(), 31);
+        seed = Long.rotateLeft(seed ^ PolicySeed.cardsHash(observation.holeCards()), 29);
+        seed = Long.rotateLeft(seed ^ PolicySeed.cardsHash(observation.communityCards()), 31);
         seed = Long.rotateLeft(seed ^ observation.publicActionHistory().hashCode(), 37);
         return seed;
     }

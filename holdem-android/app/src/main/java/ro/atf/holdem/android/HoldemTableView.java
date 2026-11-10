@@ -95,6 +95,7 @@ final class HoldemTableView {
         menu.setStateListAnimator(null);
         header.addView(menu, new LinearLayout.LayoutParams(views.dp(48), views.dp(48)));
         boolean complete = frame.street() == Street.COMPLETE;
+        boolean alignSeatHands = HoldemTablePresentation.alignTerminalSeatHands(frame);
         String street = streetName(frame.street());
         String fullTitle = text.get(R.string.table_title, street);
         if (game.isTournament()) {
@@ -170,28 +171,27 @@ final class HoldemTableView {
                 framedSeat.findViewWithTag("seat-turn-badge:" + seat)
                         .setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             }
-            View withCards = withOpponentCards(framedSeat, player, compact, seat == frame.viewer(), seat,
-                    complete, frame);
+            View withCards = withTerminalCards(framedSeat, compact, seat, frame, alignSeatHands);
             seatView.setTag("settlement-target:seat:" + seat);
             seats.add(withCards);
         }
         BoardView board = board(frame, names, game, compact);
         View center = board.root();
-        View table = compact ? compactTable(seats, center) : sharedTable(seats, center, policy);
+        View table = compact ? compactTable(seats, center, alignSeatHands) : sharedTable(seats, center, policy);
         content.addView(table, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        if (compact && complete) {
-            addTerminalHand(content, frame, 56);
-        } else if (compact) {
-            var hand = new LinearLayout(activity);
-            hand.setGravity(Gravity.CENTER);
-            for (Card card : frame.ownCards()) addCard(hand, card, 56, R.string.hand,
-                    HoldemTablePresentation.handCardTag(card.label()));
-            content.addView(hand, views.matchWrap());
-        } else if (complete) {
-            addTerminalHand(content, frame, HoldemTablePresentation.terminalCardHeightDp(false));
-        } else {
-            addHandFan(content, frame.ownCards());
+        if (!alignSeatHands) {
+            if (complete) {
+                addTerminalHand(content, frame, HoldemTablePresentation.terminalCardHeightDp(compact));
+            } else if (compact) {
+                var hand = new LinearLayout(activity);
+                hand.setGravity(Gravity.CENTER);
+                for (Card card : frame.ownCards()) addCard(hand, card, 56, R.string.hand,
+                        HoldemTablePresentation.handCardTag(card.label()));
+                content.addView(hand, views.matchWrap());
+            } else {
+                addHandFan(content, frame.ownCards());
+            }
         }
 
         addBettingLedger(content, frame, names, compact);
@@ -378,23 +378,38 @@ final class HoldemTableView {
         parent.addView(hand, views.matchWrap());
     }
 
-    private View withOpponentCards(View seatView, HoldemTableViewState.Seat seat, boolean compact, boolean human,
-                                   int physicalSeat, boolean complete, HoldemTableViewState frame) {
-        if (!HoldemTablePresentation.showOpponentCards(complete, human, seat)) return seatView;
+    private View withTerminalCards(View seatView, boolean compact, int physicalSeat, HoldemTableViewState frame,
+                                   boolean alignSeatHands) {
+        var hand = HoldemTablePresentation.terminalCardsAtSeat(frame, physicalSeat);
+        if (hand.isEmpty() && !alignSeatHands) return seatView;
         var group = new LinearLayout(views.activity());
         group.setOrientation(LinearLayout.VERTICAL);
         group.setGravity(Gravity.CENTER_HORIZONTAL);
-        group.addView(seatView, views.matchWrap());
+        group.addView(seatView, alignSeatHands
+                ? new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1)
+                : views.matchWrap());
         var cards = new LinearLayout(views.activity());
         cards.setGravity(Gravity.CENTER);
+        cards.setTag("settlement-hand:seat:" + physicalSeat);
         int height = HoldemTablePresentation.terminalCardHeightDp(compact);
-        for (int index = 0; index < seat.shownCards().size(); index++) {
-            Card card = seat.shownCards().get(index);
-            TextView view = addCard(cards, card, height, R.string.opponent_cards,
-                    HoldemTablePresentation.opponentCardTag(physicalSeat, index));
-            if (HoldemTablePresentation.isWinningCard(frame, physicalSeat, card))
+        boolean viewer = physicalSeat == frame.viewer();
+        var ownEvaluation = viewer ? frame.seats().get(physicalSeat).handEvaluation() : null;
+        for (int index = 0; index < 2; index++) {
+            Card card = hand.isEmpty() ? null : hand.get(index);
+            String tag = viewer && card != null ? HoldemTablePresentation.handCardTag(card.label())
+                    : HoldemTablePresentation.opponentCardTag(physicalSeat, index);
+            TextView view = addCard(cards, card, height, viewer ? R.string.hand : R.string.opponent_cards, tag);
+            boolean highlighted = card != null && (viewer ? ownEvaluation != null && ownEvaluation.bestFive().contains(card)
+                    : HoldemTablePresentation.isWinningCard(frame, physicalSeat, card));
+            if (highlighted) {
                 highlightWinningCard(view, card, height);
+            }
+            if (alignSeatHands) {
+                var params = (LinearLayout.LayoutParams) view.getLayoutParams();
+                params.topMargin = views.dp(Math.max(4, Math.round(height * .08f)) + 1);
+            }
         }
+        if (hand.isEmpty()) cards.setVisibility(View.INVISIBLE);
         group.addView(cards, views.matchWrap());
         return group;
     }
@@ -407,26 +422,28 @@ final class HoldemTableView {
         return board;
     }
 
-    private View compactTable(List<View> seats, View center) {
+    private View compactTable(List<View> seats, View center, boolean alignSeatHands) {
         var table = new LinearLayout(views.activity());
         table.setOrientation(LinearLayout.VERTICAL);
         var rows = CompactSeatRows.forSeats(seats.size());
-        table.addView(seatRow(seats, rows.top()), views.matchWrap());
+        table.addView(seatRow(seats, rows.top(), alignSeatHands), views.matchWrap());
         table.addView(new Space(views.activity()), new LinearLayout.LayoutParams(1, 0, 1));
         table.addView(center, views.matchWrap());
         table.addView(new Space(views.activity()), new LinearLayout.LayoutParams(1, 0, 1));
-        table.addView(seatRow(seats, rows.bottom()), views.matchWrap());
+        table.addView(seatRow(seats, rows.bottom(), alignSeatHands), views.matchWrap());
         return table;
     }
 
-    private View seatRow(List<View> seats, int[] positions) {
+    private View seatRow(List<View> seats, int[] positions, boolean alignSeatHands) {
         var row = new LinearLayout(views.activity());
         row.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.TOP);
+        if (alignSeatHands) row.setBaselineAligned(false);
+        int slotHeight = alignSeatHands ? ViewGroup.LayoutParams.MATCH_PARENT : ViewGroup.LayoutParams.WRAP_CONTENT;
         for (int seat : positions) {
             View child = seat == CompactSeatRows.EMPTY ? new Space(views.activity()) : seats.get(seat);
             var slot = positions.length == 1
-                    ? new LinearLayout.LayoutParams(views.dp(148), ViewGroup.LayoutParams.WRAP_CONTENT)
-                    : new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+                    ? new LinearLayout.LayoutParams(views.dp(148), slotHeight)
+                    : new LinearLayout.LayoutParams(0, slotHeight, 1);
             slot.setMargins(views.dp(2), 0, views.dp(2), 0);
             row.addView(child, slot);
         }

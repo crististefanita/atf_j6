@@ -6,6 +6,40 @@ import static org.junit.jupiter.api.Assertions.*;
 import static ro.atf.holdem.core.ActionType.*;
 
 class HoldemRulesTest {
+    @Test void duplicateDealsKeepPhysicalCardsAndBoardAfterButtonRotationOrElimination() {
+        var deck = HoldemHand.shuffledDeck(1234);
+        var full = new HoldemHand(1, List.of(100, 100, 100, 100), 0, BLINDS, deck, true);
+        var rotated = new HoldemHand(1, List.of(100, 100, 100, 100), 2, BLINDS, deck, true);
+        var reduced = new HoldemHand(1, List.of(0, 100, 0, 100), 3, BLINDS, deck, true);
+        for (int seat : List.of(1, 3)) {
+            assertEquals(List.of(deck.get(seat), deck.get(4 + seat)), full.viewFor(seat).ownCards());
+            assertEquals(full.viewFor(seat).ownCards(), rotated.viewFor(seat).ownCards());
+            assertEquals(full.viewFor(seat).ownCards(), reduced.viewFor(seat).ownCards());
+        }
+        assertTrue(full.viewFor(1).seats().get(3).shownCards().isEmpty());
+        for (var hand : List.of(full, rotated, reduced)) {
+            while (hand.actor() >= 0) {
+                var action = hand.legal().stream().filter(a -> a.type() == CALL || a.type() == CHECK)
+                        .findFirst().orElseThrow();
+                hand.act(hand.actor(), action.type(), action.amount());
+            }
+            assertEquals(List.of(deck.get(9), deck.get(10), deck.get(11), deck.get(13), deck.get(15)), hand.board());
+        }
+    }
+
+    @Test void shoveTendenciesOnlyPublishAcceptedOpportunitiesAfterSettlement() {
+        var history = new PublicShoveHistory(6);
+        var observation = new HoldemObservation(3, 0, 2, 1, Street.PREFLOP, List.of(), List.of(),
+                60, 20, 120, 0, List.of(120, 2000),
+                List.of(new LegalAction(ActionType.ALL_IN, 120, 120, 120)), List.of(), 4, 20, List.of(0, 20));
+        history.recordAccepted(observation, ActionType.ALL_IN, 120);
+        assertEquals(new PublicOpponentTendency(4, 0, 0), history.snapshot().get(4));
+        history.settleHand();
+        history.settleHand();
+        assertEquals(new PublicOpponentTendency(4, 1, 1), history.snapshot().get(4));
+        assertEquals(new PublicOpponentTendency(0, 0, 0), history.snapshot().get(0));
+    }
+
     private static final BlindLevel BLINDS = new BlindLevel(5, 10, 15);
 
     private HoldemHand hand(Integer... stacks) {

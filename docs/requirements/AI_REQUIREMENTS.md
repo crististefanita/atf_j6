@@ -36,7 +36,7 @@ Folosește regret minimization, abstractizare de acțiuni și board-uri, evaluar
 
 ## Implementarea curentă: equity Monte Carlo cu context public
 
-`EQUITY-MC-0.3` estimează reproductibil cota teoretică dintr-un pot comun prin eșantionarea cărților necunoscute. Returnează probabilitatea de victorie, egalitate și eroarea standard pentru bugetul YAML. Cota nu este încă decontare probabilistică pe straturi: deciziile cu all-in-uri și poturi secundare nu trebuie evaluate ca și cum fiecare adversar ar fi eligibil la întregul pot.
+`EQUITY-MC-0.4` estimează cota teoretică dintr-un pot comun prin eșantionarea cărților necunoscute. Returnează probabilitatea de victorie, egalitate și eroarea standard pentru bugetul YAML. Cota din potul comun presupune aceeași eligibilitate la jetoane, în timp ce poturile secundare au eligibilitate proprie.
 
 Distribuția cărților adversarilor rămâne uniformă între combinațiile necunoscute. Acțiunile și poziția publice ajustează pragurile; istoricul de shove este un semnal limitat de agresivitate, nu o estimare de range. Prin urmare, aceasta este o **estimare de bază împotriva cărților aleatoare**, nu un solver și nu o estimare completă de range.
 
@@ -46,19 +46,19 @@ flowchart LR
     DECK -->|alimentează| MC[Eșantionează adversari activi și board-ul rămas]
     MC -->|estimează| EQ[Equity medie, win/tie și eroare standard]
     OBS -->|descrie| CTX[Pot odds, adversari activi, acțiuni publice, locuri care mai pot acționa]
-    EQ -->|se compară cu| RISK[Prag de continuare ponderat]
-    CTX -->|ajustează| RISK
-    RISK -->|orientează| ACT{Acțiune legală}
-    ACT -->|equity sub prag| FOLD[Fold sau check]
-    ACT -->|equity peste prag| CALL[Call numai dacă prețul e justificat]
-    ACT -->|edge suplimentar| RAISE[Raise/bet ca fracție din pot]
+    EQ -->|se compară cu| CALL[Prag de call]
+    EQ -->|se compară cu| RAISE[Prag de raise Hard]
+    CTX -->|ajustează| CALL
+    CTX -->|ajustează| RAISE
+    RAISE -->|echitate și sumă legale| ACT{Acțiune}
+    CALL -->|alternativă la raise| ACT
 ```
 
 <details>
 <summary><strong>Legendă — observație și prag</strong></summary>
 
 - **Eșantionarea** estimează equity din cărțile necunoscute.
-- **Contextul public** ajustează pragul de continuare.
+- **Contextul public** alimentează ambele praguri. Fiecare folosește ponderile acțiunii sale.
 - **Acțiunea** este aleasă numai dintre opțiunile legale.
 
 </details>
@@ -66,17 +66,69 @@ flowchart LR
 | Decizie | Calcul și limite |
 |---|---|
 | Call | Pentru un call pozitiv, `c = min(toCall, heroStack)`. Pragul pornește de la `ceil(100 × c / (pot + c))` și adaugă marjele de mod, adversari, poziție, agresiune, presiune, stivă și incertitudine. Intervalul final este 0–98%. |
-| Raise | Cere pragul de call plus `raiseEdgePercent` și marja pentru adversari suplimentari, până la 99%. Mărimea crește cu avantajul estimat în limitele legale și ale stivei. |
-| Bet | Când prețul este zero, pragul de valoare ține cont de adversari, agresiune, poziție și mod. Mărimea este limitată la o fracție configurată din pot și la stiva efectivă. |
+| Raise contra unui preț pozitiv | Hard cu `raiseContext` calculează separat pragul de raise. Profilurile fără acest bloc folosesc pragul de call plus `raiseEdgePercent` și marja pentru adversari suplimentari. Motorul furnizează intervalul legal. |
+| Bet | Când prețul este zero, pragul de valoare ține cont de adversari, agresiune, poziție și mod. Politica de bază calculează 25–75% din pot înainte de aplicarea limitelor legale. |
 
 - **Incertitudine.** `uncertaintyZHundredths: 164` înseamnă `z = 1,64`. Componenta de prag este `ceil(z × standardError × 100)`, în puncte procentuale. Agresiunile proprii sunt excluse.
+- **Reproductibilitate.** Seed-ul folosește valori stabile pentru rang, suită și stradă, alături de istoricul public. Același model, aceeași observație și același buget păstrează decizia după repornirea JVM. Strategiile mixte din arenă folosesc aceeași reprezentare a cărților pentru selecția de bluff și agresiune.
 - **Configurare.** `equityDecision.contextWeights` declară ponderile. Parserul verifică setul exact de chei, iar versiunea deciziei identifică bugetul, modul, pragurile și ponderile. [Profil equity cu buget mărit](../../config/j6-policy-equity.yaml)
 - **Limită de model.** Riscul de turneu este o marjă configurată. ICM, valoarea premiilor și equity pe straturile potului rămân în afara estimatorului.
+
+### Profilul Hard al turneului local
+
+Turneul Hard alocă stilurile adversarilor în sensul acelor de ceasornic de la locul inițial al jucătorului. Eliminările și reluarea turneului păstrează stilul fiecărui loc. Un turneu Normal folosește check/call pentru toți adversarii.
+
+| Loc relativ | Stil | Comportament |
+|---|---|---|
+| 1 | Echilibrat | Aplică pragurile de referință pentru continuare și mărire. |
+| 2 | Prudent | Cere mai multă echitate pentru continuare și pentru a angaja o parte mare din stivă. |
+| 3 | Activ | Continuă mai des la preț mic și reduce marja de mărire. |
+| 4, la 5–6 locuri | Pozițional | Acordă mai multă greutate ordinii de acțiune la mărire. |
+| 5, la 6 locuri | Normal | Dă check când poate și egalează prețul când există un pariu. |
+
+- Configurația locală este centralizată în [TournamentPlayStyles](../../holdem-ai/src/main/java/ro/atf/holdem/ai/TournamentPlayStyles.java). Stilurile contextuale folosesc 512 eșantioane pe decizie și aceleași limite legale ale motorului. Sugestiile și auto-play-ul din Hard folosesc stilul echilibrat.
+- Profilul de referință reduce cu până la trei puncte procentuale pragul unei continuări preflop de cel mult două blinduri mari. Păstrează pragul obișnuit în fața unui all-in agresiv sau a riscului de eliminare.
+- Calibrează `cheapPreflopDiscount` la același buget de eșantionare, cu aceleași blinduri și adversari în pereche. Pentru auto-play, rotește locul jucătorului pe aceleași distribuții la mai multe adâncimi și verifică îmbunătățirea pe distribuții noi.
+
+#### Raise cu preț pozitiv
+
+Stilul echilibrat folosește ponderile profilului YAML de referință din arenă. Ponderile din `hardPressure.raiseContext` sunt exprimate în puncte procentuale, iar limita de angajare este un procent din stivă.
+
+| Semnal | Aplicare |
+|---|---|
+| Preț și incertitudine | Pornește de la pot odds rotunjite în sus, eroarea de eșantionare, `baseMargin` și `raiseEdgePercent`. |
+| Poziție | Adaugă `positionMargin` devreme și o scade pentru ultima jumătate a locurilor care pot acționa, rotunjită în jos la minimum un loc. Heads-up, ultimul actor beneficiază de reducere. |
+| Adversari | Adaugă `multiwayMargin` pentru fiecare adversar suplimentar în mână. Numără până la trei agresiuni adverse pe strada curentă. Adaugă prime distincte când o acțiune ridică prețul cu cel puțin 75% din potul anterior sau când un all-in ridică prețul. |
+| Acoperire | Plafonează suma la capacitatea celui mai bine finanțat adversar activ, ținând cont de contribuții. Exclude jucătorii care au dat fold sau și-au consumat stiva. Dacă plafonul cade sub minimul legal, evaluează call-ul sau fold-ul. |
+| Angajarea stivei | La `commitmentThresholdPercent` din stiva rămasă, cere `commitmentMargin` în plus. Când echitatea justifică doar o mărire mai mică, plafonează suma imediat sub limită și verifică minimul legal. |
+
+Discountul de call ieftin, reducerea de urgență pentru stivă scurtă și istoricul de shove rămân în pragul de call. Raise-ul folosește acțiunile adverse din mâna curentă. Jurnalul separă pragul de call `required` de `raiseRequired` și afișează plafonul `raiseCap` când motorul oferă raise.
+
+#### Pariu de deschidere postflop
+
+| Deschidere heads-up la preț zero, stil echilibrat | Condiții suplimentare |
+|---|---|
+| 1× pot | Turn sau river, cel puțin două perechi și equity conservatoare de minimum 76%. |
+| 2× pot | Aceleași condiții, cu minimum 86%. |
+| 3× pot | River, cel puțin chintă și minimum 94%. |
+
+Equity conservatoare scade marja de incertitudine din cota estimată. Suma trebuie să intre în intervalul legal și să fie acoperită de stiva adversarului rămas. Politica încearcă mărimile descrescător și revine la mărimea de bază dacă niciuna nu se potrivește. [Configurația comparată în arenă](../../config/policy-tuning/j6-policy-hard-pressure.yaml)
+
+#### Opțiunea de mărire din blindul mare
+
+Arena poate activa `hardPressure.bigBlindValueRaise` pentru o comparație dedicată. Profilul implicit de turneu și configurațiile YAML fără această cheie folosesc valoarea `false`.
+
+| Pas | Regulă |
+|---|---|
+| Oportunitate | Preflop, motorul oferă raise legal la preț zero, după ce adversarii au egalat blindul fără să mărească. |
+| Prag | Equity conservatoare atinge maximul dintre 45% și cota egală din pot plus 20 de puncte procentuale. Cota egală este 100% împărțit la numărul de jucători încă în mână, inclusiv actorul. |
+| Sumă | Ținta este jumătate din pot, în limitele motorului, sub stiva actorului și până la suma pe care o poate egala cel puțin un adversar activ. Când plafonul cade sub minimul legal, politica dă check. |
+| Date | Pragul folosește cărțile proprii și informația publică. Probabilitatea de fold a adversarilor rămâne în afara acestui calcul. |
 
 ### Riscul public de stack și all-in
 
 - **Oportunitate.** În turneu, locul fizic intră în numitor pentru o decizie preflop cu stiva rămasă peste 2 și cel mult 10 blinduri mari și cu un `ALL_IN` legal peste prețul call-ului. Open-shove și re-shove intră împreună, iar call-ul all-in rămâne în afara numitorului.
-- **Moment.** Contoarele devin vizibile după terminarea mâinii. La raise-ul all-in curent, stiva rămasă este suma acțiunii publice, după blindurile deja plătite.
+- **Moment.** `PublicShoveHistory` publică în arenă și în turneul Hard numai contoarele mâinilor încheiate. Android le reconstruiește la replay-ul acțiunilor acceptate. La raise-ul all-in curent, stiva rămasă este suma acțiunii publice, după blindurile deja plătite.
 - **Loc.** `HoldemObservation` separă indexul compact al motorului de `physicalHeroSeat`, folosit în jurnal. Ordinea postflop exclude locurile foldate și fără jetoane, cu fallback la poziția din observație dacă lipsește harta publică.
 
 | Pas | Efect asupra pragului de call |
@@ -92,14 +144,169 @@ flowchart LR
 
 ## Acceptanță
 
-O politică nouă se acceptă numai dacă:
+O schimbare de decizie trebuie să păstreze legalitatea, reproductibilitatea și izolarea cărților ascunse. Evaluarea competitivă măsoară separat diferența față de control.
 
-- bate baseline-ul pe un corpus ținut separat și pe seed-uri independente, nu doar pe rotații pereche ale aceluiași seed;
-- nu regresează legalitatea sau timeout-ul;
-- păstrează aceeași decizie pe replay determinist;
-- are rezultate raportate cu număr de turnee și mâini, seed-cluster, interval de încredere și drawdown;
-- este testată împotriva mai multor stiluri, nu doar împotriva propriei versiuni;
-- nu primește informație ascunsă accidental.
+- **Control.** Compară pe un corpus ținut separat și pe seed-uri independente, cu același buget și mai multe stiluri de adversar.
+- **Raport.** Include numărul de turnee și mâini, diferența pereche, intervalul de încredere și drawdown-ul când jurnalul îl măsoară.
+- **Promovare competitivă.** Cere un avantaj față de control care depășește incertitudinea. O schimbare structurală poate fi acceptată pentru comportamentul verificat în teste și trebuie evaluată separat înainte de a i se atribui un avantaj la victorii.
+
+### Citirea acțiunilor adverse preflop
+
+| Semnal public | Cum se verifică |
+|---|---|
+| Ordine | Pornește după blindul mare și stabilește poziția între locurile care mai pot acționa. Separă poziția timpurie de jumătatea finală. |
+| Succesiune | Distinge blindurile, un call anterior, un raise și un all-in care ridică prețul. Un all-in de egalare păstrează prețul existent. |
+| Context | Grupează după prețul de call și stiva în blinduri mari. Compară adversarii în aceleași condiții înainte de a atribui efectul ordinii. |
+| Predicție | Estimează frecvențele de fold și raise din turnee de antrenare. Pentru contexte rare, apropie estimarea de rata din grupul mai larg. Măsoară eroarea pe seed-uri separate și calculează incertitudinea pe turneu. |
+
+Scorul Brier compară probabilitățile de acțiune cu răspunsurile observate. Equity estimează separat cota din pot pe cărțile vizibile. Un model de răspuns evaluat în arenă rămâne o ipoteză până la o comparație separată în politica de joc.
+
+#### Candidat pentru răspunsul la raise
+
+`hardPressure.responseModel` este un bloc YAML opțional de evaluare. Profilul fără bloc folosește pragul de raise obișnuit.
+
+| Pas | Contract |
+|---|---|
+| Situație | Preflop, la preț pozitiv, cu un singur adversar activ care poate plăti suma propusă și păstra jetoane. Raise-ul trebuie să rămână sub pragul de angajare al actorului. |
+| Context | Încadrează suma efectivă de plătit pentru adversar și stiva lui în blinduri mari. Din acțiunile publice separă prima mărire, mărirea după limp și re-raise-ul. Poziția este relativă la ordinea preflop a celor doi jucători activi. |
+| Estimare | Numără fold-urile și măririle în situații comparabile, inclusiv all-in-urile care măresc. Sub `minSamples`, păstrează decizia de control. Pentru o celulă susținută, apropie frecvențele de grupul cu același preț și aceeași clasă de stivă. |
+| Decizie | Un fold estimat peste reper poate coborî pragul de raise. Un re-raise estimat peste reper îl poate ridica. Ajustarea este plafonată, iar suma propusă și pragul de call se calculează independent. |
+| Calificare | Folosește turnee distincte pentru estimarea frecvențelor, validarea probabilităților și comparația competitivă. Compară câștigurile în perechi și verifică legalitatea și reluarea jurnalelor. |
+
+Jurnalul înregistrează cheia situației, cele două probabilități, numărul de observații și ajustarea. Versiunea politicii include amprenta setărilor și a numărătorilor.
+
+- Pentru fiecare reacție, probabilitatea estimată este `(număr local + priorStrength × probabilitatea grupului) / (observații locale + priorStrength)`.
+- Pragul de raise primește ajustarea rotunjită `foldWeight × (foldGrup − foldLocal) + raiseWeight × (raiseLocal − raiseGrup)`. Aici valorile locale sunt estimările după regularizare. Se aplică plafonul simetric `maxAdjustment`.
+- Cu `penalizeRaisesOnly: true`, contribuția de re-raise folosește numai excesul pozitiv față de grup. Când probabilitatea estimată este sub reper, contribuția este zero. Omiterea cheii păstrează formula semnată.
+
+| Profil de evaluare | Intervenție |
+|---|---|
+| Fold | Pune `raiseWeight` la zero. Ajustează pragul după diferența dintre frecvența estimată de fold și reper. |
+| Penalizare re-raise | Pune `foldWeight` la zero și activează `penalizeRaisesOnly`. Ridică pragul când modelul estimează un exces de re-raise. |
+| Control | Folosește același prag Hard cu blocul `responseModel` absent. |
+
+Cele două profiluri folosesc aceiași numărători calibrați. La calificare, fixează lotul principal de adversari, regula de promovare și tratarea turneelor neterminate înainte de rulare.
+
+#### Valoarea estimată a mărimii unui raise
+
+`hardPressure.raiseEv` este opțional. Candidatul poate modifica suma când Hard a ales deja un raise preflop heads-up, cu preț pozitiv. Configurația cu `potPercents` folosește `responseModel` cu ponderile de prag la zero.
+
+| Pas | Contract |
+|---|---|
+| Oferte | Compară suma de control, minimul legal și fracțiile configurate din potul după call. Păstrează suma de control în clasa ei de preț și cea mai apropiată sumă legală din cealaltă clasă. |
+| Fold | Câștigul imediat este potul curent `P`. Jetoanele neacoperite din raise se întorc actorului. |
+| Call | Contribuția este `e × (P + R + D) − R`, unde `R` este suma adăugată de actor și `D` este suma de plătit pentru adversar. `e` pornește de la equity conservatoare și scade discountul configurat. |
+| Re-raise | Evaluează abandonul ulterior la `−R`. Scorul însumează cele trei ramuri ponderate cu probabilitățile estimate. |
+| Alegere | Cere suport în ambele clase de preț, un câștig minim exprimat în blinduri mari și încadrarea sub plafonul de angajare. În celelalte situații păstrează suma de control. |
+
+Valoarea este un scor în jetoane pentru dimensionare. Equity la call este aproximată, iar jocul ulterior și premiile de turneu rămân în afara scorului. [Valoarea așteptată pe ramuri](https://blog.gtowizard.com/what-is-expected-value-in-poker/)
+
+Pentru diagnostic, reluarea offline poate continua ramura de call până la showdown, cu check pe străzile rămase și același pachet. Raportează separat cota observată, valoarea imediată în jetoane și rezultatul turneului. Datele oracolului rămân în analiza offline.
+
+#### Comparația sumelor apropiate de control
+
+Configurația alternativă `raiseEv.nearby` folosește frecvențele proprii din perechi de oferte. Profilul de arenă selectează o singură etapă prin `scope`.
+
+- `FIRST_RAISE` acoperă prima mărire, inclusiv după limp dacă există un preț pozitiv.
+- `RERAISE` cere o mărire anterioară în istoricul public al mâinii.
+
+| Element | Regulă |
+|---|---|
+| Stivă efectivă | Minimum dintre stiva rămasă a actorului și stiva rămasă a adversarului, ajustată cu diferența contribuțiilor publice pe strada curentă. Astfel, plafonul este exprimat în jetoane de adăugat de actor. |
+| Oferte | Calculează câte o sumă mai mică și mai mare. Pasul este cel mai mic dintre procentele configurate din blindul mare, suma de control și stiva efectivă, rotunjite în jos. Încadrează ofertele între minimul legal și plafonul dat de maximul legal, limita Hard de angajare și procentul maxim din stiva efectivă. O sumă de control peste plafon rămâne neschimbată. |
+| Numărători | Reia prefixul aceleiași mâini pentru control și ofertă. Cheia numărătorilor combină etapa, poziția, clasa de preț și stiva adversarului pentru suma de control, plus direcția ajustării. Un rând include același număr de oportunități pentru ambele oferte. |
+| Alegere | Verifică `minPairedSamples` pentru fiecare pereche. Compară fiecare ofertă cu controlul din aceeași pereche și alege câștigul estimat cel mai mare, peste marja configurată. Pragurile de call și raise rămân cele ale Hard. |
+
+Configurația `nearby` se folosește separat de `potPercents` și `responseModel`. Jurnalul deciziei păstrează suma de referință, scorul în jetoane pentru referință și alegere, frecvențele estimate pentru alegere și amprenta profilului.
+
+Pentru calificare, separă loturile de estimare, verificare a reacțiilor și turnee competitive.
+
+- Raportează acoperirea pentru fiecare etapă și direcție. Un număr mare de turnee poate produce puține situații eligibile de re-raise.
+- Verifică avantajul contra adversarilor agresivi pe stive scurte și adânci. Reexecută acțiunile și verifică limitele față de starea publică.
+
+#### Re-raise mai mic evaluat până la decontare
+
+Laboratorul poate reduce un re-raise de control deja ales, într-o situație preflop cu un singur adversar. Fiecare profil fixează pasul maxim și fracția maximă din stiva efectivă. Sunt eligibile și sumele de control care acoperă exact adversarul, dacă suma redusă îi lasă jetoane și respectă minimul legal.
+
+| Pas | Ce măsurăm |
+|---|---|
+| Pereche | Reia același prefix și același pachet cu fiecare sumă. Ambii jucători continuă cu politicile de control până la decontare. |
+| Reacție | Estimează `P(reacție ∣ stare, sumă)` pentru fold, call și re-raise. Separă prețul, stiva efectivă și ordinea măririlor înainte de agregare. |
+| Valoare | Pentru fiecare reacție observată, calculează media jetoanelor nete de la decizie până la decontare, în blinduri mari. Valoarea ofertei este suma mediilor condiționate, ponderate cu probabilitățile reacțiilor. O reacție absentă are contribuție zero și medie neobservată. |
+| Tranziție | Grupează perechile după ambele reacții. De pildă, `fold → call` compară aceleași situații înainte și după schimbarea sumei, inclusiv jocul ulterior și returnarea jetoanelor neacoperite. |
+| Calificare | Fixează suportul minim pe seed-uri distincte, regula de selecție și criteriile competitive înainte de rulare. Calibrează pe un lot, validează valoarea pe altul și compară victoriile într-un al treilea. |
+
+Pentru o clasă de cărți `H` și o reacție `R`, auditorul poate calcula `P(H ∣ R, stare, sumă)` din frecvența reacției în clasa `H`, înmulțită cu frecvența clasei înainte de reacție și împărțită la frecvența reacției. Un call poate selecta altă distribuție de mâini la fiecare ofertă. Diferența pereche până la decontare compară ofertele în aceleași stări.
+
+- **Informații.** Politica folosește numai cărțile proprii și starea publică. Auditorul poate folosi cărțile ascunse pentru a explica selecția după decontarea ambelor ramuri.
+- **Valoare aleatorie comună.** Repetă diagnosticul primei reacții cu aceeași valoare aleatorie la ambele oferte. Suma rămâne vizibilă pentru calculul prețului și al acțiunilor legale. Compară rezultatul cu reacția în care generatorul folosește istoricul fiecărei oferte.
+
+#### Equity contra range-ului care răspunde
+
+În arenă, estimăm separat range-ul de call și cel de re-raise pentru fiecare sumă. Profilul păstrează numărători de fold, call și re-raise pe clasă de cărți, bandă de stivă efectivă și pereche de oferte.
+
+| Etapă | Contract |
+|---|---|
+| Calibrare | Rulează perechi din același prefix. Pentru adversarii LAG, egalizează extragerea la prima reacție prin normalizarea ultimei sume preflop doar în calculul extragerii. |
+| Range | Împarte combinațiile în premium, perechi mici, două cărți de rang mare și rest. Pentru fiecare clasă, corectează frecvența observată cu proporția de combinații disponibile după excluderea cărților proprii. |
+| Equity | Eșantionează un buget fix de runout-uri pe clasă și reutilizează aceleași eșantioane la ambele oferte. Fiecare reacție are propria medie ponderată, inclusiv jumătate de pot pentru egalitate. |
+| Scor | La call folosește equity contra range-ului care plătește. La re-raise, compară abandonul cu decontarea la stiva efectivă, folosind equity contra range-ului care mărește. Această decontare este o aproximare în scorul de selecție. |
+| Validare | Măsoară eroarea equity față de un showdown de control și față de estimatorul uniform. Verifică separat jetoanele realizate sub politicile de continuare și victoriile în turnee pereche. |
+
+- Ponderea unei clase la o reacție este numărul de răspunsuri din clasă înmulțit cu `combinații disponibile / combinații totale în clasă`.
+- Probabilitatea reacției împarte ponderea ei la ponderea tuturor răspunsurilor. Equity condiționată este media equity pe clase, cu ponderile acelei reacții.
+
+Datele ascunse intră în numărătorile offline și în oracol. La alegerea sumei, candidatul vede numai cărțile proprii, stiva, prețul și istoricul public. Când lipsesc date pentru o ofertă sau o bandă, păstrează suma de control.
+
+#### Adversari care decid după forța mâinii
+
+Adversarul de arenă `StrengthSelectivePolicy` folosește cărțile proprii, prețul și mutările legale pentru a deschide, a plăti sau a mări preflop. Stilurile schimbă pragurile. La compararea a două sume, variația pseudoaleatorie rămâne aceeași la prefix identic.
+
+| Întrebare | Probabilitate sau valoare |
+|---|---|
+| Cum reacționează adversarul? | `P(reacție ∣ stare, sumă)` pentru fold, call și re-raise, cu numărătorul și numitorul pe ofertă. |
+| Ce mâini formează range-ul? | `P(clasă de cărți ∣ reacție, stare, sumă)` pe răspunsurile observate. Raportează separat equity la showdown și valoarea netă până la decontare. |
+| Ce permite stiva? | Separă suma care acoperă adversarul de suma care îi lasă jetoane. În primul caz, probabilitatea de re-raise este zero prin regulă. |
+| Ce aduce range-ul? | Compară cu o variantă care păstrează aceleași probabilități de reacție și folosește equity uniformă. Măsoară ambele variante cu aceleași oferte și aceeași extragere. |
+
+Pentru calificarea pe stivă scurtă, numără ocaziile legale și ocaziile acoperite de calibrare pe turnee naturale. Folosește stiluri și seed-uri distincte pentru validare. Măsoară avantajul realizat pe perechi și păstrează cazurile sintetice separat de rezultatul competitiv.
+
+#### Calibrarea reacției după preț și stil la stivă scurtă
+
+Pentru un re-raise preflop legal la cel mult 10 BB efective, laboratorul calculează pot odds din perspectiva adversarului. Împarte suma de plătit la potul de după ofertă plus suma de plătit. Stilul este o estimare din shove-urile publice ale adversarului în mâini încheiate, raportate la ocaziile sale eligibile.
+
+| Nivel | Cum estimează fold, call și re-raise |
+|---|---|
+| Regim de stivă | Păstrează numărători separate pentru adversarul acoperit și cel căruia îi rămân jetoane. La acoperire, probabilitatea de re-raise este exact zero. |
+| Preț | Folosește benzile sub 20%, 20–26%, 27–33% și de la 34%, după rotunjirea în jos. Combină numărătorile din bandă cu frecvențele regimului de stivă. |
+| Stil public | Cu suficiente ocazii publice, regularizează rata de shove și separă stilurile prudent și agresiv. Un stil necunoscut folosește estimarea benzii de preț. |
+| Suport | O celulă rară folosește nivelul părinte. Un regim de stivă fără suport păstrează suma de control. Probele de acoperire construite din prefixuri reale se califică separat de deciziile naturale de acoperire. |
+
+- **Comparație de probabilități.** Raportează frecvențele observate, Brier și log loss pentru fiecare nivel. Fixează equity la call și la re-raise în comparația dintre variante.
+- **Comparație de sume.** Alege numai oferte legale, păstrează aceeași extragere la prima reacție și compară jetoanele până la decontare pe aceleași pachete. Califică apoi pe victorii, într-un lot independent de turnee.
+
+### Laboratorul cu distribuții duplicate și stiluri schimbătoare
+
+Arena rotește rolurile pe toate locurile pentru fiecare seed. Modul cu distribuții duplicate fixează cele două cărți ale fiecărui loc fizic și board-ul fiecărei mâini, inclusiv după eliminări. Blindurile, butonul, deciziile și supraviețuirea continuă să evolueze după regulile motorului.
+
+| Mecanism | Contract |
+|---|---|
+| Mese | Profilul YAML definește stive adânci, o masă cu stiluri fixe și o masă cu aceeași configurație inițială și schimbări de stil la mâini stabilite. Unele roluri păstrează stilul pe tot turneul. |
+| Observație | Profilul urmărește reacția imediată la pariuri comparabile pe flop și turn, cu un singur adversar și jetoane rămase. Publică numărătorile pe loc fizic numai după încheierea mâinii. |
+| Predicție | Compară un reper fix, istoricul cumulativ și o fereastră de mâini recente. Toate pornesc de la același reper calibrat pe un lot separat. Predictorul vede acțiuni publice, iar evaluatorul păstrează separat etichetele fazelor. |
+| Decizie | Candidatul poate înlocui un check Hard cu un pariu mic, în limitele legale și ale stivelor. Cere suficient suport și un avantaj estimat chiar dacă orice continuare adversă pierde suma pariată. |
+| Evaluare | Măsoară eroarea predicțiilor pe traiectoriile controlului și victoriile pe alte turnee pereche. Tratează toate rotațiile aceluiași seed ca un singur bloc statistic. |
+
+Modul cu distribuții duplicate se folosește în arenă. Testele verifică ascunderea cărților în timpul jocului, păstrarea board-ului după eliminări și legalitatea acțiunilor. [Profilul de laborator](../../config/j6-deep-style-study.yaml)
+
+- **După o reacție.** Cititorul pe două regimuri actualizează șansa ca adversarul să joace în regimul care renunță des, după decontare și pe baza probabilității reacției în ambele regimuri.
+- **Între reacții.** Estimarea revine treptat spre reperul populației, în funcție de mâinile scurse. Calibrarea și comparația competitivă folosesc seed-uri distincte.
+
+#### Inițiativa și poziția
+
+- **Inițiativă.** Prima mărire stabilește un preț nou. În simulare, compară call-ul și raise-ul din aceeași stare a primului actor și măsoară reacția imediată.
+- **Poziție.** În heads-up, butonul acționează primul preflop și ultimul postflop. Segmentează rezultatele după stradă, prima mărire și re-raise. [Ordinea heads-up](https://www.pokerstars.com/poker/learn/news/strategy-to-play-heads-up-poker/)
+- **Comparație.** Reexecută două sume din același prefix pe o copie a mâinii și validează prețul efectiv. Estimează frecvențele pe turnee separate și măsoară victoriile într-un lot competitiv independent. [Dimensiuni de acțiune în jocuri cu informație incompletă](https://arxiv.org/abs/1705.02955)
 
 ## Politică mixtă de bluff pentru laborator
 

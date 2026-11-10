@@ -75,6 +75,18 @@ final class HoldemTablePresentation {
         return complete && !viewer && seat.dealtCards() && seat.shownCards().size() == 2;
     }
 
+    static boolean alignTerminalSeatHands(HoldemTableViewState frame) {
+        return frame.street() == Street.COMPLETE && frame.seats().size() >= 5;
+    }
+
+    static List<Card> terminalCardsAtSeat(HoldemTableViewState frame, int physicalSeat) {
+        boolean viewer = physicalSeat == frame.viewer();
+        if (viewer && alignTerminalSeatHands(frame)) return frame.ownCards();
+        var seat = frame.seats().get(physicalSeat);
+        return showOpponentCards(frame.street() == Street.COMPLETE, viewer, seat)
+                ? seat.shownCards() : List.of();
+    }
+
     static int fitCardScale(int viewportHeight, int preferredHeight, int minimumHeight) {
         if (preferredHeight <= viewportHeight) return FULL_CARD_SCALE;
         if (minimumHeight >= viewportHeight) return MIN_CARD_SCALE;

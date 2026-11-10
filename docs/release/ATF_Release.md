@@ -8,7 +8,7 @@
 | `PREPARED` | Sursă fixată, APK semnat calificat prin teste și instalare sanity, inventar SHA-256 și descărcare autentificată verificată. |
 | `PUBLISHED` | Tag-ul indică commit-ul calificat, APK-ul și checksum-ul sunt atașate și ambele descărcări anonime sunt verificate. |
 
-APK-urile intermediare, build-urile, cache-urile, logurile și capturile brute rămân în `C:\work\holdem_back`. Dosarul ediției leagă pachetul selectat, checksum-ul, manifestul și rapoartele Extent cu imagini încorporate. APK-ul și checksum-ul rămân în afara Git și devin fișiere atașate release-ului.
+APK-urile intermediare, build-urile, cache-urile, logurile și capturile brute rămân sub rădăcina externă `HOLDEM_DATA_ROOT`. Dosarul ediției leagă pachetul selectat, checksum-ul, manifestul și rapoartele Extent cu imagini încorporate. APK-ul și checksum-ul se atașează la release.
 
 ## README principal și catalog
 
@@ -69,18 +69,18 @@ J6 folosește o identitate Android proprie, distinctă de J4/J5. Inițializarea 
 .\scripts\Initialize-HoldemSigning.ps1
 ```
 
-Cheia PKCS#12 și parola protejată cu DPAPI stau în `C:\work\holdem_back\infrastructure\signing`, cu ACL limitat la utilizatorul curent și SYSTEM. Nu copiați cheia, certificatul privat sau parola în Git, TMP, raport ori Release. Păstrați o copie de recuperare securizată; scriptul refuză identitate incompletă și nu rotește cheia automat.
+Cheia PKCS#12 și parola protejată cu DPAPI stau în `infrastructure/signing` sub rădăcina externă de date, cu ACL limitat la utilizatorul curent și SYSTEM. Păstrați cheia și parola în directorul protejat, cu o copie de recuperare securizată. Scriptul refuză o identitate incompletă și nu rotește cheia automat.
 
 ## Calificare reproductibilă
 
-Promovați doar dintr-un commit curat. Pregătiți un dosar extern nou și un repository Maven extern:
+Promovați doar dintr-un commit curat. Setați `HOLDEM_DATA_ROOT` și `HOLDEM_MAVEN_REPOSITORY` la directorul de date și repository-ul Maven din afara checkout-ului.
 
 ```powershell
 $version = (Get-Content -Raw .\release\index.json | ConvertFrom-Json).currentVersion
-$run = "C:\work\holdem_back\release-runs\j6-$version-<id-unic>"
-$maven = 'C:\work\holdem_back\infrastructure\cache\maven'
+$run = Join-Path $env:HOLDEM_DATA_ROOT ("release-runs/j6-$version-" + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+$maven = $env:HOLDEM_MAVEN_REPOSITORY
 $sourceCommit = (git rev-parse HEAD).Trim()
-.\scripts\Build-HoldemRelease.ps1 -RunRoot $run -MavenRepository $maven
+.\scripts\Build-HoldemRelease.ps1 -RunRoot $run -MavenRepository $maven -DataRoot $env:HOLDEM_DATA_ROOT
 ```
 
 | Etapă | Ce verifică runnerul |
@@ -96,7 +96,7 @@ $sourceCommit = (git rev-parse HEAD).Trim()
 
 [Catalogul edițiilor](../../release/README.md)
 
-Pentru o ediție care schimbă lizibilitatea chenarelor, adăugați `-IncludeSeatMetrics` la runner. Acesta cere Android Accessibility Suite pe emulator și include dovada Extent pentru viewport-ul compact și TalkBack în aceeași calificare. [Strategia de testare Android](../testing/TEST_STRATEGY.md#interfața-android-locală)
+Pentru o ediție care schimbă chenarele, cărțile terminale sau selectorul de dificultate, adăugați `-IncludeSeatMetrics` la runner. Acesta cere Android Accessibility Suite și include dovada Extent a afișajului compact. [Strategia de testare Android](../testing/TEST_STRATEGY.md#interfața-android-locală)
 
 Pentru o ediție care schimbă decontarea, premiul sau animația lui, includeți `-IncludeSettlementAward`. Pe același APK sanity, runnerul execută cele patru probe:
 
@@ -161,7 +161,7 @@ Pagina de Release și endpointul de download sunt distincte de `release/<versiun
 Folosiți opțiunea `-PlanOnly` pentru un checkout care indică o ediție `PREPARED` sau `PUBLISHED`. Scriptul citește manifestul și secțiunea `Jocul` din README și afișează rutele canonice, dimensiunea, SHA-256 și politica de autentificare, fără acces la rețea sau fișiere de ieșire.
 
 ```powershell
-.\scripts\Test-PublishedHoldemDownload.ps1 -ProjectRoot C:\cale\ediție-publicată -PlanOnly
+.\scripts\Test-PublishedHoldemDownload.ps1 -PlanOnly
 ```
 
 Verificarea online folosește un singur termen de trei minute pentru antete și fluxurile ambelor fișiere. Un plan confirmă identitatea țintelor. Pentru promovare sunt necesare dovezile descărcărilor reale.

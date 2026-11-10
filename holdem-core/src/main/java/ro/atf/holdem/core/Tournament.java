@@ -4,6 +4,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public final class Tournament {
+    public enum DealMode { STANDARD, FIXED_PHYSICAL_SEAT }
+
     public record Rules(int seats, int startingStack, long levelSeconds, List<BlindLevel> levels) {
         public Rules {
             levels = List.copyOf(levels);
@@ -22,6 +24,7 @@ public final class Tournament {
     public record Round(int number, long elapsedSeconds, int eliminated, int levelIndex, HoldemHand hand) {}
 
     private final Rules rules;
+    private final DealMode dealMode;
     private List<Integer> stacks;
     private final int[] finishingRanks;
     private int hands, button, previousBigBlind;
@@ -30,7 +33,12 @@ public final class Tournament {
     private boolean finalized;
 
     public Tournament(Rules rules, int initialButton) {
+        this(rules, initialButton, DealMode.STANDARD);
+    }
+
+    public Tournament(Rules rules, int initialButton, DealMode dealMode) {
         this.rules = Objects.requireNonNull(rules);
+        this.dealMode = Objects.requireNonNull(dealMode);
         if (initialButton < 0 || initialButton >= rules.seats()) throw new IllegalArgumentException("Invalid button");
         button = initialButton;
         stacks = Collections.nCopies(rules.seats(), rules.startingStack());
@@ -66,7 +74,8 @@ public final class Tournament {
         long timedLevels = elapsedSeconds / rules.levelSeconds();
         int last = rules.levels().size() - 1;
         int index = (int) Math.min(last, Math.min(last, timedLevels) + eliminated);
-        current = new HoldemHand(++hands, stacks, button, rules.levels().get(index), HoldemHand.shuffledDeck(dealSeed));
+        current = new HoldemHand(++hands, stacks, button, rules.levels().get(index), HoldemHand.shuffledDeck(dealSeed),
+                dealMode == DealMode.FIXED_PHYSICAL_SEAT);
         previousBigBlind = current.bigBlindSeat();
         return new Round(hands, elapsed, eliminated, index, current);
     }

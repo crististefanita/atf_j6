@@ -115,7 +115,7 @@ public record PreflopResponseModel(int minSamples, int priorStrength, int foldWe
         return quote == null ? null : quote.spot();
     }
 
-    record Quote(Spot spot, int opponentPrice, int effectiveStack) {}
+    record Quote(Spot spot, int opponentPrice, int effectiveStack, int opponentPhysicalSeat, boolean covered) {}
 
     static Quote quote(HoldemObservation observation, int amount) {
         return quote(observation, amount, false);
@@ -131,7 +131,8 @@ public record PreflopResponseModel(int minSamples, int priorStrength, int foldWe
         long capacity = (long) observation.visibleStacks().get(context.opponent)
                 + paid.get(context.opponent) - paid.get(observation.heroSeat());
         return new Quote(responseSpot(observation, context, context.opponent, price, context.nextRaise),
-                Math.toIntExact(price), (int) Math.min(observation.heroStack(), capacity));
+                Math.toIntExact(price), (int) Math.min(observation.heroStack(), capacity),
+                context.opponentPhysicalSeat, price == stack);
     }
 
     private static Spot spot(HoldemObservation obs, PublicContext context, int responder, long price, Sequence sequence) {
@@ -148,7 +149,8 @@ public record PreflopResponseModel(int minSamples, int priorStrength, int foldWe
         return new Spot(sequence, distance > otherDistance, price <= 2L * obs.bigBlind(), stack <= 10L * obs.bigBlind());
     }
 
-    private record PublicContext(int opponent, int bigBlind, int lastRaiser, Sequence lastRaise, Sequence nextRaise) {}
+    private record PublicContext(int opponent, int opponentPhysicalSeat, int bigBlind, int lastRaiser,
+                                 Sequence lastRaise, Sequence nextRaise) {}
 
     private static PublicContext context(HoldemObservation obs) {
         if (obs.street() != Street.PREFLOP || obs.activeOpponentCount() != 1) return null;
@@ -184,6 +186,7 @@ public record PreflopResponseModel(int minSamples, int priorStrength, int foldWe
             if (opponent >= 0 || obs.visibleStacks().get(seat) == 0) return null;
             opponent = seat;
         }
-        return bb < 0 || opponent < 0 ? null : new PublicContext(opponent, bb, seats.indexOf(raiser), last, next);
+        return bb < 0 || opponent < 0 ? null
+                : new PublicContext(opponent, seats.get(opponent), bb, seats.indexOf(raiser), last, next);
     }
 }

@@ -261,6 +261,20 @@ Adversarul de arenă `StrengthSelectivePolicy` folosește cărțile proprii, pre
 
 Pentru calificarea pe stivă scurtă, numără ocaziile legale și ocaziile acoperite de calibrare pe turnee naturale. Folosește stiluri și seed-uri distincte pentru validare. Măsoară avantajul realizat pe perechi și păstrează cazurile sintetice separat de rezultatul competitiv.
 
+#### Calibrarea reacției după preț și stil la stivă scurtă
+
+Pentru un re-raise preflop legal la cel mult 10 BB efective, laboratorul calculează pot odds din perspectiva adversarului. Împarte suma de plătit la potul de după ofertă plus suma de plătit. Stilul este o estimare din shove-urile publice ale adversarului în mâini încheiate, raportate la ocaziile sale eligibile.
+
+| Nivel | Cum estimează fold, call și re-raise |
+|---|---|
+| Regim de stivă | Păstrează numărători separate pentru adversarul acoperit și cel căruia îi rămân jetoane. La acoperire, probabilitatea de re-raise este exact zero. |
+| Preț | Folosește benzile sub 20%, 20–26%, 27–33% și de la 34%, după rotunjirea în jos. Combină numărătorile din bandă cu frecvențele regimului de stivă. |
+| Stil public | Cu suficiente ocazii publice, regularizează rata de shove și separă stilurile prudent și agresiv. Un stil necunoscut folosește estimarea benzii de preț. |
+| Suport | O celulă rară folosește nivelul părinte. Un regim de stivă fără suport păstrează suma de control. Probele de acoperire construite din prefixuri reale se califică separat de deciziile naturale de acoperire. |
+
+- **Comparație de probabilități.** Raportează frecvențele observate, Brier și log loss pentru fiecare nivel. Fixează equity la call și la re-raise în comparația dintre variante.
+- **Comparație de sume.** Alege numai oferte legale, păstrează aceeași extragere la prima reacție și compară jetoanele până la decontare pe aceleași pachete. Califică apoi pe victorii, într-un lot independent de turnee.
+
 #### Inițiativa și poziția
 
 - **Inițiativă.** Prima mărire stabilește un preț nou. În simulare, compară call-ul și raise-ul din aceeași stare a primului actor și măsoară reacția imediată.

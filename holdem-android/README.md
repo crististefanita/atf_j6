@@ -25,7 +25,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 - `engine` compilează sursele `holdem-core` și `holdem-ai`; Java se compilează cu JDK 21 și țintă Java 17.
 - Acțiunile afișate provin din acțiunile legale ale motorului. Suma de bet/raise este numărul de jetoane adăugate la acțiunea curentă; motorul respinge valori invalide și comenzi depășite.
 - Politica primește numai observația actorului. Dezvăluirea de după decontare ține de prezentare și nu intră în observația AI.
-- La configurarea turneului, selectorul „Nivelul adversarilor” oferă Normal și Hard. Normal păstrează check/call, iar Hard decide offline din cărțile actorului, acțiunile publice, pot odds și stive. Dificultatea rămâne în sesiunea salvată. Checkpoint-urile anterioare se deschid în Normal.
+- Selectorul „Nivelul adversarilor” oferă Normal și Hard. Normal folosește check/call. În Hard, stilurile se repartizează pe locuri, iar turneul cu șase jucători include un adversar Normal. Sugestiile și auto-play-ul din Hard folosesc același profil. Sesiunea păstrează dificultatea, iar sesiunile vechi fără această setare se deschid în Normal.
 
 ## Turneu și reluare
 

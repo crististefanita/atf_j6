@@ -76,13 +76,23 @@ flowchart LR
 
 ### Profilul Hard al turneului local
 
-- Normal păstrează adversarii check/call. În Hard, adversarii, coach-ul și preluarea folosesc aceeași politică contextuală cu 512 eșantioane pe decizie.
-- Profilul reduce cu până la trei puncte procentuale pragul unei continuări preflop de cel mult două blinduri mari. Păstrează pragul obișnuit în fața unui all-in agresiv sau a riscului de eliminare și ține cont de costul apelului și eroarea estimării.
-- `cheapPreflopDiscount` se calibrează cu aceleași ponderi de raise, blinduri și adversari în fiecare pereche. Compară stive inițiale scurte și adânci și urmărește deciziile la care discountul se poate aplica.
+Turneul Hard alocă stilurile adversarilor în sensul acelor de ceasornic de la locul inițial al jucătorului. Eliminările și reluarea turneului păstrează stilul fiecărui loc. Un turneu Normal folosește check/call pentru toți adversarii.
+
+| Loc relativ | Stil | Comportament |
+|---|---|---|
+| 1 | Echilibrat | Aplică pragurile de referință pentru continuare și mărire. |
+| 2 | Prudent | Cere mai multă echitate pentru continuare și pentru a angaja o parte mare din stivă. |
+| 3 | Activ | Continuă mai des la preț mic și reduce marja de mărire. |
+| 4, la 5–6 locuri | Pozițional | Acordă mai multă greutate ordinii de acțiune la mărire. |
+| 5, la 6 locuri | Normal | Dă check când poate și egalează prețul când există un pariu. |
+
+- Configurația locală este centralizată în [TournamentPlayStyles](../../holdem-ai/src/main/java/ro/atf/holdem/ai/TournamentPlayStyles.java). Stilurile contextuale folosesc 512 eșantioane pe decizie și aceleași limite legale ale motorului. Sugestiile și auto-play-ul din Hard folosesc stilul echilibrat.
+- Profilul de referință reduce cu până la trei puncte procentuale pragul unei continuări preflop de cel mult două blinduri mari. Păstrează pragul obișnuit în fața unui all-in agresiv sau a riscului de eliminare.
+- Calibrează `cheapPreflopDiscount` la același buget de eșantionare, cu aceleași blinduri și adversari în pereche. Pentru auto-play, rotește locul jucătorului pe aceleași distribuții la mai multe adâncimi și verifică îmbunătățirea pe distribuții noi.
 
 #### Raise cu preț pozitiv
 
-Turneul local Hard folosește aceleași ponderi ca profilul YAML de arenă. Ponderile din `hardPressure.raiseContext` sunt exprimate în puncte procentuale, iar limita de angajare este un procent din stivă.
+Stilul echilibrat folosește ponderile profilului YAML de referință din arenă. Ponderile din `hardPressure.raiseContext` sunt exprimate în puncte procentuale, iar limita de angajare este un procent din stivă.
 
 | Semnal | Aplicare |
 |---|---|
@@ -96,7 +106,7 @@ Discountul de call ieftin, reducerea de urgență pentru stivă scurtă și isto
 
 #### Pariu de deschidere postflop
 
-| Deschidere heads-up la preț zero | Condiții suplimentare |
+| Deschidere heads-up la preț zero, stil echilibrat | Condiții suplimentare |
 |---|---|
 | 1× pot | Turn sau river, cel puțin două perechi și equity conservatoare de minimum 76%. |
 | 2× pot | Aceleași condiții, cu minimum 86%. |

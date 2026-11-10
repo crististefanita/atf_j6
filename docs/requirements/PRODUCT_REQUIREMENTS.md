@@ -57,7 +57,7 @@ Primul increment reutilizează meniul, selectorul de limbă, editorul numelui, g
 
 Turneul local pornește cu 4–6 jucători. Intervalul blindurilor se alege la creare dintre 1, 2, 3 și 5 minute, cu 1 minut implicit.
 
-- Selectorul „Nivelul adversarilor” oferă Normal și Hard, cu Normal implicit. Dificultatea aparține turneului și se păstrează la reluare. [Politica Hard](AI_REQUIREMENTS.md#profilul-hard-al-turneului-local)
+- Selectorul „Nivelul adversarilor” oferă Normal și Hard, cu Normal implicit. În Normal, adversarii dau check sau call. În Hard, adversarii au stiluri distincte, iar la șase locuri unul folosește stilul Normal. Dificultatea și alocarea stilurilor se păstrează la reluare. [Politica Hard](AI_REQUIREMENTS.md#profilul-hard-al-turneului-local)
 - Expirarea intervalului și eliminările se reflectă în nivelul mâinii următoare.
 - La decontare, stivele decid cine continuă. Locul uman rămâne fix la schimbarea dealerului și în heads-up.
 - Ecranul terminal păstrează cărțile ultimei mâini și arată rezultatul turneului.

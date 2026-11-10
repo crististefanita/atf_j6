@@ -8,7 +8,7 @@
 
 Estimatorul Monte Carlo eșantionează uniform mâinile necunoscute. Ponderile contextuale schimbă pragul, iar estimatorul nu modelează range-uri individuale sau cota pe straturile potului. Holdout-urile existente dau rezultate mixte în funcție de mărimea mesei și poziție.
 
-În Android, Normal păstrează adversarii check/call. Hard este o alegere explicită pentru turneele locale și folosește profilul de presiune și pentru coach și preluare. Statisticile de shove se reconstruiesc din acțiunile publice ale mâinilor încheiate, inclusiv după reluare. [Contractul AI](../requirements/AI_REQUIREMENTS.md) · [Evaluarea în arenă](../requirements/TOURNAMENT_RULES.md)
+În Android, Normal folosește check/call. Hard alocă stiluri distincte, include un adversar Normal la șase locuri și folosește un profil comun pentru sugestii și auto-play. Statisticile de shove se reconstruiesc din acțiunile publice ale mâinilor încheiate, inclusiv după reluare. [Contractul AI](../requirements/AI_REQUIREMENTS.md) · [Evaluarea în arenă](../requirements/TOURNAMENT_RULES.md)
 
 ## Reper de evaluare
 

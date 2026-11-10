@@ -2,6 +2,9 @@ package ro.atf.holdem.android;
 
 import ro.atf.holdem.ai.ContextualEquityPolicy;
 import ro.atf.holdem.ai.Decision;
+import ro.atf.holdem.ai.DecisionPolicy;
+import ro.atf.holdem.ai.TournamentPlayStyles;
+import ro.atf.holdem.ai.TournamentPlayStyles.Style;
 import ro.atf.holdem.core.ActionType;
 import ro.atf.holdem.core.BlindLevel;
 import ro.atf.holdem.core.HoldemHand;
@@ -13,13 +16,15 @@ import ro.atf.holdem.core.Tournament;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.LongSupplier;
 
-/** Offline play with a fixed human viewer and a per-tournament opponent policy. */
+/** Offline play with a fixed human viewer and stable tournament opponent styles. */
 final class LocalHoldemGame {
     static final List<Integer> TABLE_SIZES = List.of(2, 4, 5, 6);
     static final List<Integer> TOURNAMENT_SIZES = List.of(4, 5, 6);
@@ -88,7 +93,8 @@ final class LocalHoldemGame {
     private final LongSupplier monotonicNanos;
     private final Tournament tournament;
     private final Random dealSeeds;
-    private final ContextualEquityPolicy advisor;
+    private final DecisionPolicy advisor;
+    private final Map<Style, DecisionPolicy> hardOpponents;
     private final Difficulty difficulty;
     private final PublicShoveHistory shoveHistory;
     private final boolean showWinChance;
@@ -178,10 +184,12 @@ final class LocalHoldemGame {
         tournament = tournamentMode
                 ? new Tournament(tournamentRules(seats, blindLevelMinutes), dealer)
                 : null;
-        advisor = new ContextualEquityPolicy(ADVISOR_SAMPLES, 2, 8, 18, 60,
-                tournamentMode ? ContextualEquityPolicy.GameMode.TOURNAMENT : ContextualEquityPolicy.GameMode.CASH,
-                ContextualEquityPolicy.ContextWeights.defaults(),
-                difficulty == Difficulty.HARD ? ContextualEquityPolicy.HardPressure.TOURNAMENT : null);
+        hardOpponents = difficulty == Difficulty.HARD ? hardOpponentPolicies() : Map.of();
+        advisor = difficulty == Difficulty.HARD
+                ? hardOpponents.get(TournamentPlayStyles.hardAutoPlayStyle())
+                : new ContextualEquityPolicy(ADVISOR_SAMPLES, 2, 8, 18, 60,
+                        tournamentMode ? ContextualEquityPolicy.GameMode.TOURNAMENT
+                                : ContextualEquityPolicy.GameMode.CASH);
         tournamentClockAnchorNanos = monotonicNanos.getAsLong();
         startHand();
     }
@@ -304,13 +312,23 @@ final class LocalHoldemGame {
         apply(actor, new Move(response.type(), response.amount()));
     }
 
+    private static Map<Style, DecisionPolicy> hardOpponentPolicies() {
+        var policies = new EnumMap<Style, DecisionPolicy>(Style.class);
+        for (Style style : Style.values()) {
+            policies.put(style, style.policy(ADVISOR_SAMPLES));
+        }
+        return Map.copyOf(policies);
+    }
+
     Move suggestOpponent(Turn expected) {
         HoldemObservation observation;
+        DecisionPolicy policy;
         synchronized (this) {
             requireHardOpponentTurn(expected);
             observation = observeActor();
+            policy = hardOpponents.get(TournamentPlayStyles.hardOpponentStyle(seats, human, hand.actor()));
         }
-        Decision decision = advisor.decide(observation);
+        Decision decision = policy.decide(observation);
         return new Move(decision.action(), decision.amount());
     }
 
@@ -366,7 +384,7 @@ final class LocalHoldemGame {
         }
     }
 
-    /** Finishes one hand by composing legal AI decisions with the existing passive-opponent policy. */
+    /** Finishes one hand by composing the human auto-play policy with the configured opponents. */
     void autoPlayHand(Turn expected) {
         synchronized (this) {
             if (!turn().equals(expected) || hand.actor() != human || hand.street() == Street.COMPLETE)

@@ -8,11 +8,10 @@ import android.widget.TextView;
 /** Keeps both facts readable at the actual seat width and Android font scale. */
 final class SeatFactRow extends LinearLayout {
     private final int gap;
-    private final int reservedDigitsWidth;
+    private int reservedDigitsWidth;
 
-    private SeatFactRow(Context context, int reservedDigitsWidth) {
+    SeatFactRow(Context context) {
         super(context);
-        this.reservedDigitsWidth = reservedDigitsWidth;
         gap = Math.round(4 * context.getResources().getDisplayMetrics().density);
         setGravity(Gravity.CENTER_VERTICAL);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
@@ -22,7 +21,8 @@ final class SeatFactRow extends LinearLayout {
         float widestDigit = 0;
         for (char digit = '0'; digit <= '9'; digit++)
             widestDigit = Math.max(widestDigit, value.getPaint().measureText(String.valueOf(digit)));
-        var row = new SeatFactRow(label.getContext(), (int) Math.ceil(reservedDigits * widestDigit));
+        var row = new SeatFactRow(label.getContext());
+        row.reservedDigitsWidth = (int) Math.ceil(reservedDigits * widestDigit);
         value.setGravity(Gravity.END);
         row.addView(label, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1));
         row.addView(value, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));

@@ -127,28 +127,6 @@
     <string name="achievement_medium">Medii</string>
     <string name="achievement_hard">Grele</string>
     <string name="achievement_error">Datele realizărilor nu au putut fi citite sau salvate.</string>
-    <string-array name="achievement_families">
-        <item>Poziție</item>
-        <item>Showdown</item>
-        <item>Mărimea pariului</item>
-        <item>Blinduri</item>
-        <item>All-in</item>
-        <item>Poturi</item>
-        <item>Poturi împărțite</item>
-        <item>Pot odds</item>
-        <item>Outs</item>
-        <item>Preflop</item>
-        <item>Textura boardului</item>
-        <item>Range-uri</item>
-        <item>Valoare</item>
-        <item>Disciplină</item>
-        <item>Bluffuri</item>
-        <item>Stackuri scurte</item>
-        <item>Heads-up</item>
-        <item>Mese cash</item>
-        <item>Turnee</item>
-        <item>Analiza mâinii</item>
-    </string-array>
     <string name="gameplay_achievement_earned">Obținută · %1$d/%2$d</string>
     <string name="gameplay_achievement_progress">Progres · %1$d/%2$d</string>
     <string name="gameplay_achievement_first_pot">Câștigă o mână de poker</string>

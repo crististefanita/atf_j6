@@ -128,28 +128,6 @@
     <string name="achievement_medium">Medium</string>
     <string name="achievement_hard">Hard</string>
     <string name="achievement_error">Achievement data could not be loaded or saved.</string>
-    <string-array name="achievement_families">
-        <item>Position</item>
-        <item>Showdown</item>
-        <item>Bet sizing</item>
-        <item>Blinds</item>
-        <item>All-in</item>
-        <item>Pots</item>
-        <item>Split pots</item>
-        <item>Pot odds</item>
-        <item>Outs</item>
-        <item>Preflop</item>
-        <item>Board texture</item>
-        <item>Ranges</item>
-        <item>Value</item>
-        <item>Discipline</item>
-        <item>Bluffs</item>
-        <item>Short stacks</item>
-        <item>Heads-up</item>
-        <item>Cash games</item>
-        <item>Tournaments</item>
-        <item>Hand review</item>
-    </string-array>
     <string name="gameplay_achievement_earned">Earned · %1$d/%2$d</string>
     <string name="gameplay_achievement_progress">Progress · %1$d/%2$d</string>
     <!-- The generated gameplay catalog owns these resource references. -->

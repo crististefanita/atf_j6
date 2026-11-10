@@ -18,7 +18,7 @@ Dosarele de mai jos păstrează dovezile edițiilor. Când un fișier este inven
 |---|---|---|
 | 0.14.1 | [Dosarul ediției](0.14.1/README.md) · `PREPARED` | [Manifestul ediției](0.14.1/release-validation.json) |
 | 0.14.0 | [Dosarul ediției](0.14.0/README.md) · `PREPARED` | [Manifestul ediției](0.14.0/release-validation.json) |
-| 0.13.0 | [Dosarul ediției](0.13.0/README.md) · `PREPARED` | [Manifestul ediției](0.13.0/release-validation.json) |
+| 0.13.0 | [Dosarul ediției](0.13.0/README.md) · retrasă din distribuție | [Manifestul ediției](0.13.0/release-validation.json) |
 | 0.12.0 | [Dosarul ediției](0.12.0/README.md) · PREPARED | [Manifestul ediției](0.12.0/release-validation.json) |
 | 0.11.1 | [Dosarul ediției](0.11.1/README.md) · `PREPARED` | [Manifestul ediției](0.11.1/release-validation.json) |
 | 0.11.0 | [Dosarul ediției](0.11.0/README.md) · `PREPARED` | [Manifestul ediției](0.11.0/release-validation.json) |
@@ -47,7 +47,9 @@ J0 continuă să raporteze aceste observații. Atribuirea la istoric cere fișie
 
 ### Ediții retrase
 
-Distribuția curentă include edițiile 0.14.1, 0.14.0 și 0.13.0. Tagurile, dosarele sigilate și istoricul Git păstrează proveniența edițiilor retrase.
+GitHub distribuie edițiile [0.14.1](https://github.com/crististefanita/atf_j6/releases/tag/v0.14.1) și [0.14.0](https://github.com/crististefanita/atf_j6/releases/tag/v0.14.0). Ediția 0.14.1 este versiunea curentă.
+
+Pentru 0.13.0, tagul și dosarul sigilat păstrează sursa și dovezile calificării. Linkul de descărcare din dosarul sigilat consemnează distribuția de la data publicării. [Tagul v0.13.0](https://github.com/crististefanita/atf_j6/tree/v0.13.0)
 
 ## Stări de publicare
 

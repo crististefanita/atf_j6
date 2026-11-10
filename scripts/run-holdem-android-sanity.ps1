@@ -3,6 +3,7 @@ param(
     [Parameter(Mandatory)][string]$RunRoot,
     [ValidateSet('tournament','release-smoke','hard-six','settlement-award','settlement-multi-award','settlement-static-award','settlement-compact-award','settlement-resume','leaderboard-settlement','leaderboard-profile-restart','seat-metrics','table-geometry')][string]$Mode = 'tournament',
     [ValidateSet('device','short','tall')][string]$GeometryProfile = 'device',
+    [switch]$UseReleaseForGeometry,
     [string]$Serial = '127.0.0.1:5555',
     [string]$Sdk = 'C:\tools\whist-android-sdk'
 )
@@ -12,7 +13,8 @@ $leaseFile = 'C:/work/whist_back/android-ui-lease.json'
 $adb = Join-Path $Sdk 'platform-tools/adb.exe'
 $appId = 'ro.atf.holdem.android'
 $testId = "$appId.test"
-$variant = if ($Mode -in @('release-smoke','hard-six','seat-metrics')) { 'release' } else { 'sanity' }
+if ($UseReleaseForGeometry -and $Mode -ne 'table-geometry') { throw 'The release geometry switch applies only to table-geometry.' }
+$variant = if ($UseReleaseForGeometry -or $Mode -in @('release-smoke','hard-six','seat-metrics')) { 'release' } else { 'sanity' }
 $journey = $Mode
 $label = if ($Mode -eq 'tournament') { 'android-tournament-sanity' } else { "android-$Mode" }
 if ($Mode -eq 'table-geometry') { $label += "-$GeometryProfile" }

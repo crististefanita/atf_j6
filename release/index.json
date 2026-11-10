@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.14.1",
-  "previousVersion": "0.14.0",
-  "changeClass": "PATCH_FIX",
-  "changeRationale": "Stabilizează masa între ture, apropie comenzile și separă realizările de exercițiile de antrenament.",
-  "state": "PREPARED",
+  "currentVersion": "0.15.0",
+  "previousVersion": "0.14.1",
+  "changeClass": "COMPATIBLE_FEATURE",
+  "changeRationale": "Păstrează poziția mesei derulate între ture și fixează spațiul marcajului de lângă numele jucătorului.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.14.1"
+    "0.15.0"
   ]
 }

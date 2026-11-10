@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.HexFormat;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,6 +43,20 @@ class ReleasePromotionGateTest {
 
     @Test void acceptsTheExactStagedBytesAndChecksum() throws Exception {
         assertTrue(gate("exact"));
+    }
+
+    @Test void componentQualificationRequiresEachProfileOnTheExactApk() throws Exception {
+        receipt.put("validationScope", "TABLE_GEOMETRY_COMPONENT");
+        var geometry = ((ObjectNode) receipt.path("qualification")).putObject("tableGeometry");
+        for (String profile : List.of("device", "short", "tall")) {
+            geometry.putObject(profile).put("status", "PASS").put("assertions", 18)
+                    .put("apkSha256", receipt.path("sha256").asText());
+        }
+        assertTrue(gate("component-exact"));
+        ((ObjectNode) geometry.path("tall")).put("apkSha256", "c".repeat(64));
+        assertFalse(gate("component-wrong-apk"));
+        geometry.remove("tall");
+        assertFalse(gate("component-missing-profile"));
     }
 
     @Test void refusesMissingAndTruncatedApk() throws Exception {

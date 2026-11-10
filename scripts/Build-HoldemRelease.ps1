@@ -7,9 +7,13 @@ param(
     [string]$Sdk = 'C:\tools\whist-android-sdk',
     [switch]$IncludeHardSix,
     [switch]$IncludeSeatMetrics,
-    [switch]$IncludeSettlementAward
+    [switch]$IncludeSettlementAward,
+    [switch]$TableGeometryOnly
 )
 $ErrorActionPreference = 'Stop'
+if ($TableGeometryOnly -and ($IncludeHardSix -or $IncludeSeatMetrics -or $IncludeSettlementAward)) {
+    throw 'TableGeometryOnly cannot be combined with end-to-end journeys.'
+}
 $sourceRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $dataRoot = [IO.Path]::GetFullPath($DataRoot)
 $RunRoot = [IO.Path]::GetFullPath($RunRoot)
@@ -59,11 +63,18 @@ function Get-SourceManifest([string]$Directory) {
         [pscustomobject]@{ path=$relative; sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
     } | Sort-Object path)
 }
-function Invoke-NativeQualification([string]$Mode) {
+function Invoke-NativeQualification([string]$Mode, [string]$GeometryProfile) {
+    $options = @{ RunRoot=$RunRoot; Mode=$Mode; Sdk=$Sdk }
+    $logName = "android-$Mode.log"
+    if ($GeometryProfile) {
+        $options.GeometryProfile = $GeometryProfile
+        $options.UseReleaseForGeometry = $true
+        $logName = "android-$Mode-$GeometryProfile.log"
+    }
     $deadline = [DateTime]::UtcNow.AddMinutes(12)
     do {
         try {
-            & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') -RunRoot $RunRoot -Mode $Mode -Sdk $Sdk *> (Join-Path $RunRoot "android-$Mode.log")
+            & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') @options *> (Join-Path $RunRoot $logName)
             return
         } catch {
             $message = $_.Exception.Message
@@ -207,87 +218,117 @@ try {
     $apkBytes = (Get-Item -LiteralPath $finalApk).Length
     [IO.File]::WriteAllText("$finalApk.sha256", "$apkHash  HoldemLab-$version.apk`n", [Text.UTF8Encoding]::new($false))
 
-    Invoke-NativeQualification -Mode tournament
-    Invoke-NativeQualification -Mode release-smoke
-
     $publisher = Join-Path $appRoot 'tools/PublishTournamentExtent.java'
-    $tournamentEvidence = Join-Path $RunRoot 'android-tournament-sanity'
-    $releaseEvidence = Join-Path $RunRoot 'android-release-smoke'
-    & $java -cp $classPath $publisher (Join-Path $reports 'android-tournament-extent.html') $tournamentEvidence $sanityApk
-    if ($LASTEXITCODE -ne 0) { throw 'Tournament Extent publication failed.' }
-    & $java -cp $classPath $publisher (Join-Path $reports 'android-release-smoke-extent.html') $releaseEvidence $releaseApk
-    if ($LASTEXITCODE -ne 0) { throw 'Release smoke Extent publication failed.' }
+    $nativeProofs = [ordered]@{}
+    if ($TableGeometryOnly) {
+        $geometry = [ordered]@{}
+        foreach ($profile in @('device','short','tall')) {
+            Invoke-NativeQualification -Mode table-geometry -GeometryProfile $profile
+            $evidence = Join-Path $RunRoot "android-table-geometry-$profile"
+            $report = "android-table-geometry-$profile-extent.html"
+            & $java -cp $classPath $publisher (Join-Path $reports $report) $evidence $releaseApk
+            if ($LASTEXITCODE -ne 0) { throw "Table geometry Extent failed for $profile." }
+            $receiptPath = Join-Path $evidence 'native.json'
+            $receipt = Get-Content -Raw -LiteralPath $receiptPath | ConvertFrom-Json
+            if ($receipt.status -cne 'PASS' -or $receipt.apkSha256 -cne $apkHash -or $receipt.assertions.Count -ne 18) {
+                throw "Table geometry proof does not match the release APK for $profile."
+            }
+            if ($receipt.window -notmatch '^(\d+) × (\d+) dp$') { throw 'The component did not report its display dimensions.' }
+            $widthDp = [int]$Matches[1]
+            $heightDp = [int]$Matches[2]
+            if (($profile -eq 'short' -and ($widthDp -gt 320 -or $heightDp -gt 360 -or $receipt.fontScale -ne 2)) -or
+                ($profile -eq 'tall' -and ($widthDp -lt 400 -or $heightDp -lt 800 -or $receipt.fontScale -ne 1))) {
+                throw "The component did not run on the requested $profile display."
+            }
+            $geometry[$profile] = [ordered]@{status=$receipt.status; apkSha256=$receipt.apkSha256;
+                assertions=$receipt.assertions.Count; window=$receipt.window; fontScale=$receipt.fontScale; report=$report
+                receiptSha256=(Get-FileHash -LiteralPath $receiptPath -Algorithm SHA256).Hash.ToLowerInvariant()}
+        }
+        $nativeProofs.tableGeometry = $geometry
+    } else {
+        Invoke-NativeQualification -Mode tournament
+        Invoke-NativeQualification -Mode release-smoke
+
+        $tournamentEvidence = Join-Path $RunRoot 'android-tournament-sanity'
+        $releaseEvidence = Join-Path $RunRoot 'android-release-smoke'
+        & $java -cp $classPath $publisher (Join-Path $reports 'android-tournament-extent.html') $tournamentEvidence $sanityApk
+        if ($LASTEXITCODE -ne 0) { throw 'Tournament Extent publication failed.' }
+        & $java -cp $classPath $publisher (Join-Path $reports 'android-release-smoke-extent.html') $releaseEvidence $releaseApk
+        if ($LASTEXITCODE -ne 0) { throw 'Release smoke Extent publication failed.' }
+        $tournament = Get-Content -Raw -LiteralPath (Join-Path $tournamentEvidence 'native.json') | ConvertFrom-Json
+        $releaseSmoke = Get-Content -Raw -LiteralPath (Join-Path $releaseEvidence 'native.json') | ConvertFrom-Json
+        $sanityHash = (Get-FileHash -LiteralPath $sanityApk -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($tournament.status -ne 'PASS' -or $releaseSmoke.status -ne 'PASS' -or
+            $tournament.apkSha256 -ne $sanityHash -or $releaseSmoke.apkSha256 -ne $apkHash) {
+            throw 'Native receipts do not prove the exact release APK and the tournament flow.'
+        }
+        $nativeProofs.tournamentSanity = [ordered]@{status=$tournament.status;api=$tournament.api;assertions=$tournament.assertions.Count;screenshots=$tournament.captures.Count;apkSha256=$tournament.apkSha256}
+        $nativeProofs.releaseInstallSmoke = [ordered]@{status=$releaseSmoke.status;api=$releaseSmoke.api;assertions=$releaseSmoke.assertions.Count;screenshots=$releaseSmoke.captures.Count;apkSha256=$releaseSmoke.apkSha256}
+        $hardSix = $null
+        if ($IncludeHardSix) {
+            Invoke-NativeQualification -Mode hard-six
+            $hardSixEvidence = Join-Path $RunRoot 'android-hard-six'
+            $hardSixReceipt = Get-Content -Raw -LiteralPath (Join-Path $hardSixEvidence 'native.json') | ConvertFrom-Json
+            & $java -cp $classPath $publisher (Join-Path $reports 'android-hard-six-extent.html') $hardSixEvidence $releaseApk
+            if ($LASTEXITCODE -ne 0 -or $hardSixReceipt.status -ne 'PASS' -or $hardSixReceipt.apkSha256 -ne $apkHash) {
+                throw 'The Hard six-seat smoke did not qualify the exact signed APK.'
+            }
+            $hardSix = [ordered]@{
+                status=$hardSixReceipt.status; api=$hardSixReceipt.api; assertions=$hardSixReceipt.assertions.Count
+                screenshots=$hardSixReceipt.captures.Count; apkSha256=$hardSixReceipt.apkSha256
+            }
+        }
+        $seatMetrics = $null
+        if ($IncludeSeatMetrics) {
+            Invoke-NativeQualification -Mode seat-metrics
+            $seatEvidence = Join-Path $RunRoot 'android-seat-metrics'
+            $seatReceipt = Get-Content -Raw -LiteralPath (Join-Path $seatEvidence 'native.json') | ConvertFrom-Json
+            & $java -cp $classPath $publisher (Join-Path $reports 'android-seat-metrics-extent.html') $seatEvidence $releaseApk
+            if ($LASTEXITCODE -ne 0 -or $seatReceipt.status -ne 'PASS' -or $seatReceipt.apkSha256 -ne $apkHash) {
+                throw 'Compact seat metrics Extent or installed APK identity failed.'
+            }
+            $seatMetrics = [ordered]@{
+                status=$seatReceipt.status; api=$seatReceipt.api; window=$seatReceipt.window; fontScale=$seatReceipt.fontScale
+                assertions=$seatReceipt.assertions.Count; screenshots=$seatReceipt.captures.Count; apkSha256=$seatReceipt.apkSha256
+            }
+        }
+        $settlementProofs = [ordered]@{}
+        if ($IncludeSettlementAward) {
+            $awardModes = [ordered]@{
+                settlementAward='settlement-award'
+                settlementMultiAward='settlement-multi-award'
+                settlementStaticAward='settlement-static-award'
+                settlementCompactAward='settlement-compact-award'
+            }
+            foreach ($entry in $awardModes.GetEnumerator()) {
+                $mode = $entry.Value
+                $awardEvidence = Join-Path $RunRoot "android-$mode"
+                $awardReport = "android-$mode-extent.html"
+                $awardError = $null
+                try {
+                    Invoke-NativeQualification -Mode $mode
+                } catch {
+                    $awardError = $_
+                }
+                $receiptPath = Join-Path $awardEvidence 'native.json'
+                if (!(Test-Path -LiteralPath $receiptPath)) {
+                    if ($awardError) { throw $awardError }
+                    throw "$mode did not produce a native receipt."
+                }
+                & $java -cp $classPath $publisher (Join-Path $reports $awardReport) $awardEvidence $sanityApk
+                $award = Get-Content -Raw -LiteralPath $receiptPath | ConvertFrom-Json
+                if ($LASTEXITCODE -ne 0 -or $awardError -or $award.status -ne 'PASS' -or $award.apkSha256 -ne $sanityHash) {
+                    throw "$mode qualification failed. Inspect the native receipt and Extent."
+                }
+                $settlementProofs[$entry.Key] = [ordered]@{
+                    status=$award.status; api=$award.api; window=$award.window; apkSha256=$award.apkSha256
+                    assertions=$award.assertions.Count; screenshots=$award.captures.Count; report=$awardReport
+                }
+            }
+        }
+    }
     Get-ChildItem -LiteralPath (Join-Path $reports 'maven') -File -Filter '*.html' | ForEach-Object {
         Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $reports $_.Name)
-    }
-    $tournament = Get-Content -Raw -LiteralPath (Join-Path $tournamentEvidence 'native.json') | ConvertFrom-Json
-    $releaseSmoke = Get-Content -Raw -LiteralPath (Join-Path $releaseEvidence 'native.json') | ConvertFrom-Json
-    $sanityHash = (Get-FileHash -LiteralPath $sanityApk -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($tournament.status -ne 'PASS' -or $releaseSmoke.status -ne 'PASS' -or
-        $tournament.apkSha256 -ne $sanityHash -or $releaseSmoke.apkSha256 -ne $apkHash) {
-        throw 'Native receipts do not prove the exact release APK and the tournament flow.'
-    }
-    $hardSix = $null
-    if ($IncludeHardSix) {
-        Invoke-NativeQualification -Mode hard-six
-        $hardSixEvidence = Join-Path $RunRoot 'android-hard-six'
-        $hardSixReceipt = Get-Content -Raw -LiteralPath (Join-Path $hardSixEvidence 'native.json') | ConvertFrom-Json
-        & $java -cp $classPath $publisher (Join-Path $reports 'android-hard-six-extent.html') $hardSixEvidence $releaseApk
-        if ($LASTEXITCODE -ne 0 -or $hardSixReceipt.status -ne 'PASS' -or $hardSixReceipt.apkSha256 -ne $apkHash) {
-            throw 'The Hard six-seat smoke did not qualify the exact signed APK.'
-        }
-        $hardSix = [ordered]@{
-            status=$hardSixReceipt.status; api=$hardSixReceipt.api; assertions=$hardSixReceipt.assertions.Count
-            screenshots=$hardSixReceipt.captures.Count; apkSha256=$hardSixReceipt.apkSha256
-        }
-    }
-    $seatMetrics = $null
-    if ($IncludeSeatMetrics) {
-        Invoke-NativeQualification -Mode seat-metrics
-        $seatEvidence = Join-Path $RunRoot 'android-seat-metrics'
-        $seatReceipt = Get-Content -Raw -LiteralPath (Join-Path $seatEvidence 'native.json') | ConvertFrom-Json
-        & $java -cp $classPath $publisher (Join-Path $reports 'android-seat-metrics-extent.html') $seatEvidence $releaseApk
-        if ($LASTEXITCODE -ne 0 -or $seatReceipt.status -ne 'PASS' -or $seatReceipt.apkSha256 -ne $apkHash) {
-            throw 'Compact seat metrics Extent or installed APK identity failed.'
-        }
-        $seatMetrics = [ordered]@{
-            status=$seatReceipt.status; api=$seatReceipt.api; window=$seatReceipt.window; fontScale=$seatReceipt.fontScale
-            assertions=$seatReceipt.assertions.Count; screenshots=$seatReceipt.captures.Count; apkSha256=$seatReceipt.apkSha256
-        }
-    }
-    $settlementProofs = [ordered]@{}
-    if ($IncludeSettlementAward) {
-        $awardModes = [ordered]@{
-            settlementAward='settlement-award'
-            settlementMultiAward='settlement-multi-award'
-            settlementStaticAward='settlement-static-award'
-            settlementCompactAward='settlement-compact-award'
-        }
-        foreach ($entry in $awardModes.GetEnumerator()) {
-            $mode = $entry.Value
-            $awardEvidence = Join-Path $RunRoot "android-$mode"
-            $awardReport = "android-$mode-extent.html"
-            $awardError = $null
-            try {
-                Invoke-NativeQualification -Mode $mode
-            } catch {
-                $awardError = $_
-            }
-            $receiptPath = Join-Path $awardEvidence 'native.json'
-            if (!(Test-Path -LiteralPath $receiptPath)) {
-                if ($awardError) { throw $awardError }
-                throw "$mode did not produce a native receipt."
-            }
-            & $java -cp $classPath $publisher (Join-Path $reports $awardReport) $awardEvidence $sanityApk
-            $award = Get-Content -Raw -LiteralPath $receiptPath | ConvertFrom-Json
-            if ($LASTEXITCODE -ne 0 -or $awardError -or $award.status -ne 'PASS' -or $award.apkSha256 -ne $sanityHash) {
-                throw "$mode qualification failed. Inspect the native receipt and Extent."
-            }
-            $settlementProofs[$entry.Key] = [ordered]@{
-                status=$award.status; api=$award.api; window=$award.window; apkSha256=$award.apkSha256
-                assertions=$award.assertions.Count; screenshots=$award.captures.Count; report=$awardReport
-            }
-        }
     }
     $afterManifest = Get-SourceManifest $sourceRoot
     if ((ConvertTo-Json -InputObject $sourceManifest -Compress) -cne (ConvertTo-Json -InputObject $afterManifest -Compress)) {
@@ -298,6 +339,7 @@ try {
     }
     $result = [ordered]@{
         schemaVersion=1; status='PASS'; sourceCommit=$sourceCommit; versionName=$version; apkName=[IO.Path]::GetFileName($finalApk)
+        validationScope=if ($TableGeometryOnly) { 'TABLE_GEOMETRY_COMPONENT' } else { 'FULL' }
         apkBytes=$apkBytes; sha256=$apkHash; certificateSha256=$certificate; debuggable=$false; targetSdk=36; minSdk=26
         qualification=[ordered]@{
             maven=[ordered]@{suites=$mavenSuites.Count;tests=$mavenTests;failures=0;errors=0;skipped=0}
@@ -307,15 +349,16 @@ try {
             releaseImpactContext=[ordered]@{path='release-impact-context.json';contextState=$impactContext.contextState;advisoryOnly=$true;sha256=(Get-FileHash -LiteralPath $impactContextPath -Algorithm SHA256).Hash.ToLowerInvariant()}
             versionPolicy=[ordered]@{previousVersion=$previousVersion;changeClass=$changeClass;candidateVersion=$version;rationale=$changeRationale}
             lint=[ordered]@{status='PASS';warnings=$lintWarnings}
-            tournamentSanity=[ordered]@{status=$tournament.status;api=$tournament.api;assertions=$tournament.assertions.Count;screenshots=$tournament.captures.Count;apkSha256=$tournament.apkSha256}
-            releaseInstallSmoke=[ordered]@{status=$releaseSmoke.status;api=$releaseSmoke.api;assertions=$releaseSmoke.assertions.Count;screenshots=$releaseSmoke.captures.Count;apkSha256=$releaseSmoke.apkSha256}
         }
         reports=@(Get-ChildItem -LiteralPath $reports -File -Filter '*.html' | ForEach-Object { [ordered]@{path=$_.Name;bytes=$_.Length;sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()} })
         runRoot=$RunRoot; completedUtc=[datetime]::UtcNow.ToString('o')
     }
+    foreach ($entry in $nativeProofs.GetEnumerator()) { $result.qualification[$entry.Key] = $entry.Value }
     if ($IncludeHardSix) { $result.qualification.hardSix = $hardSix }
     if ($IncludeSeatMetrics) { $result.qualification.seatMetrics = $seatMetrics }
-    foreach ($entry in $settlementProofs.GetEnumerator()) { $result.qualification[$entry.Key] = $entry.Value }
+    if ($IncludeSettlementAward) {
+        foreach ($entry in $settlementProofs.GetEnumerator()) { $result.qualification[$entry.Key] = $entry.Value }
+    }
     $result | ConvertTo-Json -Depth 9 | Set-Content -LiteralPath (Join-Path $RunRoot 'qualification.json') -Encoding utf8NoBOM
     $exitCode = 0
 }

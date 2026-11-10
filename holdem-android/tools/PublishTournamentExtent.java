@@ -178,6 +178,8 @@ class PublishTournamentExtent {
                             "Tournament setup offers Normal and Hard and defaults to Normal",
                             "5 settled hands align below their seat frames, including the viewer"),
                     List.of("01-compact-seat-metrics.png", "02-settled-seat-metrics.png", "03-five-seat-showdown-alignment.png"));
+            case "table-geometry" -> new Journey("TableGeometryComponent", "Measure the table component with controlled frames",
+                    "Live actors and the viewport preserve table geometry", tableGeometryAssertions(), List.of());
             default -> throw new IllegalArgumentException("Unknown native journey " + journey);
         };
         var checks = nativeChecks(receipt, contract.assertions());
@@ -198,8 +200,10 @@ class PublishTournamentExtent {
         var checkpointEvidence = new ArrayList<ReportArtifactProfile.Evidence>();
         String scenario = contract.scenario();
         String description = contract.description();
+        var tags = journey.equals("table-geometry") ? List.of("component", "android", journey)
+                : List.of("e2e", "sanity", "android", journey.equals("release-smoke") ? "release" : journey);
         try (var test = UiExtentReportSession.adaptScenario(
-                report.startScenario(scenario, description, List.of("e2e", "sanity", "android", journey.equals("release-smoke") ? "release" : journey)),
+                report.startScenario(scenario, description, tags),
                 ReportEvidenceProfile.forScreenshotPolicy(ReportScreenshotPolicy.EACH_CHECKPOINT), "Android native PNG");
              var phase = test.startPhase("TEST BODY")) {
             phase.observation(new ReportObservation("Android native evidence", List.of(
@@ -254,6 +258,18 @@ class PublishTournamentExtent {
         }
         return new ReportArtifactProfile.Scenario(scenario, description, result,
                 List.of(new ReportArtifactProfile.Phase("TEST BODY", result, checkpointEvidence)));
+    }
+
+    private static List<String> tableGeometryAssertions() {
+        var names = new ArrayList<String>();
+        for (String language : List.of("ro", "en")) {
+            for (int seats : List.of(2, 4, 5, 6)) {
+                names.add(language + " / " + seats + " seats / actor changes with identical cards and stakes");
+                names.add(language + " / " + seats + " seats / table stays fixed through the played hand");
+            }
+            names.add(language + " / 6 seats / redraw keeps the viewport position");
+        }
+        return names;
     }
 
     private static boolean hasImageDetail(java.awt.image.BufferedImage image) {

@@ -5,7 +5,7 @@
 | Stare | Criteriu |
 |---|---|
 | `DRAFT` | Versiune, note și guvernanță inspectabile; fără APK și fără link de descărcare. |
-| `PREPARED` | Sursă fixată, APK semnat calificat prin teste și instalare sanity, inventar SHA-256 și descărcare autentificată verificată. |
+| `PREPARED` | Sursă fixată, APK semnat calificat conform profilului declarat, inventar SHA-256 și descărcare autentificată verificată. |
 | `PUBLISHED` | Tag-ul indică commit-ul calificat, APK-ul și checksum-ul sunt atașate și ambele descărcări anonime sunt verificate. |
 
 APK-urile intermediare, build-urile, cache-urile, logurile și capturile brute rămân sub rădăcina externă `HOLDEM_DATA_ROOT`. Dosarul ediției leagă pachetul selectat, checksum-ul, manifestul și rapoartele Extent cu imagini încorporate. APK-ul și checksum-ul se atașează la release.
@@ -95,6 +95,8 @@ $sourceCommit = (git rev-parse HEAD).Trim()
 - Manifestul ediției leagă rapoartele selectate. Dosarul extern păstrează XML-urile și capturile originale.
 
 [Catalogul edițiilor](../../release/README.md)
+
+Pentru o ediție limitată la geometria mesei, `-TableGeometryOnly` rulează Maven, Android JVM, lint și componenta nativă pe APK-ul semnat. Componenta măsoară trei profiluri de ecran folosind cadre controlate. Manifestul declară profilul `TABLE_GEOMETRY_COMPONENT`, cu verdict și SHA-256 pentru fiecare profil. Această opțiune exclude traseele E2E. [Componenta Android](../../holdem-android/README.md#geometria-mesei-în-timpul-mâinii)
 
 Pentru o ediție care schimbă chenarele, cărțile terminale sau selectorul de dificultate, adăugați `-IncludeSeatMetrics` la runner. Acesta cere Android Accessibility Suite și include dovada Extent a afișajului compact. [Strategia de testare Android](../testing/TEST_STRATEGY.md#interfața-android-locală)
 

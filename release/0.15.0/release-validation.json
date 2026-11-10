@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "release": {
+    "versionName": "0.15.0",
+    "versionCode": 24,
+    "applicationId": "ro.atf.holdem.android",
+    "minSdk": 26,
+    "targetSdk": 36,
+    "apkName": "HoldemLab-0.15.0.apk",
+    "apkBytes": null,
+    "sha256": null,
+    "certificateSha256": null,
+    "debuggable": null
+  },
+  "publication": {
+    "state": "DRAFT",
+    "sourceCommit": null,
+    "apkBuildCommit": null,
+    "tag": null,
+    "releaseId": null,
+    "githubReleaseUrl": null,
+    "githubState": null,
+    "githubPublishedAt": null,
+    "assets": []
+  }
+}

@@ -15,8 +15,14 @@ if ((Get-Item -LiteralPath $apk).Length -ne $q.apkBytes -or (Get-Sha256 $apk) -c
     (Get-Content -Raw -LiteralPath "$apk.sha256").Trim() -cne "$($q.sha256)  $($q.apkName)") {
     throw 'APK or checksum disagrees with qualification.'
 }
-$required = @('maven-component-suites-extent.html','android-component-suites-extent.html',
-    'android-tournament-extent.html','android-release-smoke-extent.html')
+$scope = if ($q.validationScope) { $q.validationScope } else { 'FULL' }
+$profiles = @('device','short','tall')
+$required = @('maven-component-suites-extent.html','android-component-suites-extent.html')
+switch -CaseSensitive ($scope) {
+    'FULL' { $required += @('android-tournament-extent.html','android-release-smoke-extent.html') }
+    'TABLE_GEOMETRY_COMPONENT' { $required += @($profiles | ForEach-Object { "android-table-geometry-$_-extent.html" }) }
+    default { throw 'Unknown qualification scope.' }
+}
 $names = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 foreach ($report in $q.reports) {
     if ($report.path -cnotmatch '^[A-Za-z0-9_-]+\.html$' -or !$names.Add($report.path)) {
@@ -29,6 +35,26 @@ foreach ($report in $q.reports) {
 }
 foreach ($name in $required) {
     if (!$names.Contains($name)) { throw "Missing required suite report: $name" }
+}
+if ($scope -ceq 'TABLE_GEOMETRY_COMPONENT') {
+    $geometry = foreach ($profile in $profiles) {
+        $proof = $q.qualification.tableGeometry.$profile
+        $receiptPath = Join-Path $root "android-table-geometry-$profile/native.json"
+        $receipt = Get-Content -Raw -LiteralPath $receiptPath | ConvertFrom-Json
+        if ($proof.status -cne 'PASS' -or $receipt.status -cne 'PASS' -or $receipt.journey -cne 'table-geometry' -or
+            $proof.apkSha256 -cne $q.sha256 -or $receipt.apkSha256 -cne $q.sha256 -or
+            $proof.receiptSha256 -cne (Get-Sha256 $receiptPath) -or
+            $proof.assertions -ne 18 -or $receipt.assertions.Count -ne 18 -or
+            @($receipt.assertions | Where-Object { $_.passed -ne $true }).Count -or
+            $receipt.captures.Count -or $proof.report -cne "android-table-geometry-$profile-extent.html" -or
+            $proof.window -cne $receipt.window -or $proof.fontScale -ne $receipt.fontScale) {
+            throw "Invalid table geometry evidence for $profile."
+        }
+        [ordered]@{profile=$profile; window=$receipt.window; fontScale=$receipt.fontScale; assertions=$receipt.assertions.Count}
+    }
+    [ordered]@{schemaVersion=1;status='PASS';sourceCommit=$q.sourceCommit;apkSha256=$q.sha256;
+        validationScope=$scope;reportsVerified=$names.Count;tableGeometry=@($geometry)} | ConvertTo-Json -Depth 5
+    return
 }
 $nativeRuns = @(
     @{ key='tournamentSanity'; folder='android-tournament-sanity'; report='android-tournament-extent.html' },

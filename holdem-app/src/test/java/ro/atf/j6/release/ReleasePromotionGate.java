@@ -81,9 +81,23 @@ public final class ReleasePromotionGate {
         compare(checks, "Qualification records APK SHA-256", "valid", expectedHash.matches(SHA256) ? "valid" : "invalid");
         compare(checks, "Qualification records signing certificate SHA-256", "valid",
                 receipt.path("certificateSha256").asText().matches(SHA256) ? "valid" : "invalid");
-        JsonNode smoke = receipt.path("qualification").path("releaseInstallSmoke");
-        compare(checks, "Release installation smoke status", "PASS", smoke.path("status").asText());
-        compare(checks, "Release installation smoke used the qualified APK", expectedHash, smoke.path("apkSha256").asText());
+        JsonNode qualificationDetails = receipt.path("qualification");
+        String scope = receipt.path("validationScope").asText("FULL");
+        if (scope.equals("TABLE_GEOMETRY_COMPONENT")) {
+            var geometry = qualificationDetails.path("tableGeometry");
+            compare(checks, "Component qualification contains three display profiles", "3", Integer.toString(geometry.size()));
+            for (String profile : List.of("device", "short", "tall")) {
+                var proof = geometry.path(profile);
+                compare(checks, profile + " geometry status", "PASS", proof.path("status").asText());
+                compare(checks, profile + " geometry used the qualified APK", expectedHash, proof.path("apkSha256").asText());
+                compare(checks, profile + " geometry assertions", "18", proof.path("assertions").asText());
+            }
+        } else {
+            compare(checks, "Qualification scope", "FULL", scope);
+            JsonNode smoke = qualificationDetails.path("releaseInstallSmoke");
+            compare(checks, "Release installation smoke status", "PASS", smoke.path("status").asText());
+            compare(checks, "Release installation smoke used the qualified APK", expectedHash, smoke.path("apkSha256").asText());
+        }
 
         Path apk = candidate.resolve(apkName);
         boolean apkPresent = Files.isRegularFile(apk, LinkOption.NOFOLLOW_LINKS);

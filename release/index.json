@@ -5,7 +5,7 @@
   "previousVersion": "0.14.1",
   "changeClass": "COMPATIBLE_FEATURE",
   "changeRationale": "Păstrează poziția mesei derulate între ture și fixează spațiul marcajului de lângă numele jucătorului.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.15.0"

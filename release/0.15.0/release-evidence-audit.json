@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "sourceCommit": "72703dd2b076d1cb2565017435f3bcf2b7bb717d",
+  "apkSha256": "0046fed3e94e274c8fd3fefc7a841a7c9cd1dda8948e1cf7bd6d75ea84cda97c",
+  "validationScope": "TABLE_GEOMETRY_COMPONENT",
+  "reportsVerified": 14,
+  "tableGeometry": [
+    {
+      "profile": "device",
+      "window": "392 × 626 dp",
+      "fontScale": 1,
+      "assertions": 18
+    },
+    {
+      "profile": "short",
+      "window": "320 × 328 dp",
+      "fontScale": 2,
+      "assertions": 18
+    },
+    {
+      "profile": "tall",
+      "window": "432 × 964 dp",
+      "fontScale": 1,
+      "assertions": 18
+    }
+  ]
+}

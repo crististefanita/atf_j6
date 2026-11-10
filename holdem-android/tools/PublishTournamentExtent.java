@@ -107,7 +107,7 @@ class PublishTournamentExtent {
                             "The opening checkpoint is Hard with six seats",
                             "All five opponents act after the human calls",
                             "The Normal opponent checks or calls inside Hard"),
-                    List.of("01-hard-six-setup.png", "02-hard-six-table.png", "03-hard-six-action.png")),
+                    List.of("01-hard-six-setup.png", "02-hard-six-table.png", "03-hard-six-action.png"));
             case "tournament" -> new Journey("TournamentSanity", "Three hands to victory and an opening all-in defeat",
                     "The device follows the tournament contract", TOURNAMENT_ASSERTIONS, TOURNAMENT_CAPTURES);
             case "settlement-award" -> new Journey("SettlementAwardSanity", "A heads-up payout includes a separate unmatched return",

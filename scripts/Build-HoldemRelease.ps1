@@ -59,6 +59,21 @@ function Get-SourceManifest([string]$Directory) {
         [pscustomobject]@{ path=$relative; sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
     } | Sort-Object path)
 }
+function Invoke-NativeQualification([string]$Mode) {
+    $deadline = [DateTime]::UtcNow.AddMinutes(12)
+    do {
+        try {
+            & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') -RunRoot $RunRoot -Mode $Mode -Sdk $Sdk *> (Join-Path $RunRoot "android-$Mode.log")
+            return
+        } catch {
+            $message = $_.Exception.Message
+            $leaseBusy = $message -eq 'Android is reserved by another owner.' -or
+                ($message -like '*android-ui-lease.json*' -and $message -like '*being used by another process*')
+            if (!$leaseBusy -or [DateTime]::UtcNow -ge $deadline) { throw }
+            Start-Sleep -Seconds 10
+        }
+    } while ($true)
+}
 $sourceManifest = Get-SourceManifest $sourceRoot
 $stageManifest = Get-SourceManifest $stage
 if ((ConvertTo-Json -InputObject $sourceManifest -Compress) -cne (ConvertTo-Json -InputObject $stageManifest -Compress)) {
@@ -192,8 +207,8 @@ try {
     $apkBytes = (Get-Item -LiteralPath $finalApk).Length
     [IO.File]::WriteAllText("$finalApk.sha256", "$apkHash  HoldemLab-$version.apk`n", [Text.UTF8Encoding]::new($false))
 
-    & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') -RunRoot $RunRoot -Mode tournament -Sdk $Sdk *> (Join-Path $RunRoot 'android-tournament.log')
-    & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') -RunRoot $RunRoot -Mode release-smoke -Sdk $Sdk *> (Join-Path $RunRoot 'android-release-smoke.log')
+    Invoke-NativeQualification -Mode tournament
+    Invoke-NativeQualification -Mode release-smoke
 
     $publisher = Join-Path $appRoot 'tools/PublishTournamentExtent.java'
     $tournamentEvidence = Join-Path $RunRoot 'android-tournament-sanity'
@@ -214,7 +229,7 @@ try {
     }
     $hardSix = $null
     if ($IncludeHardSix) {
-        & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') -RunRoot $RunRoot -Mode hard-six -Sdk $Sdk *> (Join-Path $RunRoot 'android-hard-six.log')
+        Invoke-NativeQualification -Mode hard-six
         $hardSixEvidence = Join-Path $RunRoot 'android-hard-six'
         $hardSixReceipt = Get-Content -Raw -LiteralPath (Join-Path $hardSixEvidence 'native.json') | ConvertFrom-Json
         & $java -cp $classPath $publisher (Join-Path $reports 'android-hard-six-extent.html') $hardSixEvidence $releaseApk
@@ -228,11 +243,11 @@ try {
     }
     $seatMetrics = $null
     if ($IncludeSeatMetrics) {
-        & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') -RunRoot $RunRoot -Mode seat-metrics -Sdk $Sdk *> (Join-Path $RunRoot 'android-seat-metrics.log')
+        Invoke-NativeQualification -Mode seat-metrics
         $seatEvidence = Join-Path $RunRoot 'android-seat-metrics'
         $seatReceipt = Get-Content -Raw -LiteralPath (Join-Path $seatEvidence 'native.json') | ConvertFrom-Json
-        & $java -cp $classPath $publisher (Join-Path $reports 'android-seat-metrics-extent.html') $seatEvidence $sanityApk
-        if ($LASTEXITCODE -ne 0 -or $seatReceipt.status -ne 'PASS' -or $seatReceipt.apkSha256 -ne $sanityHash) {
+        & $java -cp $classPath $publisher (Join-Path $reports 'android-seat-metrics-extent.html') $seatEvidence $releaseApk
+        if ($LASTEXITCODE -ne 0 -or $seatReceipt.status -ne 'PASS' -or $seatReceipt.apkSha256 -ne $apkHash) {
             throw 'Compact seat metrics Extent or installed APK identity failed.'
         }
         $seatMetrics = [ordered]@{
@@ -254,7 +269,7 @@ try {
             $awardReport = "android-$mode-extent.html"
             $awardError = $null
             try {
-                & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') -RunRoot $RunRoot -Mode $mode -Sdk $Sdk *> (Join-Path $RunRoot "android-$mode.log")
+                Invoke-NativeQualification -Mode $mode
             } catch {
                 $awardError = $_
             }

@@ -4,6 +4,7 @@ import android.animation.ValueAnimator;
 import android.app.AlertDialog;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.os.Build;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
@@ -162,6 +163,7 @@ final class HoldemTableView {
             var seatContent = new SeatContent(seat, heading, List.of(), active, description);
             var seatView = seatFrame.buildInlineFacts(seatContent,
                     compact ? 1 : Math.max(0, policy.seatVerticalPaddingDp() - 1));
+            if (Build.VERSION.SDK_INT >= 28) seatView.setScreenReaderFocusable(true);
             addSeatFacts(seatView, facts, active, compact);
             addSeatAction(seatView, latestForSeat,
                     latestForSeat != null && latestForSeat.ordinal() == latestActionOrdinal, active, compact);

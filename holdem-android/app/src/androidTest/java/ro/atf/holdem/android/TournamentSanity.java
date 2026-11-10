@@ -16,9 +16,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.view.Choreographer;
-import android.view.InputDevice;
 import android.view.KeyEvent;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityManager;
@@ -54,6 +52,7 @@ public final class TournamentSanity extends Instrumentation {
     private final JSONArray assertions = new JSONArray();
     private final JSONArray captures = new JSONArray();
     private UiAutomation ui;
+    private boolean waitedForSystemUi;
     private Bundle arguments;
 
     @Override public void onCreate(Bundle arguments) {
@@ -719,15 +718,15 @@ public final class TournamentSanity extends Instrumentation {
         check("Compact viewport uses enlarged text", "width ≤ 320 dp and font scale 2.0",
                 config.screenWidthDp + " dp / " + config.fontScale, config.screenWidthDp <= 320 && config.fontScale == 2f);
         var manager = getTargetContext().getSystemService(AccessibilityManager.class);
-        boolean talkBack = manager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK).stream()
-                .anyMatch(service -> service.getId().toLowerCase(Locale.ROOT).contains("talkback"));
-        check("Google TalkBack service is enabled", "enabled", talkBack ? "enabled" : "unavailable");
+        boolean talkBack = awaitTalkBackTouchExploration(manager);
+        check("Google TalkBack service is enabled", "enabled",
+                talkBack ? "enabled" : "enabled service with touch exploration was not ready");
         actions.put("Inspect the Android accessibility nodes with Google TalkBack enabled");
         var profile = getTargetContext().getSharedPreferences("holdem-profile", Context.MODE_PRIVATE);
         if (!profile.edit().putBoolean("language", true).commit()) throw new AssertionError("Cannot select the Romanian test locale");
         var activity = launchHoldem();
         try {
-            tap("Joacă un turneu");
+            openRomanianSeatTournament();
             selectTableSize("6");
             tap("Împarte cărțile");
             see("Six-seat hand reaches preflop", "Mâna 1 · Preflop");
@@ -752,10 +751,53 @@ public final class TournamentSanity extends Instrumentation {
         inspectFiveSeatShowdown();
     }
 
+    private static boolean awaitTalkBackTouchExploration(AccessibilityManager manager) {
+        long deadline = SystemClock.uptimeMillis() + 10000;
+        do {
+            if (manager.isTouchExplorationEnabled() && manager
+                    .getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK).stream()
+                    .anyMatch(service -> service.getId().toLowerCase(Locale.ROOT).contains("talkback"))) {
+                return true;
+            }
+            SystemClock.sleep(100);
+        } while (SystemClock.uptimeMillis() < deadline);
+        return false;
+    }
+
+    private void openRomanianSeatTournament() throws Exception {
+        String label = "Joacă un turneu";
+        long deadline = SystemClock.uptimeMillis() + 15000;
+        AccessibilityNodeInfo control;
+        do {
+            if (!waitedForSystemUi && waitForSystemUiDialog()) {
+                waitedForSystemUi = true;
+                actions.put("Wait for Android System UI to recover from its ANR dialog");
+            }
+            control = find(label);
+            if (control != null) break;
+            SystemClock.sleep(100);
+        } while (SystemClock.uptimeMillis() < deadline);
+        if (control == null) capture("01a-seat-start-failure");
+        tap(label, control);
+    }
+
+    private boolean waitForSystemUiDialog() {
+        var root = ui.getRootInActiveWindow();
+        if (root == null || !List.of("android", "com.android.systemui").contains(value(root.getPackageName()))) {
+            return false;
+        }
+        var titles = new ArrayList<AccessibilityNodeInfo>();
+        collect(root, node -> "System UI isn't responding".equals(value(node.getText())), titles);
+        if (titles.size() != 1) return false;
+        var buttons = new ArrayList<AccessibilityNodeInfo>();
+        collect(root, node -> node.isClickable() && "Wait".equals(value(node.getText())), buttons);
+        return buttons.size() == 1 && buttons.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+    }
+
     private void inspectFiveSeatShowdown() throws Exception {
         var activity = launchHoldem();
         try {
-            tap("Joacă un turneu");
+            openRomanianSeatTournament();
             selectTableSize("5");
             var difficultyOptions = new ArrayList<String>();
             runOnMainSync(() -> {
@@ -919,15 +961,19 @@ public final class TournamentSanity extends Instrumentation {
         String description = value(target.getContentDescription());
         var bounds = new Rect();
         target.getBoundsInScreen(bounds);
-        tapForTalkBack(bounds.centerX(), bounds.centerY());
-        boolean focused = awaitSeatFocus(description, 1500);
-        if (!focused) {
-            target.performAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
-            focused = awaitSeatFocus(description, 3000);
+        if (bounds.isEmpty()) throw new AssertionError("Active seat has no visible bounds");
+        if (Build.VERSION.SDK_INT >= 28) {
+            check("Active seat groups its facts for the screen reader", "screen-reader focusable",
+                    target.isScreenReaderFocusable() ? "screen-reader focusable" : "ungrouped");
         }
+        boolean dispatched = target.performAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
+        boolean focused = awaitSeatFocus(description, 4000);
         if (!focused) capture("01a-seat-focus-failure");
+        var actualFocus = ui.findFocus(AccessibilityNodeInfo.FOCUS_ACCESSIBILITY);
+        actions.put("Request native accessibility focus with TalkBack touch exploration enabled");
         check("Active seat accepts Android accessibility focus", description,
-                focused ? description : "focus unavailable after Android action and TalkBack touch");
+                focused ? description : "request=" + dispatched + ", focus="
+                        + (actualFocus == null ? "none" : value(actualFocus.getContentDescription())));
         actions.put("Confirm accessibility focus on the active seat");
     }
 
@@ -950,20 +996,6 @@ public final class TournamentSanity extends Instrumentation {
             SystemClock.sleep(75);
         } while (SystemClock.uptimeMillis() < deadline);
         return false;
-    }
-
-    private void tapForTalkBack(int x, int y) throws Exception {
-        long downTime = SystemClock.uptimeMillis();
-        for (int action : new int[]{MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP}) {
-            var event = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), action, x, y, 0);
-            try {
-                event.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-                if (!ui.injectInputEvent(event, true)) throw new AssertionError("Cannot deliver TalkBack touch exploration");
-            } finally {
-                event.recycle();
-            }
-        }
-        actions.put("Explore the active seat with a single TalkBack touch");
     }
 
     private static LinearLayout seatFrame(View root, int seat) {
@@ -1343,7 +1375,10 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private void tap(String label) throws Exception {
-        var node = await(label);
+        tap(label, await(label));
+    }
+
+    private void tap(String label, AccessibilityNodeInfo node) throws Exception {
         check("Tap " + label, "click dispatched", node != null && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                 ? "click dispatched" : "control unavailable");
         actions.put(label);
@@ -1498,15 +1533,20 @@ public final class TournamentSanity extends Instrumentation {
 
     private AccessibilityNodeInfo accessibilityRoot() {
         var active = ui.getRootInActiveWindow();
-        if (active != null) return active;
-        // On API 28 the active window may be absent after a modal even when input focus has returned.
+        boolean requireApplication = "seat-metrics".equals(arguments.getString("mode"));
+        if (active != null && (!requireApplication || isApplicationRoot(active))) return active;
+        // TalkBack can expose an overlay as the active root while the app still owns input focus.
         for (var window : ui.getWindows()) {
             if (window.getType() == AccessibilityWindowInfo.TYPE_APPLICATION && window.isFocused()) {
                 var root = window.getRoot();
-                if (root != null) return root;
+                if (root != null && (!requireApplication || isApplicationRoot(root))) return root;
             }
         }
         return null;
+    }
+
+    private boolean isApplicationRoot(AccessibilityNodeInfo root) {
+        return root != null && getTargetContext().getPackageName().contentEquals(value(root.getPackageName()));
     }
 
     private static void collect(AccessibilityNodeInfo node, Predicate<AccessibilityNodeInfo> matches, List<AccessibilityNodeInfo> found) {

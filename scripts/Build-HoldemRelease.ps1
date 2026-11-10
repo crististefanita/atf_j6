@@ -5,6 +5,7 @@ param(
     [string]$DataRoot = 'C:\work\holdem_back',
     [string]$JavaHome = 'C:\tools\Java21\jdk-21.0.12.1+1',
     [string]$Sdk = 'C:\tools\whist-android-sdk',
+    [switch]$IncludeHardSix,
     [switch]$IncludeSeatMetrics,
     [switch]$IncludeSettlementAward
 )
@@ -211,6 +212,20 @@ try {
         $tournament.apkSha256 -ne $sanityHash -or $releaseSmoke.apkSha256 -ne $apkHash) {
         throw 'Native receipts do not prove the exact release APK and the tournament flow.'
     }
+    $hardSix = $null
+    if ($IncludeHardSix) {
+        & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') -RunRoot $RunRoot -Mode hard-six -Sdk $Sdk *> (Join-Path $RunRoot 'android-hard-six.log')
+        $hardSixEvidence = Join-Path $RunRoot 'android-hard-six'
+        $hardSixReceipt = Get-Content -Raw -LiteralPath (Join-Path $hardSixEvidence 'native.json') | ConvertFrom-Json
+        & $java -cp $classPath $publisher (Join-Path $reports 'android-hard-six-extent.html') $hardSixEvidence $releaseApk
+        if ($LASTEXITCODE -ne 0 -or $hardSixReceipt.status -ne 'PASS' -or $hardSixReceipt.apkSha256 -ne $apkHash) {
+            throw 'The Hard six-seat smoke did not qualify the exact signed APK.'
+        }
+        $hardSix = [ordered]@{
+            status=$hardSixReceipt.status; api=$hardSixReceipt.api; assertions=$hardSixReceipt.assertions.Count
+            screenshots=$hardSixReceipt.captures.Count; apkSha256=$hardSixReceipt.apkSha256
+        }
+    }
     $seatMetrics = $null
     if ($IncludeSeatMetrics) {
         & (Join-Path $stage 'scripts/run-holdem-android-sanity.ps1') -RunRoot $RunRoot -Mode seat-metrics -Sdk $Sdk *> (Join-Path $RunRoot 'android-seat-metrics.log')
@@ -283,6 +298,7 @@ try {
         reports=@(Get-ChildItem -LiteralPath $reports -File -Filter '*.html' | ForEach-Object { [ordered]@{path=$_.Name;bytes=$_.Length;sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()} })
         runRoot=$RunRoot; completedUtc=[datetime]::UtcNow.ToString('o')
     }
+    if ($IncludeHardSix) { $result.qualification.hardSix = $hardSix }
     if ($IncludeSeatMetrics) { $result.qualification.seatMetrics = $seatMetrics }
     foreach ($entry in $settlementProofs.GetEnumerator()) { $result.qualification[$entry.Key] = $entry.Value }
     $result | ConvertTo-Json -Depth 9 | Set-Content -LiteralPath (Join-Path $RunRoot 'qualification.json') -Encoding utf8NoBOM

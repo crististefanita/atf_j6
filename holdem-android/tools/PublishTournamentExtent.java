@@ -102,6 +102,12 @@ class PublishTournamentExtent {
         var contract = switch (journey) {
             case "release-smoke" -> new Journey("ReleaseInstallSmoke", "Installable release APK opens and navigates its entry screens",
                     "The signed release APK opens the expected app flow", RELEASE_SMOKE_ASSERTIONS, RELEASE_SMOKE_CAPTURES);
+            case "hard-six" -> new Journey("HardSixTournamentSmoke", "Open a six-seat Hard tournament in the signed APK",
+                    "The signed APK persists Hard and routes all five opponents", List.of(
+                            "The opening checkpoint is Hard with six seats",
+                            "All five opponents act after the human calls",
+                            "The Normal opponent checks or calls inside Hard"),
+                    List.of("01-hard-six-setup.png", "02-hard-six-table.png", "03-hard-six-action.png")),
             case "tournament" -> new Journey("TournamentSanity", "Three hands to victory and an opening all-in defeat",
                     "The device follows the tournament contract", TOURNAMENT_ASSERTIONS, TOURNAMENT_CAPTURES);
             case "settlement-award" -> new Journey("SettlementAwardSanity", "A heads-up payout includes a separate unmatched return",

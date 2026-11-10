@@ -8,7 +8,15 @@
     { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.MonteCarloEquityEstimatorTest" },
     { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.PolicyStyleTest" },
     { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.ShortStackShovePolicyTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.ConditionalRangeEquityPolicyTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.NearbyRaiseSizingPolicyTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.PreflopResponsePolicyTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.RaiseEvSizingPolicyTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.ShortStackResponseModelPolicyTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.StrengthSelectivePolicyTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.TournamentPlayStylesPolicyTest", "impactPaths": ["holdem-ai/src/main/java/ro/atf/holdem/ai/TournamentPlayStyles.java"] },
     { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.CashTableArenaTest" },
+    { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.DeepTableStudyTest" },
     { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.ControlledChallengeTest" },
     { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.PositionRotationExperimentTest" },
     { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.TournamentArenaTest" },
@@ -28,10 +36,20 @@
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.HoldemSessionRepositoryComponentTest" },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.HoldemTablePresentationComponentTest" },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.LocalHoldemGameTest" },
+    { "module": "holdem-android", "testClass": "ro.atf.holdem.android.LocalHoldemPlayStylesTest", "impactPaths": ["holdem-ai/src/main/java/ro/atf/holdem/ai/TournamentPlayStyles.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/LocalHoldemGame.java"] },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.LocalHoldemTournamentTest" },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.TournamentLeaderboardTest" }
   ],
   "native": [
+    {
+      "mode": "hard-six",
+      "switch": "-IncludeHardSix",
+      "impactPaths": [
+        "holdem-ai/src/main/java/ro/atf/holdem/ai/TournamentPlayStyles.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/LocalHoldemGame.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java"
+      ]
+    },
     {
       "mode": "seat-metrics",
       "switch": "-IncludeSeatMetrics",

@@ -79,6 +79,8 @@ public final class TournamentSanity extends Instrumentation {
                 loseOnTheOpeningAllIn();
             } else if (journey.equals("release-smoke")) {
                 releaseEntryNavigation();
+            } else if (journey.equals("hard-six")) {
+                inspectHardSixTournament();
             } else if (journey.equals("settlement-award")) {
                 inspectSettlementAward();
             } else if (journey.equals("settlement-multi-award")) {
@@ -120,6 +122,53 @@ public final class TournamentSanity extends Instrumentation {
         }
         result.putString("stream", failure.isEmpty() ? "PASS Holdem Android sanity (" + journey + ")\n" : "FAIL " + failure + "\n");
         finish(failure.isEmpty() ? Activity.RESULT_OK : Activity.RESULT_CANCELED, result);
+    }
+
+    private void inspectHardSixTournament() throws Exception {
+        var activity = launchHoldem();
+        try {
+            tap("Play a tournament");
+            selectTableSize("6");
+            var setup = activity.getWindow().getDecorView();
+            runOnMainSync(() -> {
+                android.widget.Spinner difficulty = setup.findViewWithTag("ai-level");
+                if (difficulty == null || !difficulty.performClick())
+                    throw new AssertionError("Difficulty selector could not be opened");
+            });
+            actions.put("Open the difficulty selector");
+            tap("Hard");
+            capture("01-hard-six-setup");
+            tap("Deal cards");
+            var sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir()));
+            var opening = sessions.load().resumed();
+            check("The opening checkpoint is Hard with six seats", "HARD / 6",
+                    opening == null ? "missing" : opening.game().difficulty() + " / " + opening.game().view().seats().size());
+            capture("02-hard-six-table");
+
+            int human = opening.game().view().viewer();
+            int normalSeat = Math.floorMod(human + 5, 6);
+            tap(revealTaggedControl(activity, "CALL"));
+            List<LocalHoldemGame.Action> ledger = List.of();
+            long deadline = SystemClock.uptimeMillis() + 25000;
+            do {
+                var resumed = sessions.load().resumed();
+                if (resumed != null) ledger = resumed.game().save().rounds().get(0);
+                if (ledger.stream().anyMatch(action -> action.actor() == normalSeat)) break;
+                SystemClock.sleep(120);
+            } while (SystemClock.uptimeMillis() < deadline);
+
+            long opponents = ledger.stream().filter(action -> action.actor() != human)
+                    .map(LocalHoldemGame.Action::actor).distinct().count();
+            check("All five opponents act after the human calls", "5", Long.toString(opponents));
+            var normalActions = ledger.stream().filter(action -> action.actor() == normalSeat)
+                    .map(action -> action.move().action()).collect(java.util.stream.Collectors.toList());
+            check("The Normal opponent checks or calls inside Hard", "one or more CHECK/CALL actions",
+                    normalActions.toString(), !normalActions.isEmpty() && normalActions.stream()
+                            .allMatch(action -> action == ActionType.CHECK || action == ActionType.CALL));
+            capture("03-hard-six-action");
+        } finally {
+            runOnMainSync(activity::finish);
+        }
     }
 
     private void releaseEntryNavigation() throws Exception {

@@ -1,7 +1,7 @@
 #requires -Version 7.0
 param(
     [Parameter(Mandatory)][string]$RunRoot,
-    [ValidateSet('tournament','release-smoke','settlement-award','settlement-multi-award','settlement-static-award','settlement-compact-award','settlement-resume','leaderboard-settlement','leaderboard-profile-restart','seat-metrics')][string]$Mode = 'tournament',
+    [ValidateSet('tournament','release-smoke','hard-six','settlement-award','settlement-multi-award','settlement-static-award','settlement-compact-award','settlement-resume','leaderboard-settlement','leaderboard-profile-restart','seat-metrics')][string]$Mode = 'tournament',
     [string]$Serial = '127.0.0.1:5555',
     [string]$Sdk = 'C:\tools\whist-android-sdk'
 )
@@ -11,7 +11,7 @@ $leaseFile = 'C:/work/whist_back/android-ui-lease.json'
 $adb = Join-Path $Sdk 'platform-tools/adb.exe'
 $appId = 'ro.atf.holdem.android'
 $testId = "$appId.test"
-$variant = if ($Mode -eq 'release-smoke') { 'release' } else { 'sanity' }
+$variant = if ($Mode -in @('release-smoke','hard-six')) { 'release' } else { 'sanity' }
 $journey = $Mode
 $label = if ($Mode -eq 'tournament') { 'android-tournament-sanity' } else { "android-$Mode" }
 $evidenceRoot = Join-Path $RunRoot $label

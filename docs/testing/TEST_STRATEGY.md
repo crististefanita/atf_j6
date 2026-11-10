@@ -133,3 +133,7 @@ Un test verde al motorului nu certifică un AI profitabil.
 - **Dosar de ediție.** `release/<versiune>/` leagă pachetul, checksum-ul, manifestul și rapoartele Extent cu capturi încorporate. `release/index.json` selectează versiunea curentă, iar manifestul consemnează testele, hash-urile și verificarea distribuției.
 - **README principal.** În `DRAFT`, secțiunea `## Jocul` indică dosarul ediției. După calificare, indică pagina Release și linkul direct la APK, în această ordine.
 - **Acces public.** `PUBLISHED` cere descărcarea completă fără autentificare. Pentru `404` la profil și repo, aplicați [diagnosticul GitHub](../release/ATF_Release.md#diagnostic-http-404-pentru-github-release).
+
+## Sanity Android pentru Hard
+
+Pentru stilurile Hard, `-IncludeHardSix` pornește din meniu un turneu de șase locuri pe APK-ul semnat. Suita verifică dificultatea salvată, cele cinci răspunsuri automate și acțiunile check/call ale adversarului Normal.

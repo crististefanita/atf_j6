@@ -88,7 +88,8 @@ class PolicyStyleTest {
         assertLegal(shortStack, safe);
         assertEquals(ActionType.BET, safe.action());
         assertEquals(20, safe.amount(), "Do not silently convert a pot-sized bet into a short-stack shove");
-        assertTrue(safe.policyVersion().startsWith("POT-SIZED-50/LOOSE-AGGRESSIVE-0.2-"));
+        assertEquals("POT-SIZED-50/" + LooseAggressivePolicy.VERSION + "-open100-raise100-call35-late0",
+                safe.policyVersion());
 
         var overbet = new PotSizedPolicy(base, 150).decide(observation(0, 0, 100, List.of(
                 LegalAction.noAmount(ActionType.CHECK), new LegalAction(ActionType.BET, 20, 20, 200))));

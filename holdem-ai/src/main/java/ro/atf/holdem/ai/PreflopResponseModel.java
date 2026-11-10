@@ -162,7 +162,7 @@ public record PreflopResponseModel(int minSamples, int priorStrength, int foldWe
             for (String event : obs.publicActionHistory()) {
                 if (event.startsWith("SEATS [") && event.endsWith("]")) {
                     seats = Arrays.stream(event.substring(7, event.length() - 1).split(","))
-                            .map(String::strip).map(Integer::parseInt).toList();
+                            .map(String::strip).map(Integer::parseInt).collect(java.util.stream.Collectors.toList());
                 } else {
                     String[] fields = event.split(" ");
                     if (fields.length == 3 && fields[0].equals("BB")) blind = Integer.parseInt(fields[1]);

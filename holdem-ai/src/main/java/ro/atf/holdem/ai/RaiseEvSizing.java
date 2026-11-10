@@ -22,7 +22,7 @@ public final class RaiseEvSizing {
                     || minEdgePercentOfBigBlind < 1 || minEdgePercentOfBigBlind > 200
                     || potPercents.isEmpty() != (nearby != null) || potPercents.size() > 5
                     || potPercents.stream().anyMatch(percent -> percent < 25 || percent > 200)
-                    || !potPercents.equals(potPercents.stream().distinct().sorted().toList()))
+                    || !potPercents.equals(potPercents.stream().distinct().sorted().collect(java.util.stream.Collectors.toList())))
                 throw new IllegalArgumentException("Invalid raise EV settings");
         }
     }

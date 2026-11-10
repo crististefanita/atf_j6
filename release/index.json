@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.13.0",
-  "previousVersion": "0.12.0",
+  "currentVersion": "0.14.0",
+  "previousVersion": "0.13.0",
   "changeClass": "COMPATIBLE_FEATURE",
-  "changeRationale": "Înlocuiește obiectivul Ușor duplicat cu prima dezvăluire, recompensată indiferent de câștigarea potului; calibrarea și testele de componentă confirmă regula.",
-  "state": "PREPARED",
+  "changeRationale": "Adaugă adversari cu stiluri distincte în turneele Hard și verifică masa de șase locuri pe APK-ul semnat.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.13.0"
+    "0.14.0"
   ]
 }

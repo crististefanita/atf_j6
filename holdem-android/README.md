@@ -18,7 +18,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 - În configurarea unui turneu, bifa „Arată șansa mea de câștig” activează indicatorul din antet. Alegerea se păstrează cu turneul salvat și pornește debifată pentru un turneu nou. Indicatorul arată șansa estimată de a câștiga singur mâna, pe baza cărților proprii, a board-ului și a numărului de adversari rămași. Estimarea folosește 256 de eșantioane cu mâini adverse necunoscute, pe un worker separat de AI. După fold nu se afișează procent.
 - Butoanele de decizie au fețe vizuale reduse și ținte de atingere de cel puțin 48 dp. Închiderea editorului Raise revine la acțiunile mesei. Tastatura se deschide când este selectat câmpul sumei.
 - Coach-ul oferă o recomandare locală. **Lasă AI-ul** sau **Let AI play**, după limba aleasă, preia mâna curentă prin acțiuni validate de motor.
-- Masa rezervă spațiu pentru mesaj, comenzi și ultima acțiune a fiecărui loc. Schimbarea actorului păstrează poziția potului, a mesajelor și a chenarelor în timpul mâinii.
+- Masa rezervă spațiu pentru mesaje, comenzi și marcajul actorului. La schimbarea turei, potul, cărțile, chenarele și numele își păstrează poziția, inclusiv când masa este derulată.
 - Profilul, limba și o sesiune întreruptă pot fi reluate din meniul principal.
 
 ## Contractul mâinii
@@ -75,6 +75,12 @@ gradle.beforeProject { project ->
 - `lintDebug` și `assembleDebug` verifică build-ul local; nu califică APK-ul de distribuție.
 - `sanity` și `release` păstrează verificarea cheii private. Acceptanța lor este descrisă în [procesul de release](../docs/release/ATF_Release.md) și în [catalogul versiunilor](../release/README.md).
 - Raportarea și APK-urile intermediare rămân în rădăcina temporară configurată.
+
+### Geometria mesei în timpul mâinii
+
+Rulați componenta nativă cu `scripts/run-holdem-android-sanity.ps1 -Mode table-geometry` și cu `-GeometryProfile device`, `short` sau `tall`. Folosiți APK-urile `sanity` și `sanityAndroidTest` din dosarul extern de build, transmis prin `-RunRoot`. Runnerul rezervă emulatorul și restaurează setările ecranului.
+
+Proba măsoară chenarele, etichetele, potul și cărțile în pixeli la mese de 2, 4, 5 și 6 locuri, în română și engleză. Schimbă separat actorul și starea mâinii, apoi verifică poziția mesei derulate la următoarea tură. Rezultatele apar în `native.json` pentru fiecare profil.
 
 ### Probe native de decontare
 

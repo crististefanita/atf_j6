@@ -1,7 +1,8 @@
 #requires -Version 7.0
 param(
     [Parameter(Mandatory)][string]$RunRoot,
-    [ValidateSet('tournament','release-smoke','hard-six','settlement-award','settlement-multi-award','settlement-static-award','settlement-compact-award','settlement-resume','leaderboard-settlement','leaderboard-profile-restart','seat-metrics')][string]$Mode = 'tournament',
+    [ValidateSet('tournament','release-smoke','hard-six','settlement-award','settlement-multi-award','settlement-static-award','settlement-compact-award','settlement-resume','leaderboard-settlement','leaderboard-profile-restart','seat-metrics','table-geometry')][string]$Mode = 'tournament',
+    [ValidateSet('device','short','tall')][string]$GeometryProfile = 'device',
     [string]$Serial = '127.0.0.1:5555',
     [string]$Sdk = 'C:\tools\whist-android-sdk'
 )
@@ -14,6 +15,8 @@ $testId = "$appId.test"
 $variant = if ($Mode -in @('release-smoke','hard-six','seat-metrics')) { 'release' } else { 'sanity' }
 $journey = $Mode
 $label = if ($Mode -eq 'tournament') { 'android-tournament-sanity' } else { "android-$Mode" }
+if ($Mode -eq 'table-geometry') { $label += "-$GeometryProfile" }
+$overrideGeometry = $Mode -eq 'table-geometry' -and $GeometryProfile -ne 'device'
 $evidenceRoot = Join-Path $RunRoot $label
 New-Item -ItemType Directory -Force -Path $evidenceRoot | Out-Null
 $apkRoot = Join-Path $RunRoot "source/holdem-android/app/build/outputs/apk"
@@ -135,7 +138,7 @@ try {
         $testScale = if ($Mode -eq 'settlement-static-award') { '0' } else { '1' }
         InvokeAdb @('shell','settings','put','global','animator_duration_scale',$testScale) | Out-Null
     }
-    if ($Mode -in @('seat-metrics','settlement-compact-award')) {
+    if ($overrideGeometry -or $Mode -in @('seat-metrics','settlement-compact-award')) {
         $size = InvokeAdb @('shell','wm','size')
         $density = InvokeAdb @('shell','wm','density')
         $physicalWidth = [regex]::Match($size, '(?m)^Physical size:\s*(\d+)x\d+')
@@ -145,16 +148,27 @@ try {
             density = [regex]::Match($density, '(?m)^Override density:\s*(\d+)').Groups[1].Value
             fontScale = (InvokeAdb @('shell','settings','get','system','font_scale')).Trim()
         }
-        if ($Mode -eq 'settlement-compact-award') {
-            $width = [int]$physicalWidth.Groups[1].Value
-            $height = [int][Math]::Round($width * 1.25)
+        $width = [int]$physicalWidth.Groups[1].Value
+        if ($overrideGeometry) {
+            $aspect = if ($GeometryProfile -eq 'short') { 1.25 } else { 2.4 }
+            $targetDp = if ($GeometryProfile -eq 'short') { 320 } else { 432 }
+            $height = [int][Math]::Round($width * $aspect)
+            $density = [int][Math]::Ceiling($width * 160.0 / $targetDp)
+            $fontScale = if ($GeometryProfile -eq 'short') { '2.0' } else { '1.0' }
             InvokeAdb @('shell','wm','size',"${width}x${height}") | Out-Null
-        } elseif ($originalDisplay.size) {
-            InvokeAdb @('shell','wm','size','reset') | Out-Null
+            InvokeAdb @('shell','wm','density',"$density") | Out-Null
+            InvokeAdb @('shell','settings','put','system','font_scale',$fontScale) | Out-Null
+        } else {
+            if ($Mode -eq 'settlement-compact-award') {
+                $height = [int][Math]::Round($width * 1.25)
+                InvokeAdb @('shell','wm','size',"${width}x${height}") | Out-Null
+            } elseif ($originalDisplay.size) {
+                InvokeAdb @('shell','wm','size','reset') | Out-Null
+            }
+            $compactDensity = [int][Math]::Ceiling($width / 2.0)
+            InvokeAdb @('shell','wm','density',"$compactDensity") | Out-Null
+            InvokeAdb @('shell','settings','put','system','font_scale','2.0') | Out-Null
         }
-        $compactDensity = [int][Math]::Ceiling([int]$physicalWidth.Groups[1].Value / 2.0)
-        InvokeAdb @('shell','wm','density',"$compactDensity") | Out-Null
-        InvokeAdb @('shell','settings','put','system','font_scale','2.0') | Out-Null
     }
     if ($Mode -eq 'seat-metrics') {
         $talkBack = 'com.google.android.marvin.talkback/.TalkBackService'
@@ -230,7 +244,7 @@ finally {
                     try {
                         if ($originalDisplay.size) {
                             InvokeAdb @('shell','wm','size',$originalDisplay.size) | Out-Null
-                        } elseif ($Mode -eq 'settlement-compact-award') {
+                        } elseif ($overrideGeometry -or $Mode -eq 'settlement-compact-award') {
                             InvokeAdb @('shell','wm','size','reset') | Out-Null
                         }
                     } finally { RestoreSetting 'system' 'font_scale' $originalDisplay.fontScale }

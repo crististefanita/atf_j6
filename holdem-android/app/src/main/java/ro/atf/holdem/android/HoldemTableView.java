@@ -6,6 +6,9 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Build;
 import android.text.InputType;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,6 +52,9 @@ final class HoldemTableView {
     // BoardLayout gives this center the full measured width. Its width hint only has to fit that region.
     private static final int FULL_WIDTH_CENTER_HINT_DP = 1;
     private record BoardView(View root, TextView turnStatus) {}
+    private record ViewportPosition(int tableY, boolean historyExpanded, int historyY) {
+        private static final ViewportPosition TOP = new ViewportPosition(0, false, 0);
+    }
     record Labels(TextView advice, TextView winChance) { }
     interface Text { String get(int resource, Object... arguments); }
 
@@ -57,6 +63,8 @@ final class HoldemTableView {
     private ViewGroup contentRoot;
     private HoldemViewport compactViewport;
     private HoldemTableViewState settlementFrame;
+    private LocalHoldemGame displayedGame;
+    private int displayedHand;
     private ValueAnimator settlementAnimator;
 
     private record AwardMotion(View marker, float startX, float startY, float endX, float endY) { }
@@ -75,6 +83,7 @@ final class HoldemTableView {
         var viewport = activity.getResources().getConfiguration();
         var policy = new TableViewportPolicy(viewport.screenHeightDp, viewport.fontScale);
         boolean compact = policy.isCompact() || viewport.screenWidthDp < 340 || names.size() == 2;
+        var position = viewportPosition(game, frame.street());
         LinearLayout root = views.gamePage();
         var scroll = new HoldemViewport(activity);
         compactViewport = compact ? scroll : null;
@@ -83,9 +92,12 @@ final class HoldemTableView {
         var content = new LinearLayout(activity);
         contentRoot = content;
         settlementFrame = frame;
+        displayedGame = game;
+        displayedHand = game.handNumber();
         content.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(content, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
+        restoreScrollOnLayout(scroll, position.tableY());
 
         var header = new LinearLayout(activity);
         header.setGravity(Gravity.CENTER_VERTICAL);
@@ -161,12 +173,21 @@ final class HoldemTableView {
                     + (latestForSeat == null ? "" : ", " + seatActionDescription(latestForSeat));
             String heading = HoldemTablePresentation.seatHeading(name, shortRoles.toString(), player.folded(),
                     eliminated, text.get(R.string.folded_badge), text.get(R.string.out_badge));
-            if (compact && active) heading = "▸ " + heading;
+            if (compact) heading = "▸ " + heading;
             var seatContent = new SeatContent(seat, heading, List.of(), active, description);
             var seatView = seatFrame.buildInlineFacts(seatContent,
                     compact ? 1 : Math.max(0, policy.seatVerticalPaddingDp() - 1));
             if (Build.VERSION.SDK_INT >= 28) seatView.setScreenReaderFocusable(true);
-            singleLine(seatView.findViewWithTag("seat-name:" + seat));
+            TextView seatName = seatView.findViewWithTag("seat-name:" + seat);
+            singleLine(seatName);
+            if (compact) {
+                // The same glyph occupies the same space when the turn passes to another seat.
+                var markedHeading = new SpannableString(heading);
+                int markerColor = active ? seatName.getCurrentTextColor() : Color.TRANSPARENT;
+                markedHeading.setSpan(new ForegroundColorSpan(markerColor), 0, 1,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                seatName.setText(markedHeading);
+            }
             addSeatFacts(seatView, facts, active, compact, reservedDigits);
             addSeatAction(seatView, latestForSeat,
                     latestForSeat != null && latestForSeat.ordinal() == latestActionOrdinal, active, compact, !complete);
@@ -199,7 +220,7 @@ final class HoldemTableView {
             }
         }
 
-        addBettingLedger(content, frame, names, compact);
+        addBettingLedger(content, frame, names, compact, position);
 
         TextView advice = null;
         if (complete) {
@@ -238,6 +259,26 @@ final class HoldemTableView {
                     views.dp(HoldemTablePresentation.ACTION_TARGET_DP)));
         }
         return new Labels(advice, winChance);
+    }
+
+    private ViewportPosition viewportPosition(LocalHoldemGame game, Street street) {
+        if (game != displayedGame || displayedHand != game.handNumber() || street == Street.COMPLETE
+                || settlementFrame.street() == Street.COMPLETE || !contentRoot.isAttachedToWindow())
+            return ViewportPosition.TOP;
+        var viewport = (ScrollView) contentRoot.getParent();
+        ScrollView history = contentRoot.findViewWithTag("betting-history-list");
+        return new ViewportPosition(viewport.getScrollY(), history.getVisibility() == View.VISIBLE, history.getScrollY());
+    }
+
+    private static void restoreScrollOnLayout(ScrollView scroll, int y) {
+        if (y == 0) return;
+        scroll.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override public void onLayoutChange(View view, int left, int top, int right, int bottom,
+                                                 int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                scroll.removeOnLayoutChangeListener(this);
+                scroll.scrollTo(0, y);
+            }
+        });
     }
 
     void renderWinChance(TextView label, Integer percent) {
@@ -551,7 +592,8 @@ final class HoldemTableView {
         return text.get(R.string.best_hand, text.get(categoryLabel(HandRank.categoryOf(cards))));
     }
 
-    private void addBettingLedger(LinearLayout parent, HoldemTableViewState frame, List<String> names, boolean compact) {
+    private void addBettingLedger(LinearLayout parent, HoldemTableViewState frame, List<String> names, boolean compact,
+                                  ViewportPosition position) {
         var section = new LinearLayout(views.activity());
         section.setOrientation(LinearLayout.VERTICAL);
         section.setPadding(views.dp(8), views.dp(2), views.dp(8), views.dp(2));
@@ -561,7 +603,9 @@ final class HoldemTableView {
         title.setClickable(true);
         title.setFocusable(true);
         title.setPadding(views.dp(4), views.dp(4), views.dp(4), views.dp(4));
-        title.setContentDescription(text.get(R.string.betting_history_show));
+        title.setContentDescription(text.get(position.historyExpanded()
+                ? R.string.betting_history_hide : R.string.betting_history_show));
+        title.setSelected(position.historyExpanded());
         section.addView(title, views.matchWrap());
         var entries = new LinearLayout(views.activity());
         entries.setOrientation(LinearLayout.VERTICAL);
@@ -590,7 +634,8 @@ final class HoldemTableView {
                 ViewGroup.LayoutParams.WRAP_CONTENT));
         section.addView(history, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 views.dp(compact ? 92 : 116)));
-        history.setVisibility(View.GONE);
+        history.setVisibility(position.historyExpanded() ? View.VISIBLE : View.GONE);
+        restoreScrollOnLayout(history, position.historyY());
         title.setOnClickListener(ignored -> {
             boolean expanded = history.getVisibility() != View.VISIBLE;
             history.setVisibility(expanded ? View.VISIBLE : View.GONE);

@@ -102,6 +102,8 @@ public final class TournamentSanity extends Instrumentation {
                 }
             } else if (journey.equals("seat-metrics")) {
                 inspectCompactSeatMetrics();
+            } else if (journey.equals("table-geometry")) {
+                inspectTableGeometry();
             } else {
                 throw new IllegalArgumentException("Unknown Android sanity mode: " + journey);
             }
@@ -121,6 +123,23 @@ public final class TournamentSanity extends Instrumentation {
         }
         result.putString("stream", failure.isEmpty() ? "PASS Holdem Android sanity (" + journey + ")\n" : "FAIL " + failure + "\n");
         finish(failure.isEmpty() ? Activity.RESULT_OK : Activity.RESULT_CANCELED, result);
+    }
+
+    private void inspectTableGeometry() throws Exception {
+        var activity = launchHoldem();
+        var results = new ArrayList<TableGeometryComponent.Probe>();
+        try {
+            runOnMainSync(() -> results.addAll(TableGeometryComponent.inspect(activity)));
+            boolean passed = true;
+            for (var result : results) {
+                assertions.put(new JSONObject().put("name", result.name()).put("expected", result.expected())
+                        .put("actual", result.actual()).put("passed", result.passed()));
+                passed &= result.passed();
+            }
+            if (!passed) throw new AssertionError("Table geometry drifted; see individual component assertions.");
+        } finally {
+            runOnMainSync(activity::finish);
+        }
     }
 
     private void inspectHardSixTournament() throws Exception {

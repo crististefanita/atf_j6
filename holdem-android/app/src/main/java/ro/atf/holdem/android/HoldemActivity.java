@@ -44,6 +44,7 @@ public final class HoldemActivity extends Activity {
     static final String DEBUG_DEAL_SEED = "ro.atf.holdem.android.DEBUG_DEAL_SEED";
     private SharedPreferences profile;
     private ScreenViews views;
+    private HoldemTableView table;
     private HoldemSessionRepository sessions;
     private TournamentLeaderboardRepository leaderboard;
     private HoldemProgressStore progress;
@@ -82,6 +83,7 @@ public final class HoldemActivity extends Activity {
                 GameplayAchievementFile.local(this, stablePlayerId()));
         romanian = profile.getBoolean(LANGUAGE, false);
         views = new ScreenViews(this, tag -> tag, HoldemActivity::protect);
+        table = new HoldemTableView(views, this::text);
         if (Build.VERSION.SDK_INT >= 33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT,
                     this::navigateBack);
@@ -443,7 +445,6 @@ public final class HoldemActivity extends Activity {
         boolean automatedHumanTurn = autoFinishingHand && frame.actor() == frame.viewer() && !completed;
         settlementPending = completed;
         var names = displayNames(current);
-        var table = new HoldemTableView(views, this::text);
         var labels = table.show(frame, names, current, this::home, () -> {
             if (!activityResumed || sceneRevision != renderedScene || game != current
                     || !current.turn().equals(turn) || deferredContinuation != null) return;

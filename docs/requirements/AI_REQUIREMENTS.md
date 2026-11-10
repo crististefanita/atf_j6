@@ -275,6 +275,23 @@ Pentru un re-raise preflop legal la cel mult 10 BB efective, laboratorul calcule
 - **Comparație de probabilități.** Raportează frecvențele observate, Brier și log loss pentru fiecare nivel. Fixează equity la call și la re-raise în comparația dintre variante.
 - **Comparație de sume.** Alege numai oferte legale, păstrează aceeași extragere la prima reacție și compară jetoanele până la decontare pe aceleași pachete. Califică apoi pe victorii, într-un lot independent de turnee.
 
+### Laboratorul cu distribuții duplicate și stiluri schimbătoare
+
+Arena rotește rolurile pe toate locurile pentru fiecare seed. Modul cu distribuții duplicate fixează cele două cărți ale fiecărui loc fizic și board-ul fiecărei mâini, inclusiv după eliminări. Blindurile, butonul, deciziile și supraviețuirea continuă să evolueze după regulile motorului.
+
+| Mecanism | Contract |
+|---|---|
+| Mese | Profilul YAML definește stive adânci, o masă cu stiluri fixe și o masă cu aceeași configurație inițială și schimbări de stil la mâini stabilite. Unele roluri păstrează stilul pe tot turneul. |
+| Observație | Profilul urmărește reacția imediată la pariuri comparabile pe flop și turn, cu un singur adversar și jetoane rămase. Publică numărătorile pe loc fizic numai după încheierea mâinii. |
+| Predicție | Compară un reper fix, istoricul cumulativ și o fereastră de mâini recente. Toate pornesc de la același reper calibrat pe un lot separat. Predictorul vede acțiuni publice, iar evaluatorul păstrează separat etichetele fazelor. |
+| Decizie | Candidatul poate înlocui un check Hard cu un pariu mic, în limitele legale și ale stivelor. Cere suficient suport și un avantaj estimat chiar dacă orice continuare adversă pierde suma pariată. |
+| Evaluare | Măsoară eroarea predicțiilor pe traiectoriile controlului și victoriile pe alte turnee pereche. Tratează toate rotațiile aceluiași seed ca un singur bloc statistic. |
+
+Modul cu distribuții duplicate se folosește în arenă. Testele verifică ascunderea cărților în timpul jocului, păstrarea board-ului după eliminări și legalitatea acțiunilor. [Profilul de laborator](../../config/j6-deep-style-study.yaml)
+
+- **După o reacție.** Cititorul pe două regimuri actualizează șansa ca adversarul să joace în regimul care renunță des, după decontare și pe baza probabilității reacției în ambele regimuri.
+- **Între reacții.** Estimarea revine treptat spre reperul populației, în funcție de mâinile scurse. Calibrarea și comparația competitivă folosesc seed-uri distincte.
+
 #### Inițiativa și poziția
 
 - **Inițiativă.** Prima mărire stabilește un preț nou. În simulare, compară call-ul și raise-ul din aceeași stare a primului actor și măsoară reacția imediată.

@@ -6,6 +6,27 @@ import static org.junit.jupiter.api.Assertions.*;
 import static ro.atf.holdem.core.ActionType.*;
 
 class HoldemRulesTest {
+    @Test void duplicateDealsKeepPhysicalCardsAndBoardAfterButtonRotationOrElimination() {
+        var deck = HoldemHand.shuffledDeck(1234);
+        var full = new HoldemHand(1, List.of(100, 100, 100, 100), 0, BLINDS, deck, true);
+        var rotated = new HoldemHand(1, List.of(100, 100, 100, 100), 2, BLINDS, deck, true);
+        var reduced = new HoldemHand(1, List.of(0, 100, 0, 100), 3, BLINDS, deck, true);
+        for (int seat : List.of(1, 3)) {
+            assertEquals(List.of(deck.get(seat), deck.get(4 + seat)), full.viewFor(seat).ownCards());
+            assertEquals(full.viewFor(seat).ownCards(), rotated.viewFor(seat).ownCards());
+            assertEquals(full.viewFor(seat).ownCards(), reduced.viewFor(seat).ownCards());
+        }
+        assertTrue(full.viewFor(1).seats().get(3).shownCards().isEmpty());
+        for (var hand : List.of(full, rotated, reduced)) {
+            while (hand.actor() >= 0) {
+                var action = hand.legal().stream().filter(a -> a.type() == CALL || a.type() == CHECK)
+                        .findFirst().orElseThrow();
+                hand.act(hand.actor(), action.type(), action.amount());
+            }
+            assertEquals(List.of(deck.get(9), deck.get(10), deck.get(11), deck.get(13), deck.get(15)), hand.board());
+        }
+    }
+
     @Test void shoveTendenciesOnlyPublishAcceptedOpportunitiesAfterSettlement() {
         var history = new PublicShoveHistory(6);
         var observation = new HoldemObservation(3, 0, 2, 1, Street.PREFLOP, List.of(), List.of(),

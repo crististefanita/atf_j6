@@ -95,6 +95,7 @@ function audit(file, strict, requirePublicShoveHistory = false) {
                     buttonAnchor,stack:Array(seatCount).fill(+stackRaw),total:seatCount * +stackRaw,number:0,
                     strategies:new Map(),shortStackShoveOpportunities:Array(seatCount).fill(0),
                     shortStackAllInRaises:Array(seatCount).fill(0)};
+                table.fixedPhysicalSeats = / dealMode=FIXED_PHYSICAL_SEAT /.test(line);
                 const policyOffset = / policyOffset=(-?\d+)$/.exec(line);
                 if (policyOffset) table.policyOffset = +policyOffset[1];
                 table.seedState = word(BigInt(seed));
@@ -129,8 +130,12 @@ function audit(file, strict, requirePublicShoveHistory = false) {
                 table.seedState = nextSeed(table.seedState);
                 assert.equal(BigInt(m[9]),dealSeed(table.seedState),'Deal seed differs from tournament seed');
                 const deck = deckFor(BigInt(m[9]));
-                const n = order.length, base = n*2;
-                const hole = new Map(order.map((seat,index)=>[seat,[deck[index],deck[index+n]]]));
+                const slots = table.fixedPhysicalSeats ? table.size : order.length;
+                const base = slots*2;
+                const hole = new Map(order.map((seat,index)=>{
+                    const slot = table.fixedPhysicalSeats ? seat : index;
+                    return [seat,[deck[slot],deck[slot+slots]]];
+                }));
                 hand = {number,active,order,hole,button,board:[1,2,3,5,7].map(offset=>deck[base+offset]),
                     blindPlan:[['SB',small,sb],['BB',table.big,bb]],blinds:0,after:table.big,open,bigBlind:bb,street:0,price:bb,full:bb,
                     responded:new Map(),stack:[...table.stack],paid:Array(table.size).fill(0),streetPaid:Array(table.size).fill(0),

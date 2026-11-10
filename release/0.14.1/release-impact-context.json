@@ -1,0 +1,283 @@
+{
+  "schemaVersion" : 1,
+  "kind" : "offline-release-impact-context",
+  "contextState" : "CONTEXT_READY",
+  "advisoryOnly" : true,
+  "gateEffect" : "NONE",
+  "canChangeReleaseIndex" : false,
+  "canDeclareTestPass" : false,
+  "candidateVersion" : "0.14.1",
+  "baseReleaseVersion" : "0.14.0",
+  "declaredChangeClass" : "PATCH_FIX",
+  "changeRationale" : "Stabilizează masa între ture, apropie comenzile și separă realizările de exercițiile de antrenament.",
+  "candidateCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+  "baseReleaseCommit" : "4e9ab509be03f86d908e8a601cb5ca351c7480b6",
+  "testReceiptState" : "NOT_EVALUATED",
+  "distributionVerification" : "AUTHENTICATED_ONLY",
+  "evidenceNote" : "Changed-text signals have versioned source and suite citations.",
+  "changedFiles" : [ "README.md", "config/release-test-suites.json", "docs/design/achievements/README.md", "docs/feedback/J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md", "docs/requirements/PRODUCT_REQUIREMENTS.md", "docs/testing/TEST_STRATEGY.md", "holdem-android/README.md", "holdem-android/app/build.gradle", "holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java", "holdem-android/app/src/main/AndroidManifest.xml", "holdem-android/app/src/main/assets/training-achievements.csv", "holdem-android/app/src/main/java/ro/atf/holdem/android/AchievementCatalog.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/AchievementExercises.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/AchievementPresentation.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/AchievementProgress.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/AchievementsActivity.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementCatalog.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementsActivity.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableButton.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTablePresentation.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/SeatFactRow.java", "holdem-android/app/src/main/res/values-ro/strings.xml", "holdem-android/app/src/main/res/values/strings.xml", "holdem-android/app/src/test/java/ro/atf/holdem/android/AchievementProgressComponentTest.java", "holdem-android/app/src/test/java/ro/atf/holdem/android/GameplayAchievementsComponentTest.java", "holdem-android/app/src/test/java/ro/atf/holdem/android/HoldemTablePresentationComponentTest.java", "holdem-android/tools/PublishTournamentExtent.java", "holdem-app/src/test/java/ro/atf/j6/reporting/NativeTournamentExtentPublisherTest.java", "release/0.14.0/README.md", "release/0.14.0/qualification.json", "release/0.14.0/release-evidence-audit.json", "release/0.14.0/release-impact-context.json", "release/0.14.0/release-validation.json", "release/0.14.0/reports/README.md", "release/0.14.0/reports/android-component-suites-extent.html", "release/0.14.0/reports/android-hard-six-extent.html", "release/0.14.0/reports/android-release-smoke-extent.html", "release/0.14.0/reports/android-seat-metrics-extent.html", "release/0.14.0/reports/android-settlement-award-extent.html", "release/0.14.0/reports/android-settlement-compact-award-extent.html", "release/0.14.0/reports/android-settlement-multi-award-extent.html", "release/0.14.0/reports/android-settlement-static-award-extent.html", "release/0.14.0/reports/android-tournament-extent.html", "release/0.14.0/reports/maven-component-suites-extent.html", "release/0.14.0/reports/promotion-extent.html", "release/0.14.1/README.md", "release/0.14.1/release-notes.md", "release/0.14.1/release-validation.json", "release/0.14.1/reports/README.md", "release/README.md", "release/index.json" ],
+  "retrievedSources" : [ {
+    "rank" : 1,
+    "score" : 3623,
+    "path" : "holdem-android/README.md",
+    "heading" : "Prezentarea mesei",
+    "startLine" : 42,
+    "endLine" : 51,
+    "sourceSha256" : "6bfe1080ed7fb49e5db07bbfa1d81e762435fe5b4c4454746c0c3ab664e51d4d",
+    "chunkSha256" : "d5c69225e558b01fcf671f57a07db60e6236a3d737ae606a1c2a85b363e19798",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "## Prezentarea mesei\n\n- `TurnPacing` programează câte o acțiune automată la `550 ms` <!-- rag:contract android.turn-pacing --> după primul cadru vizibil și verifică din nou tokenul turei înainte de aplicare.\n- `PlayerSeatFrame` marchează actorul. După decontare, masa păstrează cărțile vizibile până la următoarea comandă. Cele folosite în combinația câștigătoare sunt evidențiate, iar marcajul premiului se deplasează spre locurile care au câștigat din pot.\n- La decontare, chenarul separă `Won` de `Returned`. Sumarul central arată potul plătit, fără restituiri. Fiecare marker arată premiul locului și ajunge în centrul chenarului beneficiar, când centrul lui este vizibil. La mai mulți beneficiari, rezumatul de sub pot păstrează numele și suma fiecăruia, inclusiv cu animațiile Android dezactivate sau dacă un chenar iese din fereastră. Ultima poziție rămâne vizibilă pentru un cadru înainte de curățarea efectului.\n- Pe ferestre înguste sau cu font mărit, locurile se rearanjează în jurul potului și al board-ului; conținutul dialogului de raise derulează separat de acțiuni.\n- Masa compactă măsoară fereastra cu istoricul pliat și reduce proporțional fețele cărților doar când conținutul depășește spațiul disponibil. Dacă dimensiunea minimă încă depășește fereastra, derularea păstrează comenzile accesibile. Istoricul deschis are propria listă derulabilă.\n- Fundalurile butoanelor de pariere ocupă aproximativ 62,5% din înălțimea controlului. Butoanele păstrează ținta tactilă de minimum 48 dp.\n- Heads-up: dealerul postează small blind și acționează primul preflop; big blind-ul acționează primul după flop. [Poker TDA, regula 36-C](https://www.pokertda.com/view-poker-tda-rules/)"
+  }, {
+    "rank" : 2,
+    "score" : 8901,
+    "path" : "config/release-test-suites.json",
+    "heading" : "Document",
+    "startLine" : 1,
+    "endLine" : 85,
+    "sourceSha256" : "e5a7d9e1148bd73178ef1b3e939e6c9eb5330bde438b59863a72fb810b817915",
+    "chunkSha256" : "3b068c5fda50fc6fe9f3ad6e1a66fa7ff49476a64f7a50ec76cb1ec4ef74e48d",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "{\n  \"schemaVersion\": 1,\n  \"maven\": [\n    { \"module\": \"holdem-core\", \"testClass\": \"ro.atf.holdem.core.HoldemRulesTest\" },\n    { \"module\": \"holdem-ai\", \"testClass\": \"ro.atf.holdem.ai.ContextualEquityPolicyTest\" },\n    { \"module\": \"holdem-ai\", \"testClass\": \"ro.atf.holdem.ai.DeterministicBluffPolicyTest\" },\n    { \"module\": \"holdem-ai\", \"testClass\": \"ro.atf.holdem.ai.HardPressurePolicyTest\", \"impactPaths\": [\"config/policy-tuning/j6-policy-hard-pressure.yaml\", \"holdem-ai/src/main/java/ro/atf/holdem/ai/ContextualEquityPolicy.java\"] },\n    { \"module\": \"holdem-ai\", \"testClass\": \"ro.atf.holdem.ai.MonteCarloEquityEstimatorTest\" },\n    { \"module\": \"holdem-ai\", \"testClass\": \"ro.atf.holdem.ai.PolicyStyleTest\" },\n    { \"module\": \"holdem-ai\", \"testClass\": \"ro.atf.holdem.ai.ShortStackShovePolicyTest\" },\n    { \"module\": \"holdem-ai\", \"testClass\": \"ro.atf.holdem.ai.ConditionalRangeEquityPolicyTest\" },\n    { \"module\": \"holdem-ai\", \"testClass\": \"ro.atf.holdem.ai.NearbyRaiseSizingPolicyTest\" },\n    { \"module\": \"holdem-ai\", \"testClass\": \"ro.atf.holdem.ai.PreflopResponsePolicyTest\" },\n    { \"module\": \"holdem-ai\", \"testClass\": \"ro.atf.holdem.ai.RaiseEvSizingPolicyTest\" },\n    { \"module\": \"holdem-ai\", \"testClass\": \"ro.atf.holdem.ai.ShortStackResponseModelPolicyTest\" },\n    { \"module\": \"holdem-ai\", \"testClass\": \"ro.atf.holdem.ai.StrengthSelectivePolicyTest\" },\n    { \"module\": \"holdem-ai\", \"testClass\": \"ro.atf.holdem.ai.TournamentPlayStylesPolicyTest\", \"impactPaths\": [\"holdem-ai/src/main/java/ro/atf/holdem/ai/TournamentPlayStyles.java\"] },\n    { \"module\": \"holdem-arena\", \"testClass\": \"ro.atf.holdem.arena.CashTableArenaTest\" },\n    { \"module\": \"holdem-arena\", \"testClass\": \"ro.atf.holdem.arena.DeepTableStudyTest\" },\n    { \"module\": \"holdem-arena\", \"testClass\": \"ro.atf.holdem.arena.ControlledChallengeTest\" },\n    { \"module\": \"holdem-arena\", \"testClass\": \"ro.atf.holdem.arena.PositionRotationExperimentTest\" },\n    { \"module\": \"holdem-arena\", \"testClass\": \"ro.atf.holdem.arena.TournamentArenaTest\" },\n    { \"module\": \"holdem-arena\", \"testClass\": \"ro.atf.holdem.arena.TournamentStrategyArenaTest\" },\n    { \"module\": \"holdem-app\", \"testClass\": \"ro.atf.j6.libraries.PlatformLibraryAdoptionTest\" },\n    { \"module\": \"holdem-app\", \"testClass\": \"ro.atf.j6.release.ReleaseGovernanceTest\", \"impactPaths\": [\"scripts/Test-PublishedHoldemDownload.ps1\"] },\n    { \"module\": \"holdem-app\", \"testClass\": \"ro.atf.j6.release.DocumentationGovernanceTest\" },\n    { \"module\": \"holdem-app\", \"testClass\": \"ro.atf.j6.release.ReleasePromotionGateTest\" },\n    { \"module\": \"holdem-app\", \"testClass\": \"ro.atf.j6.reporting.ComponentSuiteExtentPublisherTest\" },\n    { \"module\": \"holdem-app\", \"testClass\": \"ro.atf.j6.reporting.NativeTournamentExtentPublisherTest\" },\n    { \"module\": \"holdem-app\", \"testClass\": \"ro.atf.j6.release.ReleaseImpactRagTest\" },\n    { \"module\": \"holdem-app\", \"testClass\": \"ro.atf.j6.release.ReleaseVersionPolicyTest\" }\n  ],\n  \"android\": [\n    { \"module\": \"holdem-android\", \"testClass\": \"ro.atf.holdem.android.GameplayAchievementsComponentTest\", \"impactPaths\": [\"config/j6-achievements.yaml\", \"holdem-android/app/build.gradle\", \"holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievements.java\", \"holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementCatalog.java\", \"holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementFile.java\", \"holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementsActivity.java\", \"holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemProgressStore.java\"] },\n    { \"module\": \"holdem-android\", \"testClass\": \"ro.atf.holdem.android.HoldemSessionRepositoryComponentTest\" },\n    { \"module\": \"holdem-android\", \"testClass\": \"ro.atf.holdem.android.HoldemTablePresentationComponentTest\" },\n    { \"module\": \"holdem-android\", \"testClass\": \"ro.atf.holdem.android.LocalHoldemGameTest\" },\n    { \"module\": \"holdem-android\", \"testClass\": \"ro.atf.holdem.android.LocalHoldemPlayStylesTest\", \"impactPaths\": [\"holdem-ai/src/main/java/ro/atf/holdem/ai/TournamentPlayStyles.java\", \"holdem-android/app/src/main/java/ro/atf/holdem/android/LocalHoldemGame.java\"] },\n    { \"module\": \"holdem-android\", \"testClass\": \"ro.atf.holdem.android.LocalHoldemTournamentTest\" },\n    { \"module\": \"holdem-android\", \"testClass\": \"ro.atf.holdem.android.TournamentLeaderboardTest\" }\n  ],\n  \"native\": [\n    {\n      \"mode\": \"hard-six\",\n      \"switch\": \"-IncludeHardSix\",\n      \"impactPaths\": [\n        \"holdem-ai/src/main/java/ro/atf/holdem/ai/TournamentPlayStyles.java\",\n        \"holdem-android/app/src/main/java/ro/atf/holdem/android/LocalHoldemGame.java\",\n        \"holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java\"\n      ]\n    },\n    {\n      \"mode\": \"seat-metrics\",\n      \"switch\": \"-IncludeSeatMetrics\",\n      \"impactPaths\": [\n        \"holdem-android/app/src/main/java/ro/atf/holdem/android/CompactSeatRows.java\",\n        \"holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java\",\n        \"holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTablePresentation.java\",\n        \"holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java\",\n        \"holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemViewport.java\",\n        \"holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java\",\n        \"holdem-android/app/src/main/res/values/strings.xml\",\n        \"holdem-android/app/src/main/res/values-ro/strings.xml\",\n        \"holdem-android/tools/PublishTournamentExtent.java\"\n      ]\n    },\n    {\n      \"mode\": \"settlement-award\",\n      \"switch\": \"-IncludeSettlementAward\",\n      \"companionModes\": [\"settlement-multi-award\", \"settlement-static-award\", \"settlement-compact-award\"],\n      \"impactPaths\": [\n        \"holdem-core/src/main/java/ro/atf/holdem/core/HoldemHand.java\",\n        \"holdem-core/src/main/java/ro/atf/holdem/core/PotSettlement.java\",\n        \"holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java\",\n        \"holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTablePresentation.java\",\n        \"holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java\",\n        \"holdem-android/app/src/androidTest/java/ro/atf/holdem/android/SettlementAwardObservation.java\",\n        \"holdem-android/app/src/testSupport/java/ro/atf/holdem/android/SettlementAwardFixture.java\",\n        \"holdem-android/app/src/main/res/values/strings.xml\",\n        \"holdem-android/app/src/main/res/values-ro/strings.xml\"\n      ]\n    }\n  ]\n}"
+  }, {
+    "rank" : 3,
+    "score" : 8721,
+    "path" : "docs/testing/TEST_STRATEGY.md",
+    "heading" : "Interfața Android locală",
+    "startLine" : 60,
+    "endLine" : 89,
+    "sourceSha256" : "75c66f12222f8d0e7038d120856023576ac40b1fd956c91b8a8e86af4750dbca",
+    "chunkSha256" : "664489207150bb791895f6dbc27c19d95b1f79dc9c1515ef27ac5fc24bb21fb4",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "### Interfața Android locală\n\n- Admitere bibliotecă. Build-ul verifică cele opt fișiere Card Table după proveniență, coordonate și SHA-256, înainte de împachetare. J6 consumă Card Table UI 0.1.7; producătorul califică pacing-ul comun de `550 ms` <!-- rag:contract android.turn-pacing --> după primul cadru vizibil, iar consumatorul păstrează testul de proveniență exactă.\n- Componente JVM. Motorul păstrează cărțile observatorului când se schimbă actorul, inclusiv când se modifică numai cărți ascunse. Sesiunea Android joacă mese de 4, 5 și 6 locuri și verifică acțiunile invalide, comenzile repetate, fold, all-in, restaurarea și conservarea jetoanelor.\n- Sanity nativ. Modul `tournament` verifică victoria și eliminarea în APK-ul `sanity`, care acceptă seed-uri reproductibile. Modul `release-smoke` verifică navigarea inițială în APK-ul distribuibil exact. Extent leagă API-ul, fereastra, acțiunile, aserțiunile și capturile de hash-ul APK-ului instalat.\n- Profil compact. Componentele verifică rândurile pentru 2, 4, 5 și 6 locuri, plus ordinea heads-up în ambele poziții. Pe emulator, profilul de 320 × 569 dp cu font 2,0 verifică șase chenare, board-ul, acțiunile și dialogul de raise cu tastatura deschisă. O a doua trecere pe același profil verifică schimbarea dealerului heads-up. Scriptul restabilește configurația emulatorului.\n- Chenare și cărți terminale. Modului `seat-metrics` îi sunt necesare TalkBack, lățimea de `320 dp` <!-- rag:contract android.seat-metrics.viewport-width --> și font 2,0. Pe APK-ul semnat verifică sumele, focalizarea nativă a locului activ cu TalkBack pornit și perechile de cărți sub chenare la șase și la cinci locuri. La cinci locuri confirmă și opțiunile Normal și Hard, cu Normal implicit. Publisherul cere aserțiunile și toate cele trei capturi. Runnerul restaurează afișajul și setările de accesibilitate.\n- Reluare și prezentarea turei. `HoldemSessionRepositoryComponentTest` verifică checkpoint-ul durabil după o acțiune umană și o acțiune automată, actorul următor după replay, jurnalul reordonat, păstrarea checkpoint-ului vechi la eșec și recuperarea după întreruperea dintre redenumiri. `LocalHoldemGameTest` verifică acțiunile automate una câte una. `HoldemTablePresentationComponentTest` verifică un singur chenar pentru actorul fizic la mese de 2/4/5/6 locuri și nicio evidențiere la settlement; proiecția de decontare păstrează vizibilitatea cărților și selectează locurile cu premiu din pot. În UI, cadrul terminal rămâne disponibil, iar markerul premiului pornește din pot spre locul beneficiar. Traiectoria măsurată pe Android rămâne în [J6-UI-07](../feedback/J6-UI-07-SHOWDOWN-WIN-CLARITY.md). Aceste teste rulează fără emulator.\n- Turneu, componente JVM. `LocalHoldemTournamentTest` verifică stivele exacte, locurile sărite după eliminare, tranziția la heads-up, plata finală, înfrângerea, restaurarea mai multor runde și refuzul comenzilor expirate. Verifică nivelurile de blind la intervale configurate și pauza ceasului în fundal folosind un ceas monoton injectat; timpul suspendat nu avansează nivelul, fără `sleep` sau toleranțe temporale. Rulați această suită la fiecare schimbare a sesiunii.\n- Decontare și marker. JVM verifică premiul, restituirea și păstrarea lor după restaurarea checkpoint-ului, inclusiv locul cu restituire fără premiu. Sanity-ul `settlement-award` joacă un singur all-in heads-up. Verifică centrul markerului față de pot și chenar, suma markerului, potul plătit și rândurile lizibile și accesibile. Publisherul respinge un receipt fără măsurarea sosirii sau fără toate cele trei cadre.\n- Premii multiple. Fixture-urile comune JVM și Android reproduc seed 33 pentru split (locurile 1 și 3, câte 4.000) și seed 24 pentru side pot (locul 2 primește 7.840, locul 3 primește 160). Componentele confruntă premiile după replay. Sanity-ul animat măsoară câte un marker per loc și păstrează cadrele de plecare și sosire. La scala Android 0, sanity-ul confruntă textul permanent și continuarea fără marker. Publisherul cere dovada numelor și sumelor și refuză receipt-ul incomplet.\n- Premii în fereastră scundă. Componenta testează centrul exact al chenarului față de limitele decupajului. `settlement-compact-award` folosește seed 24 și font 2,0. Verifică faptul că locul 3 este complet în afara ferestrei, rezumatul cu ambele sume încape integral, iar singurul marker observat ajunge la locul 2. Extent respinge receipt-ul fără dovada absenței markerului ascuns.\n- Turneu, sanity Android. Traseele verifică heads-up, felicitările și ecranul de eliminare. Android confirmă afișarea plății, iar JVM verifică sumele exacte ale all-in-urilor și decontărilor ulterioare. Verifică limitele legale ale unui Raise în testele de componentă. Traseul nativ confirmă deschiderea editorului, revenirea la Call și înregistrarea lui în jurnal. Corelarea unui Raise acceptat cu jurnalul curent rămâne în [J6-UI-10](../feedback/J6-UI-10-BETTING-ACTION-LEDGER.md).\n- Guvernanță release. `ReleaseGovernanceTest` verifică offline starea catalogului, identitatea Android, blocul `## Jocul` (dosarul ediției în `DRAFT`; exact două linkuri ordonate în `PREPARED`/`PUBLISHED`), linkurile tehnice către catalog/proces, lipsa checksum-ului din README, politica de semnare, contractul descărcării autentificate și păstrarea octeților în Git. Blocul pentru utilizator nu acceptă mărime, checksum, stare, cerință de autentificare sau linkuri suplimentare; dovada descărcării pentru `PREPARED` rămâne în manifestul ediției. Mutanții negativi resping versiunea veche, ordinea greșită, linkul duplicat, textul zgomotos și rutele nepotrivite stării. Politica API Android minimă respinge metode Java de colecții indisponibile pe `minSdk 26`; testele native validează și calea de recomandare AI pe API 28. Guvernanța din checkout verifică dovezile versionate și receipt-ul cerut de stare, fără APK sau checksum local. Testele publică rapoarte Extent, inspectate cu `ReportArtifactInspector`. `Build-HoldemRelease.ps1` cere un commit curat și verifică separat turneul determinist `sanity` și smoke-ul APK-ului `release` instalat.\n- Poarta de promovare. `Test-HoldemPromotion.ps1` verifică copia pentru upload față de calificarea fixată. Extent păstrează rezultatul și cauza blocării pentru APK absent, trunchiat sau alterat, checksum greșit și receipt incoerent. [Comanda și ordinea promovării](../release/ATF_Release.md#promovare-și-descărcare)\n- Runnerul publică prin `atf-reporting` câte un Extent pentru Maven și Android JVM. Traseele Android native au rapoarte proprii, cu capturi încorporate. Dosarul fiecărei ediții identifică binarele testate, rezultatele și rapoartele. [Catalogul edițiilor](../../release/README.md)\n- Context de impact release. `ReleaseImpactRag` propune suitele și probele native afectate. Testele verifică ordinea surselor, trasabilitatea citatelor, observațiile depășite și referințele locale rupte. [Contractul RAG](../release/ATF_Release.md#contextul-rag-consultativ)\n- Decizie și estimare. JVM verifică proiecția permisă, separarea victoriei de egalitate, aceleași intrări între actori și migrarea checkpointurilor. Traseul de turneu verifică bifa în ambele stări, dimensiunea țintelor și accesibilitatea Call imediat după închiderea editorului Raise, urmată de flop și jurnalul acțiunii.\n- Lifecycle UI. Componentele verifică timerul determinist; logica Activity invalidează callback-urile, oprește ceasul și checkpoint-uiește la `onPause`, apoi reconstruiește scena la `onResume`. Rezultatul AI este doar o sugestie până când UI-ul revalidează Activity și tokenul curent. O probă de componentă nu înlocuiește verificarea nativă a rotației/background-ului pe emulator.\n- Separarea semnării. `:app:testSanityUnitTest` rulează fără identitatea privată; `verifyHoldemReleaseSigning` este dependență doar pentru împachetarea APK-urilor `sanity`/`release` și semnarea AAB-urilor. `:app:testDebugUnitTest` nu există deoarece `testBuildType` selectează `sanity`. Dry-run-ul `:app:assembleSanity` trebuie să includă gate-ul de semnare, iar testele JVM nu trebuie să-l includă.\n- Capturi native. Arborele de accesibilitate poate anunța un ecran înainte ca imaginea să fie afișată. Runnerul sincronizează captura cu cadrele Android și cu stabilizarea accesibilității. Receipt-ul și PNG-urile sunt transmise prin instrumentare, nu citite din datele private ale aplicației. Publicarea compară SHA-256 al APK-ului instalat cu binarul furnizat din build.\n- Reluarea decontării. Rulează sanity-ul cu `-Mode settlement-resume` pentru două tap-uri urmate de recrearea Activity, apoi pentru reluarea rezultatului din checkpoint. Extent cere destinația corectă, un singur turneu în clasament și două capturi. Componenta exercită și scrierea eșuată cu retry.\n- Clasamentul la finalizare. `-Mode leaderboard-settlement` încheie un turneu, pornește altul direct din meniu și verifică ID-ul și punctajul inițial în clasament după redeschidere. Componentele verifică recuperarea când eșuează scrierea checkpoint-ului sau a registrului.\n- Redenumirea în clasament. `-Mode leaderboard-profile-restart` câștigă un turneu de o mână, redenumește profilul din meniu și verifică rândul înainte și după `am force-stop`. Același APK și aceleași date rămân instalate între cele două faze. Extent cere un PID nou, un singur rând pentru profil, același ID și același digest al registrului. Capturile arată meniul după salvare și clasamentul din procesul nou. Testul JVM verifică și coliziunea cu un alias de bot.\n- Oracol Extent nativ. Fiecare parcurs declară observațiile obligatorii și inventarul capturilor. Publisherul cere fiecare observație obligatorie o singură dată și verifică inventarul ordonat. Hash-ul APK are o verificare separată. O listă de aserțiuni absentă sau incompletă produce Extent `FAIL` cu diagnosticul și capturile disponibile dintr-un receipt lizibil. [Testele publisherului](../../holdem-app/src/test/java/ro/atf/j6/reporting/NativeTournamentExtentPublisherTest.java)\n\n[Comenzi de calificare](../../holdem-android/README.md#verificare-locală)\n\n[Procesul de release](../release/ATF_Release.md)"
+  }, {
+    "rank" : 4,
+    "score" : 5462,
+    "path" : "docs/requirements/PRODUCT_REQUIREMENTS.md",
+    "heading" : "Realizări",
+    "startLine" : 118,
+    "endLine" : 134,
+    "sourceSha256" : "bb5408dad4e24c839428abe80646ec0a6e1032e9869121ea74c774e887503494",
+    "chunkSha256" : "7205b0db878ade0a9f27c3e101368782c02f19d36a7b5d3086e9236f92b23895",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "## Realizări\n\nMeniul **Realizări** arată cinci obiective pe nivel. Ordinea sugerează de unde să începi, iar o mână sau un turneu poate avansa mai multe obiective simultan. Progresul vine din rezultatele obținute la masă.\n\n| Nivel | Primul obiectiv | Alte criterii |\n|---|---|---|\n| Ușor | Câștigă o mână de poker. | Ajungi la prima dezvăluire, câștigi un pot din blindul mare, trei mâini distincte și închei participarea într-un turneu. |\n| Mediu | Câștigă un turneu. | Cinci mâini câștigate în turnee, trei victorii la dezvăluire cu minimum trei participanți, două victorii cu chintă sau mai bine și două podiumuri. |\n| Greu | Câștigă trei turnee distincte. | Carte mare ca unic beneficiar al poturilor, două victorii cu full sau mai bine, 12 victorii la dezvăluire cu minimum trei participanți și două titluri la mese pornite cu șase jucători. |\n\n- O mână se califică dacă profilul primește jetoane dintr-un pot la decontare. O restituire nu contează. Un pot secundar sau împărțit poate conta o singură dată pentru mâna respectivă.\n- La o dezvăluire cu minimum trei participanți se numără doar jucătorii ale căror cărți sunt evaluate. Criteriul de carte mare cere ca jucătorul să fie singurul beneficiar al poturilor.\n- Participarea și podiumul se acordă când locul devine definitiv, chiar dacă adversarii continuă. Un loc al treilea împărțit contează. Titlul cere locul întâi, iar obiectivul de șase folosește dimensiunea de la începutul turneului.\n- Progresul este local pe profil și se deduplică după ID-ul mâinii sau al turneului. Se poate reconcilia sesiunea salvată. Clasamentul agregat nu reconstruiește partidele vechi.\n\nCatalogul YAML definește ID-urile, nivelul, ordinea, metrica și pragul. Textele localizate folosesc aceleași praguri la afișare. [Regulile executabile](../../config/j6-achievements.yaml) · [Ghid de proiectare](../design/achievements/README.md) · [Verificarea realizărilor](../testing/TEST_STRATEGY.md#realizări-de-joc)"
+  }, {
+    "rank" : 5,
+    "score" : 1832,
+    "path" : "README.md",
+    "heading" : "Module",
+    "startLine" : 30,
+    "endLine" : 40,
+    "sourceSha256" : "760a949bb6c19c556f02b29b542a5bf67fb05034d5991e3058a751b38a8fccc8",
+    "chunkSha256" : "1c39178a3b088807d489b340acf98a9cee4e2b1983c8e312238de6b836da61a2",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "## Module\n\n| Modul | Contract |\n|---|---|\n| `holdem-core` | Cărți, străzi, observația actorului, acțiuni legale și decontarea poturilor; fără Android sau rețea. |\n| `holdem-ai` | Politici baseline și estimator Monte Carlo reproductibil; ponderi de context configurate în YAML. |\n| `holdem-arena` | Turnee cu blinduri progresive, mese cash cu blinduri fixe, seed-uri și replay. |\n| `holdem-online` | Configurație și raportare `dry-run` doar; nu implementează transportul protocolului. Poate fi scos din produs până când online devine o etapă aprobată. |\n| `holdem-app` | Vertical slice de consolă pentru o decizie locală și inspecția scaffold-ului online. |\n| `holdem-android` | Interfață locală pentru mâini de antrenament și turnee de 4–6 locuri; Gradle folosește sursele comune ale motorului și AI-ului. |"
+  }, {
+    "rank" : 6,
+    "score" : 1395,
+    "path" : "release/0.14.0/reports/README.md",
+    "heading" : "Rapoarte Extent",
+    "startLine" : 12,
+    "endLine" : 25,
+    "sourceSha256" : "0722925c03fc415d5c8f75e66a8fa50129e6f494c73dbbce17815e412c6ec901",
+    "chunkSha256" : "90aaea5daab0fd8b12abc84d0ce46f3dd8797bc73c1fd5bb06dcbdf16a611473",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "## Rapoarte Extent\n\n- [Verdictul RAG](promotion-extent.html)\n- [Componente Maven și guvernanță](maven-component-suites-extent.html)\n- [Componente Android JVM](android-component-suites-extent.html)\n- [Instalare și smoke pe APK-ul semnat](android-release-smoke-extent.html)\n- [Turneu Hard la șase locuri pe APK-ul semnat](android-hard-six-extent.html)\n- [Poziționare și focalizare TalkBack pe APK-ul semnat](android-seat-metrics-extent.html)\n- [Sanity de turneu pe buildul de test](android-tournament-extent.html)\n- [Acordarea potului pe buildul de test](android-settlement-award-extent.html)\n- [Acordarea pe fereastră compactă](android-settlement-compact-award-extent.html)\n- [Acordarea către mai mulți jucători](android-settlement-multi-award-extent.html)\n- [Acordarea cu animații dezactivate](android-settlement-static-award-extent.html)"
+  }, {
+    "rank" : 7,
+    "score" : 903,
+    "path" : "release/README.md",
+    "heading" : "Pe scurt",
+    "startLine" : 3,
+    "endLine" : 6,
+    "sourceSha256" : "2cbc2ccadb7e1b9127f1aa9be4a0a12e6daaf2c584fc7c45c769c85245a263f3",
+    "chunkSha256" : "5abc0a34e6ae1373a7f02b55354cfc31f4772cc475493750fa4475633af37b6c",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "## Pe scurt\n\nAcest catalog separă ghidurile de lucru de dosarele care atestă o ediție Android. `index.json` selectează ediția curentă, iar manifestul ediției consemnează starea și identitatea pachetului."
+  }, {
+    "rank" : 8,
+    "score" : 870,
+    "path" : "release/index.json",
+    "heading" : "Document",
+    "startLine" : 1,
+    "endLine" : 14,
+    "sourceSha256" : "d812a5e80d86d8324a679e9584f383ccbca7b862c27dc28292987be29d5197c3",
+    "chunkSha256" : "e5fb2a9fb610288c5e5529c2ad6ff7601fc152aa60f850736b3f502873b516e9",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "{\n  \"schemaVersion\": 1,\n  \"repository\": \"crististefanita/atf_j6\",\n  \"currentVersion\": \"0.14.1\",\n  \"previousVersion\": \"0.14.0\",\n  \"changeClass\": \"PATCH_FIX\",\n  \"changeRationale\": \"Stabilizează masa între ture, apropie comenzile și separă realizările de exercițiile de antrenament.\",\n  \"state\": \"DRAFT\",\n  \"published\": false,\n  \"versions\": [\n    \"0.14.1\"\n  ]\n}"
+  }, {
+    "rank" : 9,
+    "score" : 731,
+    "path" : "docs/feedback/J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md",
+    "heading" : "Criterii de acceptanță",
+    "startLine" : 9,
+    "endLine" : 14,
+    "sourceSha256" : "d412a03575734a833155e801dd5e56eb9013cd0f77fe0ad6ccf4fa8b6b7088f1",
+    "chunkSha256" : "5e4fcf16b8fe494b280d759465da749d9be08dd59463cd9757f1db58c58a055a",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "## Criterii de acceptanță\n\n- Verifică dacă primul obiectiv din fiecare tab este înțeles fără explicații și dacă se vede că alte obiective pot progresa în paralel.\n- Compară distribuția numărului de mâini și turnee necesare per nivel. Urmărește separat victoria cu o carte mare, unde oportunitatea depinde de distribuție și de adversari.\n- Adaugă obiective doar pentru situații observabile din joc. Pentru o tactică nouă, precizează evenimentul autoritar, ce o deosebește de un câștig întâmplător și testul care respinge un caz aproape identic."
+  }, {
+    "rank" : 10,
+    "score" : 618,
+    "path" : "release/0.14.0/README.md",
+    "heading" : "Dosar",
+    "startLine" : 11,
+    "endLine" : 19,
+    "sourceSha256" : "7e7ea0fe8d341dfc50b2c48892f88ecadb9af25b15a5e3162a373d9e59c0b9d8",
+    "chunkSha256" : "922b927a968397af6c1a33f65052aacc15e256a725c90c4bde6761900b703688",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "## Dosar\n\n- [Manifestul ediției](release-validation.json)\n- [Note de versiune](release-notes.md)\n- [Indexul rapoartelor](reports/README.md)\n- [Calificarea sursei și a binarului](qualification.json)\n- [Contextul RAG](release-impact-context.json)\n- [Auditul dovezilor](release-evidence-audit.json)"
+  }, {
+    "rank" : 11,
+    "score" : 379,
+    "path" : "release/0.14.1/reports/README.md",
+    "heading" : "Contract",
+    "startLine" : 7,
+    "endLine" : 11,
+    "sourceSha256" : "cbeacc59bd7a28605ac7f7662fbf634ef6edd9d7734e573bf4f57bc906321995",
+    "chunkSha256" : "abc7a3e534c7fe05854d82f908e87e1410c36400a5f5eb8bc70b7e0a837510fa",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "## Contract\n\n- [Manifestul ediției](../release-validation.json)\n- [Procesul de release](../../../docs/release/ATF_Release.md#auditul-artefactelor-după-rulare)"
+  }, {
+    "rank" : 12,
+    "score" : 276,
+    "path" : "release/0.14.1/release-notes.md",
+    "heading" : "Note de versiune 0.14.1",
+    "startLine" : 1,
+    "endLine" : 6,
+    "sourceSha256" : "68672d28605fe87015329466029a440ab7b74763a281eed8c8dd498a8724628f",
+    "chunkSha256" : "7dc948d06b3a33dfced3c749804ae8b009ad0c21dcecc53553a8c660e7a45ce2",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "# Note de versiune 0.14.1\n\n- Comenzile de la masă sunt mai apropiate, cu etichete pentru limba aleasă în aplicație.\n- Potul, mesajele și chenarele își păstrează poziția la schimbarea actorului.\n- Realizările urmăresc rezultatele din joc pe cele trei niveluri."
+  }, {
+    "rank" : 13,
+    "score" : 261,
+    "path" : "release/0.14.1/README.md",
+    "heading" : "Dosar",
+    "startLine" : 7,
+    "endLine" : 12,
+    "sourceSha256" : "6462520eb83d3d4c730176309aa4eca57e840ffb0f62ac5bcea8a1d54fd50134",
+    "chunkSha256" : "1523cc047eb2603003901a17e232ace58ea5b2af01e81cbc7c2acce62346e131",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "## Dosar\n\n- [Manifestul ediției](release-validation.json)\n- [Note de versiune](release-notes.md)\n- [Indexul rapoartelor](reports/README.md)"
+  }, {
+    "rank" : 14,
+    "score" : 4474,
+    "path" : "docs/requirements/AI_REQUIREMENTS.md",
+    "heading" : "Prioritatea acțiunii loose-aggressive",
+    "startLine" : 340,
+    "endLine" : 374,
+    "sourceSha256" : "e5e315933f6cf2330979142b2395223445e88b55f16e77ae4b42a48006da267d",
+    "chunkSha256" : "deffcb20425d84f4738e895abc58d6d3c9ea32b1a7deef7c2366bd329d5cdc29",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "## Prioritatea acțiunii loose-aggressive\n\nPolitica separă deschiderea de continuarea agresiunii în istoricul **străzii curente**:\n\n```mermaid\nflowchart LR\n    TURN[Observația actorului] -->|verifică| AGG{Există BET/RAISE anterior pe strada curentă?}\n    AGG -->|Nu| OPEN[Frecvența open, ajustată pentru poziție]\n    AGG -->|Da| RERAISE[Frecvența de raise]\n    OPEN -->|propune| LEGAL[Selectează numai o acțiune legală]\n    RERAISE -->|propune| LEGAL\n    LEGAL -->|verifică| CALL{Preț de call în plafon?}\n    CALL -->|Da| MATCH[Call]\n    CALL -->|Nu| FOLD[Fold dacă este legal]\n```\n\n<details>\n<summary><strong>Legendă — deschidere și re-raise</strong></summary>\n\n- **Open** folosește frecvența ajustată pentru poziție.\n- **Re-raise** se aplică după agresiune pe strada curentă.\n- **Call** rămâne condiționat de preț și opțiunile legale.\n\n</details>\n\n| Semnal | Comportament |\n|---|---|\n| Open | Prima mărire preflop fără raise anterior, sau un `BET` fără preț, folosește frecvența de deschidere. |\n| Re-raise | După agresiune pe strada curentă, politica folosește `raiseFrequencyPercent`. Clasificarea pornește din nou pe strada următoare. |\n| Poziție | `latePositionAdjustmentPercent` crește frecvența de open pentru buton și cutoff, o scade în rest și plafonează rezultatul la 0–100%. |\n| Call | `maxCallPotPercent` compară suma de plătit cu potul înainte de call. |\n| Mărime | Politica de bază deschide sau mărește cu suma minimă legală. |\n\nFrecvențele de open și re-raise folosesc o valoare deterministă calculată din observația actorului. Ajustarea pozițională se aplică numai la open. [Politica loose-aggressive](../../holdem-ai/src/main/java/ro/atf/holdem/ai/LooseAggressivePolicy.java)"
+  }, {
+    "rank" : 15,
+    "score" : 4461,
+    "path" : "docs/requirements/TOURNAMENT_RULES.md",
+    "heading" : "Rotația aceleiași distribuții",
+    "startLine" : 88,
+    "endLine" : 134,
+    "sourceSha256" : "5cfaea6796767eb420899ff7f0d1c5f298b2640756ca9be46baf44d80b41ccd2",
+    "chunkSha256" : "f117d8777112bc20d616f60eda8c6d998e3f4f851328aecb2dc79c1f889c698a",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "version" : "0.14.1",
+    "excerpt" : "### Rotația aceleiași distribuții\n\nSetați `HOLDEM_DATA_ROOT` la directorul extern de date și `HOLDEM_MAVEN_REPOSITORY` la cache-ul Maven folosit la compilare.\n\n- **Distribuție controlată.** `PositionRotationExperiment` păstrează cărțile private, board-ul și stivele pe loc fizic și rotește butonul prin șase poziții.\n- **Politici.** TAG, calling, pressure, loose, bluff și equity primesc `HoldemObservation`. Calling stations sunt adversarii de referință. `bluff-always` exercită declanșatorul.\n- **Oracol.** Auditorul verifică observația și legalitatea fiecărei mutări. Comparația de stivă folosește TAG în același loc.\n\n```powershell\n$run = Join-Path $env:HOLDEM_DATA_ROOT ('position-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))\nNew-Item -ItemType Directory -Path $run | Out-Null\n$yaml = Join-Path $env:HOLDEM_MAVEN_REPOSITORY 'org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar'\n$cp = \"holdem-core/target/classes;holdem-ai/target/classes;holdem-arena/target/classes;$yaml\"\njava -cp $cp ro.atf.holdem.arena.PositionRotationExperiment config/j6-policy.yaml \"$run\\positions.psv\"\nnode scripts/audit-position-rotations.cjs \"$run\\positions.psv\"\n```\n\nAuditul compară aceeași distribuție fizică între toate rotațiile, confirmă că actorul vede numai propriile cărți și board-ul ajuns până la strada curentă și verifică acțiunea în meniul legal. Aceste mâini controlate validează mecanisme și sensibilitatea la poziție; nu estimează singure forța unui stil în turneu.\n\nExemplu PowerShell, din rădăcina proiectului (JAR-ul SnakeYAML trebuie să existe în repository-ul Maven local):\n\n```powershell\n$run = Join-Path $env:HOLDEM_DATA_ROOT ('tournament-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))\n$yaml = Join-Path $env:HOLDEM_MAVEN_REPOSITORY 'org/yaml/snakeyaml/2.2/snakeyaml-2.2.jar'\n$cp = \"holdem-core/target/classes;holdem-ai/target/classes;holdem-arena/target/classes;$yaml\"\nNew-Item -ItemType Directory -Force -Path $run | Out-Null\njava -cp $cp ro.atf.holdem.arena.TournamentArena config/j6-tournaments-stress.yaml \"$run\\mixed.trace\" 50 7000 mixed\njava -cp $cp ro.atf.holdem.arena.TournamentArena config/j6-tournaments-stress.yaml \"$run\\control.trace\" 50 7000 control\nnode scripts/audit-tournament.cjs \"$run\\mixed.trace\" --require-layers\nnode scripts/audit-tournament.cjs \"$run\\control.trace\" --require-layers\nnode scripts/compare-tournament-cohorts.cjs \"$run\\mixed.trace\" \"$run\\control.trace\"\n```\n\nPentru fixture-ul de redeschidere, adaugă `-Dj6.challenge.trace=<cale-nouă>` la `mvn test`, apoi rulează auditorul de provocări pe jurnalul rezultat.\n\nJurnalul local păstrează seed-ul, nivelul, acțiunile, board-ul public, plățile și stivele. Politicile primesc doar observația actorului.\n\n| Eveniment | Ce permite verificarea |\n|---|---|\n| `POT` | Pragul cumulativ al contribuției pe loc, totalul stratului, locurile eligibile și câștigătorii în ordinea folosită pentru jetoanele indivizibile. |\n| `RETURN` | Locul și surplusul neacoperit returnat separat de poturi. |\n| `SHOWDOWN` sau `FOLD_WIN` | Totalul virat fiecărui loc, inclusiv surplusul returnat, înainte de stivele finale. |\n\nRulați `node scripts/audit-tournament.cjs <jurnal> --require-layers` pentru un jurnal nou. Verificatorul reface distribuirea JDK 21 din seed, ordinea acțiunilor, sumele, dreptul de raise și clasarea mâinilor independent de motorul Java. Pentru jurnalele vechi, omiteți opțiunea pentru a verifica decontarea agregată.\n\n[Profilul de stres](../../config/j6-tournaments-stress.yaml) reduce stiva și durata nivelului și ridică deschiderea postflop peste blindul mare. Rulați-l separat de profilul standard pentru a exercita call-uri parțiale și poturi secundare mai devreme în turneu."
+  } ],
+  "suggestedTestSuites" : [ {
+    "module" : "holdem-android",
+    "testClass" : "ro.atf.holdem.android.GameplayAchievementsComponentTest",
+    "relevanceScore" : 411,
+    "matchingChanges" : [ "holdem-android/app/build.gradle", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementCatalog.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementsActivity.java" ],
+    "inventoryPath" : "config/release-test-suites.json",
+    "inventorySha256" : "e5a7d9e1148bd73178ef1b3e939e6c9eb5330bde438b59863a72fb810b817915",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc"
+  }, {
+    "module" : "holdem-android",
+    "testClass" : "ro.atf.holdem.android.HoldemTablePresentationComponentTest",
+    "relevanceScore" : 435,
+    "inventoryPath" : "config/release-test-suites.json",
+    "inventorySha256" : "e5a7d9e1148bd73178ef1b3e939e6c9eb5330bde438b59863a72fb810b817915",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc"
+  }, {
+    "module" : "holdem-app",
+    "testClass" : "ro.atf.j6.reporting.NativeTournamentExtentPublisherTest",
+    "relevanceScore" : 298,
+    "inventoryPath" : "config/release-test-suites.json",
+    "inventorySha256" : "e5a7d9e1148bd73178ef1b3e939e6c9eb5330bde438b59863a72fb810b817915",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc"
+  }, {
+    "module" : "holdem-android",
+    "testClass" : "ro.atf.holdem.android.LocalHoldemTournamentTest",
+    "relevanceScore" : 322,
+    "inventoryPath" : "config/release-test-suites.json",
+    "inventorySha256" : "e5a7d9e1148bd73178ef1b3e939e6c9eb5330bde438b59863a72fb810b817915",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc"
+  }, {
+    "module" : "holdem-android",
+    "testClass" : "ro.atf.holdem.android.HoldemSessionRepositoryComponentTest",
+    "relevanceScore" : 321,
+    "inventoryPath" : "config/release-test-suites.json",
+    "inventorySha256" : "e5a7d9e1148bd73178ef1b3e939e6c9eb5330bde438b59863a72fb810b817915",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc"
+  }, {
+    "module" : "holdem-android",
+    "testClass" : "ro.atf.holdem.android.TournamentLeaderboardTest",
+    "relevanceScore" : 320,
+    "inventoryPath" : "config/release-test-suites.json",
+    "inventorySha256" : "e5a7d9e1148bd73178ef1b3e939e6c9eb5330bde438b59863a72fb810b817915",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc"
+  }, {
+    "module" : "holdem-android",
+    "testClass" : "ro.atf.holdem.android.LocalHoldemPlayStylesTest",
+    "relevanceScore" : 316,
+    "inventoryPath" : "config/release-test-suites.json",
+    "inventorySha256" : "e5a7d9e1148bd73178ef1b3e939e6c9eb5330bde438b59863a72fb810b817915",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc"
+  }, {
+    "module" : "holdem-android",
+    "testClass" : "ro.atf.holdem.android.LocalHoldemGameTest",
+    "relevanceScore" : 309,
+    "inventoryPath" : "config/release-test-suites.json",
+    "inventorySha256" : "e5a7d9e1148bd73178ef1b3e939e6c9eb5330bde438b59863a72fb810b817915",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc"
+  } ],
+  "suggestedNativeJourneys" : [ {
+    "mode" : "hard-six",
+    "releaseSwitch" : "-IncludeHardSix",
+    "inventoryPath" : "config/release-test-suites.json",
+    "inventorySha256" : "e5a7d9e1148bd73178ef1b3e939e6c9eb5330bde438b59863a72fb810b817915",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "matchingChanges" : [ "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java" ]
+  }, {
+    "mode" : "seat-metrics",
+    "releaseSwitch" : "-IncludeSeatMetrics",
+    "inventoryPath" : "config/release-test-suites.json",
+    "inventorySha256" : "e5a7d9e1148bd73178ef1b3e939e6c9eb5330bde438b59863a72fb810b817915",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "matchingChanges" : [ "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTablePresentation.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java", "holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java", "holdem-android/app/src/main/res/values/strings.xml", "holdem-android/app/src/main/res/values-ro/strings.xml", "holdem-android/tools/PublishTournamentExtent.java" ]
+  }, {
+    "mode" : "settlement-award",
+    "releaseSwitch" : "-IncludeSettlementAward",
+    "companionModes" : [ "settlement-multi-award", "settlement-static-award", "settlement-compact-award" ],
+    "inventoryPath" : "config/release-test-suites.json",
+    "inventorySha256" : "e5a7d9e1148bd73178ef1b3e939e6c9eb5330bde438b59863a72fb810b817915",
+    "indexedCommit" : "7e01c3af791eea90c13fa39ffe4da16811f1b9dc",
+    "matchingChanges" : [ "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTablePresentation.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java", "holdem-android/app/src/main/res/values/strings.xml", "holdem-android/app/src/main/res/values-ro/strings.xml" ]
+  } ],
+  "documentFindings" : [ ],
+  "corpusSha256" : "3f345ea9169eb98065692a4d8d2e0205ee4e9311d9762e78a03555d81a87d2e3"
+}

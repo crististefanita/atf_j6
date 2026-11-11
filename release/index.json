@@ -5,7 +5,7 @@
   "previousVersion": "0.16.0",
   "changeClass": "COMPATIBLE_FEATURE",
   "changeRationale": "Adaugă comanda revocabilă de joc automat în antet și actualizează căutarea și detaliile Realizărilor.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.17.0"

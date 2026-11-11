@@ -18,3 +18,4 @@ Proba de componentă leagă Raise-ul acceptat de motor de intrarea unică, contr
 1. Confirmă în Android un Raise aplicat din editor. Verifică suma și intrarea unică din jurnal după apăsarea butonului de confirmare.
 2. Într-o fereastră scundă, verifică nume lungi în română și engleză. Badge-ul, stiva, acțiunile și cărțile trebuie să rămână lizibile. Istoricul trebuie să păstreze ordinea motorului.
 3. Cu TalkBack activ, parcurge indicatorul fiecărui loc și istoricul. Ascultă numele, acțiunea, suma și contribuția cumulată o singură dată pentru fiecare loc. Leagă proba de matricea [J6-UI-09](J6-UI-09-SEAT-METRIC-HIERARCHY.md).
+4. Sincronizează aserțiunea de accesibilitate după Check cu următoarea intrare din jurnal. Așteaptă ca ordinalul acțiunii să avanseze, apoi verifică jucătorul, suma și contribuția. Adaugă o probă care livrează întâi nodul vechi și apoi acțiunea așteptată. La expirare, păstrează ultimul ordinal și ultima descriere observată.

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "sourceCommit": "9f4856f1a3f336a441f8838ee40dc5fbe1b1f37c",
+  "apkSha256": "77806fa24ed83efec9de0b6694fdbd60f9c173902e7572f1b9353f5ac4ce460c",
+  "reportsVerified": 20,
+  "native": [
+    {
+      "journey": "tournamentSanity",
+      "apkSha256": "c5404568227657794c8de4f734e675bc4225ff35f1e9b3a2a359b6b3a45844f8",
+      "assertions": 95,
+      "captures": 12
+    },
+    {
+      "journey": "releaseInstallSmoke",
+      "apkSha256": "77806fa24ed83efec9de0b6694fdbd60f9c173902e7572f1b9353f5ac4ce460c",
+      "assertions": 80,
+      "captures": 13
+    }
+  ]
+}

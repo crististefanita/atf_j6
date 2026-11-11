@@ -241,7 +241,8 @@ final class HoldemTableView {
             boolean humanTurn = frame.actor() == frame.viewer();
             boolean manual = humanTurn && !autoPlay;
             var adviceSlot = views.text(text.get(humanTurn && autoPlay ? R.string.ai_playing : R.string.ai_thinking),
-                    compact ? 12 : 13, ScreenViews.MUTED, false);
+                    compact ? 12 : 13, HoldemTablePresentation.SECONDARY_TABLE_TEXT, false);
+            adviceSlot.setTag("coach-status");
             adviceSlot.setGravity(Gravity.CENTER);
             adviceSlot.setLines(HoldemTablePresentation.ADVICE_LINES);
             adviceSlot.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -519,7 +520,7 @@ final class HoldemTableView {
         center.setPadding(0, 0, 0, views.dp(compact ? 2 : 5));
         String actor = frame.actor() < 0 ? "" : actorName(frame, names);
         var turn = views.text(frame.actor() < 0 ? "" : text.get(R.string.turn_status, actor), compact ? 11 : 14,
-                frame.actor() == frame.viewer() ? 0xfff0d486 : ScreenViews.MUTED, true);
+                frame.actor() == frame.viewer() ? 0xfff0d486 : HoldemTablePresentation.SECONDARY_TABLE_TEXT, true);
         turn.setTag("turn-status");
         singleLine(turn);
         turn.setGravity(Gravity.CENTER);
@@ -534,7 +535,8 @@ final class HoldemTableView {
                 ? text.get(R.string.tournament_blinds, game.blindLevelNumber(), game.blindLevel().smallBlind(),
                 game.blindLevel().bigBlind(), game.blindLevelMinutes())
                 : text.get(R.string.fixed_blinds, game.blindLevel().smallBlind(), game.blindLevel().bigBlind());
-        var blinds = views.text(blindLevel, compact ? 10 : 12, ScreenViews.MUTED, false);
+        var blinds = views.text(blindLevel, compact ? 10 : 12, HoldemTablePresentation.SECONDARY_TABLE_TEXT, false);
+        blinds.setTag("blind-level");
         blinds.setGravity(Gravity.CENTER);
         singleLine(blinds);
         var pot = views.text(text.get(frame.street() == Street.COMPLETE ? R.string.settled_pot : R.string.pot,
@@ -605,7 +607,8 @@ final class HoldemTableView {
         var section = new LinearLayout(views.activity());
         section.setOrientation(LinearLayout.VERTICAL);
         section.setPadding(views.dp(8), views.dp(2), views.dp(8), views.dp(2));
-        var title = views.text(text.get(R.string.betting_history_title), compact ? 10 : 11, ScreenViews.MUTED, true);
+        var title = views.text(text.get(R.string.betting_history_title), compact ? 10 : 11,
+                HoldemTablePresentation.SECONDARY_TABLE_TEXT, true);
         title.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
         title.setTag("betting-history-toggle");
         title.setClickable(true);

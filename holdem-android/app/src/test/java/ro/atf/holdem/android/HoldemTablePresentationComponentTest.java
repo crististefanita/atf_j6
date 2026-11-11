@@ -192,6 +192,13 @@ public final class HoldemTablePresentationComponentTest {
         return result;
     }
 
+    @Test public void smallSecondaryTableTextMeetsContrastOnFelt() {
+        int color = HoldemTablePresentation.SECONDARY_TABLE_TEXT;
+        assertEquals("The secondary text is opaque", 0xff, color >>> 24);
+        assertTrue("Small table text needs 4.5:1 against the felt",
+                contrast(0xff174f3c, color) >= 4.5);
+    }
+
     private static double contrast(int first, int second) {
         double a = luminance(first), b = luminance(second);
         return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);

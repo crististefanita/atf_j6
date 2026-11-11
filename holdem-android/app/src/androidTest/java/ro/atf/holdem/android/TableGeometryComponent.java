@@ -3,7 +3,9 @@ package ro.atf.holdem.android;
 import ro.cardtable.ui.screens.GameTitleBar;
 
 import android.app.Activity;
+import android.graphics.Color;
 import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
@@ -68,6 +70,7 @@ final class TableGeometryComponent {
             var turn = new HoldemTableViewState(frame.viewer(), actor, frame.dealer(), frame.smallBlind(), frame.bigBlind(),
                     frame.street(), frame.pot(), frame.ownCards(), frame.board(), frame.seats(), controls, frame.bettingActions());
             var measured = render(table, names, game, turn, false);
+            checkSecondaryText(actor == frame.viewer(), differences);
             if (original == null) original = measured;
             compare(differences, "actor " + actor, original.bounds(), measured.bounds());
             if (!original.names().equals(measured.names()))
@@ -89,7 +92,7 @@ final class TableGeometryComponent {
             }
         }
         return probe(language, seats, "actor changes with identical cards and stakes", differences,
-                seats + " actors plus automatic local turn");
+                seats + " actors plus automatic local turn, secondary text ≥ 4.5:1");
     }
 
     private Probe playedHand(String language, int seats) {
@@ -183,6 +186,28 @@ final class TableGeometryComponent {
         return measure(names.size(), frame);
     }
 
+    private void checkSecondaryText(boolean humanTurn, List<String> differences) {
+        var page = host.getChildAt(0);
+        if (!(page.getBackground() instanceof ColorDrawable felt)) {
+            differences.add("table background cannot be measured");
+            return;
+        }
+        float background = Color.luminance(felt.getColor());
+        for (String tag : List.of("turn-status", "blind-level", "betting-history-toggle", "coach-status")) {
+            if (!humanTurn && tag.equals("coach-status")) continue;
+            TextView label = page.findViewWithTag(tag);
+            if (label == null || label.getVisibility() != View.VISIBLE) {
+                differences.add(tag + " missing in its active state");
+                continue;
+            }
+            int text = label.getCurrentTextColor();
+            float luminance = Color.luminance(text);
+            float ratio = (Math.max(background, luminance) + .05f) / (Math.min(background, luminance) + .05f);
+            if (Color.alpha(text) != 255 || ratio < 4.5f)
+                differences.add(tag + " contrast " + String.format(Locale.ROOT, "%.2f", ratio) + ":1");
+        }
+    }
+
     private CheckBox toggle() {
         return host.findViewWithTag(GameTitleBar.AUTO_PLAY_TAG);
     }
@@ -217,7 +242,8 @@ final class TableGeometryComponent {
     private Frame measure(int seatCount, HoldemTableViewState frame) {
         View page = host.getChildAt(0);
         var measured = new LinkedHashMap<String, Rect>();
-        for (String tag : List.of("turn-status", "best-hand-status", "settlement-target:pot", "table-title", "table-street", GameTitleBar.AUTO_PLAY_TAG))
+        for (String tag : List.of("turn-status", "best-hand-status", "settlement-target:pot", "table-title", "table-street", GameTitleBar.AUTO_PLAY_TAG,
+                "coach-status", "blind-level", "betting-history-toggle"))
             measured.put(tag, bounds(page.findViewWithTag(tag), page));
         View chance = page.findViewWithTag("win-chance");
         if (chance != null) measured.put("win-chance", bounds(chance, page));

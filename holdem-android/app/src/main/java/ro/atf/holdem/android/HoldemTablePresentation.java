@@ -26,6 +26,7 @@ final class HoldemTablePresentation {
     static final float TABLE_ACTION_FACE_INSET = ACTION_FACE_INSET / 2;
     static final int ACTION_ROWS = 2;
     static final int ADVICE_LINES = 2;
+    static final int SECONDARY_TABLE_TEXT = 0xFFB6D0C1;
     private static final float ACTION_PAIR_GAP_DP = .75f;
     private static final int ACTION_EDGE_MARGIN_DP = 3;
 

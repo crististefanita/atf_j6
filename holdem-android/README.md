@@ -19,6 +19,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 - Butoanele de decizie au fețe vizuale reduse și ținte de atingere de cel puțin 48 dp. Închiderea editorului Raise revine la acțiunile mesei. Tastatura se deschide când este selectat câmpul sumei.
 - Coach-ul oferă o recomandare locală. Bifa **Automat** sau **Auto play** din antet deleagă deciziile locului uman în mâna curentă. Debifarea revocă decizia locală încă neaplicată. În tura unui adversar, bifa stabilește cum va fi jucată următoarea tură proprie, iar adversarul își continuă mutarea.
 - Masa rezervă spațiu pentru mesaje, comenzi și marcajul actorului. La schimbarea turei, potul, cărțile, chenarele și numele își păstrează poziția, inclusiv când masa este derulată.
+- Textul secundar de pe masă păstrează minimum 4,5:1 față de fundal. Stilul se aplică actorului advers, recomandării, blindurilor și istoricului de pariuri.
 - Profilul, limba și o sesiune întreruptă pot fi reluate din meniul principal.
 
 ## Contractul mâinii

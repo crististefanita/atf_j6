@@ -166,6 +166,36 @@ public class LocalHoldemGameTest {
         assertThrows(IllegalArgumentException.class, () -> game.autoPlayHand(turn));
     }
 
+    @Test public void coachAdviceIgnoresHiddenCardsAndLeavesTheTurnAndLedgerUntouched() {
+        // These deals share the same public preflop state and hero cards. The terminal views prove the hidden difference.
+        var first = LocalHoldemGame.tournament(4, 49, 1, () -> 0L);
+        var second = LocalHoldemGame.tournament(4, 86, 1, () -> 0L);
+        var opening = first.view();
+        assertEquals(opening, second.view());
+        assertEquals(Street.PREFLOP, opening.street());
+        assertEquals(opening.viewer(), opening.actor());
+
+        assertEquals(readOnlyAdvice(first), readOnlyAdvice(second));
+
+        play(first, ActionType.FOLD, 0);
+        play(second, ActionType.FOLD, 0);
+        assertEquals(Street.COMPLETE, first.view().street());
+        assertEquals(Street.COMPLETE, second.view().street());
+        assertNotEquals("The observer's left-hand opponent had different cards",
+                first.view().seats().get(1).shownCards(), second.view().seats().get(1).shownCards());
+    }
+
+    private static LocalHoldemGame.AiSuggestion readOnlyAdvice(LocalHoldemGame game) {
+        var before = game.save();
+        var view = game.view();
+        var turn = game.turn();
+        var advice = game.suggest(turn);
+        assertEquals(turn, game.turn());
+        assertEquals(view, game.view());
+        assertEquals(before, game.save());
+        return advice;
+    }
+
     @Test public void recreationReplaysOnlyAcceptedHumanMovesAndRejectsTheOldToken() {
         var original = new LocalHoldemGame(5, 9);
         play(original, ActionType.CALL, 20);

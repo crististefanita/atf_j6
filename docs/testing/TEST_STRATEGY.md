@@ -7,7 +7,7 @@ J6 separă oracolul de componentă de probele pe Android. Guvernanța documentar
 ## Revizia documentației
 
 - Compară afirmațiile despre comportament cu implementarea și testul modulului responsabil.
-- Rulează `DocumentationGovernanceTest` pentru orientarea și navigarea README-urilor active. Rulează `ReleaseGovernanceTest` pentru blocul **Jocul** și integritatea dovezilor ediției.
+- Rulează `DocumentationGovernanceTest` pentru orientarea README-urilor active și prezența unei singure legături către fiecare ghid responsabil în secțiunea de documentație. Rulează `ReleaseGovernanceTest` pentru blocul **Jocul** și integritatea dovezilor ediției.
 - Aplică validatorii ATF de documentație pentru titluri, proză, linkuri și ancore, căi portabile, diagrame și legende. Verifică editorial dacă prima diagramă răspunde la întrebarea cititorului. [Auditul documentației active și al dosarelor](../release/ATF_Release.md#audit-editorial-și-dosare-de-ediție)
 
 ## Niveluri

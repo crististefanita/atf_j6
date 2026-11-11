@@ -14,10 +14,11 @@ Hold’em Lab este un joc No-Limit Texas Hold’em pentru Android. Poți juca of
 La prima pornire, meniul este în engleză. Poți selecta româna din **Language**. Alege un mod de joc și confirmă cu **Deal cards** sau **Împarte cărțile**.
 
 ```mermaid
+%%{init: {"themeVariables":{"fontSize":"20px"},"flowchart":{"nodeSpacing":18,"rankSpacing":24,"padding":6,"diagramPadding":6}}}%%
 flowchart LR
     Menu["Meniu"] -->|alegi| Hand["O mână"]
     Menu -->|alegi| Tournament["Turneu"]
-    Hand -->|distribui| Table["Masa de joc"]
+    Hand -->|distribui| Table["Masă"]
     Tournament -->|distribui| Table
 ```
 

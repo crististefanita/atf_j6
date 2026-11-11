@@ -159,12 +159,7 @@ public final class HoldemTablePresentationComponentTest {
         assertEquals(4, HoldemTablePresentation.chipFieldDigits(after));
     }
 
-    @Test public void achievementsTextAndTableButtonsStayReadableAgainstTheirActualFills() {
-        // TablePalette.TABLE_FELT is Color.rgb(23, 79, 60) in the Android library.
-        int felt = 0xff174f3c;
-        assertTrue(contrast(felt, AchievementPresentation.TEXT) >= 7);
-        assertTrue(contrast(felt, AchievementPresentation.SECONDARY_TEXT) >= 7);
-        assertTrue(contrast(felt, AchievementPresentation.ACCENT_TEXT) >= 7);
+    @Test public void tableButtonsStayReadableAgainstTheirActualFills() {
         assertTrue(contrast(HoldemTableButton.PRIMARY_FILL, HoldemTableButton.PRIMARY_TEXT) >= 4.5);
         assertTrue(contrast(HoldemTableButton.SECONDARY_FILL, HoldemTableButton.SECONDARY_TEXT) >= 4.5);
         assertTrue(contrast(pressedFill(HoldemTableButton.PRIMARY_FILL), HoldemTableButton.PRIMARY_TEXT) >= 4.5);

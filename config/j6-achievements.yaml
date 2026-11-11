@@ -2,25 +2,29 @@
   "schemaVersion": 1,
   "tiers": {
     "EASY": [
-      {"id":"first-pot", "metric":"POT", "target":1, "label":"gameplay_achievement_first_pot"},
-      {"id":"first-showdown", "metric":"SHOWDOWN", "target":1, "label":"gameplay_achievement_first_showdown"},
-      {"id":"big-blind-pot", "metric":"BIG_BLIND_POT", "target":1, "label":"gameplay_achievement_big_blind"},
-      {"id":"three-pots", "metric":"POT", "target":3, "label":"plurals/gameplay_achievement_three_pots"},
-      {"id":"finish-tournament", "metric":"TOURNAMENT_FINISHED", "target":1, "label":"gameplay_achievement_finish_tournament"}
+      {"id":"first-pot","metric":"POT","target":1,"label":"gameplay_achievement_first_pot","ruleRo":"Primește jetoane dintr-un pot la finalul unei mâini de turneu. Jetoanele restituite se contabilizează separat.","ruleEn":"Receive chips from a pot in a settled tournament hand. Uncalled returns are tracked separately."},
+      {"id":"first-showdown","metric":"SHOWDOWN","target":1,"label":"gameplay_achievement_first_showdown","ruleRo":"Ajungi la dezvăluire și motorul evaluează cărțile tale. Participarea contează și când alt loc câștigă potul.","ruleEn":"Reach showdown and have your cards evaluated. Participation counts when another seat wins the pot."},
+      {"id":"big-blind-pot","metric":"BIG_BLIND_POT","target":1,"label":"gameplay_achievement_big_blind","ruleRo":"Primește jetoane din pot într-o mână de turneu în care ai postat blindul mare.","ruleEn":"Receive pot chips in a tournament hand where you posted the big blind."},
+      {"id":"three-pots","metric":"POT","target":3,"label":"plurals/gameplay_achievement_three_pots","ruleRo":"Primește jetoane din pot în {target} mâini distincte de turneu. O mână contribuie o dată, indiferent de numărul de poturi.","ruleEn":"Receive pot chips in {target} distinct tournament hands. Each hand contributes once across all pot layers."},
+      {"id":"finish-tournament","metric":"TOURNAMENT_FINISHED","target":1,"label":"gameplay_achievement_finish_tournament","ruleRo":"Încheie participarea într-un turneu până când motorul fixează locul final.","ruleEn":"Play a tournament until the engine locks your final place."}
     ],
     "MEDIUM": [
-      {"id":"first-title", "metric":"TITLE", "target":1, "label":"gameplay_achievement_first_title"},
-      {"id":"tournament-pots", "metric":"TOURNAMENT_POT", "target":5, "label":"plurals/gameplay_achievement_tournament_pots"},
-      {"id":"multiway-showdowns", "metric":"MULTIWAY_SHOWDOWN_POT", "target":3, "label":"plurals/gameplay_achievement_multiway_showdowns"},
-      {"id":"straight-or-better", "metric":"STRAIGHT_OR_BETTER", "target":2, "label":"plurals/gameplay_achievement_straight"},
-      {"id":"tournament-podiums", "metric":"PODIUM", "target":2, "label":"plurals/gameplay_achievement_podium"}
+      {"id":"first-title","metric":"TITLE","target":1,"label":"gameplay_achievement_first_title","ruleRo":"Câștigă un turneu și obține locul întâi la clasarea finală.","ruleEn":"Win a tournament and take first place in the final standings."},
+      {"id":"split-showdown","metric":"SPLIT_POT","target":1,"label":"gameplay_achievement_split_pot","ruleRo":"Primește o cotă dintr-un pot împărțit între câștigători la dezvăluire.","ruleEn":"Receive a share of a pot split among winners at showdown."},
+      {"id":"contested-side-pot","metric":"SIDE_POT","target":1,"label":"gameplay_achievement_side_pot","ruleRo":"Primește jetoane dintr-un pot secundar cu cel puțin doi jucători eligibili la decontare.","ruleEn":"Receive chips from a side pot with at least two players eligible at settlement."},
+      {"id":"multiway-showdowns","metric":"MULTIWAY_SHOWDOWN_POT","target":1,"label":"plurals/gameplay_achievement_multiway_showdowns","ruleRo":"Câștigă un pot la o dezvăluire în care motorul evaluează cel puțin trei jucători.","ruleEn":"Win a pot at a showdown with at least three evaluated players."},
+      {"id":"straight-or-better","metric":"STRAIGHT_OR_BETTER","target":2,"label":"plurals/gameplay_achievement_straight","ruleRo":"Câștigă poturi la dezvăluire cu chintă sau mai bine în {target} mâini distincte.","ruleEn":"Win showdown pots with a straight or better in {target} distinct hands."},
+      {"id":"tournament-podiums","metric":"PODIUM","target":2,"label":"plurals/gameplay_achievement_podium","ruleRo":"Obține locul întâi, al doilea sau al treilea în {target} turnee distincte. Egalitățile folosesc locul fixat de motor.","ruleEn":"Place first, second or third in {target} distinct tournaments. Ties use the engine's locked placement."}
     ],
     "HARD": [
-      {"id":"three-titles", "metric":"TITLE", "target":3, "label":"plurals/gameplay_achievement_three_titles"},
-      {"id":"high-card", "metric":"SOLE_HIGH_CARD_POT", "target":1, "label":"gameplay_achievement_high_card"},
-      {"id":"full-house-or-better", "metric":"FULL_HOUSE_OR_BETTER", "target":2, "label":"plurals/gameplay_achievement_full_house"},
-      {"id":"multiway-showdown-series", "metric":"MULTIWAY_SHOWDOWN_POT", "target":12, "label":"plurals/gameplay_achievement_multiway_series"},
-      {"id":"six-seat-titles", "metric":"SIX_SEAT_TITLE", "target":2, "label":"plurals/gameplay_achievement_six_seat_titles"}
+      {"id":"three-titles","metric":"TITLE","target":3,"label":"plurals/gameplay_achievement_three_titles","ruleRo":"Obține locul întâi în {target} turnee distincte.","ruleEn":"Finish first in {target} distinct tournaments."},
+      {"id":"full-house-or-better","metric":"FULL_HOUSE_OR_BETTER","target":2,"label":"plurals/gameplay_achievement_full_house","ruleRo":"Câștigă la dezvăluire cu full sau mai bine în {target} mâini distincte.","ruleEn":"Win at showdown with a full house or better in {target} distinct hands."},
+      {"id":"six-seat-titles","metric":"SIX_SEAT_TITLE","target":2,"label":"plurals/gameplay_achievement_six_seat_titles","ruleRo":"Obține locul întâi în {target} turnee distincte care au început cu șase jucători.","ruleEn":"Win {target} distinct tournaments that started with six players."}
     ]
-  }
+  },
+  "retired": [
+    {"id":"tournament-pots","metric":"TOURNAMENT_POT","target":5,"label":"plurals/gameplay_achievement_tournament_pots","reason":"Dubla contorul de poturi după separarea Antrenamentului."},
+    {"id":"high-card","metric":"SOLE_HIGH_CARD_POT","target":1,"label":"gameplay_achievement_high_card","reason":"Încuraja urmărirea unei combinații slabe, iar creditul depinde de distribuție și adversari."},
+    {"id":"multiway-showdown-series","metric":"MULTIWAY_SHOWDOWN_POT","target":12,"label":"plurals/gameplay_achievement_multiway_series","reason":"Repeta același criteriu cu un prag care nu a produs deblocări pe Greu la calibrare."}
+  ]
 }

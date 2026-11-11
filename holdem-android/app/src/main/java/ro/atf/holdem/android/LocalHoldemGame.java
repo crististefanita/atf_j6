@@ -160,9 +160,22 @@ final class LocalHoldemGame {
                 "local-human", tournamentMode ? UUID.randomUUID().toString() : "", false, Difficulty.NORMAL);
     }
 
+    static LocalHoldemGame tournament(int seats, long seed, Difficulty difficulty,
+                                      LongSupplier monotonicNanos, int policySamples) {
+        return new LocalHoldemGame(seats, 0, seed, true, 1, monotonicNanos,
+                "calibration-player", "calibration-" + seed, false, difficulty, policySamples);
+    }
+
     private LocalHoldemGame(int seats, int dealer, long seed, boolean tournamentMode, int blindLevelMinutes,
                             LongSupplier monotonicNanos, String humanPlayerId, String tournamentId,
                             boolean showWinChance, Difficulty difficulty) {
+        this(seats, dealer, seed, tournamentMode, blindLevelMinutes, monotonicNanos, humanPlayerId, tournamentId,
+                showWinChance, difficulty, ADVISOR_SAMPLES);
+    }
+
+    private LocalHoldemGame(int seats, int dealer, long seed, boolean tournamentMode, int blindLevelMinutes,
+                            LongSupplier monotonicNanos, String humanPlayerId, String tournamentId,
+                            boolean showWinChance, Difficulty difficulty, int policySamples) {
         if (!(tournamentMode ? TOURNAMENT_SIZES : TABLE_SIZES).contains(seats)) {
             throw new IllegalArgumentException("Unsupported training table size: " + seats);
         }
@@ -184,10 +197,10 @@ final class LocalHoldemGame {
         tournament = tournamentMode
                 ? new Tournament(tournamentRules(seats, blindLevelMinutes), dealer)
                 : null;
-        hardOpponents = difficulty == Difficulty.HARD ? hardOpponentPolicies() : Map.of();
+        hardOpponents = difficulty == Difficulty.HARD ? hardOpponentPolicies(policySamples) : Map.of();
         advisor = difficulty == Difficulty.HARD
                 ? hardOpponents.get(TournamentPlayStyles.hardAutoPlayStyle())
-                : new ContextualEquityPolicy(ADVISOR_SAMPLES, 2, 8, 18, 60,
+                : new ContextualEquityPolicy(policySamples, 2, 8, 18, 60,
                         tournamentMode ? ContextualEquityPolicy.GameMode.TOURNAMENT
                                 : ContextualEquityPolicy.GameMode.CASH);
         tournamentClockAnchorNanos = monotonicNanos.getAsLong();
@@ -247,6 +260,7 @@ final class LocalHoldemGame {
     }
 
     synchronized int settledRank() { return tournament == null ? 0 : tournament.settledRank(human); }
+    synchronized List<ro.atf.holdem.core.PotAward> potAwards() { return hand.potAwards(); }
 
     synchronized int handNumber() { return rounds.size(); }
 
@@ -312,10 +326,10 @@ final class LocalHoldemGame {
         apply(actor, new Move(response.type(), response.amount()));
     }
 
-    private static Map<Style, DecisionPolicy> hardOpponentPolicies() {
+    private static Map<Style, DecisionPolicy> hardOpponentPolicies(int policySamples) {
         var policies = new EnumMap<Style, DecisionPolicy>(Style.class);
         for (Style style : Style.values()) {
-            policies.put(style, style.policy(ADVISOR_SAMPLES));
+            policies.put(style, style.policy(policySamples));
         }
         return Map.copyOf(policies);
     }

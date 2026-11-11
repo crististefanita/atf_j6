@@ -6,6 +6,8 @@
 
 Proba compactă măsoară alinierea perechilor imediat sub chenare la cinci și șase locuri. Probele de decontare verifică plecarea din pot și sosirea markerului la beneficiar, inclusiv la split și la potul secundar. În fereastra scundă, rezumatul rămâne complet, iar markerul apare la chenarul vizibil. [Rapoarte 0.14.1](../../release/0.14.1/reports/README.md#rapoarte-extent) · [Contractul produsului](../requirements/PRODUCT_REQUIREMENTS.md#claritatea-rezultatului-mâinii)
 
+Proba de geometrie din 0.15.0 păstrează aceleași coordonate în timpul mâinii, la dimensiunea implicită, scundă și înaltă. Criteriile terminale de mai jos privesc perechile dezvăluite și cărțile decisive. [Rapoarte 0.15.0](../../release/0.15.0/reports/README.md#rapoarte-extent)
+
 ## Dovezi rămase
 
 - Măsoară centrarea orizontală a perechilor sub chenare la cinci și șase locuri. Extinde verificarea alinierii verticale la profilul obișnuit și la cazurile cu un rând de restituire sau un loc deja eliminat.

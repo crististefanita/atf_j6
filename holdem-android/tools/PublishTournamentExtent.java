@@ -35,16 +35,17 @@ class PublishTournamentExtent {
             "Achievement progress: Win 3 different hands", "Achievement progress: Win 3 different tournaments");
     private static final List<String> RELEASE_SMOKE_ASSERTIONS = List.of("Release APK opens the branded home menu",
             "Release APK opens hand setup", "Hand setup returns to the home menu", "Release APK opens tournament setup",
-            "Achievements opens from the main menu", "Gameplay achievements omit training in English",
-            "Gameplay achievements omit training in Romanian",
+            "Achievements opens from the main menu", "All active achievements start locked",
+            "Search narrows the catalog", "The shared detail exposes the eligibility rule",
+            "Training has no entry in the gameplay catalog",
             "Romanian table uses localized compact actions",
             "English table uses localized compact actions",
             "Pot, messages and seats keep the same bounds through live turns",
             "A complete hand started from setup reaches showdown",
             "Achievement progress: Reach your first showdown",
             "Achievement progress: Ajungi prima dată la dezvăluirea cărților",
-            "Achievement progress: Câștigă 3 mâini diferite", "Achievement progress: Câștigă 5 mâini în turnee",
-            "Achievement progress: Câștigă 12 mâini la dezvăluire cu cel puțin trei jucători rămași");
+            "Achievement progress: Câștigă 3 mâini diferite", "Achievement progress: Împarte un pot la dezvăluire",
+            "Achievement progress: Câștigă un pot secundar disputat", "Achievement progress: Câștigă 3 turnee diferite");
     private static final List<String> TOURNAMENT_CAPTURES = List.of(
             "01b-opening-preflop.png", "01-call-ledger-visible.png", "01-betting-ledger-history.png", "01-hand-one-settled.png",
             "01a-settlement-retained.png", "02-two-seats-eliminated.png", "03-heads-up.png",
@@ -52,7 +53,8 @@ class PublishTournamentExtent {
             "04c-achievements-hard-progress.png", "05-tournament-lost.png");
     private static final List<String> RELEASE_SMOKE_CAPTURES = List.of(
             "01-release-hand-setup.png", "02-release-tournament-setup.png", "03-achievements-easy.png",
-            "04-achievements-medium.png", "05-achievements-hard.png", "05a-achievements-romanian-easy.png",
+            "04-achievements-medium.png", "05-achievements-hard.png", "05a-achievement-side-pot-detail.png",
+            "05a-achievements-romanian-easy.png",
             "05b-achievements-romanian-medium.png", "05c-achievements-romanian-hard.png",
             "05d-stable-table-romanian-preflop.png",
             "05e-stable-table-romanian-opponent.png",

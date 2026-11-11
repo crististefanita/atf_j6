@@ -1,7 +1,9 @@
 package ro.atf.holdem.android;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -12,12 +14,13 @@ import ro.atf.holdem.core.Street;
 /** Projects settled poker results into independent, bounded progress counters. */
 final class GameplayAchievements {
     enum Metric {
-        POT(3), TOURNAMENT_POT(5), BIG_BLIND_POT(1), SHOWDOWN(1), TOURNAMENT_FINISHED(1),
-        PODIUM(2), TITLE(3), SIX_SEAT_TITLE(2), STRAIGHT_OR_BETTER(2),
-        FULL_HOUSE_OR_BETTER(2), SOLE_HIGH_CARD_POT(1), MULTIWAY_SHOWDOWN_POT(12);
+        POT, TOURNAMENT_POT, BIG_BLIND_POT, SHOWDOWN, TOURNAMENT_FINISHED,
+        PODIUM, TITLE, SIX_SEAT_TITLE, STRAIGHT_OR_BETTER,
+        FULL_HOUSE_OR_BETTER, SOLE_HIGH_CARD_POT, MULTIWAY_SHOWDOWN_POT, SIDE_POT, SPLIT_POT
+    }
 
-        final int cap;
-        Metric(int cap) { this.cap = cap; }
+    record Change(GameplayAchievementCatalog.Milestone milestone, int count) {
+        boolean unlocked() { return count == milestone.target(); }
     }
 
     interface Storage {
@@ -26,14 +29,7 @@ final class GameplayAchievements {
     }
 
     private final Storage storage;
-    private final String currentProfile;
-
     GameplayAchievements(Storage storage) {
-        this(storage, null);
-    }
-
-    GameplayAchievements(Storage storage, String currentProfile) {
-        this.currentProfile = currentProfile;
         this.storage = storage;
     }
 
@@ -47,33 +43,31 @@ final class GameplayAchievements {
         return result;
     }
 
-    void recordSettled(LocalHoldemGame game) {
-        if (game == null) return;
+    List<Change> recordSettled(LocalHoldemGame game) {
+        if (game == null || !game.isTournament()) return List.of();
         var frame = game.view();
-        if (frame.street() != Street.COMPLETE) return;
-        String tournament = game.isTournament() ? game.tournamentId() : null;
-        String hand = tournament == null
-                ? "table:" + game.displayNameSeed() + ":" + frame.dealer()
-                : tournament + ":" + game.handNumber();
-        int rank = game.settledRank();
+        if (frame.street() != Street.COMPLETE) return List.of();
+        String tournament = game.tournamentId();
         String owner = game.playerId(frame.viewer());
-        if (tournament == null && currentProfile != null
-                && ("local-human".equals(owner) || "legacy-human".equals(owner))) {
-            // Old standalone hands predate profile IDs. They belong to this installation's profile.
-            owner = currentProfile;
-        }
-        recordSettled(owner, hand, tournament, rank, frame);
+        return recordSettled(owner, tournament + ":" + game.handNumber(), tournament, game.settledRank(), frame,
+                AchievementPotEvidence.from(game.potAwards(), frame.viewer()));
     }
 
-    synchronized void recordSettled(String profile, String hand, String tournament, int rank, HoldemTableViewState frame) {
-        if (frame.street() != Street.COMPLETE) return;
+    List<Change> recordSettled(String profile, String hand, String tournament, int rank, HoldemTableViewState frame) {
+        return recordSettled(profile, hand, tournament, rank, frame, AchievementPotEvidence.NONE);
+    }
+
+    synchronized List<Change> recordSettled(String profile, String hand, String tournament, int rank,
+                                            HoldemTableViewState frame, AchievementPotEvidence pots) {
+        if (tournament == null || frame.street() != Street.COMPLETE) return List.of();
         var recorded = storage.read(profile);
         var updates = new EnumMap<Metric, Set<String>>(Metric.class);
         var seat = frame.seats().get(frame.viewer());
         if (seat.handEvaluation() != null) credit(recorded, Metric.SHOWDOWN, hand, updates);
         if (seat.potWon() > 0) {
             credit(recorded, Metric.POT, hand, updates);
-            if (tournament != null) credit(recorded, Metric.TOURNAMENT_POT, hand, updates);
+            if (pots.sideWon()) credit(recorded, Metric.SIDE_POT, hand, updates);
+            if (pots.splitWon()) credit(recorded, Metric.SPLIT_POT, hand, updates);
             if (frame.viewer() == frame.bigBlind()) credit(recorded, Metric.BIG_BLIND_POT, hand, updates);
             var evaluation = seat.handEvaluation();
             if (evaluation != null) {
@@ -84,12 +78,9 @@ final class GameplayAchievements {
                     credit(recorded, Metric.STRAIGHT_OR_BETTER, hand, updates);
                 if (category.compareTo(HandRank.Category.FULL_HOUSE) >= 0)
                     credit(recorded, Metric.FULL_HOUSE_OR_BETTER, hand, updates);
-                if (category == HandRank.Category.HIGH_CARD
-                        && frame.seats().stream().filter(other -> other.potWon() > 0).count() == 1)
-                    credit(recorded, Metric.SOLE_HIGH_CARD_POT, hand, updates);
             }
         }
-        if (tournament != null && rank >= 1 && rank <= frame.seats().size()) {
+        if (rank >= 1 && rank <= frame.seats().size()) {
             credit(recorded, Metric.TOURNAMENT_FINISHED, tournament, updates);
             if (rank <= 3) credit(recorded, Metric.PODIUM, tournament, updates);
             if (rank == 1) {
@@ -97,12 +88,25 @@ final class GameplayAchievements {
                 if (frame.seats().size() == 6) credit(recorded, Metric.SIX_SEAT_TITLE, tournament, updates);
             }
         }
-        if (!updates.isEmpty()) storage.write(profile, updates);
+        if (updates.isEmpty()) return List.of();
+        storage.write(profile, updates);
+        return changes(updates);
+    }
+
+    private static List<Change> changes(Map<Metric, Set<String>> updates) {
+        var changes = new ArrayList<Change>();
+        for (var tier : GameplayAchievementCatalog.Tier.values()) {
+            for (var milestone : GameplayAchievementCatalog.forTier(tier)) {
+                var ids = updates.get(milestone.metric());
+                if (ids != null && ids.size() <= milestone.target()) changes.add(new Change(milestone, ids.size()));
+            }
+        }
+        return List.copyOf(changes);
     }
 
     private static void credit(Map<Metric, Set<String>> recorded, Metric metric, String result, Map<Metric, Set<String>> updates) {
         var ids = recorded.getOrDefault(metric, Set.of());
-        if (ids.size() >= metric.cap || ids.contains(result)) return;
+        if (ids.size() >= GameplayAchievementCatalog.maxTarget(metric) || ids.contains(result)) return;
         var next = new HashSet<>(ids);
         next.add(result);
         updates.put(metric, Set.copyOf(next));

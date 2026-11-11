@@ -131,6 +131,8 @@
     <string name="gameplay_achievement_earned">Earned · %1$d/%2$d</string>
     <string name="gameplay_achievement_progress">Progress · %1$d/%2$d</string>
     <!-- The generated gameplay catalog owns these resource references. -->
+    <string name="gameplay_achievement_side_pot" tools:ignore="UnusedResources">Win a contested side pot</string>
+    <string name="gameplay_achievement_split_pot" tools:ignore="UnusedResources">Share a pot at showdown</string>
     <string name="gameplay_achievement_first_pot" tools:ignore="UnusedResources">Win a poker hand</string>
     <string name="gameplay_achievement_first_showdown" tools:ignore="UnusedResources">Reach your first showdown</string>
     <string name="gameplay_achievement_big_blind" tools:ignore="UnusedResources">Win a pot from the big blind</string>
@@ -172,5 +174,25 @@
     <plurals name="gameplay_achievement_multiway_series" tools:ignore="UnusedResources">
         <item quantity="one">Win %1$d hand at showdown with at least three players still in the hand</item>
         <item quantity="other">Win %1$d hands at showdown with at least three players still in the hand</item>
+    </plurals>
+    <string name="gameplay_achievement_eligibility">Eligibility</string>
+    <string name="gameplay_achievement_summary">Unlocked %1$d/%2$d</string>
+    <string name="gameplay_achievement_filter_open">Search and filters</string>
+    <string name="gameplay_achievement_filter_search">Search by title or rule</string>
+    <string name="gameplay_achievement_filter_tier">Difficulty</string>
+    <string name="gameplay_achievement_filter_status">Status</string>
+    <string name="gameplay_achievement_filter_apply">Apply</string>
+    <string name="gameplay_achievement_filter_any">All</string>
+    <string name="gameplay_achievement_filter_locked">Locked</string>
+    <string name="gameplay_achievement_filter_in_progress">In progress</string>
+    <string name="gameplay_achievement_filter_earned">Earned</string>
+    <string name="gameplay_achievement_filter_empty">No achievements match these filters.</string>
+    <string name="gameplay_achievement_filter_summary">Showing %1$d of %2$d</string>
+    <string name="gameplay_achievement_path">Learning path</string>
+    <string name="gameplay_achievement_notice">Achievement progress</string>
+    <string name="gameplay_achievement_match_notice">Tournament achievement progress</string>
+    <plurals name="gameplay_achievement_more">
+        <item quantity="one">+%1$d other achievement updated</item>
+        <item quantity="other">+%1$d other achievements updated</item>
     </plurals>
 </resources>

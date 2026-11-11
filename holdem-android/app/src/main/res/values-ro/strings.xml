@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Hold’em Lab</string>
     <string name="language">Limbă</string>
     <string name="ai_level">Nivelul adversarilor</string>
@@ -129,6 +129,8 @@
     <string name="achievement_error">Datele realizărilor nu au putut fi citite sau salvate.</string>
     <string name="gameplay_achievement_earned">Obținută · %1$d/%2$d</string>
     <string name="gameplay_achievement_progress">Progres · %1$d/%2$d</string>
+    <string name="gameplay_achievement_side_pot" tools:ignore="UnusedResources">Câștigă un pot secundar disputat</string>
+    <string name="gameplay_achievement_split_pot" tools:ignore="UnusedResources">Împarte un pot la dezvăluire</string>
     <string name="gameplay_achievement_first_pot">Câștigă o mână de poker</string>
     <string name="gameplay_achievement_first_showdown">Ajungi prima dată la dezvăluirea cărților</string>
     <string name="gameplay_achievement_big_blind">Câștigă un pot din poziția de blind mare</string>
@@ -179,5 +181,26 @@
         <item quantity="one">Câștigă %1$d mână la dezvăluire cu cel puțin trei jucători rămași</item>
         <item quantity="few">Câștigă %1$d mâini la dezvăluire cu cel puțin trei jucători rămași</item>
         <item quantity="other">Câștigă %1$d de mâini la dezvăluire cu cel puțin trei jucători rămași</item>
+    </plurals>
+    <string name="gameplay_achievement_eligibility">Eligibilitate</string>
+    <string name="gameplay_achievement_summary">Deblocate %1$d/%2$d</string>
+    <string name="gameplay_achievement_filter_open">Caută și filtrează</string>
+    <string name="gameplay_achievement_filter_search">Caută după titlu sau regulă</string>
+    <string name="gameplay_achievement_filter_tier">Dificultate</string>
+    <string name="gameplay_achievement_filter_status">Stare</string>
+    <string name="gameplay_achievement_filter_apply">Aplică</string>
+    <string name="gameplay_achievement_filter_any">Toate</string>
+    <string name="gameplay_achievement_filter_locked">Blocate</string>
+    <string name="gameplay_achievement_filter_in_progress">În progres</string>
+    <string name="gameplay_achievement_filter_earned">Obținute</string>
+    <string name="gameplay_achievement_filter_empty">Nicio realizare nu corespunde filtrelor.</string>
+    <string name="gameplay_achievement_filter_summary">Afișate %1$d din %2$d</string>
+    <string name="gameplay_achievement_path">Parcurs de învățare</string>
+    <string name="gameplay_achievement_notice">Progres la realizări</string>
+    <string name="gameplay_achievement_match_notice">Progres după turneu</string>
+    <plurals name="gameplay_achievement_more">
+        <item quantity="one">+%1$d altă realizare actualizată</item>
+        <item quantity="few">+%1$d alte realizări actualizate</item>
+        <item quantity="other">+%1$d de alte realizări actualizate</item>
     </plurals>
 </resources>

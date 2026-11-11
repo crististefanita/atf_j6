@@ -217,10 +217,15 @@ class NativeTournamentExtentPublisherTest {
     }
 
     @Test
-    void releaseSmokeRequiresTheRomanianHardCheckpoint(@TempDir Path temp) throws Exception {
+    void releaseSmokeRequiresTheAchievementEligibilityCheckpoint(@TempDir Path temp) throws Exception {
         var receipt = smokeReceipt();
         var captures = receipt.withArray("captures");
-        captures.remove(captures.size() - 1);
+        for (int index = 0; index < captures.size(); index++) {
+            if ("05a-achievement-side-pot-detail.png".equals(captures.get(index).asText())) {
+                captures.remove(index);
+                break;
+            }
+        }
 
         assertAuditedFailure(publish(temp, receipt), "Native capture inventory matches the journey");
     }
@@ -231,22 +236,24 @@ class NativeTournamentExtentPublisherTest {
         receipt.putArray("actions").add("Open hand setup").add("Open tournament setup");
         receipt.putArray("captures").add("01-release-hand-setup.png").add("02-release-tournament-setup.png")
                 .add("03-achievements-easy.png").add("04-achievements-medium.png").add("05-achievements-hard.png")
+                .add("05a-achievement-side-pot-detail.png")
                 .add("05a-achievements-romanian-easy.png").add("05b-achievements-romanian-medium.png")
                 .add("05c-achievements-romanian-hard.png")
                 .add("05d-stable-table-romanian-preflop.png").add("05e-stable-table-romanian-opponent.png").add("05f-stable-table-romanian-settled.png").add("05g-stable-table-english-preflop.png");
         var assertions = receipt.putArray("assertions");
         for (String name : List.of("Release APK opens the branded home menu", "Release APK opens hand setup",
                 "Hand setup returns to the home menu", "Release APK opens tournament setup",
-                "Achievements opens from the main menu", "Gameplay achievements omit training in English",
-                "Gameplay achievements omit training in Romanian",
+                "Achievements opens from the main menu", "All active achievements start locked",
+                "Search narrows the catalog", "The shared detail exposes the eligibility rule",
+                "Training has no entry in the gameplay catalog",
                 "Romanian table uses localized compact actions",
                 "English table uses localized compact actions",
                 "Pot, messages and seats keep the same bounds through live turns",
                 "A complete hand started from setup reaches showdown",
                 "Achievement progress: Reach your first showdown",
                 "Achievement progress: Ajungi prima dată la dezvăluirea cărților",
-                "Achievement progress: Câștigă 3 mâini diferite", "Achievement progress: Câștigă 5 mâini în turnee",
-                "Achievement progress: Câștigă 12 mâini la dezvăluire cu cel puțin trei jucători rămași")) {
+                "Achievement progress: Câștigă 3 mâini diferite", "Achievement progress: Împarte un pot la dezvăluire",
+                "Achievement progress: Câștigă un pot secundar disputat", "Achievement progress: Câștigă 3 turnee diferite")) {
             assertions.add(assertion(name, true));
         }
         // The same navigation action can legitimately occur more than once.

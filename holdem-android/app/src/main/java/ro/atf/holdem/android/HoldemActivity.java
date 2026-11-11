@@ -48,6 +48,8 @@ public final class HoldemActivity extends Activity {
     private HoldemSessionRepository sessions;
     private TournamentLeaderboardRepository leaderboard;
     private HoldemProgressStore progress;
+    private LocalHoldemGame achievementProgressGame;
+    private List<GameplayAchievements.Change> achievementProgress = List.of();
     private LocalHoldemGame game;
     private LocalHoldemGame resumableGame;
     private boolean romanian;
@@ -80,7 +82,7 @@ public final class HoldemActivity extends Activity {
         sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(getFilesDir()));
         leaderboard = new TournamentLeaderboardRepository(new AtomicFileTournamentLeaderboardStorage(getFilesDir()));
         progress = new HoldemProgressStore(sessions, leaderboard,
-                GameplayAchievementFile.local(this, stablePlayerId()));
+                GameplayAchievementFile.local(this));
         romanian = profile.getBoolean(LANGUAGE, false);
         views = new ScreenViews(this, tag -> tag, HoldemActivity::protect);
         table = new HoldemTableView(views, this::text);
@@ -155,6 +157,8 @@ public final class HoldemActivity extends Activity {
 
     @Override protected void onPause() {
         activityResumed = false;
+        achievementProgressGame = null;
+        achievementProgress = List.of();
         if (game != null) {
             game.pauseClock();
             if (deferredContinuation == null) saveCheckpoint(game, showingResult);
@@ -198,6 +202,8 @@ public final class HoldemActivity extends Activity {
             saveCheckpoint(game, showingResult);
         }
         game = null;
+        achievementProgressGame = null;
+        achievementProgress = List.of();
         configuring = false;
         showingResult = false;
         setupBlindIntervalPicker = null;
@@ -381,11 +387,41 @@ public final class HoldemActivity extends Activity {
 
     private TournamentLeaderboard.State saveCheckpoint(LocalHoldemGame current, boolean result) {
         try {
-            return progress.checkpoint(current, result, displayName());
+            return progress.checkpoint(current, result, displayName(), changes -> {
+                if (activityResumed) {
+                    achievementProgressGame = current;
+                    achievementProgress = changes;
+                }
+            });
         } catch (java.io.IOException | RuntimeException failure) {
             reportCheckpointFailure(failure);
             return null;
         }
+    }
+
+    private void showAchievementProgress(LocalHoldemGame current, android.widget.FrameLayout slot) {
+        if (achievementProgressGame != current) return;
+        var changes = achievementProgress;
+        achievementProgress = List.of();
+        achievementProgressGame = null;
+        var lines = new java.util.ArrayList<String>();
+        var unlocked = changes.stream().filter(GameplayAchievements.Change::unlocked).findFirst();
+        var partial = changes.stream().filter(change -> !change.unlocked()).findFirst();
+        for (var preview : List.of(unlocked, partial)) preview.ifPresent(change -> lines.add(
+                GameplayAchievementsActivity.title(this, change.milestone()) + " · " +
+                text(change.unlocked() ? R.string.gameplay_achievement_earned : R.string.gameplay_achievement_progress,
+                        change.count(), change.milestone().target())));
+        if (changes.size() > lines.size()) {
+            int remaining = changes.size() - lines.size();
+            lines.add(localizedContext(this, romanian).getResources().getQuantityString(
+                    R.plurals.gameplay_achievement_more, remaining, remaining));
+        }
+        int title = current.outcome() == null ? R.string.gameplay_achievement_notice
+                : R.string.gameplay_achievement_match_notice;
+        Runnable dismiss = slot::removeAllViews;
+        ro.cardtable.ui.achievements.AchievementNoticeView.show(views, slot, text(title), lines,
+                text(R.string.close), text(R.string.close), dismiss);
+        slot.postDelayed(dismiss, 8000);
     }
 
     private void reportCheckpointFailure(Exception failure) {
@@ -472,6 +508,7 @@ public final class HoldemActivity extends Activity {
             autoFinishingHand = true;
             showHand();
         });
+        if (completed) showAchievementProgress(current, labels.achievementSlot());
         if (labels.winChance() != null) updateWinChance(table, labels.winChance(), HoldemWinChance.from(frame), renderedScene);
         TextView advice = labels.advice();
         if (advice != null) aiExecutor.execute(() -> {
@@ -575,6 +612,8 @@ public final class HoldemActivity extends Activity {
         views.applyStandardWindowChrome();
         boolean won = current.outcome() == LocalHoldemGame.Outcome.WON;
         var page = views.page(null, text(won ? R.string.tournament_won : R.string.tournament_lost));
+        var achievementSlot = new android.widget.FrameLayout(this);
+        page.addView(achievementSlot, views.matchWrap());
         var table = current.view();
         var names = displayNames(current);
         var physicalNames = HoldemTablePresentation.physicalSeatNames(table, names);
@@ -588,6 +627,7 @@ public final class HoldemActivity extends Activity {
             setup(true);
         }, true);
         views.addQuietButton(page, text(R.string.home), this::home);
+        showAchievementProgress(current, achievementSlot);
     }
 
     private void showLeaderboard() {
@@ -667,7 +707,7 @@ public final class HoldemActivity extends Activity {
 
     // Both locales ship in the same APK.
     @SuppressLint("AppBundleLocaleChanges")
-    private static Context localizedContext(Context base, boolean romanian) {
+    static Context localizedContext(Context base, boolean romanian) {
         var configuration = new Configuration(base.getResources().getConfiguration());
         configuration.setLocale(romanian ? Locale.forLanguageTag("ro") : Locale.ENGLISH);
         return base.createConfigurationContext(configuration);

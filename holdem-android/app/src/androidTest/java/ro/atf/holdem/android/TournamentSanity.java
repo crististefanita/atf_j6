@@ -216,53 +216,79 @@ public final class TournamentSanity extends Instrumentation {
     private void inspectNewAchievementCatalog() throws Exception {
         tap("Achievements");
         see("Achievements opens from the main menu", "Achievements");
-        openAchievementTier("Easy");
+        see("All active achievements start locked", "Unlocked 0/14");
+        scrollAchievementTo("Easy");
         achievementRow("Win a poker hand", "Progress · 0/1");
         achievementRow("Reach your first showdown", "Progress · 0/1");
         achievementRow("Win a pot from the big blind", "Progress · 0/1");
         achievementRow("Win 3 different hands", "Progress · 0/3");
         achievementRow("Finish your run in a tournament", "Progress · 0/1");
-        tap("Easy");
         capture("03-achievements-easy");
 
-        openAchievementTier("Medium");
+        scrollAchievementTo("Medium");
         achievementRow("Win a tournament", "Progress · 0/1");
-        achievementRow("Win 5 hands in tournaments", "Progress · 0/5");
-        achievementRow("Win 3 hands at showdown with at least three players still in the hand", "Progress · 0/3");
+        achievementRow("Share a pot at showdown", "Progress · 0/1");
+        achievementRow("Win a contested side pot", "Progress · 0/1");
+        achievementRow("Win 1 hand at showdown with at least three players still in the hand", "Progress · 0/1");
         achievementRow("Win 2 hands at showdown with a straight or better", "Progress · 0/2");
         achievementRow("Finish in the top three in 2 different tournaments", "Progress · 0/2");
-        tap("Medium");
         capture("04-achievements-medium");
 
-        openAchievementTier("Hard");
+        scrollAchievementTo("Hard");
         achievementRow("Win 3 different tournaments", "Progress · 0/3");
-        achievementRow("Win every pot at showdown with high card", "Progress · 0/1");
         achievementRow("Win 2 hands at showdown with a full house or better", "Progress · 0/2");
-        achievementRow("Win 12 hands at showdown with at least three players still in the hand", "Progress · 0/12");
         achievementRow("Win 2 tournaments that started with six players", "Progress · 0/2");
-        tap("Hard");
         capture("05-achievements-hard");
-        check("Gameplay achievements omit training in English", "absent",
-                find("Training exercises") == null ? "absent" : "visible");
+        searchAchievements("contested side pot");
+        see("Search narrows the catalog", "Showing 1 of 14");
+        var row = scrollAchievementTo("Win a contested side pot");
+        tap("Win a contested side pot", row.isClickable() ? row : row.getParent());
+        see("The shared detail exposes the eligibility rule",
+                "Receive chips from a side pot with at least two players eligible at settlement.");
+        capture("05a-achievement-side-pot-detail");
+        tapDialogAction("Close");
+        searchAchievements("training exercises");
+        see("Training has no entry in the gameplay catalog", "No achievements match these filters.");
         tap("Back");
+    }
+
+    private void searchAchievements(String query) throws Exception {
+        tap("Search and filters");
+        var field = await("Search by title or rule");
+        if (field == null) {
+            var editFields = collect(node -> node.isEditable() && "android.widget.EditText".contentEquals(node.getClassName()));
+            field = editFields.size() == 1 ? editFields.get(0) : null;
+        }
+        var text = new Bundle();
+        text.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, query);
+        check("Set achievement search", "text entered",
+                field != null && field.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, text)
+                        ? "text entered" : "search unavailable");
+        tapDialogAction("Apply");
+    }
+
+    private void tapDialogAction(String label) throws Exception {
+        var button = awaitMatch(node -> node.isClickable()
+                && "android.widget.Button".contentEquals(node.getClassName())
+                && label.equalsIgnoreCase(value(node.getText())));
+        tap(label, button);
     }
 
     private void inspectRomanianAchievementLabels() throws Exception {
         tap("interface-language");
         tap("Română");
         tap("Realizări");
-        openAchievementTier("Ușoare");
+        scrollAchievementTo("Ușoare");
         achievementRow("Ajungi prima dată la dezvăluirea cărților", "Progres · 0/1");
         achievementRow("Câștigă 3 mâini diferite", "Progres · 0/3");
         capture("05a-achievements-romanian-easy");
-        openAchievementTier("Medii");
-        achievementRow("Câștigă 5 mâini în turnee", "Progres · 0/5");
+        scrollAchievementTo("Medii");
+        achievementRow("Împarte un pot la dezvăluire", "Progres · 0/1");
+        achievementRow("Câștigă un pot secundar disputat", "Progres · 0/1");
         capture("05b-achievements-romanian-medium");
-        openAchievementTier("Grele");
-        achievementRow("Câștigă 12 mâini la dezvăluire cu cel puțin trei jucători rămași", "Progres · 0/12");
+        scrollAchievementTo("Grele");
+        achievementRow("Câștigă 3 turnee diferite", "Progres · 0/3");
         capture("05c-achievements-romanian-hard");
-        check("Gameplay achievements omit training in Romanian", "absent",
-                find("Exerciții de antrenament") == null ? "absent" : "visible");
         tap("Înapoi");
     }
 
@@ -368,61 +394,73 @@ public final class TournamentSanity extends Instrumentation {
 
     private void inspectEarnedAchievementProgress() throws Exception {
         tap("Achievements");
-        openAchievementTier("Easy");
+        see("Earned achievement progress reloads from the saved profile", "Unlocked 6/14");
+        scrollAchievementTo("Easy");
         achievementRow("Win a poker hand", "Earned · 1/1");
         achievementRow("Reach your first showdown", "Earned · 1/1");
         achievementRow("Win 3 different hands", "Progress · 2/3");
         achievementRow("Finish your run in a tournament", "Earned · 1/1");
         capture("04a-achievements-earned");
 
-        openAchievementTier("Medium");
+        scrollAchievementTo("Medium");
         achievementRow("Win a tournament", "Earned · 1/1");
-        achievementRow("Win 5 hands in tournaments", "Progress · 2/5");
         achievementRow("Finish in the top three in 2 different tournaments", "Progress · 1/2");
         capture("04b-achievements-parallel");
 
-        openAchievementTier("Hard");
+        scrollAchievementTo("Hard");
         achievementRow("Win 3 different tournaments", "Progress · 1/3");
         achievementRow("Win 2 tournaments that started with six players", "Progress · 0/2");
         capture("04c-achievements-hard-progress");
         tap("Back");
-        tap("Achievements");
-        openAchievementTier("Medium");
+        see("Closing achievements returns to the main menu", "Hold’em Lab");
+        tap("Achievements", awaitMatch(node -> node.isClickable()
+                && ("Achievements".equals(value(node.getText()))
+                || "achievements".equals(value(node.getContentDescription())))));
+        see("Reopening achievements preserves the unlocked count", "Unlocked 6/14");
+        scrollAchievementTo("Medium");
         achievementRow("Win a tournament", "Earned · 1/1");
-        achievementRow("Win 5 hands in tournaments", "Progress · 2/5");
         achievementRow("Finish in the top three in 2 different tournaments", "Progress · 1/2");
         tap("Back");
     }
 
-    private void openAchievementTier(String name) throws Exception {
-        tap(name);
-        var tab = await(name);
-        check("Select achievement tier " + name, "selected",
-                tab != null && tab.isSelected() ? "selected" : "not selected");
+    private AccessibilityNodeInfo scrollAchievementTo(String title) throws Exception {
+        var item = findAchievement(title, false);
+        if (item != null) return item;
+        throw new AssertionError("Achievement item is not visible: " + title);
+    }
+
+    private AccessibilityNodeInfo findAchievement(String title, boolean withProgress) {
+        Predicate<AccessibilityNodeInfo> visible = node -> title.equals(value(node.getText()))
+                && (!withProgress || achievementProgress(node) != null);
+        for (int action : new int[] {AccessibilityNodeInfo.ACTION_SCROLL_FORWARD, AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD}) {
+            for (int page = 0; page < 6; page++) {
+                var item = awaitMatch(visible, 550);
+                if (item != null) return item;
+                var lists = collect(node -> node.isScrollable()
+                        && "android.widget.ListView".contentEquals(node.getClassName()));
+                if (lists.size() != 1 || !lists.get(0).performAction(action)) break;
+                waitForIdleSync();
+            }
+        }
+        return awaitMatch(visible);
+    }
+
+    private static String achievementProgress(AccessibilityNodeInfo title) {
+        var row = title.getParent();
+        if (row == null) return null;
+        for (int index = 0; index < row.getChildCount(); index++) {
+            var node = row.getChild(index);
+            if (node == null || !node.isVisibleToUser()) continue;
+            String text = value(node.getText());
+            if (text.startsWith("Earned · ") || text.startsWith("Progress · ")
+                    || text.startsWith("Obținută · ") || text.startsWith("Progres · ")) return text;
+        }
+        return null;
     }
 
     private void achievementRow(String title, String expected) throws Exception {
-        String observed = "not visible";
-        for (int attempt = 0; attempt < 6; attempt++) {
-            var texts = collect(node -> {
-                String text = value(node.getText());
-                return text.equals(title) || text.startsWith("Earned · ") || text.startsWith("Progress · ")
-                        || text.startsWith("Obținută · ") || text.startsWith("Progres · ");
-            });
-            for (int index = 0; index + 1 < texts.size(); index++) {
-                if (title.equals(value(texts.get(index).getText()))) {
-                    observed = value(texts.get(index + 1).getText());
-                    check("Achievement progress: " + title, expected, observed);
-                    return;
-                }
-            }
-            var scrollers = collect(node -> node.isScrollable()
-                    && "android.widget.ScrollView".contentEquals(node.getClassName()));
-            if (scrollers.isEmpty() || !scrollers.get(0).performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)) break;
-            waitForIdleSync();
-            ui.waitForIdle(200, 4000);
-        }
-        check("Achievement progress: " + title, expected, observed);
+        var item = findAchievement(title, true);
+        check("Achievement progress: " + title, expected, item == null ? "not visible" : achievementProgress(item));
     }
 
     private String installedApkHash() throws Exception {
@@ -453,6 +491,10 @@ public final class TournamentSanity extends Instrumentation {
             inspectRaiseEditorAndCall(activity);
             see("First hand reaches the flop", "Hand 1 · Flop");
             awaitWinChance("The win chance remains visible on the flop", true);
+            var flopCheck = awaitMatch(node -> node.isEnabled() && node.isClickable()
+                    && "Check".equals(value(node.getText())));
+            check("Flop actions have returned to the player", "Check available",
+                    flopCheck == null ? "Check unavailable" : "Check available");
             capture("01-call-ledger-visible");
             checkSeatActions(activity, 4);
             seeActionForPlayer("You", "Call", 20);
@@ -1640,10 +1682,19 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private AccessibilityNodeInfo await(String label) {
-        long deadline = SystemClock.uptimeMillis() + 4000;
+        return awaitMatch(node -> label.equals(value(node.getText()))
+                || label.equals(value(node.getContentDescription())));
+    }
+
+    private AccessibilityNodeInfo awaitMatch(Predicate<AccessibilityNodeInfo> match) {
+        return awaitMatch(match, 4000);
+    }
+
+    private AccessibilityNodeInfo awaitMatch(Predicate<AccessibilityNodeInfo> match, long timeoutMs) {
+        long deadline = SystemClock.uptimeMillis() + timeoutMs;
         do {
-            var node = find(label);
-            if (node != null) return node;
+            var matches = collect(match);
+            if (!matches.isEmpty()) return matches.get(0);
             SystemClock.sleep(80);
         } while (SystemClock.uptimeMillis() < deadline);
         return null;

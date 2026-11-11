@@ -23,8 +23,8 @@ final class GameplayAchievementFile implements GameplayAchievements.Storage {
         file = new AtomicFile(new File(directory, "gameplay-achievements.json"));
     }
 
-    static GameplayAchievements local(Context context, String profile) {
-        return new GameplayAchievements(new GameplayAchievementFile(context.getFilesDir()), profile);
+    static GameplayAchievements local(Context context) {
+        return new GameplayAchievements(new GameplayAchievementFile(context.getFilesDir()));
     }
 
     @Override public Map<GameplayAchievements.Metric, Set<String>> read(String profile) {
@@ -37,7 +37,8 @@ final class GameplayAchievementFile implements GameplayAchievements.Storage {
                 if (array == null) continue;
                 var ids = new HashSet<String>();
                 for (int index = 0; index < array.length(); index++) ids.add(array.getString(index));
-                if (ids.size() != array.length() || ids.size() > metric.cap)
+                // An older catalog may have credited a higher target. Preserve those event IDs.
+                if (ids.size() != array.length())
                     throw new JSONException("Invalid recorded IDs for " + metric);
                 result.put(metric, Set.copyOf(ids));
             }

@@ -29,6 +29,7 @@ import ro.atf.holdem.core.LegalAction;
 import ro.atf.holdem.core.Street;
 import ro.cardtable.ui.cards.CardFace;
 import ro.cardtable.ui.cards.CardFaceMetrics;
+import ro.cardtable.ui.cards.CardHighlightView;
 import ro.cardtable.ui.hand.CenteredHandView;
 import ro.cardtable.ui.hand.HandCard;
 import ro.cardtable.ui.hand.HandFan;
@@ -55,7 +56,7 @@ final class HoldemTableView {
     private record ViewportPosition(int tableY, boolean historyExpanded, int historyY) {
         private static final ViewportPosition TOP = new ViewportPosition(0, false, 0);
     }
-    record Labels(TextView advice, TextView winChance) { }
+    record Labels(TextView advice, TextView winChance, android.widget.FrameLayout achievementSlot) { }
     interface Text { String get(int resource, Object... arguments); }
 
     private final ScreenViews views;
@@ -223,7 +224,10 @@ final class HoldemTableView {
         addBettingLedger(content, frame, names, compact, position);
 
         TextView advice = null;
+        android.widget.FrameLayout achievementSlot = null;
         if (complete) {
+            achievementSlot = new android.widget.FrameLayout(activity);
+            content.addView(achievementSlot, views.matchWrap());
             boolean finished = game.outcome() != null;
             views.addButton(content, text.get(finished ? R.string.tournament_result : R.string.new_hand),
                     finished ? "tournament-result" : "new-hand", true, newHand, true);
@@ -258,7 +262,7 @@ final class HoldemTableView {
             content.addView(takeover, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                     views.dp(HoldemTablePresentation.ACTION_TARGET_DP)));
         }
-        return new Labels(advice, winChance);
+        return new Labels(advice, winChance, achievementSlot);
     }
 
     private ViewportPosition viewportPosition(LocalHoldemGame game, Street street) {
@@ -699,9 +703,7 @@ final class HoldemTableView {
     }
 
     private void highlightWinningCard(TextView card, Card identity, int height) {
-        card.setTranslationY(-views.dp(Math.max(4, Math.round(height * .08f))));
-        card.setElevation(views.dp(8));
-        card.setBackground(views.roundedBackground(0xfffff6d7, 0xffc99537, 6));
+        CardHighlightView.raise(card, height);
         String label = card.getContentDescription() == null ? "" : card.getContentDescription().toString();
         card.setContentDescription(label + " · " + text.get(R.string.winning_card));
         card.setTag("winning-card:" + identity.label());

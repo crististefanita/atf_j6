@@ -49,17 +49,20 @@ function rankFive(cards) {
     return [{41:7,32:6,311:3,221:2,2111:1,11111:0}[shape],...groups.map(group => group[0])];
 }
 
+function rankCode(key) {
+    return key.reduce((score,value) => score*15+value,0) * 15 ** (6-key.length);
+}
+
 function rankSeven(cards) {
     let best = -1;
     for (let a=0; a<6; a++) for (let b=a+1; b<7; b++) {
         const key = rankFive(cards.filter((_,index) => index!==a && index!==b));
-        while (key.length<6) key.push(0);
-        best = Math.max(best,key.reduce((score,value) => score*15+value,0));
+        best = Math.max(best,rankCode(key));
     }
     return best;
 }
 
-function audit(file, strict, requirePublicShoveHistory = false) {
+function audit(file, strict, requirePublicShoveHistory = false, observer) {
     const stats = {tournaments:0,hands:0,showdowns:0,actions:{},sidePotHands:0,sidePots:0,returns:0,
         shortCalls:0,shortAllInIncreases:0,lockedResponses:0,cumulativeReopens:0,splitPots:0,bySize:{},examples:{}};
     let table, hand, lineNo = 0;
@@ -140,6 +143,7 @@ function audit(file, strict, requirePublicShoveHistory = false) {
                     blindPlan:[['SB',small,sb],['BB',table.big,bb]],blinds:0,after:table.big,open,bigBlind:bb,street:0,price:bb,full:bb,
                     responded:new Map(),stack:[...table.stack],paid:Array(table.size).fill(0),streetPaid:Array(table.size).fill(0),
                     folded:new Set(),foldedActors:[],shortPrices:[],layers:[],allInActors:[],allInEvents:[],shoveObservations:[]};
+                if (observer) hand.actions = [];
                 stats.hands++;
                 stats.bySize[table.size].hands++;
             } else if (line.startsWith('SEATS ')) {
@@ -229,6 +233,7 @@ function audit(file, strict, requirePublicShoveHistory = false) {
                     default: assert.fail('Unknown action '+action);
                 }
                 const increase = amount-due;
+                if (observer) hand.actions.push({seat, street, kind:action, allIn:amount>0 && amount===stack, aggressive:increase>0});
                 if (increase>0) {
                     hand.price = wager+increase;
                     if (increase>=hand.full) { hand.full=increase; hand.shortPrices=[]; }
@@ -266,6 +271,7 @@ function audit(file, strict, requirePublicShoveHistory = false) {
                 assert.ok(showdown ? contenders.length>1 && hand.street===3 : contenders.length===1);
                 const scores = new Map(contenders.map(seat=>[seat,showdown?rankSeven([...hand.board,...hand.hole.get(seat)]):0]));
                 const awards = Array(table.size).fill(0), expected = [];
+                const layers = [], returned = Array(table.size).fill(0);
                 let prior = 0, pots = 0;
                 for (const cap of [...new Set(hand.paid.filter(Boolean))].sort((a,b)=>a-b)) {
                     const contributors = hand.order.filter(seat=>hand.paid[seat]>=cap);
@@ -273,6 +279,7 @@ function audit(file, strict, requirePublicShoveHistory = false) {
                     prior = cap;
                     if (contributors.length===1) {
                         awards[contributors[0]] += chips;
+                        if (observer) returned[contributors[0]] += chips;
                         expected.push('RETURN seat='+contributors[0]+' amount='+chips);
                         stats.returns++;
                         continue;
@@ -282,6 +289,7 @@ function audit(file, strict, requirePublicShoveHistory = false) {
                     const best = Math.max(...eligible.map(seat=>scores.get(seat)));
                     const winners = eligible.filter(seat=>scores.get(seat)===best);
                     winners.forEach((seat,i)=>{ awards[seat] += Math.floor(chips/winners.length)+(i<chips%winners.length?1:0); });
+                    if (observer) layers.push({chips, eligible, winners});
                     if (winners.length>1) stats.splitPots++;
                     const list = seats => '['+seats.join(', ')+']';
                     expected.push('POT cap='+cap+' amount='+chips+' eligible='+list(eligible)+' winners='+list(winners));
@@ -290,10 +298,12 @@ function audit(file, strict, requirePublicShoveHistory = false) {
                 if (strict || hand.layers.length) assert.deepEqual(hand.layers,expected,'Pot or return events differ');
                 assert.deepEqual(JSON.parse(m[2]),awards,'Settlement differs from independent evaluator');
                 hand.awards = awards;
+                if (observer) hand.settlement = {showdown, scores, layers, returned, boardRank:showdown ? rankCode(rankFive(hand.board)) : null};
                 if (showdown) stats.showdowns++;
                 if (pots>1) { stats.sidePotHands++; stats.sidePots+=pots-1; remember('sidePot'); }
             } else if (line.startsWith('STACKS ')) {
                 assert.ok(hand.awards && !hand.complete);
+                const before = table.stack;
                 table.stack = hand.stack.map((chips,seat)=>chips+hand.awards[seat]);
                 assert.deepEqual(JSON.parse(line.slice(7)),table.stack);
                 assert.equal(sum(table.stack),table.total);
@@ -303,11 +313,16 @@ function audit(file, strict, requirePublicShoveHistory = false) {
                     if (decision.raisedAllIn) table.shortStackAllInRaises[decision.seat]++;
                 }
                 hand.complete = true;
+                if (observer) observer.hand({seed:table.seed, seats:table.size, number:hand.number,
+                    active:hand.active, button:hand.button, smallBlind:hand.blindPlan[0][1], bigBlindSeat:table.big, bigBlind:hand.bigBlind,
+                    street:streets[hand.street], before, after:table.stack, actions:hand.actions,
+                    ...hand.settlement});
             } else if (m=/^COMPLETE winner=(\d+) hands=(\d+)$/.exec(line)) {
                 assert.ok(hand.complete && !table.complete);
                 assert.equal(+m[2],table.number);
                 assert.equal(table.stack[+m[1]],table.total);
                 table.complete = true;
+                if (observer) observer.tournament({seed:table.seed, seats:table.size, winner:+m[1], finalActive:hand.active.length});
                 stats.tournaments++;
                 stats.bySize[table.size].tournaments++;
             } else assert.fail('Unknown event '+line);

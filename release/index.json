@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.15.0",
-  "previousVersion": "0.14.1",
+  "currentVersion": "0.16.0",
+  "previousVersion": "0.15.0",
   "changeClass": "COMPATIBLE_FEATURE",
-  "changeRationale": "Păstrează poziția mesei derulate între ture și fixează spațiul marcajului de lângă numele jucătorului.",
-  "state": "PREPARED",
+  "changeRationale": "Adaugă lista comună de realizări cu filtre, detalii și progres din poturi secundare și împărțite.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.15.0"
+    "0.16.0"
   ]
 }

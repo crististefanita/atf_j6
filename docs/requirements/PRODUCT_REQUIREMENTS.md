@@ -117,17 +117,52 @@ O comandă de continuare acceptată în timpul animației salvează destinația 
 
 ## Realizări
 
-Meniul **Realizări** arată cinci obiective pe nivel. Ordinea sugerează de unde să începi, iar o mână sau un turneu poate avansa mai multe obiective simultan. Progresul vine din rezultatele obținute la masă.
+Meniul **Realizări** folosește componentele comune cu Rentz pentru listă, progres, detalii și notificări. Ordinea provine din catalog. O mână sau un turneu poate avansa mai multe obiective simultan.
+
+Căutarea recunoaște titlurile și regulile în română și engleză, inclusiv fără diacritice. Filtrele după nivel și stare se aplică împreună și se păstrează la recrearea activității.
 
 | Nivel | Primul obiectiv | Alte criterii |
 |---|---|---|
 | Ușor | Câștigă o mână de poker. | Ajungi la prima dezvăluire, câștigi un pot din blindul mare, trei mâini distincte și închei participarea într-un turneu. |
-| Mediu | Câștigă un turneu. | Cinci mâini câștigate în turnee, trei victorii la dezvăluire cu minimum trei participanți, două victorii cu chintă sau mai bine și două podiumuri. |
-| Greu | Câștigă trei turnee distincte. | Carte mare ca unic beneficiar al poturilor, două victorii cu full sau mai bine, 12 victorii la dezvăluire cu minimum trei participanți și două titluri la mese pornite cu șase jucători. |
+| Mediu | Câștigă un turneu. | Pot împărțit, pot secundar disputat, prima victorie la dezvăluire cu minimum trei participanți, două victorii cu chintă sau mai bine și două podiumuri. |
+| Greu | Câștigă trei turnee distincte. | Două victorii cu full sau mai bine și două titluri la mese pornite cu șase jucători. |
 
-- O mână se califică dacă profilul primește jetoane dintr-un pot la decontare. O restituire nu contează. Un pot secundar sau împărțit poate conta o singură dată pentru mâna respectivă.
-- La o dezvăluire cu minimum trei participanți se numără doar jucătorii ale căror cărți sunt evaluate. Criteriul de carte mare cere ca jucătorul să fie singurul beneficiar al poturilor.
+- Turneele Normal și Greu acordă progres pe profil. Mâinile de exercițiu din **Antrenament** au propriul parcurs.
+- Câștigurile folosesc jetoanele acordate din pot și o singură cheie per mână. Motorul contabilizează separat jetoanele restituite.
+- Un pot secundar disputat are minimum doi jucători eligibili la decontare. Un pot împărțit are mai mulți beneficiari pe același strat. La showdown se numără jucătorii cu cărți evaluate.
 - Participarea și podiumul se acordă când locul devine definitiv, chiar dacă adversarii continuă. Un loc al treilea împărțit contează. Titlul cere locul întâi, iar obiectivul de șase folosește dimensiunea de la începutul turneului.
 - Progresul este local pe profil și se deduplică după ID-ul mâinii sau al turneului. Se poate reconcilia sesiunea salvată. Clasamentul agregat nu reconstruiește partidele vechi.
 
-Catalogul YAML definește ID-urile, nivelul, ordinea, metrica și pragul. Textele localizate folosesc aceleași praguri la afișare. [Regulile executabile](../../config/j6-achievements.yaml) · [Ghid de proiectare](../design/achievements/README.md) · [Verificarea realizărilor](../testing/TEST_STRATEGY.md#realizări-de-joc)
+- Catalogul YAML definește ID-urile, nivelul, ordinea, metrica, pragul și regulile RO/EN. Gradle generează lista Android și rezervă ID-urile retrase.
+- Lista, detaliile și panoul de progres folosesc interfața comună. Panoul afișează actualizările după confirmarea salvării, iar repetarea rezultatului nu produce o nouă notificare.
+- Progresul acumulează dovezi până la cel mai mare prag declarat pentru metrică. Fiecare obiectiv afișează cel mult propriul prag.
+- ID-urile și dovezile salvate se păstrează la reducerea pragului sau retragerea unei realizări. Lista folosește aceeași cheie pentru rând și detaliu când se schimbă ordinea, traducerea sau pragul.
+
+[Regulile executabile](../../config/j6-achievements.yaml) · [Ghid de proiectare](../design/achievements/README.md) · [Verificarea realizărilor](../testing/TEST_STRATEGY.md#realizări-de-joc)
+
+### Extinderea parcursului
+
+Păstrează filele Ușoare, Medii și Grele, cu mai multe trepte în fiecare.
+
+- Grupează treptele după competența de poker. Într-o treaptă, obiectivele avansează în paralel.
+- Ordinea duce de la citirea mesei la situații în care poziția, stiva și acțiunile precedente schimbă decizia.
+
+| Familie | Parcurs posibil | Fapt necesar |
+|---|---|---|
+| Poziție și blinduri | Prima victorie din blind, apoi victorii din poziții distincte la mese de dimensiuni diferite. | Loc fizic și rol în mâna decontată. |
+| Showdown și decontare | Prima dezvăluire, o victorie cu o chintă, apoi un pot secundar câștigat distinct de potul principal. | Combinația validată, beneficiarii și eligibilitatea pe fiecare strat al potului. |
+| Joc la stivă scurtă | Terminarea unei mâini la stivă mică, câștigarea potului după un all-in acceptat, apoi revenire până la podium. | Stiva efectivă în blinduri mari înainte de decizie, acțiunea acceptată și locul definitiv. |
+| Acțiuni după flop | Câștig după pariu și renunțarea adversarilor, apoi astfel de rezultate în poziții și runde distincte. | Actor, rundă, acțiuni acceptate și decontare fără showdown. |
+| Turneu | Primul titlu, titluri repetate la dimensiuni diferite, apoi titluri în configurații Hard eligibile. | ID de turneu, loc definitiv, numărul inițial de locuri și dificultatea adversarilor. |
+
+- Poturile și clasările folosesc verdictul motorului. Un pot câștigat după renunțarea adversarilor confirmă rezultatul pariului.
+- Criteriile tactice folosesc faptele disponibile la momentul acțiunii. Clasificarea unui bluff cere criterii explicite despre mâna și contextul observabile atunci.
+
+- Un criteriu nou declară modul eligibil, proveniența deciziei, metrica și cheia evenimentului distinct.
+- Mâinile de antrenament și replay-urile servesc calibrării. Pentru obiective de execuție personală, evenimentul dovedește decizia manuală.
+- Proveniența Auto-play și recuperarea din checkpoint au cazuri de test separate.
+
+- Păstrează lista reciclată și filtrele comune când adaugi grupe noi. În detalii, afișează regula YAML și condițiile de eligibilitate.
+- ID-ul din catalog păstrează selecția între traduceri. Afișajul RO/EN arată progresul rămas și situația în care obiectivul poate avansa.
+
+[Criteriile de extindere](../feedback/J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md)

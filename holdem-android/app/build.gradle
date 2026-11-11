@@ -1,4 +1,5 @@
 import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
 import java.security.MessageDigest
 
 plugins { id 'com.android.application' }
@@ -19,8 +20,8 @@ android {
         applicationId 'ro.atf.holdem.android'
         minSdk 26
         targetSdk 36
-        versionCode 24
-        versionName '0.15.0'
+        versionCode 25
+        versionName '0.16.0'
         testApplicationId 'ro.atf.holdem.android.test'
         testInstrumentationRunner 'ro.atf.holdem.android.TournamentSanity'
     }
@@ -30,6 +31,7 @@ android {
         androidTest.java.srcDir 'src/testSupport/java'
     }
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
@@ -64,30 +66,41 @@ abstract class GenerateGameplayAchievementCatalog extends DefaultTask {
         // The project uses the JSON subset of YAML for this shared Android and Node catalog.
         def catalog = new JsonSlurper().parse(rulesFile.get().asFile)
         def tiers = ['EASY', 'MEDIUM', 'HARD']
-        if (catalog.keySet() != ['schemaVersion', 'tiers'].toSet() || catalog.schemaVersion != 1 ||
+        if (catalog.keySet() != ['schemaVersion', 'tiers', 'retired'].toSet() || catalog.schemaVersion != 1 ||
                 catalog.tiers.keySet() != tiers.toSet()) {
             throw new GradleException('Invalid achievement catalog schema or tier set')
         }
         def ids = [] as Set
         def labels = [] as Set
         def rules = [] as Set
+        if (!(catalog.retired instanceof List)) throw new GradleException('Retired achievement inventory is missing')
+        catalog.retired.each { row ->
+            if (row.keySet() != ['id', 'metric', 'target', 'label', 'reason'].toSet() ||
+                    !(row.id ==~ /[a-z][a-z0-9-]*/) || !(row.metric ==~ /[A-Z][A-Z0-9_]*/) ||
+                    !(row.target instanceof Integer) || row.target < 1 ||
+                    !(row.label ==~ /(plurals\/)?gameplay_achievement_[a-z0-9_]+/) ||
+                    !(row.reason instanceof String) || row.reason.isBlank() || !ids.add(row.id) || !labels.add(row.label)) {
+                throw new GradleException("Invalid retired achievement: $row")
+            }
+        }
         def cases = tiers.collect { tier ->
             def milestones = catalog.tiers[tier]
-            if (!(milestones instanceof List) || !(milestones.size() in [5, 6])) {
+            if (!(milestones instanceof List) || milestones.isEmpty()) {
                 throw new GradleException("Invalid achievement count for $tier")
             }
             def entries = milestones.collect { row ->
-                if (row.keySet() != ['id', 'metric', 'target', 'label'].toSet() ||
+                if (row.keySet() != ['id', 'metric', 'target', 'label', 'ruleRo', 'ruleEn'].toSet() ||
                         !(row.id ==~ /[a-z][a-z0-9-]*/) || !(row.metric ==~ /[A-Z][A-Z0-9_]*/) ||
                         !(row.target instanceof Integer) || row.target < 1 ||
                         !(row.label ==~ /(plurals\/)?gameplay_achievement_[a-z0-9_]+/) ||
+                        ![row.ruleRo, row.ruleEn].every { it instanceof String && !it.isBlank() && it.contains('{target}') == (row.target > 1) } ||
                         !ids.add(row.id) || !labels.add(row.label) ||
                         !rules.add([row.metric, row.target])) {
                     throw new GradleException("Invalid or duplicate achievement in $tier: $row")
                 }
                 def plural = row.label.startsWith('plurals/')
                 def resource = plural ? row.label.replace('/', '.') : "string.$row.label"
-                "new Milestone(\"$row.id\", Metric.$row.metric, $row.target, R.$resource, $plural)"
+                "new Milestone(\"$row.id\", Metric.$row.metric, $row.target, R.$resource, $plural, ${JsonOutput.toJson(row.ruleRo)}, ${JsonOutput.toJson(row.ruleEn)})"
             }
             "            case $tier -> List.of(\n                    " + entries.join(',\n                    ') + ');'
         }.join('\n')
@@ -143,11 +156,12 @@ tasks.matching { it.name in ['packageRelease', 'packageSanity', 'signReleaseBund
     dependsOn verifyHoldemReleaseSigning
 }
 
-def cardUi = 'ro.cardtable:card-table-ui:0.1.7'
+def cardUi = 'ro.cardtable:card-table-ui:0.1.9'
 def cardNames = 'ro.cardtable:card-table-names:0.1.0'
 def uiLibrary = rootProject.layout.projectDirectory.dir('ui-library')
 
 dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
     implementation project(':engine')
     implementation cardUi
     implementation cardNames

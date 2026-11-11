@@ -3,12 +3,13 @@ package ro.atf.holdem.core;
 import java.util.*;
 
 final class PotSettlement {
-    record Result(int[] awards, int[] potWon, int[] returned, List<String> journal) {
+    record Result(int[] awards, int[] potWon, int[] returned, List<String> journal, List<PotAward> layers) {
         Result {
             awards = awards.clone();
             potWon = potWon.clone();
             returned = returned.clone();
             journal = List.copyOf(journal);
+            layers = List.copyOf(layers);
         }
         @Override public int[] awards() { return awards.clone(); }
         @Override public int[] potWon() { return potWon.clone(); }
@@ -22,6 +23,7 @@ final class PotSettlement {
         int[] potWon = new int[paid.length];
         int[] returned = new int[paid.length];
         var journal = new ArrayList<String>();
+        var layers = new ArrayList<PotAward>();
         int previous = 0;
         for (int cap : Arrays.stream(paid).filter(n -> n > 0).distinct().sorted().toArray()) {
             int contributors = 0;
@@ -52,10 +54,11 @@ final class PotSettlement {
                     awards[winners.get(i)] += share;
                     potWon[winners.get(i)] += share;
                 }
+                layers.add(new PotAward(layer, eligible, winners));
                 journal.add("POT cap=" + cap + " amount=" + layer + " eligible=" + eligible + " winners=" + winners);
             }
             previous = cap;
         }
-        return new Result(awards, potWon, returned, journal);
+        return new Result(awards, potWon, returned, journal, layers);
     }
 }

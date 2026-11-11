@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "creditByUnit": {
+    "hand": {"distinctBy":"hand-id","provenance":"manual-hand"},
+    "tournament": {"distinctBy":"tournament-id","provenance":"manual-tournament"},
+    "table-size": {"distinctBy":"starting-seat-count","provenance":"manual-tournament"}
+  },
+  "groups": [
+    {
+      "id": "table-position",
+      "tier": "EASY",
+      "titleRo": "Poziția la masă",
+      "titleEn": "Table position",
+      "entries": [
+        {"id":"small-blind-win","metric":"SMALL_BLIND_POT","target":1,"titleRo":"Câștig din blindul mic","titleEn":"Small blind win","ruleRo":"Primește jetoane dintr-un pot din blindul mic.","ruleEn":"Receive chips from a pot while in the small blind."},
+        {"id":"button-win","metric":"BUTTON_POT","target":1,"titleRo":"Câștig de pe buton","titleEn":"Button win","ruleRo":"Primește jetoane dintr-un pot de pe buton.","ruleEn":"Receive chips from a pot while on the button."},
+        {"id":"heads-up-pot","metric":"HEADS_UP_POT","target":1,"titleRo":"Primul pot în doi","titleEn":"First heads-up pot","ruleRo":"Câștigă un pot într-o mână începută cu doi jucători activi.","ruleEn":"Win a pot in a hand that started with two active players."},
+        {"id":"check-big-blind-to-flop","metric":"BIG_BLIND_CHECK_TO_FLOP","target":1,"titleRo":"Check din blindul mare","titleEn":"Check the big blind","ruleRo":"Dă check înainte de flop din blindul mare și rămâi în mână până la flop.","ruleEn":"Check preflop from the big blind and stay in the hand through the flop."},
+        {"id":"showdown-win","metric":"SHOWDOWN_POT","target":1,"titleRo":"Primul pot la showdown","titleEn":"First showdown pot","ruleRo":"Primește jetoane dintr-un pot la dezvăluire.","ruleEn":"Receive chips from a pot at showdown."}
+      ]
+    },
+    {
+      "id": "reading-the-board",
+      "tier": "EASY",
+      "titleRo": "Citirea boardului",
+      "titleEn": "Reading the board",
+      "entries": [
+        {"id":"reach-flop","metric":"FLOP_REACHED","target":1,"titleRo":"Primul flop","titleEn":"First flop","ruleRo":"Rămâi în mână până la flop.","ruleEn":"Stay in a hand through the flop."},
+        {"id":"reach-river","metric":"RIVER_REACHED","target":1,"titleRo":"Primul river","titleEn":"First river","ruleRo":"Rămâi în mână până la river, inclusiv când masa rulează boardul după un all-in.","ruleEn":"Stay in a hand through the river, including an all-in runout."},
+        {"id":"pair-wins","metric":"PAIR_SHOWDOWN_POT","target":1,"titleRo":"Pot cu o pereche","titleEn":"Win with one pair","ruleRo":"Câștigă un pot la dezvăluire cu exact o pereche ca evaluare finală.","ruleEn":"Win a showdown pot with exactly one pair as the final hand category."},
+        {"id":"multiway-pot","metric":"MULTIWAY_POT","target":1,"titleRo":"Pot la masă cu mai mulți jucători","titleEn":"Multiway table pot","ruleRo":"Câștigă un pot într-o mână începută cu cel puțin trei jucători activi.","ruleEn":"Win a pot in a hand that started with at least three active players."},
+        {"id":"postflop-pot","metric":"POSTFLOP_POT","target":1,"titleRo":"Primul pot după flop","titleEn":"First postflop pot","ruleRo":"Câștigă un pot într-o mână care a ajuns la flop.","ruleEn":"Win a pot in a hand that reached the flop."}
+      ]
+    },
+    {
+      "id": "table-actions",
+      "tier": "EASY",
+      "titleRo": "Acțiuni la masă",
+      "titleEn": "Table actions",
+      "entries": [
+        {"id":"preflop-call-to-flop","metric":"PREFLOP_CALL_TO_FLOP","target":1,"titleRo":"Call înainte de flop","titleEn":"Call to see the flop","ruleRo":"Plătește voluntar un pariu înainte de flop și rămâi în mână până la flop.","ruleEn":"Voluntarily call preflop and stay in the hand through the flop."},
+        {"id":"postflop-check-showdown","metric":"POSTFLOP_CHECK_SHOWDOWN","target":1,"titleRo":"Check și showdown","titleEn":"Check and reach showdown","ruleRo":"Dă check pe o rundă postflop și ajungi la showdown.","ruleEn":"Check on a postflop street and reach showdown."},
+        {"id":"river-decision","metric":"RIVER_DECISION","target":1,"titleRo":"Prima decizie la river","titleEn":"First river decision","ruleRo":"Ia o decizie pe river într-o mână în care mai poți acționa.","ruleEn":"Make a decision on the river while you can still act."},
+        {"id":"call-showdown-pot","metric":"CALL_SHOWDOWN_POT","target":1,"titleRo":"Pot câștigat după call","titleEn":"Win a pot after calling","ruleRo":"Plătește cel puțin un pariu și câștigă un pot la showdown în aceeași mână.","ruleEn":"Call at least one bet and win a showdown pot in the same hand."},
+        {"id":"two-pair-showdown-pot","metric":"TWO_PAIR_SHOWDOWN_POT","target":1,"titleRo":"Câștig cu două perechi","titleEn":"Win with two pair","ruleRo":"Câștigă un pot la showdown cu exact două perechi ca evaluare finală.","ruleEn":"Win a showdown pot with exactly two pair as the final evaluation."}
+      ]
+    },
+    {
+      "id": "pot-settlement",
+      "tier": "MEDIUM",
+      "titleRo": "Decontarea poturilor",
+      "titleEn": "Pot settlement",
+      "entries": [
+        {"id":"heads-up-showdown-series","metric":"HEADS_UP_SHOWDOWN_POT","target":3,"titleRo":"Victorii la showdown în doi","titleEn":"Heads-up showdown wins","ruleRo":"Primește jetoane la showdown în {target} mâini distincte începute cu doi jucători activi.","ruleEn":"Receive pot chips at showdown in {target} distinct hands that started heads-up."},
+        {"id":"side-pot-only","metric":"SIDE_POT_ONLY","target":1,"titleRo":"Pot secundar câștigat","titleEn":"Win a side pot","ruleRo":"Câștigă dintr-un pot secundar într-o mână în care potul principal revine altcuiva.","ruleEn":"Win chips from a side pot in a hand where another player wins the main pot."},
+        {"id":"pot-and-refund","metric":"POT_WITH_REFUND","target":2,"titleRo":"Pot și restituire","titleEn":"Pot and refund","ruleRo":"În {target} mâini distincte, primește jetoane din pot și o restituire din aceeași mână.","ruleEn":"In {target} distinct hands, receive chips both from a pot and as an uncalled return."},
+        {"id":"side-pot-sweep","metric":"SWEPT_SIDE_POTS","target":1,"titleRo":"Toate poturile la showdown","titleEn":"Sweep the pots","ruleRo":"Câștigă singur fiecare strat al unui showdown cu pot principal și pot secundar.","ruleEn":"Win every layer outright in a showdown with a main pot and at least one side pot."}
+      ]
+    },
+    {
+      "id": "pressure-and-survival",
+      "tier": "MEDIUM",
+      "titleRo": "Presiune și supraviețuire",
+      "titleEn": "Pressure and survival",
+      "entries": [
+        {"id":"preflop-fold-win","metric":"PREFLOP_FOLD_WIN","target":1,"titleRo":"Pot înainte de flop","titleEn":"Pot before the flop","ruleRo":"Primește potul după ce adversarii au renunțat înainte de flop. Un blind primit fără luptă contează.","ruleEn":"Win the pot when opponents fold before the flop. A blind walk counts."},
+        {"id":"short-stack-all-in-pots","metric":"SHORT_STACK_ALL_IN_POT","target":2,"titleRo":"Poturi all-in de la stivă scurtă","titleEn":"Short-stack all-in pots","ruleRo":"Pornește cu cel mult zece blinduri mari, consumă voluntar stiva și câștigă un pot în {target} mâini distincte.","ruleEn":"Start with at most ten big blinds, voluntarily commit your stack and win a pot in {target} distinct hands."},
+        {"id":"all-in-showdown-series","metric":"ALL_IN_SHOWDOWN_POT","target":3,"titleRo":"Poturi all-in la showdown","titleEn":"All-in showdown pots","ruleRo":"Consumă voluntar stiva și câștigă la showdown în {target} mâini distincte.","ruleEn":"Voluntarily commit your stack and win at showdown in {target} distinct hands."},
+        {"id":"main-pot-knockouts","metric":"SOLE_MAIN_WIN_ELIMINATION","target":2,"titleRo":"Victorii cu eliminare","titleEn":"Wins with an elimination","ruleRo":"Câștigă singur potul principal la showdown când un jucător activ rămâne fără jetoane, în {target} mâini distincte.","ruleEn":"Win the main pot outright at showdown while an active player is eliminated in {target} distinct hands."},
+        {"id":"postflop-pressure","metric":"POSTFLOP_AGGRESSION_FOLD_WIN","target":2,"titleRo":"Pariu care închide mâna","titleEn":"Take it down after betting","ruleRo":"Câștigă prin fold pe aceeași stradă postflop pe care ai mărit prețul, în {target} mâini distincte.","ruleEn":"Win by folds on the same postflop street where you increased the price in {target} distinct hands."},
+        {"id":"reach-heads-up-tournaments","metric":"HEADS_UP_PHASE_REACHED","target":2,"titleRo":"Ajungi la duel","titleEn":"Reach heads-up play","ruleRo":"Începe o mână în doi în {target} turnee distincte.","ruleEn":"Start a heads-up hand in {target} distinct tournaments."}
+      ]
+    },
+    {
+      "id": "postflop-lines",
+      "tier": "MEDIUM",
+      "titleRo": "Linii de joc după flop",
+      "titleEn": "Postflop lines",
+      "entries": [
+        {"id":"big-blind-defense-showdown","metric":"BIG_BLIND_DEFENSE_SHOWDOWN_POT","target":1,"titleRo":"Apără blindul mare","titleEn":"Defend the big blind","ruleRo":"Plătește din blindul mare înainte de flop și câștigă un pot la showdown.","ruleEn":"Call preflop from the big blind and win a showdown pot."},
+        {"id":"two-street-pressure-showdown","metric":"MULTISTREET_BET_SHOWDOWN_POT","target":1,"titleRo":"Pariuri pe două runde","titleEn":"Bet on two streets","ruleRo":"Mărește prețul pe cel puțin două runde postflop și câștigă la showdown.","ruleEn":"Increase the price on at least two postflop streets and win at showdown."},
+        {"id":"river-call-showdown-pots","metric":"RIVER_CALL_SHOWDOWN_POT","target":2,"titleRo":"Victorii după call la river","titleEn":"River call wins","ruleRo":"Plătește un pariu la river și câștigă la showdown în {target} mâini distincte.","ruleEn":"Call a river bet and win at showdown in {target} distinct hands."},
+        {"id":"river-bet-showdown-pot","metric":"RIVER_BET_SHOWDOWN_POT","target":1,"titleRo":"Victorie după pariu la river","titleEn":"Win after betting the river","ruleRo":"Mărește prețul la river și câștigă un pot la showdown.","ruleEn":"Increase the price on the river and win a showdown pot."},
+        {"id":"three-street-call-showdown","metric":"THREE_STREET_CALL_SHOWDOWN_POT","target":1,"titleRo":"Call pe trei runde postflop","titleEn":"Call on three postflop streets","ruleRo":"Plătește pe flop, turn și river și câștigă un pot la showdown în aceeași mână.","ruleEn":"Call on the flop, turn and river and win a showdown pot in the same hand."}
+      ]
+    },
+    {
+      "id": "rare-showdowns",
+      "tier": "HARD",
+      "titleRo": "Showdown-uri rare",
+      "titleEn": "Rare showdowns",
+      "entries": [
+        {"id":"board-plays-split","metric":"BOARD_PLAYS_SPLIT","target":1,"titleRo":"Pot împărțit cu boardul","titleEn":"Play the board for a split","ruleRo":"Câștigă o cotă dintr-un pot împărțit când evaluarea ta finală este egală cu evaluarea celor cinci cărți comune.","ruleEn":"Win a share of a split pot when your final evaluation equals the five-card board."},
+        {"id":"all-in-wheel","metric":"ALL_IN_WHEEL_POT","target":1,"titleRo":"All-in câștigat cu chintă la cinci","titleEn":"Win an all-in with a wheel","ruleRo":"Consumă voluntar stiva și câștigă la showdown cu chintă la cinci ca evaluare finală.","ruleEn":"Voluntarily commit your stack and win at showdown with a five-high straight as your final evaluation."},
+        {"id":"high-card-multiway-sole","metric":"HIGH_CARD_MULTIWAY_SOLE","target":1,"titleRo":"Carte mare la showdown multiplu","titleEn":"High card in a multiway showdown","ruleRo":"Fii singurul beneficiar al poturilor cu carte mare într-un showdown cu minimum trei jucători evaluați.","ruleEn":"Be the sole pot recipient with high card in a showdown with at least three evaluated players."},
+        {"id":"double-elimination","metric":"TWO_KNOCKOUTS_MAIN_POT","target":1,"titleRo":"Pot principal cu două eliminări","titleEn":"Main pot and two eliminations","ruleRo":"Câștigă singur potul principal la showdown când cel puțin doi jucători activi rămân fără jetoane.","ruleEn":"Win the main pot outright at showdown while at least two active players are eliminated."},
+        {"id":"odd-chip-split","metric":"ODD_CHIP_SPLIT","target":1,"titleRo":"Jeton suplimentar la pot împărțit","titleEn":"Odd chip in a split pot","ruleRo":"Primește jetonul suplimentar dintr-un strat împărțit conform ordinii de la buton.","ruleEn":"Receive an extra chip from a split layer according to the order from the button."}
+      ]
+    },
+    {
+      "id": "tournament-mastery",
+      "tier": "HARD",
+      "titleRo": "Stăpânirea turneului",
+      "titleEn": "Tournament mastery",
+      "entries": [
+        {"id":"short-stack-title","metric":"SHORT_STACK_TITLE","target":1,"titleRo":"Titlu după stivă scurtă","titleEn":"Title after a short stack","ruleRo":"Câștigă un turneu în care ai început o mână cu cel mult zece blinduri mari când cel puțin trei jucători erau activi.","ruleEn":"Win a tournament after starting a hand with at most ten big blinds while at least three players remained."},
+        {"id":"heads-up-comeback-title","metric":"TITLE_AFTER_HEADS_UP_DEFICIT","target":1,"titleRo":"Titlu după revenire în duel","titleEn":"Heads-up comeback title","ruleRo":"Câștigă un turneu după ce ai început o mână în doi cu cel mult o treime din jetoanele aflate în joc.","ruleEn":"Win a tournament after starting a heads-up hand with at most one third of the chips in play."},
+        {"id":"five-seat-title-series","metric":"FIVE_SEAT_TITLE","target":3,"titleRo":"Titluri la mese de cinci","titleEn":"Five-seat titles","ruleRo":"Câștigă {target} turnee distincte începute la o masă de cinci locuri.","ruleEn":"Win {target} distinct tournaments that started with five seats."},
+        {"id":"manual-hard-six-titles","metric":"HARD_SIX_SEAT_MANUAL_TITLE","target":2,"titleRo":"Titluri jucate manual pe Greu","titleEn":"Manual Hard titles","ruleRo":"Câștigă {target} turnee distincte începute la șase locuri pe Greu, cu toate deciziile proprii luate manual.","ruleEn":"Win {target} distinct Hard tournaments starting at six seats, making every player decision manually."},
+        {"id":"titles-every-table-size","metric":"ALL_TABLE_SIZES_TITLE","target":3,"titleRo":"Titlu la fiecare dimensiune de masă","titleEn":"Title at every table size","ruleRo":"Câștigă cel puțin un turneu la fiecare dintre dimensiunile inițiale 4, 5 și 6.","ruleEn":"Win at least one tournament at each starting table size of 4, 5 and 6."}
+      ]
+    },
+    {
+      "id": "comeback-play",
+      "tier": "HARD",
+      "titleRo": "Revenire și final de turneu",
+      "titleEn": "Comebacks and tournament finishes",
+      "entries": [
+        {"id":"title-after-last-stack","metric":"TITLE_AFTER_LAST_STACK","target":1,"titleRo":"Titlu de pe ultimul loc la jetoane","titleEn":"Title after being last in chips","ruleRo":"Câștigă turneul după ce ai început o mână cu stiva strict cea mai mică între cel puțin trei jucători activi.","ruleEn":"Win after starting a hand strictly last in chips with at least three players still active."},
+        {"id":"title-without-heads-up","metric":"TITLE_WITHOUT_HEADS_UP","target":1,"titleRo":"Titlu direct de la trei sau mai mulți","titleEn":"Title before heads-up","ruleRo":"Câștigă turneul într-o mână finală începută cu cel puțin trei jucători activi.","ruleEn":"Win a tournament whose final hand started with at least three active players."},
+        {"id":"heads-up-river-call-series","metric":"HEADS_UP_RIVER_CALL_SHOWDOWN_POT","target":3,"titleRo":"Call-uri câștigătoare în duel","titleEn":"Winning heads-up river calls","ruleRo":"Plătește la river și câștigă la showdown în {target} mâini distincte începute în doi.","ruleEn":"Call the river and win at showdown in {target} distinct hands that started heads-up."}
+      ]
+    }
+  ]
+}

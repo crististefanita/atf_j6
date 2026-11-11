@@ -10,6 +10,8 @@ J6 separă oracolul de componentă de probele pe Android. Suita documentară ver
 
 Testele curente acoperă ordinea actorilor, sizing-ul minim, menținerea stării după acțiuni ilegale, all-in-uri scurte cumulative, evaluarea mâinii și decontarea pe straturi. `config/j6-allin-challenges.yaml` este fixture-ul controlat pentru redeschidere, egalitate și jetoane impare; JUnit îl rulează prin motor, iar `audit-allin-challenge.cjs` reface separat acțiunile, clasificarea și plata.
 
+Un caz redus din turnee verifică plata parțială a ambelor blinduri, locurile eliminate și împărțirea potului. Aserțiunile verifică separat câștigul și restituirea în vederea publică a mesei. Un al doilea caz acoperă jetonul impar acordat după buton peste un loc eliminat, cu pot secundar și restituire distincte. [Testele motorului](../../holdem-core/src/test/java/ro/atf/holdem/core/HoldemRulesTest.java)
+
 ### Politici AI
 
 | Zonă | Acoperire |
@@ -59,7 +61,7 @@ Testele curente acoperă ordinea actorilor, sizing-ul minim, menținerea stării
 
 ### Interfața Android locală
 
-- Admitere bibliotecă. Build-ul verifică cele opt fișiere Card Table după proveniență, coordonate și SHA-256, înainte de împachetare. J6 consumă Card Table UI 0.1.7; producătorul califică pacing-ul comun de `550 ms` <!-- rag:contract android.turn-pacing --> după primul cadru vizibil, iar consumatorul păstrează testul de proveniență exactă.
+- Build-ul verifică proveniența, coordonatele și SHA-256 pentru bibliotecile Card Table înainte de împachetare. Card Table UI furnizează ecranul de realizări, marcajul vizual al cărților și temporizarea de `550 ms` <!-- rag:contract android.turn-pacing --> după primul cadru vizibil. Testele Hold’em verifică selecția pokerului și progresul.
 - Componente JVM. Motorul păstrează cărțile observatorului când se schimbă actorul, inclusiv când se modifică numai cărți ascunse. Sesiunea Android joacă mese de 4, 5 și 6 locuri și verifică acțiunile invalide, comenzile repetate, fold, all-in, restaurarea și conservarea jetoanelor.
 - Sanity nativ. Modul `tournament` verifică victoria și eliminarea în APK-ul `sanity`, care acceptă seed-uri reproductibile. Modul `release-smoke` verifică navigarea inițială în APK-ul distribuibil exact. Extent leagă API-ul, fereastra, acțiunile, aserțiunile și capturile de hash-ul APK-ului instalat.
 - Profil compact. Componentele verifică rândurile pentru 2, 4, 5 și 6 locuri, plus ordinea heads-up în ambele poziții. Pe emulator, profilul de 320 × 569 dp cu font 2,0 verifică șase chenare, board-ul, acțiunile și dialogul de raise cu tastatura deschisă. O a doua trecere pe același profil verifică schimbarea dealerului heads-up. Scriptul restabilește configurația emulatorului.
@@ -89,19 +91,47 @@ Testele curente acoperă ordinea actorilor, sizing-ul minim, menținerea stării
 
 ### Realizări de joc
 
+- Pentru o familie nouă, păstrați un caz pozitiv mic și un caz aproape identic care nu primește credit. Exemplele de decontare se reduc la stivele inițiale, poziții, acțiuni acceptate și rezultatul verificat independent.
+- La mărirea catalogului, verificați că pragul maxim pe metrică provine din YAML și că profilurile cu ID-uri deja salvate se deschid după o reducere a pragului. Pentru obiective manuale, simulați aceeași mână cu proveniență manuală și Auto-play.
+
 - Testele de componentă verifică ordinea, pragul fiecărui obiectiv, poturile secundare sau împărțite, blindul fizic, participanții la dezvăluire și progresul deduplicat. Motorul verifică momentul când se fixează locul într-un turneu, inclusiv locurile împărțite.
-- Calibrarea realizărilor rulează la 4, 5 și 6 locuri cu coach-ul și adversarii Normal. Loturile de reglaj și verificare folosesc seed-uri distincte.
-- Raportul arată rata de obținere după 1, 3, 6 și 12 turnee și mediana mâinii între sesiunile care au obținut obiectivul. Turneele care ating limita de observare rămân în numitor. Pentru cele de șase locuri se numără doar sesiunile eligibile.
-- Proba vizuală urmărește în română și engleză deschiderea meniului, cele trei niveluri, progresul din joc și absența exercițiilor din Realizări.
+- Calibrarea folosește masa locală din cod, fără randare, la 4, 5 și 6 locuri, pe Normal și Greu. Politica Auto-play joacă rolul profilului simulat.
+- Loturile de reglaj și confirmare folosesc seed-uri distincte și același buget. Un lot separat folosește bugetul complet al aplicației.
+- Raportul arată prima ocazie, deblocarea și ferestrele de 1, 3, 6 și 12 turnee. Turneele cenzurate rămân în numitor. Obiectivele de șase locuri folosesc mesele eligibile.
+- Testul notificării simulează eșecul fiecărei scrieri. La succes verifică jocul și progresul salvat înainte de callback, apoi reîncarcă jocul și verifică deduplicarea.
+- Proba de instalare deschide Realizările pe APK-ul semnat, parcurge lista în română și engleză, caută un obiectiv și deschide regula lui. Scenariul de turneu verifică progresul paralel după redeschidere. Testele de componentă verifică identitatea rândurilor și combinațiile de căutare, nivel și stare. Măsurarea contrastului randat și proba cu font mărit sunt urmărite în [feedback](../feedback/J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md).
 
 De la rădăcina proiectului, rulați cu JDK 21, Node și PowerShell. Setați `HOLDEM_DATA_ROOT` la directorul extern de date. Dosarul de ieșire trebuie să fie nou.
 
 ```powershell
 $run = Join-Path $env:HOLDEM_DATA_ROOT 'achievement-calibration'
-.\scripts\run-achievement-calibration.ps1 -OutputDirectory $run
+.\scripts\run-live-achievement-calibration.ps1 -OutputDirectory $run
+node scripts/analyze-live-achievement-calibration.cjs $run config/j6-achievements.yaml (Join-Path $run 'objective-results.json')
 ```
 
-[Planul cohortelor](../../config/j6-achievement-calibration.yaml) · [Suita Android](../../holdem-android/app/src/test/java/ro/atf/holdem/android/GameplayAchievementsComponentTest.java)
+[Planul cohortelor](../../config/j6-live-achievement-calibration.yaml) · [Publicarea Extent](../../holdem-app/src/test/java/ro/atf/j6/release/PublishAchievementCalibrationExtent.java) · [Suita Android](../../holdem-android/app/src/test/java/ro/atf/holdem/android/GameplayAchievementsComponentTest.java)
+
+### Replay pentru catalogul extins
+
+- Catalogul candidat declară familia, ordinea în cele trei file, metrica, pragul și textele RO/EN. Pentru fiecare unitate declară cheia distinctă și proveniența necesară deciziei manuale.
+- Auditorul reface mâna și decontarea din jurnal. Expune acțiunile acceptate, câștigătorii fiecărui strat, restituirile și stivele după ce verifică rezultatul.
+- Calibrarea folosește jurnalele păstrate. Confirmarea reia configurațiile pereche pe seed-uri disjuncte. Raportul ține separat fiecare profil, fiecare rol și mesele de 4, 5 și 6 locuri.
+- Raportul arată evenimentele observate, mediana mâinii printre cei care ating pragul și ferestrele de 1, 3, 6 și 12 turnee. Ferestrele grupează aceeași poziție fizică la aceeași dimensiune de masă. Sunt o simulare de progres, iar activarea cere verificarea profilului și a provenienței manuale în aplicație.
+
+Rulați de la rădăcina proiectului după compilarea Maven. Folosiți un director extern nou pentru lotul independent și pentru raport.
+
+```powershell
+$plan = Get-Content -Raw config/j6-achievement-replay.yaml | ConvertFrom-Json
+$archive = Join-Path $env:HOLDEM_DATA_ROOT "20261107-controlled-challenges"
+$holdout = Join-Path $env:HOLDEM_DATA_ROOT "achievement-holdout"
+$report = Join-Path $env:HOLDEM_DATA_ROOT "achievement-replay.json"
+.\scripts\run-policy-cohorts.ps1 -OutputRoot $holdout -FirstSeed $plan.holdout.firstSeed `
+    -TournamentsPerSeatCount $plan.holdout.tournamentsPerSeatCount -CandidateNames $plan.holdout.style
+node --test scripts/test-achievement-replays.cjs
+node scripts/analyze-achievement-replays.cjs $archive $report $holdout
+```
+
+[Catalogul candidat](../../config/j6-achievement-expansion.yaml) · [Protocolul replay](../../config/j6-achievement-replay.yaml)
 
 ### Alegerea nivelului de test
 

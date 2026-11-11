@@ -7,6 +7,9 @@ import ro.atf.holdem.core.HandEvaluation;
 import ro.atf.holdem.core.HandRank;
 import ro.atf.holdem.core.HoldemTableViewState;
 import ro.atf.holdem.core.Street;
+import ro.atf.holdem.core.PotAward;
+
+import java.io.IOException;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,7 +25,11 @@ public class GameplayAchievementsComponentTest {
         var achievements = memory();
         var hand = settled(0, seat(80, 0, evaluation("As Kd Jh 8c 5d")),
                 seat(0, 0, evaluation("Qs Jd 9h 8c 5d")), 4);
-        achievements.recordSettled("p", "t:1", "t", 0, hand);
+        var changes = achievements.recordSettled("p", "t:1", "t", 0, hand);
+        assertTrue(changes.stream().anyMatch(change -> change.milestone().id().equals("first-pot") && change.unlocked()));
+        assertTrue(changes.stream().anyMatch(change -> change.milestone().id().equals("three-pots")
+                && change.count() == 1 && !change.unlocked()));
+        assertTrue(achievements.recordSettled("p", "t:1", "t", 0, hand).isEmpty());
 
         var easy = GameplayAchievementCatalog.forTier(GameplayAchievementCatalog.Tier.EASY);
         assertEquals(POT, easy.get(0).metric());
@@ -31,7 +38,7 @@ public class GameplayAchievementsComponentTest {
         assertEquals(1, easy.get(1).progress(achievements.counts("p")));
         assertEquals(0, easy.get(2).progress(achievements.counts("p")));
         assertEquals(1, easy.get(3).progress(achievements.counts("p")));
-        assertEquals(1, achievements.count("p", SOLE_HIGH_CARD_POT));
+        assertEquals(0, achievements.count("p", SOLE_HIGH_CARD_POT));
         assertEquals(0, achievements.count("p", TITLE));
         assertEquals(0, achievements.count("other", POT));
 
@@ -41,6 +48,40 @@ public class GameplayAchievementsComponentTest {
         assertEquals(1, achievements.count("p", SHOWDOWN));
         assertEquals(2, easy.get(3).progress(achievements.counts("p")));
         assertEquals(0, achievements.count("p", MULTIWAY_SHOWDOWN_POT));
+    }
+
+    @Test public void rowIdsFollowCatalogKeysAcrossThresholdAndLabelChanges() {
+        var first = new GameplayAchievementCatalog.Milestone("sample-pot", POT, 1, 10, false, "Rule", "Rule");
+        var adjusted = new GameplayAchievementCatalog.Milestone("sample-pot", POT, 4, 20, true, "Rule {target}", "Rule {target}");
+        assertEquals(first.rowId(), adjusted.rowId());
+
+        var rowIds = new java.util.HashSet<Long>();
+        for (var tier : GameplayAchievementCatalog.Tier.values()) {
+            for (var milestone : GameplayAchievementCatalog.forTier(tier)) {
+                assertTrue("Milestones use nonnegative row IDs", milestone.rowId() >= 0);
+                assertTrue("Unique row for " + milestone.id(), rowIds.add(milestone.rowId()));
+            }
+        }
+    }
+
+    @Test public void titleEvidenceStopsAtTheLargestTargetAcrossTiers() {
+        var medium = GameplayAchievementCatalog.forTier(GameplayAchievementCatalog.Tier.MEDIUM).get(0);
+        var hard = GameplayAchievementCatalog.forTier(GameplayAchievementCatalog.Tier.HARD).get(0);
+        assertEquals(TITLE, medium.metric());
+        assertEquals(TITLE, hard.metric());
+        assertTrue(hard.target() > medium.target());
+
+        var storage = new MemoryStorage();
+        var achievements = new GameplayAchievements(storage);
+        var finalHand = settled(0, seat(80, 0, null), seat(0, 0, null), 4);
+        for (int tournament = 0; tournament < hard.target() + 2; tournament++) {
+            String id = "title-" + tournament;
+            achievements.recordSettled("profile", id + ":1", id, 1, finalHand);
+        }
+
+        assertEquals(hard.target(), storage.read("profile").get(TITLE).size());
+        assertEquals(medium.target(), medium.progress(achievements.counts("profile")));
+        assertEquals(hard.target(), hard.progress(achievements.counts("profile")));
     }
 
     @Test public void noCreditForOpenHandRefundOrOpponentWin() {
@@ -71,19 +112,37 @@ public class GameplayAchievementsComponentTest {
                 .progress(achievements.counts("p")));
     }
 
-    @Test public void highCardRequiresShowdownAndSolePotRecipient() {
-        var highCard = evaluation("As Kd Jh 8c 5d");
-        var pair = evaluation("As Ad Jh 8c 5d");
-        var achievements = memory();
-        achievements.recordSettled("p", "t:1", "t", 0, settled(0, seat(25, 0, highCard), seat(25, 0, highCard), 4));
-        achievements.recordSettled("p", "t:2", "t", 0, settled(0, seat(50, 0, pair), seat(0, 0, null), 4));
-        achievements.recordSettled("p", "t:3", "t", 0, settled(0, seat(50, 0, null), seat(0, 0, null), 4));
-        assertEquals(3, achievements.count("p", POT));
-        assertEquals(0, achievements.count("p", SOLE_HIGH_CARD_POT));
+    @Test public void retiredCountersRemainReadableAndDoNotEarnNewCredit() {
+        var storage = new MemoryStorage();
+        storage.write("p", Map.of(SOLE_HIGH_CARD_POT, Set.of("old"), TOURNAMENT_POT, Set.of("one", "two")));
+        var achievements = new GameplayAchievements(storage);
+        var hand = settled(0, seat(80, 0, evaluation("As Kd Jh 8c 5d")), seat(0, 0, null), 4);
+        var changes = achievements.recordSettled("p", "t:1", "t", 0, hand);
+        assertTrue(changes.stream().noneMatch(change -> change.milestone().id().equals("high-card")
+                || change.milestone().id().equals("tournament-pots")));
+        assertEquals(Set.of("old"), storage.read("p").get(SOLE_HIGH_CARD_POT));
+        assertEquals(Set.of("one", "two"), storage.read("p").get(TOURNAMENT_POT));
+    }
 
-        achievements.recordSettled("p", "t:4", "t", 0, settled(0, seat(50, 0, highCard),
-                seat(0, 30, evaluation("Qs Jd 9h 8c 5d")), 4));
-        assertEquals(1, achievements.count("p", SOLE_HIGH_CARD_POT));
+    @Test public void splitAndSideCreditUseAwardedLayersAndAdvanceOncePerHand() {
+        var achievements = memory();
+        var hand = settled(0, seat(80, 0, evaluation("As Kd Jh 8c 5d")),
+                seat(40, 0, evaluation("As Kd Jh 8c 5d")), 4);
+        var unopposed = AchievementPotEvidence.from(List.of(new PotAward(30, List.of(0, 1), List.of(1)),
+                new PotAward(20, List.of(0), List.of(0))), 0);
+        achievements.recordSettled("p", "t:1", "t", 0, hand, unopposed);
+        assertEquals(0, achievements.count("p", SIDE_POT));
+        assertEquals(0, achievements.count("p", SPLIT_POT));
+
+        var contested = AchievementPotEvidence.from(List.of(new PotAward(60, List.of(0, 1), List.of(0, 1)),
+                new PotAward(30, List.of(0, 1), List.of(0, 1))), 0);
+        var changes = achievements.recordSettled("p", "t:2", "t", 0, hand, contested);
+        assertEquals(1, achievements.count("p", SIDE_POT));
+        assertEquals(1, achievements.count("p", SPLIT_POT));
+        assertEquals(List.of("split-showdown", "contested-side-pot"), changes.stream()
+                .filter(change -> change.milestone().metric() == SIDE_POT || change.milestone().metric() == SPLIT_POT)
+                .map(change -> change.milestone().id()).collect(java.util.stream.Collectors.toList()));
+        assertTrue(achievements.recordSettled("p", "t:2", "t", 0, hand, contested).isEmpty());
     }
 
     @Test public void rankingAndCombinationBoundariesFollowPokerFacts() {
@@ -96,13 +155,13 @@ public class GameplayAchievementsComponentTest {
         assertEquals(0, achievements.count("p", TITLE));
 
         var straight = settled(0, seat(50, 0, evaluation("9s 8d 7h 6c 5d")), seat(0, 0, null), 2);
-        achievements.recordSettled("p", "cash:1", null, 0, straight);
+        achievements.recordSettled("p", "t:1", "t", 0, straight);
         assertEquals(1, achievements.count("p", STRAIGHT_OR_BETTER));
         assertEquals(0, achievements.count("p", FULL_HOUSE_OR_BETTER));
         assertEquals(0, achievements.count("p", TOURNAMENT_POT));
 
         var fullHouse = settled(0, seat(50, 0, evaluation("As Ad Ah 5c 5d")), seat(0, 0, null), 2);
-        achievements.recordSettled("p", "cash:2", null, 0, fullHouse);
+        achievements.recordSettled("p", "t:2", "t", 0, fullHouse);
         assertEquals(1, achievements.count("p", FULL_HOUSE_OR_BETTER));
     }
 
@@ -118,15 +177,15 @@ public class GameplayAchievementsComponentTest {
         var hard = GameplayAchievementCatalog.forTier(GameplayAchievementCatalog.Tier.HARD);
         assertEquals(1, medium.progress(restarted.counts("p")));
         assertEquals(1, hard.get(0).progress(restarted.counts("p")));
-        assertEquals(1, restarted.count("p", TOURNAMENT_POT));
+        assertEquals(1, restarted.count("p", POT));
 
         restarted.recordSettled("p", "b:5", "b", 1, fourSeats);
         assertEquals(2, hard.get(0).progress(restarted.counts("p")));
-        assertEquals(1, hard.get(4).progress(restarted.counts("p")));
+        assertEquals(1, hard.get(2).progress(restarted.counts("p")));
         restarted.recordSettled("p", "c:9", "c", 1, sixSeats);
         restarted.recordSettled("p", "d:3", "d", 1, sixSeats);
         assertEquals(3, hard.get(0).progress(restarted.counts("p")));
-        assertEquals(2, hard.get(4).progress(restarted.counts("p")));
+        assertEquals(2, hard.get(2).progress(restarted.counts("p")));
         assertEquals(0, hard.get(1).progress(restarted.counts("p")));
     }
 
@@ -158,7 +217,7 @@ public class GameplayAchievementsComponentTest {
         while (game.hasPassiveTurn()) game.advancePassiveAction(game.turn());
     }
 
-    @Test public void existingStandaloneTableCreditsTheInstallationProfileAfterUpgrade() {
+    @Test public void trainingAndItsRestoredSessionLeaveExistingProgressUntouched() {
         LocalHoldemGame winner = null;
         for (int seed = 1; seed <= 12 && winner == null; seed++) {
             var game = new LocalHoldemGame(2, seed);
@@ -169,11 +228,12 @@ public class GameplayAchievementsComponentTest {
             if (game.view().seats().get(game.view().viewer()).potWon() > 0) winner = game;
         }
         assertNotNull("cohort must contain a cash hand won by the viewer", winner);
-        var achievements = new GameplayAchievements(new MemoryStorage(), "installed-profile");
-        achievements.recordSettled(winner);
-        achievements.recordSettled(LocalHoldemGame.restore(winner.save()));
-        assertEquals(1, achievements.count("installed-profile", POT));
-        assertEquals(0, achievements.count("local-human", POT));
+        var storage = new MemoryStorage();
+        storage.write("local-human", Map.of(POT, Set.of("legacy-training-evidence")));
+        var achievements = new GameplayAchievements(storage);
+        assertTrue(achievements.recordSettled(winner).isEmpty());
+        assertTrue(achievements.recordSettled(LocalHoldemGame.restore(winner.save())).isEmpty());
+        assertEquals(Set.of("legacy-training-evidence"), storage.read("local-human").get(POT));
     }
 
     @Test public void failedBatchCanBeRetriedWithoutPartialCredit() {
@@ -185,11 +245,54 @@ public class GameplayAchievementsComponentTest {
         assertTrue(achievements.counts("p").isEmpty());
 
         storage.failWrite = false;
-        achievements.recordSettled("p", "t:1", "t", 1, hand);
-        achievements.recordSettled("p", "t:1", "t", 1, hand);
+        assertFalse(achievements.recordSettled("p", "t:1", "t", 1, hand).isEmpty());
+        assertTrue(achievements.recordSettled("p", "t:1", "t", 1, hand).isEmpty());
         assertEquals(1, achievements.count("p", POT));
         assertEquals(1, achievements.count("p", TITLE));
         assertEquals(1, achievements.count("p", TOURNAMENT_FINISHED));
+    }
+
+    @Test public void notificationFollowsBothDurableWritesAndDoesNotRepeatOnResume() throws IOException {
+        var game = LocalHoldemGame.tournament(4, 1, 1, "profile-a");
+        playAndAdvance(game, ActionType.CALL, 20);
+        for (int street = 0; street < 3; street++) playAndAdvance(game, ActionType.CHECK, 0);
+        var checkpoint = new HoldemSessionStorage() {
+            String saved;
+            boolean fail = true;
+            @Override public String read() { return saved; }
+            @Override public void write(String state) throws IOException {
+                if (fail) throw new IOException("checkpoint unavailable");
+                saved = state;
+            }
+        };
+        var ledger = new TournamentLeaderboardStorage() {
+            @Override public String read() { return null; }
+            @Override public void write(String encoded) { throw new AssertionError("Hand is not the final result"); }
+        };
+        var storage = new MemoryStorage();
+        var sessions = new HoldemSessionRepository(checkpoint);
+        var progress = new HoldemProgressStore(sessions, new TournamentLeaderboardRepository(ledger), new GameplayAchievements(storage));
+        var notices = new java.util.ArrayList<List<GameplayAchievements.Change>>();
+        assertThrows(IOException.class, () -> progress.checkpoint(game, false, "Profile", notices::add));
+        assertTrue(storage.read("profile-a").isEmpty());
+        assertTrue(notices.isEmpty());
+
+        checkpoint.fail = false;
+        storage.failWrite = true;
+        assertThrows(IllegalStateException.class, () -> progress.checkpoint(game, false, "Profile", notices::add));
+        assertTrue(notices.isEmpty());
+        assertTrue(sessions.load().hasCheckpoint());
+
+        storage.failWrite = false;
+        progress.checkpoint(game, false, "Profile", changes -> {
+            assertNotNull(checkpoint.saved);
+            assertEquals(1, storage.read("profile-a").get(SHOWDOWN).size());
+            notices.add(changes);
+        });
+        var restarted = new HoldemProgressStore(sessions, new TournamentLeaderboardRepository(ledger), new GameplayAchievements(storage));
+        restarted.checkpoint(sessions.load().resumed().game(), false, "Profile", notices::add);
+        assertEquals(1, notices.size());
+        assertTrue(notices.get(0).stream().anyMatch(change -> change.milestone().id().equals("first-showdown")));
     }
 
     @Test public void allCatalogEntriesUnlockAtTheirOwnThresholdInPublishedOrder() {
@@ -197,11 +300,11 @@ public class GameplayAchievementsComponentTest {
                 "first-pot:POT:1", "first-showdown:SHOWDOWN:1", "big-blind-pot:BIG_BLIND_POT:1",
                 "three-pots:POT:3", "finish-tournament:TOURNAMENT_FINISHED:1"));
         assertMilestones(GameplayAchievementCatalog.Tier.MEDIUM, List.of(
-                "first-title:TITLE:1", "tournament-pots:TOURNAMENT_POT:5", "multiway-showdowns:MULTIWAY_SHOWDOWN_POT:3",
+                "first-title:TITLE:1", "split-showdown:SPLIT_POT:1", "contested-side-pot:SIDE_POT:1",
+                "multiway-showdowns:MULTIWAY_SHOWDOWN_POT:1",
                 "straight-or-better:STRAIGHT_OR_BETTER:2", "tournament-podiums:PODIUM:2"));
         assertMilestones(GameplayAchievementCatalog.Tier.HARD, List.of(
-                "three-titles:TITLE:3", "high-card:SOLE_HIGH_CARD_POT:1", "full-house-or-better:FULL_HOUSE_OR_BETTER:2",
-                "multiway-showdown-series:MULTIWAY_SHOWDOWN_POT:12", "six-seat-titles:SIX_SEAT_TITLE:2"));
+                "three-titles:TITLE:3", "full-house-or-better:FULL_HOUSE_OR_BETTER:2", "six-seat-titles:SIX_SEAT_TITLE:2"));
     }
 
     private static void assertMilestones(GameplayAchievementCatalog.Tier tier, List<String> expected) {
@@ -214,6 +317,8 @@ public class GameplayAchievementsComponentTest {
             assertEquals(rule.id(), rule.target() - 1, rule.progress(Map.of(rule.metric(), rule.target() - 1)));
             assertEquals(rule.id(), rule.target(), rule.progress(Map.of(rule.metric(), rule.target())));
             assertEquals(rule.id(), rule.target(), rule.progress(Map.of(rule.metric(), rule.target() + 1)));
+            assertFalse(rule.rule(true).contains("{target}"));
+            assertFalse(rule.rule(false).contains("{target}"));
         }
     }
 
@@ -233,7 +338,7 @@ public class GameplayAchievementsComponentTest {
                 List.of(), List.of(runnerUp, third, winner, folded), List.of());
         for (int hand = 2; hand <= 14; hand++) achievements.recordSettled("p", "a:" + hand, "a", 0, multiway);
         assertEquals(1, achievements.count("p", BIG_BLIND_POT));
-        assertEquals(12, achievements.count("p", MULTIWAY_SHOWDOWN_POT));
+        assertEquals(1, achievements.count("p", MULTIWAY_SHOWDOWN_POT));
         assertEquals(2, achievements.count("p", STRAIGHT_OR_BETTER));
         assertEquals(2, achievements.count("p", FULL_HOUSE_OR_BETTER));
     }

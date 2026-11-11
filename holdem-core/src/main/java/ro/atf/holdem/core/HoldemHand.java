@@ -20,6 +20,7 @@ public final class HoldemHand {
     private int cursor, actor, price, increment;
     private int[] awards;
     private int[] potWon, returned;
+    private List<PotAward> potAwards = List.of();
     private HandEvaluation[] evaluations;
     private Street street = Street.PREFLOP;
 
@@ -89,6 +90,7 @@ public final class HoldemHand {
     public List<Integer> contributions() { return List.copyOf(Arrays.stream(paid).boxed().collect(Collectors.toList())); }
     public List<Card> board() { return List.copyOf(board); }
     public List<String> history() { return List.copyOf(history); }
+    public List<PotAward> potAwards() { return potAwards; }
 
     public HoldemObservation observeActor() {
         return observeActor(List.of());
@@ -240,6 +242,7 @@ public final class HoldemHand {
         awards = settlement.awards();
         potWon = settlement.potWon();
         returned = settlement.returned();
+        potAwards = settlement.layers();
         for (int i = 0; i < stacks.length; i++) stacks[i] += awards[i];
         history.addAll(settlement.journal());
         history.add((showdown ? "SHOWDOWN " : "FOLD_WIN ") + Arrays.toString(awards));

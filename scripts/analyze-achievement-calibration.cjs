@@ -151,13 +151,18 @@ for (const run of plan.runs) {
 }
 const result = plan.runs.filter(run => !stage || run.stage === stage).map(run => {
   const {completed, hands, sessions} = readRun(run);
-  const measures = Object.entries(catalog.tiers).flatMap(([tier, rules]) => rules.map(rule => ({
-    tier, ...rule, ...summarize(sessions, rule.metric, rule.target),
-    bySeatCount: Object.fromEntries(plan.seatCounts.filter(seats => rule.metric !== 'SIX_SEAT_TITLE' || seats === 6)
-      .map(seats => [seats, summarize(sessions.filter(s => s.seats === seats), rule.metric, rule.target)])),
-    byPolicy: Object.fromEntries([...new Set(sessions.map(s => s.policy))].sort()
-      .map(policy => [policy, summarize(sessions.filter(s => s.policy === policy), rule.metric, rule.target)])),
-  })));
+  const measures = Object.entries(catalog.tiers).flatMap(([tier, rules]) => rules.map(rule => {
+    if (['SIDE_POT', 'SPLIT_POT'].includes(rule.metric)) {
+      return {tier, ...rule, evidence:'unavailable', reason:'Legacy CSV omits the awarded pot layers.'};
+    }
+    return {
+      tier, ...rule, ...summarize(sessions, rule.metric, rule.target),
+      bySeatCount: Object.fromEntries(plan.seatCounts.filter(seats => rule.metric !== 'SIX_SEAT_TITLE' || seats === 6)
+        .map(seats => [seats, summarize(sessions.filter(s => s.seats === seats), rule.metric, rule.target)])),
+      byPolicy: Object.fromEntries([...new Set(sessions.map(s => s.policy))].sort()
+        .map(policy => [policy, summarize(sessions.filter(s => s.policy === policy), rule.metric, rule.target)])),
+    };
+  }));
   return {...run, completed, censored: run.count - completed, hands, playerSessions: sessions.length, measures,
     previousRules: Object.fromEntries(Object.entries(legacy).map(([id, [metric, target]]) =>
       [id, summarize(sessions, metric, target)]))};

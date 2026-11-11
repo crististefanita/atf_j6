@@ -43,7 +43,7 @@ flowchart LR
 | Adaptorul jocului | Extrage fapte din rezultatul confirmat: câștig, clasare, regulă de departajare ori contextul unei acțiuni. |
 | Catalogul | Asociază faptele cu un ID stabil, nivel, grup, ordine, prag și text localizat. |
 | Stocarea | Separă profilurile și deduplică în fiecare obiectiv după cheia evenimentului. Salvează împreună actualizările produse de același eveniment. |
-| Interfața | Arată criteriul și progresul, inclusiv pentru obiectivele încă neobținute. |
+| Interfața | `card-table-ui` afișează lista, detaliul și panoul de progres. Adaptorul jocului transmite rânduri cu chei stabile, textele localizate și modificările confirmate. |
 
 - Un rezultat poate satisface mai multe obiective. O victorie poate avansa simultan primul câștig și obiectivul cu trei câștiguri.
 - Redeschiderea aceluiași rezultat nu avansează din nou niciun obiectiv. Separă identitatea contului de numele afișat.
@@ -80,6 +80,16 @@ groups:
 Respinge ID-urile duplicate, metricile necunoscute, pragurile invalide și textele lipsă. Catalogul descrie criteriile; evaluatorii rămân acoperiți de teste de domeniu.
 
 </details>
+
+## Cum adaugi o realizare în YAML
+
+1. Alege evenimentul autoritar. Un showdown și un pariu acceptat sunt fapte diferite. O carte comună afișată automat poate exista fără o decizie pe runda respectivă.
+2. Alege cheia distinctă potrivită. O realizare de mână primește credit o singură dată, chiar dacă jucătorul câștigă mai multe poturi în aceeași mână.
+3. Scrie criteriul în ambele limbi și folosește pragul configurat în text. Păstrează ID-ul când schimbi ordinea sau traducerea.
+4. Verifică rezultatul apropiat care trebuie respins. Pentru o acțiune pe două runde, două pariuri pe același flop formează o singură rundă.
+5. Estimează dificultatea din progresul pe sesiuni și oportunități. Rulează confirmarea pe distribuții distincte de cele folosite la reglaj.
+
+Pentru Hold’em, familiile ordonează învățarea în interiorul nivelului. Completează criteriul cu proveniența manuală a mâinii sau a turneului, conform unității declarate. [Catalogul candidat](../../../config/j6-achievement-expansion.yaml) · [Strategia de replay](../../testing/TEST_STRATEGY.md#replay-pentru-catalogul-extins)
 
 ## Acceptanță înainte de lansare
 

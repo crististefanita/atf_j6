@@ -426,6 +426,66 @@ class HoldemRulesTest {
                 .toList());
     }
 
+    @Test void shortPostedBlindsSplitThePotAndReturnOnlyTheUnmatchedBigBlind() {
+        // Six-seat paired tournament 20261127, hand 20.
+        var initial = List.of(10, 130, 0, 0, 4620, 40);
+        var hand = new HoldemHand(20, initial, 5, new BlindLevel(100, 200, 200),
+                HoldemHand.shuffledDeck(-8573450631867781592L));
+
+        assertEquals(List.of(10, 130, 0, 0, 0, 0), hand.contributions());
+        assertEquals(4, hand.actor());
+        hand.act(4, FOLD, 0);
+        assertEquals(5, hand.actor());
+        hand.act(5, FOLD, 0);
+
+        assertEquals(Street.COMPLETE, hand.street());
+        assertEquals(cards("As 5c 3c 8h 4d"), hand.board());
+        assertEquals(initial, hand.stacks());
+        assertEquals(List.of(
+                "POT cap=10 amount=20 eligible=[0, 1] winners=[0, 1]",
+                "RETURN seat=1 amount=120",
+                "SHOWDOWN [10, 130, 0, 0, 0, 0]"), hand.history().stream()
+                .filter(event -> event.startsWith("POT ") || event.startsWith("RETURN ") || event.startsWith("SHOWDOWN "))
+                .toList());
+
+        var seats = hand.viewFor(1).seats();
+        assertEquals(10, seats.get(0).potWon());
+        assertEquals(0, seats.get(0).returned());
+        assertEquals(10, seats.get(1).potWon());
+        assertEquals(120, seats.get(1).returned());
+        assertFalse(seats.get(2).dealtCards());
+        assertFalse(seats.get(3).dealtCards());
+    }
+
+    @Test void oddMainPotChipFollowsButtonAcrossAnEliminatedSeat() {
+        // Four-seat stress tournament 20261229, hand 5.
+        var hand = new HoldemHand(5, List.of(1095, 20, 0, 5), 1, new BlindLevel(25, 50, 65),
+                HoldemHand.shuffledDeck(1915085129736696406L));
+        assertEquals(1, hand.actor());
+        hand.act(1, CALL, 20);
+
+        assertEquals(Street.COMPLETE, hand.street());
+        assertEquals(cards("8d As Th Ad 4h"), hand.board());
+        assertEquals(List.of(50, 20, 0, 5), hand.contributions());
+        assertEquals(List.of(1075, 37, 0, 8), hand.stacks());
+        assertEquals(List.of(new PotAward(15, List.of(3, 0, 1), List.of(3, 1)),
+                new PotAward(30, List.of(0, 1), List.of(1))), hand.potAwards());
+        assertEquals(List.of(
+                "POT cap=5 amount=15 eligible=[3, 0, 1] winners=[3, 1]",
+                "POT cap=20 amount=30 eligible=[0, 1] winners=[1]",
+                "RETURN seat=0 amount=30",
+                "SHOWDOWN [30, 37, 0, 8]"), hand.history().stream()
+                .filter(event -> event.startsWith("POT ") || event.startsWith("RETURN ") || event.startsWith("SHOWDOWN "))
+                .toList());
+
+        var seats = hand.viewFor(1).seats();
+        assertEquals(seats.get(1).handEvaluation().score(), seats.get(3).handEvaluation().score());
+        assertEquals(37, seats.get(1).potWon());
+        assertEquals(8, seats.get(3).potWon());
+        assertEquals(0, seats.get(0).potWon());
+        assertEquals(30, seats.get(0).returned());
+    }
+
     @Test void evaluatorUsesBestFiveAndTreatsWheelAsFiveHigh() {
         var board = cards("As Ks Qs Js Ts");
         var first = new ArrayList<>(cards("2c 3d"));

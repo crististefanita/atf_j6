@@ -57,7 +57,7 @@ public final class HoldemActivity extends Activity {
     private boolean tournamentSetup;
     private boolean showingResult;
     private boolean aiBusy;
-    private boolean autoFinishingHand;
+    private final HandAutoPlay autoPlay = new HandAutoPlay();
     private boolean settlementPending;
     private HoldemSessionRepository.Resumed deferredContinuation;
     // The first screen is built in onCreate; its first-frame work runs after Android resumes the Activity.
@@ -157,6 +157,7 @@ public final class HoldemActivity extends Activity {
 
     @Override protected void onPause() {
         activityResumed = false;
+        autoPlay.setEnabled(false);
         achievementProgressGame = null;
         achievementProgress = List.of();
         if (game != null) {
@@ -167,10 +168,14 @@ public final class HoldemActivity extends Activity {
         stopSettlement = () -> { };
         settlementPending = false;
         mainHandler.removeCallbacksAndMessages(null);
+        cancelPendingAi();
+        super.onPause();
+    }
+
+    private void cancelPendingAi() {
         if (aiTask != null) aiTask.cancel(true);
         aiTask = null;
         aiBusy = false;
-        super.onPause();
     }
 
     // API 33 and later dispatch through the registered platform callback.
@@ -190,10 +195,8 @@ public final class HoldemActivity extends Activity {
         stopSettlement.run();
         stopSettlement = () -> { };
         settlementPending = false;
-        if (aiTask != null) aiTask.cancel(true);
-        aiTask = null;
-        aiBusy = false;
-        autoFinishingHand = false;
+        cancelPendingAi();
+        autoPlay.setEnabled(false);
         if (deferredContinuation != null) {
             resumableGame = deferredContinuation.game();
             deferredContinuation = null;
@@ -247,6 +250,7 @@ public final class HoldemActivity extends Activity {
 
     private void showResumed(HoldemSessionRepository.Resumed resumed) {
         deferredContinuation = null;
+        autoPlay.setEnabled(false);
         game = resumed.game();
         resumableGame = game;
         game.resumeClock();
@@ -323,7 +327,7 @@ public final class HoldemActivity extends Activity {
         configuring = false;
         showingResult = false;
         aiBusy = false;
-        autoFinishingHand = false;
+        autoPlay.setEnabled(false);
         setupBlindIntervalPicker = null;
         setupDifficultyPicker = null;
         setupWinChance = null;
@@ -477,8 +481,9 @@ public final class HoldemActivity extends Activity {
         var frame = current.view();
         var turn = current.turn();
         boolean completed = frame.street() == Street.COMPLETE;
-        if (completed) autoFinishingHand = false;
-        boolean automatedHumanTurn = autoFinishingHand && frame.actor() == frame.viewer() && !completed;
+        if (!HoldemTablePresentation.canDelegate(frame)) autoPlay.setEnabled(false);
+        long delegationRevision = autoPlay.revision();
+        boolean automatedHumanTurn = autoPlay.isEnabled() && frame.actor() == frame.viewer() && !completed;
         settlementPending = completed;
         var names = displayNames(current);
         var labels = table.show(frame, names, current, this::home, () -> {
@@ -494,7 +499,7 @@ public final class HoldemActivity extends Activity {
                 Toast.makeText(this, text(R.string.checkpoint_error), Toast.LENGTH_LONG).show();
             }
         }, move -> {
-            if (!activityResumed || sceneRevision != renderedScene || game != current) return false;
+            if (!activityResumed || sceneRevision != renderedScene || game != current || autoPlay.isEnabled()) return false;
             try {
                 current.play(turn, move);
             } catch (IllegalArgumentException rejected) {
@@ -503,10 +508,13 @@ public final class HoldemActivity extends Activity {
             saveCheckpoint(current, false);
             showHand();
             return true;
-        }, automatedHumanTurn, () -> {
-            if (aiBusy || game != current || !current.turn().equals(turn) || settlementPending) return;
-            autoFinishingHand = true;
-            showHand();
+        }, autoPlay.isEnabled(), checked -> {
+            if (!activityResumed || sceneRevision != renderedScene || game != current
+                    || !current.turn().equals(turn) || settlementPending || !HoldemTablePresentation.canDelegate(frame)) return;
+            autoPlay.change(checked, frame.actor() == frame.viewer(), () -> {
+                cancelPendingAi();
+                showHand();
+            });
         });
         if (completed) showAchievementProgress(current, labels.achievementSlot());
         if (labels.winChance() != null) updateWinChance(table, labels.winChance(), HoldemWinChance.from(frame), renderedScene);
@@ -533,7 +541,7 @@ public final class HoldemActivity extends Activity {
                 () -> activityResumed && sceneRevision == renderedScene
                         && !isFinishing() && !isDestroyed() && game == current
                         && current.turn().equals(turn)
-                        && (current.hasPassiveTurn() || (autoFinishingHand && current.view().actor() == current.view().viewer())),
+                        && (current.hasPassiveTurn() || (automatedHumanTurn && autoPlay.accepts(delegationRevision))),
                 (action, delay) -> mainHandler.postDelayed(action, delay),
                 () -> {
                     boolean opponentTurn = current.hasPassiveTurn();
@@ -548,7 +556,7 @@ public final class HoldemActivity extends Activity {
                             android.util.Log.e("HoldemLab", "Automated action failed; current checkpoint retained", failure);
                             Toast.makeText(this, text(R.string.ai_action_error), Toast.LENGTH_LONG).show();
                         }
-                    } else if ((opponentTurn || (autoFinishingHand && automatedHumanTurn)) && !aiBusy) {
+                    } else if ((opponentTurn || (automatedHumanTurn && autoPlay.accepts(delegationRevision))) && !aiBusy) {
                         aiBusy = true;
                         aiTask = aiExecutor.submit(() -> {
                             LocalHoldemGame.Move suggestion = null;
@@ -565,14 +573,18 @@ public final class HoldemActivity extends Activity {
                                         || !current.turn().equals(turn)) return;
                                 aiBusy = false;
                                 aiTask = null;
+                                if (!opponentTurn && !autoPlay.accepts(delegationRevision)) return;
                                 if (error != null || result == null) {
-                                    autoFinishingHand = false;
                                     Toast.makeText(this, text(R.string.ai_action_error), Toast.LENGTH_LONG).show();
+                                    if (!opponentTurn) {
+                                        autoPlay.setEnabled(false);
+                                        showHand();
+                                    }
                                     return;
                                 }
                                 try {
                                     if (opponentTurn) current.playOpponent(turn, result);
-                                    else current.play(turn, result);
+                                    else current.playDelegated(turn, result);
                                 } catch (IllegalArgumentException stale) {
                                     return;
                                 }

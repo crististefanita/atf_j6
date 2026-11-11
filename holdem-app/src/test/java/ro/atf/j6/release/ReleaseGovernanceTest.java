@@ -249,6 +249,27 @@ class ReleaseGovernanceTest {
                         + check.expected() + " actual " + check.actual()).toList().toString());
     }
 
+    @Test void commonAndroidUiChangesSelectBothAchievementContracts() throws Exception {
+        Path root = projectRoot();
+        JsonNode inventory = JSON.readTree(root.resolve("config/release-test-suites.json").toFile());
+        String manifest = "holdem-android/ui-library/provenance.json";
+        var selected = new java.util.HashSet<String>();
+        for (JsonNode suite : inventory.required("android")) {
+            if (!"holdem-android".equals(suite.path("module").asText())) continue;
+            for (JsonNode path : suite.path("impactPaths")) {
+                if (manifest.equals(path.asText())) selected.add(suite.path("testClass").asText());
+            }
+        }
+        var checks = new ArrayList<AtfAssertion>();
+        for (String name : List.of("GameplayAchievementsComponentTest", "GameplayAchievementBrowserComponentTest")) {
+            String fullName = "ro.atf.holdem.android." + name;
+            add(checks, "Shared UI provenance selects " + name, "selected",
+                    selected.contains(fullName) ? "selected" : "missing");
+        }
+        publish(root, "J6SharedUiImpactGovernance", "Shared UI adoption selects achievement contracts", checks);
+        assertTrue(checks.stream().allMatch(AtfAssertion::passed), checks::toString);
+    }
+
     @Test void releaseRunnerKeepsComponentAndNativeE2eExtentReportsSeparate() throws Exception {
         Path root = projectRoot();
         String runner = Files.readString(root.resolve("scripts/Build-HoldemRelease.ps1"));

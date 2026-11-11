@@ -17,7 +17,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 - `Istoric pariuri` deschide lista cronologică a mâinii, cu strada și contribuția cumulată pentru fiecare mutare. Istoricul poate fi consultat și după decontare, până la următoarea distribuire.
 - În configurarea unui turneu, bifa „Arată șansa mea de câștig” activează indicatorul din antet. Alegerea se păstrează cu turneul salvat și pornește debifată pentru un turneu nou. Indicatorul arată șansa estimată de a câștiga singur mâna, pe baza cărților proprii, a board-ului și a numărului de adversari rămași. Estimarea folosește 256 de eșantioane cu mâini adverse necunoscute, pe un worker separat de AI. După fold nu se afișează procent.
 - Butoanele de decizie au fețe vizuale reduse și ținte de atingere de cel puțin 48 dp. Închiderea editorului Raise revine la acțiunile mesei. Tastatura se deschide când este selectat câmpul sumei.
-- Coach-ul oferă o recomandare locală. **Lasă AI-ul** sau **Let AI play**, după limba aleasă, preia mâna curentă prin acțiuni validate de motor.
+- Coach-ul oferă o recomandare locală. Bifa **Automat** sau **Auto play** din antet deleagă deciziile locului uman în mâna curentă. Debifarea revocă decizia locală încă neaplicată. În tura unui adversar, bifa stabilește cum va fi jucată următoarea tură proprie, iar adversarul își continuă mutarea.
 - Masa rezervă spațiu pentru mesaje, comenzi și marcajul actorului. La schimbarea turei, potul, cărțile, chenarele și numele își păstrează poziția, inclusiv când masa este derulată.
 - Profilul, limba și o sesiune întreruptă pot fi reluate din meniul principal.
 
@@ -34,10 +34,19 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 - Stivele se păstrează între mâinile turneului; dealerul și blindurile se mută numai printre locurile eligibile.
 - Clasamentul local înregistrează turneul după salvarea stării terminale. ID-ul turneului împiedică punctarea repetată. Pornirea unei alte partide verifică întâi că rezultatul anterior a intrat în registru. Rândul jucătorului afișează numele curent al profilului pentru același ID, cu rangul, punctele și numărul de turnee deja înregistrate.
 - În chenare, valoarea are mai mult contrast decât eticheta. Când spațiul măsurat nu ajunge pentru o linie, eticheta rămâne întreagă deasupra sumei. Chenarul oferă un singur punct de focus pentru nume, rol, sume și starea jucătorului.
-- Fiecare acțiune acceptată se salvează într-un checkpoint privat, cu locul fizic al actorului și ordinea replay-ului.
+- Fiecare acțiune acceptată se salvează într-un checkpoint privat, cu locul fizic al actorului, proveniența și ordinea replay-ului. Checkpoint-urile mai vechi se pot reda cu proveniența necunoscută.
 - La redeschidere, motorul reconstruiește și revalidează istoricul înainte de afișarea mesei. Se reiau mâna, turneul sau rezultatul confirmat.
 - O comandă acceptată în timpul decontării salvează direct următoarea mână sau rezultatul. Efectul poate amâna afișarea până la final. După pauză ori recreare se afișează destinația deja salvată, cu aceeași identitate de turneu.
-- Suspendarea invalidează callback-urile UI și oprește ceasul turneului; revenirea îl continuă din timpul salvat.
+- Suspendarea invalidează callback-urile UI, oprește delegarea și pune pe pauză ceasul turneului. Revenirea continuă ceasul din timpul salvat. Bifa pornește debifată și la o mână nouă sau la reluarea unei sesiuni.
+
+## Componente Android comune
+
+| Componentă | Ce oferă biblioteca | Ce decide Hold’em |
+|---|---|---|
+| Antetul | Bifă nativă, țintă de minimum 48 dp și mutare sub titlu când spațiul cere | Titlul fix al mâinii, etapa și șansa pe rândul separat, disponibilitatea delegării |
+| Realizările | Lista grupată, progresul vizual, detaliile, starea listei și notificările | Catalogul din YAML, eligibilitatea, creditul pe profil și filtrele pokerului |
+
+[Proveniența pachetelor Android](ui-library/provenance.json) · [Contractul Realizărilor](../docs/requirements/PRODUCT_REQUIREMENTS.md#realizări)
 
 ## Prezentarea mesei
 
@@ -68,17 +77,19 @@ gradle.beforeProject { project ->
 }
 "@ | Set-Content -Encoding utf8 $init
 .\gradlew.bat --no-daemon -I $init `
-    :app:testSanityUnitTest :engine:test :app:lintDebug :app:assembleDebug
+    :app:testSanityUnitTest :app:lintDebug :app:assembleDebug
 ```
 
-- `testSanityUnitTest` și `engine:test` verifică componentele JVM fără cheie de release.
+- `testSanityUnitTest` verifică adaptorul Android fără cheie de release. Testele motorului rulează prin Maven în `holdem-core` și `holdem-ai`.
 - `lintDebug` și `assembleDebug` verifică build-ul local; nu califică APK-ul de distribuție.
 - `sanity` și `release` păstrează verificarea cheii private. Acceptanța lor este descrisă în [procesul de release](../docs/release/ATF_Release.md) și în [catalogul versiunilor](../release/README.md).
 - Raportarea și APK-urile intermediare rămân în rădăcina temporară configurată.
 
 ### Geometria mesei în timpul mâinii
 
-Rulați componenta nativă cu `scripts/run-holdem-android-sanity.ps1 -Mode table-geometry` și cu `-GeometryProfile device`, `short` sau `tall`. Folosiți APK-urile `sanity` și `sanityAndroidTest` din dosarul extern de build, transmis prin `-RunRoot`. Runnerul rezervă emulatorul și restaurează setările ecranului.
+- Rulați `scripts/run-holdem-android-sanity.ps1 -Mode table-geometry` cu `-GeometryProfile device`, `short`, `phone`, `tall` sau `wide`. Profilurile forțate acoperă 320/360/432/600 dp și font la 100/150/200%.
+- Transmiteți prin `-RunRoot` dosarul extern cu APK-urile `sanity` și `sanityAndroidTest`. Runnerul rezervă emulatorul și restaurează setările ecranului.
+- Proba compară poziția titlului, a bifei, a rândului cu etapa, a potului, a board-ului, a cărților și a chenarelor după schimbări de actor, pariuri și etape. Verifică și ținta tactilă a bifei, descrierea stării și comenzile manuale după debifare.
 
 Proba măsoară chenarele, etichetele, potul și cărțile în pixeli la mese de 2, 4, 5 și 6 locuri, în română și engleză. Schimbă separat actorul și starea mâinii, apoi verifică poziția mesei derulate la următoarea tură. Rezultatele apar în `native.json` pentru fiecare profil.
 

@@ -14,7 +14,7 @@ import java.util.List;
 /** Versioned, bounded checkpoint encoding; engine replay remains the final integrity check. */
 final class HoldemSessionCodec {
     private static final int MAGIC = 0x484C534A;
-    private static final int SCHEMA = 4;
+    private static final int SCHEMA = 5;
     private static final int MAX_ENCODED_CHARS = 4_000_000;
     private static final int MAX_ROUNDS = 20_000;
     private static final int MAX_ACTIONS_PER_ROUND = 2_000;
@@ -52,6 +52,7 @@ final class HoldemSessionCodec {
                         output.writeInt(action.actor());
                         output.writeInt(action.move().action().ordinal());
                         output.writeInt(action.move().amount());
+                        output.writeByte(action.source().ordinal());
                     }
                 }
             }
@@ -91,6 +92,7 @@ final class HoldemSessionCodec {
                 var startTimes = new ArrayList<Long>(roundCount);
                 var rounds = new ArrayList<List<LocalHoldemGame.Action>>(roundCount);
                 int totalActions = 0;
+                var sources = LocalHoldemGame.ActionSource.values();
                 for (int round = 0; round < roundCount; round++) {
                     startTimes.add(input.readLong());
                     int actionCount = input.readInt();
@@ -102,10 +104,12 @@ final class HoldemSessionCodec {
                         int actor = input.readInt();
                         int actionOrdinal = input.readInt();
                         int amount = input.readInt();
+                        int source = schema >= 5 ? input.readUnsignedByte() : LocalHoldemGame.ActionSource.UNKNOWN.ordinal();
                         if (actor < 0 || actor >= seats || actionOrdinal < 0 || actionOrdinal >= ActionType.values().length || amount < 0)
                             throw new IllegalArgumentException("Invalid checkpoint action");
+                        if (source >= sources.length) throw new IllegalArgumentException("Invalid checkpoint action source");
                         actions.add(new LocalHoldemGame.Action(actor,
-                                new LocalHoldemGame.Move(ActionType.values()[actionOrdinal], amount)));
+                                new LocalHoldemGame.Move(ActionType.values()[actionOrdinal], amount), sources[source]));
                     }
                     rounds.add(List.copyOf(actions));
                 }

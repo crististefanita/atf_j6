@@ -43,6 +43,11 @@ final class HoldemTablePresentation {
         return Math.max(ACTION_ROWS, (legalActions + 1) / 2);
     }
 
+    static boolean canDelegate(HoldemTableViewState frame) {
+        var viewer = frame.seats().get(frame.viewer());
+        return frame.street() != Street.COMPLETE && !viewer.folded() && viewer.stack() > 0;
+    }
+
     static int chipFieldDigits(List<HoldemTableViewState.Seat> seats) {
         long chips = 0;
         for (var seat : seats) chips += (long) seat.stack() + seat.contributed();

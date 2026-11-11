@@ -30,6 +30,46 @@ public final class HoldemSessionRepositoryComponentTest {
         assertEquals("The visible frame, stacks, actor and cards are deterministic", game.view(), restored.resumed().game().view());
         assertEquals("Automated turns resume as automated turns", game.hasPassiveTurn(), restored.resumed().game().hasPassiveTurn());
         assertEquals("Exactly the accepted events survive", 2, restored.resumed().game().save().rounds().get(0).size());
+        assertEquals(List.of(LocalHoldemGame.ActionSource.MANUAL, LocalHoldemGame.ActionSource.OPPONENT),
+                restored.resumed().game().save().rounds().get(0).stream().map(LocalHoldemGame.Action::source).toList());
+    }
+
+    @Test public void delegatedDecisionInAnEarlierHandSurvivesCheckpointReplay() throws Exception {
+        var game = LocalHoldemGame.tournament(4, 72);
+        game.playDelegated(game.turn(), new LocalHoldemGame.Move(ActionType.FOLD, 0));
+        while (game.hasPassiveTurn()) game.advancePassiveAction(game.turn());
+        assertEquals(Street.COMPLETE, game.view().street());
+        game.nextHand();
+        var repository = new HoldemSessionRepository(new MemoryStorage());
+        repository.save(game, false);
+        var restored = repository.load().resumed().game();
+        assertEquals(game.view(), restored.view());
+        assertEquals(2, restored.save().rounds().size());
+        assertEquals(LocalHoldemGame.ActionSource.AUTO_PLAY, restored.save().rounds().get(0).get(0).source());
+        assertEquals(game.save().rounds(), restored.save().rounds());
+    }
+
+    @Test public void schemaFourHumanDecisionResumesWithUnknownSource() {
+        var game = LocalHoldemGame.tournament(4, 72);
+        game.play(game.turn(), new LocalHoldemGame.Move(ActionType.FOLD, 0));
+        var checkpoint = HoldemSessionCodec.encode(new HoldemSessionCodec.Checkpoint(game.save(), false));
+        var base64 = java.util.Base64.getUrlDecoder().decode(checkpoint);
+        byte[] legacy = java.util.Arrays.copyOf(base64, base64.length - 1);
+        java.nio.ByteBuffer.wrap(legacy).putInt(4, 4);
+        var restored = LocalHoldemGame.restore(HoldemSessionCodec.decode(
+                java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(legacy)).game());
+        assertEquals(game.view(), restored.view());
+        assertEquals(LocalHoldemGame.ActionSource.UNKNOWN, restored.save().rounds().get(0).get(0).source());
+    }
+
+    @Test public void replayRejectsOpponentSourceOnTheHumanSeat() {
+        var game = LocalHoldemGame.tournament(4, 72);
+        game.play(game.turn(), new LocalHoldemGame.Move(ActionType.FOLD, 0));
+        var checkpoint = HoldemSessionCodec.encode(new HoldemSessionCodec.Checkpoint(game.save(), false));
+        var encoded = java.util.Base64.getUrlDecoder().decode(checkpoint);
+        encoded[encoded.length - 1] = (byte) LocalHoldemGame.ActionSource.OPPONENT.ordinal();
+        var saved = HoldemSessionCodec.decode(java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(encoded)).game();
+        assertThrows(IllegalArgumentException.class, () -> LocalHoldemGame.restore(saved));
     }
 
     @Test public void truncatedOrEngineInvalidCheckpointIsReportedAndPreservedForDiagnosis() throws Exception {

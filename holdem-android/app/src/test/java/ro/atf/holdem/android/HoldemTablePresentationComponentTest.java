@@ -14,6 +14,20 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 public final class HoldemTablePresentationComponentTest {
+    @Test public void delegationIsAvailableAcrossTurnsAndStopsWhenTheViewerHasNoDecisionLeft() {
+        var folded = new LocalHoldemGame(4, 72);
+        assertTrue(HoldemTablePresentation.canDelegate(folded.view()));
+        folded.play(folded.turn(), new LocalHoldemGame.Move(ActionType.FOLD, 0));
+        assertTrue(folded.hasPassiveTurn());
+        assertFalse(HoldemTablePresentation.canDelegate(folded.view()));
+
+        var allIn = new LocalHoldemGame(4, 72);
+        var option = allIn.view().legalActions().stream().filter(action -> action.type() == ActionType.ALL_IN)
+                .findFirst().orElseThrow();
+        allIn.play(allIn.turn(), new LocalHoldemGame.Move(option.type(), option.amount()));
+        assertFalse(HoldemTablePresentation.canDelegate(allIn.view()));
+    }
+
     @Test public void measuredViewportFitsCardsAtTheLargestScaleSupportedByTheBudget() {
         assertEquals(100, HoldemTablePresentation.fitCardScale(626, 570, 510));
         assertEquals(100, HoldemTablePresentation.fitCardScale(570, 570, 510));

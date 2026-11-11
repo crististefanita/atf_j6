@@ -2,7 +2,7 @@
 param(
     [Parameter(Mandatory)][string]$RunRoot,
     [ValidateSet('tournament','release-smoke','hard-six','settlement-award','settlement-multi-award','settlement-static-award','settlement-compact-award','settlement-resume','leaderboard-settlement','leaderboard-profile-restart','seat-metrics','table-geometry')][string]$Mode = 'tournament',
-    [ValidateSet('device','short','tall')][string]$GeometryProfile = 'device',
+    [ValidateSet('device','short','phone','tall','wide')][string]$GeometryProfile = 'device',
     [switch]$UseReleaseForGeometry,
     [string]$Serial = '127.0.0.1:5555',
     [string]$Sdk = 'C:\tools\whist-android-sdk'
@@ -152,11 +152,17 @@ try {
         }
         $width = [int]$physicalWidth.Groups[1].Value
         if ($overrideGeometry) {
-            $aspect = if ($GeometryProfile -eq 'short') { 1.25 } else { 2.4 }
-            $targetDp = if ($GeometryProfile -eq 'short') { 320 } else { 432 }
+            $geometry = switch ($GeometryProfile) {
+                'short' { @{width=320;aspect=1.25;font='2.0'} }
+                'phone' { @{width=360;aspect=1.95;font='1.5'} }
+                'tall' { @{width=432;aspect=2.4;font='1.0'} }
+                'wide' { @{width=600;aspect=1.55;font='1.0'} }
+            }
+            $aspect = $geometry.aspect
+            $targetDp = $geometry.width
             $height = [int][Math]::Round($width * $aspect)
             $density = [int][Math]::Ceiling($width * 160.0 / $targetDp)
-            $fontScale = if ($GeometryProfile -eq 'short') { '2.0' } else { '1.0' }
+            $fontScale = $geometry.font
             InvokeAdb @('shell','wm','size',"${width}x${height}") | Out-Null
             InvokeAdb @('shell','wm','density',"$density") | Out-Null
             InvokeAdb @('shell','settings','put','system','font_scale',$fontScale) | Out-Null

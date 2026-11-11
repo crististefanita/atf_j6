@@ -8,10 +8,9 @@ Rămân trei verificări. Proveniența deciziilor condiționează activarea obie
 
 **Responsabil · motorul local și checkpoint-ul Android**
 
-`LocalHoldemGame` salvează actorul și mutarea. Atât comanda din UI, cât și Auto-play pot ajunge la `play`, iar jurnalul le salvează în aceeași formă. [Jurnalul local](../../holdem-android/app/src/main/java/ro/atf/holdem/android/LocalHoldemGame.java) · [Intrările din interfață](../../holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java)
+Checkpoint-ul păstrează sursa fiecărei mutări. Componentele verifică proveniența delegată dintr-o mână anterioară, migrarea cu sursă necunoscută și respingerea unei surse incompatibile cu actorul. [Jurnalul local](../../holdem-android/app/src/main/java/ro/atf/holdem/android/LocalHoldemGame.java) · [Testele de checkpoint](../../holdem-android/app/src/test/java/ro/atf/holdem/android/HoldemSessionRepositoryComponentTest.java)
 
-- Persistă sursa la acceptarea mutării și păstrează eligibilitatea pe toată durata turneului. Pentru un checkpoint vechi, proveniența necunoscută trebuie să lase jocul reluabil și creditul manual neacordat.
-- Verifică aceleași mutări cu surse diferite, inclusiv o mutare Auto-play într-o mână anterioară ultimei. O victorie Hard la șase locuri, integral manuală, avansează exact o dată și după restart. Cazurile Normal, mixt și cu proveniență necunoscută au zero credit la obiectivul manual Hard.
+- Leagă eligibilitatea obiectivelor candidate de sursa salvată pe toate mâinile. O victorie Hard la șase locuri, integral manuală, avansează exact o dată și după restart. Cazurile Normal, mixt și cu proveniență necunoscută au zero credit la obiectivul manual Hard.
 - Pentru titlurile la toate dimensiunile, folosește ID-ul persistent al profilului și dimensiunea inițială a mesei. Două titluri la aceeași dimensiune avansează o singură treaptă. Verifică 4, 5 și 6 locuri, reluarea și două profiluri cu același nume.
 
 [Regulile candidate](../../config/j6-achievement-expansion.yaml) · [Dovezile care lipsesc în replay](../../scripts/analyze-achievement-replays.cjs)
@@ -20,7 +19,7 @@ Rămân trei verificări. Proveniența deciziilor condiționează activarea obie
 
 **Responsabil · acceptanța Android**
 
-Proba de instalare acoperă căutarea și deschiderea regulii unui obiectiv. Proba de turneu verifică progresul salvat după redeschiderea listei. [Rapoartele ediției](../../release/0.16.0/reports/README.md#rapoarte-extent)
+Hold’em folosește ecranul și notificarea Card Table UI. Proba de instalare acoperă căutarea și deschiderea regulii unui obiectiv. Proba de turneu verifică progresul salvat după redeschiderea listei. [Rapoartele ediției](../../release/0.16.0/reports/README.md#rapoarte-extent)
 
 - Combină căutarea cu nivelul și starea, derulează și deschide un detaliu. După recrearea activității, verifică aceleași filtre, același rând și același detaliu. [Activitatea Realizări](../../holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementsActivity.java)
 - Pe profil compact cu font mărit, verifică accesul la textul eligibilității și la butonul de închidere. Măsoară contrastul stărilor obținut și în progres pe ecranul randat. [Proba nativă](../../holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java)

@@ -1,5 +1,7 @@
 package ro.atf.holdem.android;
 
+import ro.cardtable.ui.screens.GameTitleBar;
+
 import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.app.Instrumentation;
@@ -42,6 +44,7 @@ import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import ro.cardtable.ui.screens.GameTitleBar;
 
 /** A small device suite that drives the same accessible controls as the player. */
 public final class TournamentSanity extends Instrumentation {
@@ -296,7 +299,7 @@ public final class TournamentSanity extends Instrumentation {
         tap("Joacă un turneu");
         tap("Împarte cărțile");
         await("Mărește");
-        assertActionLanguage(activity, "Romanian", "Mărește", "Lasă AI-ul");
+        assertActionLanguage(activity, "Romanian", "Mărește", "Automat");
         capture("05d-stable-table-romanian-preflop");
 
         var actors = new java.util.HashSet<String>();
@@ -340,7 +343,7 @@ public final class TournamentSanity extends Instrumentation {
         tap("Play a tournament");
         tap("Deal cards");
         await("Raise");
-        assertActionLanguage(activity, "English", "Raise", "Let AI play");
+        assertActionLanguage(activity, "English", "Raise", "Auto play");
         capture("05g-stable-table-english-preflop");
     }
 
@@ -348,7 +351,7 @@ public final class TournamentSanity extends Instrumentation {
         var labels = new ArrayList<String>();
         runOnMainSync(() -> {
             var root = activity.getWindow().getDecorView();
-            for (String tag : List.of("FOLD", "RAISE", "ai-finish-hand")) {
+            for (String tag : List.of("FOLD", "RAISE", GameTitleBar.AUTO_PLAY_TAG)) {
                 TextView button = root.findViewWithTag(tag);
                 if (button != null && button.isShown()) labels.add(button.getText().toString());
             }

@@ -39,11 +39,17 @@ final class LocalHoldemGame {
 
     enum Outcome { WON, LOST }
     enum Difficulty { NORMAL, HARD }
+    enum ActionSource { UNKNOWN, MANUAL, AUTO_PLAY, OPPONENT }
     record Turn(UUID handId, int revision) {}
     record Move(ActionType action, int amount) {}
-    record Action(int actor, Move move) {
+    record Action(int actor, Move move, ActionSource source) {
+        Action(int actor, Move move) {
+            this(actor, move, ActionSource.UNKNOWN);
+        }
+
         Action {
-            if (actor < -1 || actor >= 6 || move == null || move.amount() < 0)
+            if (actor < -1 || actor >= 6 || move == null || move.amount() < 0 || source == null
+                    || (actor == -1 && source != ActionSource.UNKNOWN))
                 throw new IllegalArgumentException("Invalid saved action");
         }
     }
@@ -312,8 +318,16 @@ final class LocalHoldemGame {
     }
 
     synchronized void play(Turn expected, Move move) {
+        playHuman(expected, move, ActionSource.MANUAL);
+    }
+
+    synchronized void playDelegated(Turn expected, Move move) {
+        playHuman(expected, move, ActionSource.AUTO_PLAY);
+    }
+
+    private void playHuman(Turn expected, Move move, ActionSource source) {
         if (!turn().equals(expected) || hand.actor() != human) throw new IllegalArgumentException("This turn is no longer active");
-        apply(human, move);
+        apply(human, move, source);
     }
 
     synchronized void advancePassiveAction(Turn expected) {
@@ -323,7 +337,7 @@ final class LocalHoldemGame {
         var response = hand.legal().stream()
                 .filter(option -> option.type() == ActionType.CHECK || option.type() == ActionType.CALL)
                 .findFirst().orElseThrow(() -> new IllegalStateException("Passive policy has no legal response"));
-        apply(actor, new Move(response.type(), response.amount()));
+        apply(actor, new Move(response.type(), response.amount()), ActionSource.OPPONENT);
     }
 
     private static Map<Style, DecisionPolicy> hardOpponentPolicies(int policySamples) {
@@ -348,7 +362,7 @@ final class LocalHoldemGame {
 
     synchronized void playOpponent(Turn expected, Move move) {
         requireHardOpponentTurn(expected);
-        apply(hand.actor(), move);
+        apply(hand.actor(), move, ActionSource.OPPONENT);
     }
 
     private void requireHardOpponentTurn(Turn expected) {
@@ -356,14 +370,17 @@ final class LocalHoldemGame {
             throw new IllegalArgumentException("This Hard opponent turn is no longer active");
     }
 
-    private void apply(int actor, Move move) {
+    private void apply(int actor, Move move, ActionSource source) {
+        boolean opponent = actor != human;
+        if (source != ActionSource.UNKNOWN && opponent != (source == ActionSource.OPPONENT))
+            throw new IllegalArgumentException("Saved action source disagrees with the acting seat");
         var before = shoveHistory == null ? null : hand.observeActor();
         hand.act(actor, move.action(), move.amount());
         if (shoveHistory != null) {
             shoveHistory.recordAccepted(before, move.action(), move.amount());
             if (hand.street() == Street.COMPLETE) shoveHistory.settleHand();
         }
-        actions.add(new Action(actor, move));
+        actions.add(new Action(actor, move, source));
     }
 
     private HoldemObservation observeActor() {
@@ -391,11 +408,7 @@ final class LocalHoldemGame {
         var observation = snapshotForAdvice(expected);
         Decision decision = advisor.decide(observation);
         if (Thread.currentThread().isInterrupted()) throw new IllegalStateException("AI action interrupted");
-        synchronized (this) {
-            if (!turn().equals(expected) || hand.actor() != human || hand.street() == Street.COMPLETE)
-                throw new IllegalArgumentException("The human turn changed during AI action");
-            play(expected, new Move(decision.action(), decision.amount()));
-        }
+        playDelegated(expected, new Move(decision.action(), decision.amount()));
     }
 
     /** Finishes one hand by composing the human auto-play policy with the configured opponents. */
@@ -443,11 +456,11 @@ final class LocalHoldemGame {
                     while (game.hasPassiveTurn()) game.advancePassiveAction(game.turn());
                     if (game.hand.actor() != game.human)
                         throw new IllegalArgumentException("Legacy replay did not reach the human turn");
-                    game.play(game.turn(), action.move());
+                    game.apply(game.human, action.move(), ActionSource.UNKNOWN);
                 } else {
                     if (game.hand.actor() != action.actor())
                         throw new IllegalArgumentException("Saved actor order differs from the engine");
-                    game.apply(action.actor(), action.move());
+                    game.apply(action.actor(), action.move(), action.source());
                 }
             }
         }

@@ -1,9 +1,12 @@
 package ro.atf.holdem.android;
 
+import ro.cardtable.ui.screens.GameTitleBar;
+
 import android.app.Activity;
 import android.graphics.Rect;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import java.util.ArrayList;
@@ -11,11 +14,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Consumer;
 import ro.atf.holdem.core.ActionType;
 import ro.atf.holdem.core.HoldemTableViewState;
 import ro.atf.holdem.core.LegalAction;
 import ro.atf.holdem.core.Street;
 import ro.cardtable.ui.screens.ScreenViews;
+import ro.cardtable.ui.screens.GameTitleBar;
 
 /** Measures the real Android table component with controlled public frames and no input timing. */
 final class TableGeometryComponent {
@@ -67,8 +72,21 @@ final class TableGeometryComponent {
             compare(differences, "actor " + actor, original.bounds(), measured.bounds());
             if (!original.names().equals(measured.names()))
                 differences.add("actor " + actor + " changes the seat name text");
-            if (actor == frame.viewer())
-                compare(differences, "automatic local turn", original.bounds(), render(table, names, game, turn, true).bounds());
+            if (actor == frame.viewer()) {
+                var changes = new ArrayList<Boolean>();
+                render(table, names, game, turn, false, changes::add);
+                checkToggle(language, false, differences);
+                if (viewport().findViewWithTag("CHECK") == null) differences.add("manual command missing before delegation");
+                toggle().performClick();
+                var delegated = render(table, names, game, turn, true, changes::add);
+                compare(differences, "automatic local turn", original.bounds(), delegated.bounds());
+                checkToggle(language, true, differences);
+                if (viewport().findViewWithTag("CHECK") != null) differences.add("manual command available while delegated");
+                toggle().performClick();
+                render(table, names, game, turn, false, changes::add);
+                if (viewport().findViewWithTag("CHECK") == null) differences.add("manual command missing after revocation");
+                if (!changes.equals(List.of(true, false))) differences.add("toggle events " + changes);
+            }
         }
         return probe(language, seats, "actor changes with identical cards and stakes", differences,
                 seats + " actors plus automatic local turn");
@@ -81,6 +99,7 @@ final class TableGeometryComponent {
         var differences = new ArrayList<String>();
         Map<String, Rect> original = null;
         int frames = 0;
+        boolean raised = false;
         while (game.view().street() != Street.COMPLETE && frames < 40) {
             var frame = game.view();
             var measured = render(table, names, game, frame, false).bounds();
@@ -90,16 +109,23 @@ final class TableGeometryComponent {
             if (game.hasPassiveTurn()) {
                 game.advancePassiveAction(turn);
             } else {
-                var action = frame.legalActions().stream()
+                var aggressive = raised ? null : frame.legalActions().stream()
+                        .filter(option -> option.type() == ActionType.RAISE).findFirst().orElse(null);
+                var action = aggressive != null ? aggressive : frame.legalActions().stream()
                         .filter(option -> option.type() == ActionType.CHECK || option.type() == ActionType.CALL)
                         .findFirst().orElseThrow();
-                game.play(turn, new LocalHoldemGame.Move(action.type(), action.amount()));
+                game.play(turn, new LocalHoldemGame.Move(action.type(), action.minAmount()));
+                raised |= aggressive != null;
             }
             frames++;
         }
         if (game.view().street() != Street.COMPLETE || game.view().board().size() != 5)
             differences.add("fixture did not reach showdown");
-        return probe(language, seats, "table stays fixed through the played hand", differences, frames + " frames");
+        table.show(game.view(), names, game, () -> { }, () -> { }, move -> false, false, checked -> { });
+        layoutPage();
+        if (toggle() != null) differences.add("settled hand still exposes Auto play");
+        if (!raised) differences.add("fixture did not change wagers");
+        return probe(language, seats, "table stays fixed through the played hand", differences, frames + " frames with a raise");
     }
 
     private Probe scrolledTurn(String language) {
@@ -147,9 +173,34 @@ final class TableGeometryComponent {
 
     private Frame render(HoldemTableView table, List<String> names, LocalHoldemGame game,
                          HoldemTableViewState frame, boolean automatic) {
-        table.show(frame, names, game, () -> { }, () -> { }, move -> false, automatic, () -> { });
+        return render(table, names, game, frame, automatic, checked -> { });
+    }
+
+    private Frame render(HoldemTableView table, List<String> names, LocalHoldemGame game,
+                         HoldemTableViewState frame, boolean automatic, Consumer<Boolean> onToggle) {
+        table.show(frame, names, game, () -> { }, () -> { }, move -> false, automatic, onToggle);
         layoutPage();
         return measure(names.size(), frame);
+    }
+
+    private CheckBox toggle() {
+        return host.findViewWithTag(GameTitleBar.AUTO_PLAY_TAG);
+    }
+
+    private void checkToggle(String language, boolean checked, List<String> differences) {
+        var control = toggle();
+        var page = host.getChildAt(0);
+        var area = bounds(control, page);
+        var title = bounds(page.findViewWithTag("table-title"), page);
+        int target = Math.round(48 * activity.getResources().getDisplayMetrics().density);
+        String expected = language.equals("ro") ? "Automat" : "Auto play";
+        if (!expected.contentEquals(control.getText()) || control.isChecked() != checked)
+            differences.add("toggle label or state differs");
+        if (area.width() < target || area.height() < target || area.right > width || Rect.intersects(area, title))
+            differences.add("toggle target or header placement " + area + " / " + title);
+        View chance = page.findViewWithTag("win-chance");
+        if (chance != null && Rect.intersects(area, bounds(chance, page)))
+            differences.add("toggle overlaps the win chance");
     }
 
     private ScrollView viewport() {
@@ -166,8 +217,10 @@ final class TableGeometryComponent {
     private Frame measure(int seatCount, HoldemTableViewState frame) {
         View page = host.getChildAt(0);
         var measured = new LinkedHashMap<String, Rect>();
-        for (String tag : List.of("turn-status", "best-hand-status", "settlement-target:pot"))
+        for (String tag : List.of("turn-status", "best-hand-status", "settlement-target:pot", "table-title", "table-street", GameTitleBar.AUTO_PLAY_TAG))
             measured.put(tag, bounds(page.findViewWithTag(tag), page));
+        View chance = page.findViewWithTag("win-chance");
+        if (chance != null) measured.put("win-chance", bounds(chance, page));
         View pot = page.findViewWithTag("settlement-target:pot");
         var center = (ViewGroup) pot.getParent();
         var board = (ViewGroup) center.getChildAt(center.getChildCount() - 1);

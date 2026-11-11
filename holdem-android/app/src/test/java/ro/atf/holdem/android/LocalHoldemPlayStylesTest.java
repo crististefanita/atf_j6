@@ -8,12 +8,56 @@ import ro.atf.holdem.core.PublicShoveHistory;
 import ro.atf.holdem.core.Street;
 import ro.atf.holdem.core.Tournament;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import static org.junit.Assert.*;
 
 public class LocalHoldemPlayStylesTest {
+    @Test public void changingDelegationDuringAnOpponentTurnLeavesTheirWorkScheduled() {
+        var autoPlay = new HandAutoPlay();
+        var humanRefreshes = new ArrayList<Boolean>();
+        Runnable refreshHumanTurn = () -> humanRefreshes.add(autoPlay.isEnabled());
+
+        autoPlay.change(true, false, refreshHumanTurn);
+        assertTrue(autoPlay.accepts(autoPlay.revision()));
+        long previousRequest = autoPlay.revision();
+        autoPlay.change(false, false, refreshHumanTurn);
+        assertFalse(autoPlay.accepts(previousRequest));
+        assertTrue(humanRefreshes.isEmpty());
+
+        autoPlay.change(true, true, refreshHumanTurn);
+        autoPlay.change(true, true, refreshHumanTurn);
+        autoPlay.change(false, true, refreshHumanTurn);
+        assertEquals(List.of(true, false), humanRefreshes);
+    }
+
+    @Test public void uncheckingAndRecheckingDoesNotAcceptTheOldDelegatedDecision() {
+        var game = new LocalHoldemGame(4, 811);
+        var delegation = new HandAutoPlay();
+        assertFalse(delegation.isEnabled());
+        assertTrue(delegation.setEnabled(true));
+        var turn = game.turn();
+        long oldRequest = delegation.revision();
+        var move = new LocalHoldemGame.Move(ActionType.FOLD, 0);
+        Runnable delayedResult = () -> {
+            if (delegation.accepts(oldRequest)) game.playDelegated(turn, move);
+        };
+
+        delegation.setEnabled(false);
+        delayedResult.run();
+        assertEquals(turn, game.turn());
+        delegation.setEnabled(true);
+        delayedResult.run();
+        assertTrue(game.save().rounds().get(0).isEmpty());
+        assertEquals(turn, game.turn());
+        assertTrue(delegation.accepts(delegation.revision()));
+        game.playDelegated(turn, move);
+        assertEquals(LocalHoldemGame.ActionSource.AUTO_PLAY, game.save().rounds().get(0).get(0).source());
+        assertThrows(IllegalArgumentException.class, () -> game.playDelegated(turn, move));
+    }
+
     @Test public void sixSeatHardRoutesEachOpponentIncludingNormalAndPreservesTheRosterOnRestore() {
         long seed = 418;
         var game = LocalHoldemGame.tournament(6, seed, 1, "Ana", false, LocalHoldemGame.Difficulty.HARD);
@@ -82,7 +126,8 @@ public class LocalHoldemPlayStylesTest {
                 game.suggest(token));
         assertEquals(token, game.turn());
         game.autoPlayAction(token);
-        assertEquals(List.of(new LocalHoldemGame.Action(hand.actor(), move)), game.save().rounds().get(0));
+        assertEquals(List.of(new LocalHoldemGame.Action(hand.actor(), move, LocalHoldemGame.ActionSource.AUTO_PLAY)),
+                game.save().rounds().get(0));
         assertThrows(IllegalArgumentException.class, () -> game.autoPlayAction(token));
     }
 

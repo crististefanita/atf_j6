@@ -217,9 +217,18 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private void inspectNewAchievementCatalog() throws Exception {
-        tap("Achievements");
+        var monitor = addMonitor(GameplayAchievementsActivity.class.getName(), null, false);
+        Activity achievements;
+        try {
+            tap("Achievements");
+            achievements = monitor.waitForActivityWithTimeout(5000);
+        } finally {
+            removeMonitor(monitor);
+        }
+        if (achievements == null) throw new AssertionError("Achievement Activity did not open");
         see("Achievements opens from the main menu", "Achievements");
         see("All active achievements start locked", "Unlocked 0/14");
+        see("Achievement list has an English accessibility label", "Achievement list");
         scrollAchievementTo("Easy");
         achievementRow("Win a poker hand", "Progress · 0/1");
         achievementRow("Reach your first showdown", "Progress · 0/1");
@@ -248,14 +257,50 @@ public final class TournamentSanity extends Instrumentation {
         tap("Win a contested side pot", row.isClickable() ? row : row.getParent());
         see("The shared detail exposes the eligibility rule",
                 "Receive chips from a side pot with at least two players eligible at settlement.");
+        see("Achievement details explain tournament-only credit", "Only tournament play earns progress.");
         capture("05a-achievement-side-pot-detail");
         tapDialogAction("Close");
+        inspectAchievementSearchAfterRecreation(achievements);
         searchAchievements("training exercises");
         see("Training has no entry in the gameplay catalog", "No achievements match these filters.");
         tap("Back");
     }
 
+    private void inspectAchievementSearchAfterRecreation(Activity original) throws Exception {
+        String query = "in 3 distinct tournament hands";
+        String rule = "Receive pot chips in 3 distinct tournament hands. Each hand contributes once across all pot layers.";
+        searchAchievements(query, "Easy", "Locked");
+        see("Search finds a rendered YAML threshold with difficulty and status filters", "Showing 1 of 14");
+        var result = scrollAchievementTo("Win 3 different hands");
+        tap("Win 3 different hands", result.isClickable() ? result : result.getParent());
+        see("Achievement detail renders the same threshold as search", rule);
+        var monitor = addMonitor(GameplayAchievementsActivity.class.getName(), null, false);
+        try {
+            runOnMainSync(original::recreate);
+            Activity restored = monitor.waitForActivityWithTimeout(5000);
+            check("Achievement Activity is recreated", "new Activity",
+                    restored != null && restored != original ? "new Activity" : "recreation missing");
+        } finally {
+            removeMonitor(monitor);
+        }
+        see("Achievement detail survives Activity recreation", rule);
+        tapDialogAction("Close");
+        see("Filtered achievement list survives Activity recreation", "Showing 1 of 14");
+        tap("Search and filters");
+        var field = awaitMatch(node -> node.isEditable() && query.equals(value(node.getText())));
+        boolean restored = field != null && selectedAchievementFilter("Difficulty", "Easy")
+                && selectedAchievementFilter("Status", "Locked");
+        check("Achievement search restores all three filter selections", "text, difficulty and status restored",
+                restored ? "text, difficulty and status restored" : "filter selection missing");
+        sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
+        waitForIdleSync();
+    }
+
     private void searchAchievements(String query) throws Exception {
+        searchAchievements(query, null, null);
+    }
+
+    private void searchAchievements(String query, String difficulty, String status) throws Exception {
         tap("Search and filters");
         var field = await("Search by title or rule");
         if (field == null) {
@@ -267,7 +312,27 @@ public final class TournamentSanity extends Instrumentation {
         check("Set achievement search", "text entered",
                 field != null && field.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, text)
                         ? "text entered" : "search unavailable");
+        if (difficulty != null) selectAchievementFilter("Difficulty", difficulty);
+        if (status != null) selectAchievementFilter("Status", status);
         tapDialogAction("Apply");
+    }
+
+    private AccessibilityNodeInfo achievementFilter(String name) {
+        return awaitMatch(node -> "android.widget.Spinner".contentEquals(node.getClassName())
+                && name.equals(value(node.getContentDescription())));
+    }
+
+    private void selectAchievementFilter(String name, String option) throws Exception {
+        tap(name, achievementFilter(name));
+        var item = await(option);
+        while (item != null && !item.isClickable()) item = item.getParent();
+        tap(option, item);
+    }
+
+    private boolean selectedAchievementFilter(String name, String option) {
+        var selected = new ArrayList<AccessibilityNodeInfo>();
+        collect(achievementFilter(name), node -> option.equals(value(node.getText())), selected);
+        return !selected.isEmpty();
     }
 
     private void tapDialogAction(String label) throws Exception {
@@ -281,6 +346,7 @@ public final class TournamentSanity extends Instrumentation {
         tap("interface-language");
         tap("Română");
         tap("Realizări");
+        see("Achievement list has a Romanian accessibility label", "Lista realizărilor");
         scrollAchievementTo("Ușoare");
         achievementRow("Ajungi prima dată la dezvăluirea cărților", "Progres · 0/1");
         achievementRow("Câștigă 3 mâini diferite", "Progres · 0/3");

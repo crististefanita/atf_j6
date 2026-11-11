@@ -102,7 +102,8 @@ Un caz redus din turnee verifică plata parțială a ambelor blinduri, locurile 
 - Loturile de reglaj și confirmare folosesc seed-uri distincte și același buget. Un lot separat folosește bugetul complet al aplicației.
 - Raportul arată prima ocazie, deblocarea și ferestrele de 1, 3, 6 și 12 turnee. Turneele cenzurate rămân în numitor. Obiectivele de șase locuri folosesc mesele eligibile.
 - Testul notificării simulează eșecul fiecărei scrieri. La succes verifică jocul și progresul salvat înainte de callback, apoi reîncarcă jocul și verifică deduplicarea.
-- Proba de instalare deschide Realizările pe APK-ul semnat, parcurge lista în română și engleză, caută un obiectiv și deschide regula lui. Scenariul de turneu verifică progresul paralel după redeschidere. Testele de componentă verifică identitatea rândurilor și combinațiile de căutare, nivel și stare. Măsurarea contrastului randat și proba cu font mărit sunt urmărite în [feedback](../feedback/J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md).
+- Proba de instalare deschide Realizările pe APK-ul semnat, parcurge lista în română și engleză, caută un obiectiv după pragul afișat și deschide regula lui. Scenariul de turneu verifică progresul paralel după redeschidere. Testele de componentă verifică identitatea rândurilor și combinațiile de căutare, nivel și stare. Traseul nativ recreează activitatea cu un detaliu deschis, apoi confirmă căutarea, nivelul și starea.
+- Măsurarea contrastului randat și proba cu font mărit sunt urmărite în [feedback](../feedback/J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md).
 
 De la rădăcina proiectului, rulați cu JDK 21, Node și PowerShell. Setați `HOLDEM_DATA_ROOT` la directorul extern de date. Dosarul de ieșire trebuie să fie nou.
 

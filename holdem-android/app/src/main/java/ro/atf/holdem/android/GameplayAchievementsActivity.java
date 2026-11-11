@@ -110,7 +110,8 @@ public final class GameplayAchievementsActivity extends Activity {
             rows.add(new AchievementScreen.Row(milestone.rowId(), milestone.id(), entry.title(), progress, complete,
                     () -> new AchievementScreen.Detail(progress, List.of(
                             new AchievementScreen.Section(getString(R.string.gameplay_achievement_eligibility),
-                                    milestone.rule(romanian()))))));
+                                    milestone.rule(romanian())),
+                            new AchievementScreen.Section("", getString(R.string.gameplay_achievement_scope))))));
         }
         String summary = query.active()
                 ? getString(R.string.gameplay_achievement_filter_summary, visible.size(), entries.size()) : "";
@@ -195,7 +196,7 @@ public final class GameplayAchievementsActivity extends Activity {
 
     private AchievementScreen.Copy labels(String summary, String empty) {
         return new AchievementScreen.Copy(getString(R.string.achievements), summary, empty,
-                getString(R.string.gameplay_achievement_path), getString(R.string.close));
+                getString(R.string.gameplay_achievement_list), getString(R.string.close));
     }
 
     static String title(Context context, GameplayAchievementCatalog.Milestone milestone) {

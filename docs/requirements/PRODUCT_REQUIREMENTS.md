@@ -119,7 +119,7 @@ O comandă de continuare acceptată în timpul animației salvează destinația 
 
 Meniul **Realizări** folosește componentele comune cu Rentz pentru listă, progres, detalii și notificări. Ordinea provine din catalog. O mână sau un turneu poate avansa mai multe obiective simultan.
 
-Căutarea recunoaște titlurile și regulile în română și engleză, inclusiv fără diacritice. Filtrele după nivel și stare se aplică împreună și se păstrează la recrearea activității.
+Căutarea recunoaște titlurile și regulile în română și engleză, inclusiv pragul afișat și expresiile fără diacritice. Filtrele după nivel și stare se aplică împreună și se păstrează la recrearea activității. Detaliul precizează că progresul se acordă în turnee.
 
 | Nivel | Primul obiectiv | Alte criterii |
 |---|---|---|

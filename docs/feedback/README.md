@@ -12,11 +12,11 @@ Indexul urmărește lacunele verificabile ale J6. Cerințele stabile apar în do
 | Extern · la cerere | [J6-REL-01 · Vizibilitate publică](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | Investigație separată de calificarea autentificată a ediției curente. |
 | P1 | [J6-AI-02 · Calibrare](J6-AI-02-STRATEGY-CALIBRATION.md) | Reluarea nivelului Hard din interfață, evaluarea independentă și modelul de range. |
 | P1 | [J6-AI-04 · Ablație shove](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) | Efect repetat cu minimum 20 de seed-uri independente pe configurație. |
-| P1 · P2 | [J6-UI-05 · Coach și Auto-play](J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md) | Traseul nativ de la delegare la o decizie confirmată și înapoi la control manual. Oracolul pentru combinație și confirmarea nativă a contrastului textului secundar. |
+| P1 | [J6-UI-05 · Coach și Auto-play](J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md) | Traseul nativ de la delegare la o decizie confirmată și înapoi la control manual. Oracolul pentru combinație și verificarea reluării din interfață. |
 | P1 | [J6-UI-10 · Istoricul pariurilor](J6-UI-10-BETTING-ACTION-LEDGER.md) | Confirmarea unui Raise din editorul nativ. Proba de componentă verifică deja jurnalul și replay-ul. Rămân verificările vizuale și audio în fereastra scundă. |
 | P2 | [J6-UI-09 · Lizibilitate](J6-UI-09-SEAT-METRIC-HIERARCHY.md) | Anunțurile audio și parcurgerea tuturor locurilor prin gesturi. |
 | P2 | [J6-REL-03 · API minim](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) | Instalare și proba de recomandare AI pe API 26. |
-| P1 la extindere · P2 | [J6-PROD-01 · Realizări](J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md) | Credit manual dovedit pentru catalogul candidat, restaurarea listei pe Android și ritmul în sesiuni manuale. |
+| P1 la extindere · P2 | [J6-PROD-01 · Realizări](J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md) | Credit manual dovedit pentru catalogul candidat, poziția listei filtrate pe ecran scund și ritmul în sesiuni manuale. |
 
 ## Contracte și dovezi
 

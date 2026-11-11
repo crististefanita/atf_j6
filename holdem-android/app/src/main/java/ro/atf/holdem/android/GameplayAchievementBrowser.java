@@ -39,8 +39,8 @@ final class GameplayAchievementBrowser {
             if (query.status() != null && query.status() != entry.status()) continue;
             if (!search.isEmpty() && !normalize(entry.title()).contains(search)
                     && !normalize(entry.alternateTitle()).contains(search)
-                    && !normalize(entry.milestone().ruleRo()).contains(search)
-                    && !normalize(entry.milestone().ruleEn()).contains(search)) continue;
+                    && !normalize(entry.milestone().rule(true)).contains(search)
+                    && !normalize(entry.milestone().rule(false)).contains(search)) continue;
             result.add(entry);
         }
         return List.copyOf(result);

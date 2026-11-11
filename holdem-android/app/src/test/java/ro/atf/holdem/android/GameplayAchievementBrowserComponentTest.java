@@ -40,6 +40,23 @@ public class GameplayAchievementBrowserComponentTest {
         assertEquals(List.of(entry), GameplayAchievementBrowser.visible(List.of(entry), new Query(null, null, null)));
     }
 
+    @Test public void searchesRenderedThresholdsInBothLanguagesWithoutExposingTheYamlPlaceholder() {
+        var milestone = GameplayAchievementCatalog.forTier(EASY).stream()
+                .filter(item -> item.id().equals("three-pots"))
+                .findFirst().orElseThrow();
+        var objective = new Entry(EASY, milestone, 1, "Câștigă 3 mâini diferite", "Win 3 different hands");
+        var catalog = List.of(objective);
+
+        assertEquals(catalog, GameplayAchievementBrowser.visible(catalog,
+                new Query("in 3 maini distincte", EASY, IN_PROGRESS)));
+        assertEquals(catalog, GameplayAchievementBrowser.visible(catalog,
+                new Query("in 3 distinct tournament hands", EASY, IN_PROGRESS)));
+        assertEquals(List.of(), GameplayAchievementBrowser.visible(catalog,
+                new Query("in 3 distinct tournament hands", EASY, LOCKED)));
+        assertEquals(List.of(), GameplayAchievementBrowser.visible(catalog,
+                new Query("{target}", null, null)));
+    }
+
     private static Entry entry(Tier tier, String id, int current, int target, String title, String alternate) {
         return new Entry(tier, new Milestone(id, GameplayAchievements.Metric.POT, target, 0, false,
                 "Jetoane restituite", "Uncalled chips"),

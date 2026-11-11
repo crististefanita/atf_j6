@@ -15,13 +15,13 @@ Checkpoint-ul păstrează sursa fiecărei mutări. Componentele verifică proven
 
 [Regulile candidate](../../config/j6-achievement-expansion.yaml) · [Dovezile care lipsesc în replay](../../scripts/analyze-achievement-replays.cjs)
 
-## P2 · Restaurarea listei pe Android
+## P2 · Lista filtrată pe ecran scund
 
 **Responsabil · acceptanța Android**
 
-Hold’em folosește ecranul și notificarea Card Table UI. Proba de instalare acoperă căutarea și deschiderea regulii unui obiectiv. Proba de turneu verifică progresul salvat după redeschiderea listei. [Rapoartele ediției](../../release/0.16.0/reports/README.md#rapoarte-extent)
+Hold’em folosește ecranul și notificarea Card Table UI. Proba de instalare verifică redeschiderea detaliului și a celor trei filtre după recrearea activității. Proba de turneu verifică progresul salvat după redeschiderea listei. [Rapoartele ediției](../../release/0.16.0/reports/README.md#rapoarte-extent)
 
-- Combină căutarea cu nivelul și starea, derulează și deschide un detaliu. După recrearea activității, verifică aceleași filtre, același rând și același detaliu. [Activitatea Realizări](../../holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementsActivity.java)
+- Pe o listă filtrată cu mai multe rezultate, derulează înainte să deschizi un detaliu. După recrearea activității și închiderea detaliului, compară primul rând vizibil cu cel anterior. [Activitatea Realizări](../../holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementsActivity.java)
 - Pe profil compact cu font mărit, verifică accesul la textul eligibilității și la butonul de închidere. Măsoară contrastul stărilor obținut și în progres pe ecranul randat. [Proba nativă](../../holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java)
 
 ## P2 · Ritmul în sesiuni jucate manual
@@ -30,4 +30,4 @@ Hold’em folosește ecranul și notificarea Card Table UI. Proba de instalare a
 
 Calibrarea existentă folosește Auto-play pentru profil. În sesiuni manuale Normal și Greu, măsoară dacă jucătorul înțelege primul obiectiv din fiecare nivel și observă progresul paralel.
 
-Pentru trei titluri, măsoară deblocarea pe ferestre de 6 și 12 turnee, cu numitorul explicit și sesiunile neterminate evidențiate. Folosește diferența față de simulare ca dovadă pentru o eventuală schimbare de prag. [Metoda de calibrare](../testing/TEST_STRATEGY.md#realizări-de-joc)
+Măsoară separat ritmul victoriei la showdown multiplu, al seriei de trei titluri și al titlurilor la șase locuri. Folosește ferestre de 6 și 12 turnee, cu numitorul explicit și sesiunile neterminate evidențiate. Folosește diferența față de simulare ca dovadă pentru o eventuală schimbare de prag. [Metoda de calibrare](../testing/TEST_STRATEGY.md#realizări-de-joc)

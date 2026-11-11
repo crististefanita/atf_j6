@@ -1,7 +1,7 @@
 #requires -Version 7.0
 param(
     [Parameter(Mandatory)][string]$RunRoot,
-    [ValidateSet('tournament','release-smoke','hard-six','settlement-award','settlement-multi-award','settlement-static-award','settlement-compact-award','settlement-resume','leaderboard-settlement','leaderboard-profile-restart','seat-metrics','table-geometry')][string]$Mode = 'tournament',
+    [ValidateSet('tournament','release-smoke','hard-six','settlement-award','settlement-multi-award','settlement-static-award','settlement-compact-award','settlement-resume','leaderboard-settlement','leaderboard-profile-restart','seat-metrics','table-geometry','betting-ledger','betting-ledger-compact','betting-ledger-talkback')][string]$Mode = 'tournament',
     [ValidateSet('device','short','phone','tall','wide')][string]$GeometryProfile = 'device',
     [switch]$UseReleaseForGeometry,
     [string]$Serial = '127.0.0.1:5555',
@@ -18,7 +18,10 @@ $variant = if ($UseReleaseForGeometry -or $Mode -in @('release-smoke','hard-six'
 $journey = $Mode
 $label = if ($Mode -eq 'tournament') { 'android-tournament-sanity' } else { "android-$Mode" }
 if ($Mode -eq 'table-geometry') { $label += "-$GeometryProfile" }
-$overrideGeometry = $Mode -eq 'table-geometry' -and $GeometryProfile -ne 'device'
+$compactLedger = $Mode -in @('betting-ledger-compact','betting-ledger-talkback')
+$withTalkBack = $Mode -in @('seat-metrics','betting-ledger-talkback')
+$overrideGeometry = $compactLedger -or ($Mode -eq 'table-geometry' -and $GeometryProfile -ne 'device')
+if ($compactLedger) { $GeometryProfile = 'short' }
 $evidenceRoot = Join-Path $RunRoot $label
 New-Item -ItemType Directory -Force -Path $evidenceRoot | Out-Null
 $apkRoot = Join-Path $RunRoot "source/holdem-android/app/build/outputs/apk"
@@ -178,10 +181,10 @@ try {
             InvokeAdb @('shell','settings','put','system','font_scale','2.0') | Out-Null
         }
     }
-    if ($Mode -eq 'seat-metrics') {
+    if ($withTalkBack) {
         $talkBack = 'com.google.android.marvin.talkback/.TalkBackService'
         $services = InvokeAdb @('shell','cmd','package','query-services','--brief','-a','android.accessibilityservice.AccessibilityService')
-        if (!$services.Contains($talkBack)) { throw 'Install Android Accessibility Suite from Google Play before running seat-metrics.' }
+        if (!$services.Contains($talkBack)) { throw 'Install Android Accessibility Suite from Google Play before running $Mode.' }
         $originalAccessibility = @{
             services = (InvokeAdb @('shell','settings','get','secure','enabled_accessibility_services')).Trim()
             enabled = (InvokeAdb @('shell','settings','get','secure','accessibility_enabled')).Trim()

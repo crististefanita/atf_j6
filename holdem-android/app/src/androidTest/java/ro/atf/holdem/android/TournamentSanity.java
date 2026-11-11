@@ -48,6 +48,8 @@ import ro.cardtable.ui.screens.GameTitleBar;
 
 /** A small device suite that drives the same accessible controls as the player. */
 public final class TournamentSanity extends Instrumentation {
+    private static final List<String> BETTING_LEDGER_MODES =
+            List.of("betting-ledger", "betting-ledger-compact", "betting-ledger-talkback");
     private static final String RENAMED_PROFILE = "Alex Poker";
     private static final String ORIGINAL_LEADERBOARD_ROW = "#1 · You · Points 100 · Tournaments 1 · Best finish 1";
     private static final String RENAMED_LEADERBOARD_ROW = "#1 · " + RENAMED_PROFILE + " · Points 100 · Tournaments 1 · Best finish 1";
@@ -71,15 +73,17 @@ public final class TournamentSanity extends Instrumentation {
         String journey = arguments.getString("mode", "tournament");
         try {
             apkHash = installedApkHash();
-            ui = journey.equals("seat-metrics") ? getUiAutomation(UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES)
+            ui = usesTalkBack() ? getUiAutomation(UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES)
                     : getUiAutomation();
             var service = ui.getServiceInfo();
-            service.flags |= AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
+            service.flags |= AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS | AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS;
             ui.setServiceInfo(service);
             if (journey.equals("tournament")) {
                 winAcrossThreeHands();
                 loseOnTheOpeningAllIn();
                 inspectConfirmedRaiseLedger();
+            } else if (BETTING_LEDGER_MODES.contains(journey)) {
+                inspectBettingLedger(journey);
             } else if (journey.equals("release-smoke")) {
                 releaseEntryNavigation();
             } else if (journey.equals("hard-six")) {
@@ -657,12 +661,89 @@ public final class TournamentSanity extends Instrumentation {
         waitForIdleSync();
     }
 
+    private boolean usesTalkBack() {
+        String mode = arguments.getString("mode");
+        return "seat-metrics".equals(mode) || "betting-ledger-talkback".equals(mode);
+    }
+
+    private void inspectBettingLedger(String journey) throws Exception {
+        if (!journey.equals("betting-ledger")) {
+            var config = getTargetContext().getResources().getConfiguration();
+            check("Compact betting ledger uses enlarged text", "width ≤ 320 dp, height ≤ 360 dp, font scale 2.0",
+                    config.screenWidthDp + " × " + config.screenHeightDp + " dp / " + config.fontScale,
+                    config.screenWidthDp <= 320 && config.screenHeightDp <= 360 && config.fontScale == 2f);
+        }
+        if (usesTalkBack()) {
+            var manager = getTargetContext().getSystemService(AccessibilityManager.class);
+            check("Google TalkBack touch exploration is active", "enabled",
+                    awaitTalkBackTouchExploration(manager) ? "enabled" : "unavailable");
+        }
+        inspectCheckedLedger();
+        inspectConfirmedRaiseLedger();
+        for (int index = 0; index < assertions.length(); index++) {
+            if (!assertions.getJSONObject(index).getBoolean("passed")) {
+                throw new AssertionError("Ledger accessibility checks failed; see the per-target assertions");
+            }
+        }
+    }
+
+    private void inspectCheckedLedger() throws Exception {
+        var game = new LocalHoldemGame(4, 1L);
+        while (game.hasPassiveTurn()) game.advancePassiveAction(game.turn());
+        game.play(game.turn(), new LocalHoldemGame.Move(ActionType.CALL, 20));
+        while (game.hasPassiveTurn()) game.advancePassiveAction(game.turn());
+        check("Check fixture is waiting at the flop", "FLOP", game.view().street().name());
+        int ordinal = game.view().bettingActions().size() + 1;
+        var sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir()));
+        sessions.save(game, false);
+        var activity = launchHoldem();
+        try {
+            resumeLedgerFixture(activity);
+            tap(revealTaggedControl(activity, "CHECK"));
+            inspectActionLedger(activity, "Check", ordinal, 0, 20, "Flop", "01-checked-ledger");
+        } finally {
+            runOnMainSync(activity::finish);
+            waitForIdleSync();
+        }
+    }
+
+    private void resumeLedgerFixture(Activity activity) throws Exception {
+        String label = "Continue saved game";
+        long deadline = SystemClock.uptimeMillis() + 15000;
+        boolean waitedForSystem = false;
+        do {
+            if (!waitedForSystem && waitForSystemUiDialog()) {
+                waitedForSystem = true;
+                actions.put("Wait for Android System UI before resuming the ledger fixture");
+            }
+            runOnMainSync(() -> {
+                var controls = new ArrayList<View>();
+                activity.getWindow().getDecorView().findViewsWithText(controls, label, View.FIND_VIEWS_WITH_TEXT);
+                for (var control : controls) {
+                    if (control instanceof TextView text && label.equals(value(text.getText()))) reveal(control);
+                }
+            });
+            var matches = collect(node -> label.equals(value(node.getText())) && node.isClickable() && node.isEnabled());
+            if (matches.size() == 1 && matches.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                check("Tap " + label, "click dispatched", "click dispatched");
+                actions.put(label);
+                waitForIdleSync();
+                return;
+            }
+            SystemClock.sleep(100);
+        } while (SystemClock.uptimeMillis() < deadline);
+        if (BETTING_LEDGER_MODES.contains(arguments.getString("mode"))) capture("01a-ledger-resume-unavailable");
+        var root = accessibilityRoot();
+        check("Tap " + label, "click dispatched", root == null ? "no active root"
+                : "control unavailable in " + value(root.getPackageName()));
+    }
+
     private void inspectConfirmedRaiseLedger() throws Exception {
         var sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir()));
         sessions.save(new LocalHoldemGame(2, 0, 62), false);
         var activity = launchHoldem();
         try {
-            tap("Continue saved game");
+            resumeLedgerFixture(activity);
             tap(revealTaggedControl(activity, "RAISE"));
             var field = awaitMatch(node -> node.isEditable()
                     && (value(node.getContentDescription()).startsWith("Add now ·")
@@ -675,30 +756,150 @@ public final class TournamentSanity extends Instrumentation {
             actions.put("Enter 60 in the Raise editor");
             int editorWindow = field.getWindowId();
             tap("Confirm Raise in the editor", awaitMatch(node -> node.getWindowId() == editorWindow
-                    && node.isClickable() && node.isEnabled() && "Raise".equals(value(node.getText()))));
-            seeBettingAction("Confirmed Raise exposes 60 added chips and 70 total",
-                    new BettingActionObservation.Expectation(3, "You", "Raise", 60, 70), false);
-
-            String expected = "#3 · You · Raise +60\nPreflop · total 70";
-            tap(revealTaggedControl(activity, "betting-history-toggle"));
-            scrollBackUntilVisible(expected);
-            var entries = new ArrayList<String>();
-            runOnMainSync(() -> {
-                var history = activity.getWindow().getDecorView().findViewWithTag("betting-history-list");
-                if (!(history instanceof android.widget.ScrollView scroll) || !scroll.isShown()
-                        || !(scroll.getChildAt(0) instanceof ViewGroup rows)) return;
-                for (int index = 0; index < rows.getChildCount(); index++) {
-                    if (rows.getChildAt(index) instanceof TextView row) entries.add(value(row.getText()));
-                }
-            });
-            var raiseOrOrdinal = entries.stream().filter(entry -> entry.startsWith("#3 · ")
-                    || entry.contains(" · You · Raise +")).toList();
-            check("Confirmed Raise has exactly one entry in the expanded ledger", List.of(expected).toString(),
-                    raiseOrOrdinal.toString(), raiseOrOrdinal.equals(List.of(expected)));
-            capture("06-confirmed-raise-ledger");
+                    && node.isClickable() && node.isEnabled()
+                    && "android:id/button1".equals(node.getViewIdResourceName())
+                    && "Raise".equalsIgnoreCase(value(node.getText()))));
+            inspectActionLedger(activity, "Raise", 3, 60, 70, "Preflop", "05a-confirmed-raise-ledger");
         } finally {
             runOnMainSync(activity::finish);
         }
+    }
+
+    private void inspectActionLedger(Activity activity, String action, int ordinal, int chips, int total,
+                                     String street, String screenshot) throws Exception {
+        var expectedAction = new BettingActionObservation.Expectation(ordinal, "You", action, chips, total);
+        var result = BettingActionObservation.await(() -> {
+            // A passive opponent can redraw the table while it is scrolled to the action controls.
+            runOnMainSync(() -> reveal(seatFrame(activity.getWindow().getDecorView(), 0)));
+            return bettingActionDescriptions(false);
+        }, SystemClock::uptimeMillis, SystemClock::sleep, 5000, expectedAction);
+        var entry = result.matched();
+        if (entry == null && BETTING_LEDGER_MODES.contains(arguments.getString("mode"))) {
+            capture("01a-ledger-action-unavailable");
+        }
+        check(action + " exposes the added chips and contribution",
+                expectedAction.description(), result.diagnostic(), entry != null);
+        if (usesTalkBack()) {
+            String actionDetail = entry.description().substring(entry.description().lastIndexOf("Action #"));
+            verifyLedgerFocus(action + " seat", candidate -> candidate.endsWith(actionDetail));
+        }
+        String expected = "#" + ordinal + " · You · " + action + " +" + chips + "\n" + street + " · total " + total;
+        tap(revealTaggedControl(activity, "betting-history-toggle"));
+        var rows = new ArrayList<String>();
+        var layout = new ArrayList<String>();
+        runOnMainSync(() -> {
+            var history = activity.getWindow().getDecorView().findViewWithTag("betting-history-list");
+            if (!(history instanceof android.widget.ScrollView scroll) || !scroll.isShown()
+                    || !(scroll.getChildAt(0) instanceof ViewGroup entries)) return;
+            for (int index = 0; index < entries.getChildCount(); index++) {
+                if (!(entries.getChildAt(index) instanceof TextView row)) continue;
+                String text = value(row.getText());
+                if (text.startsWith("#" + ordinal + " · ") || text.contains(" · You · " + action + " +")) {
+                    rows.add(text);
+                    if (text.equals(expected)) {
+                        reveal(row);
+                        if (row.getLayout() != null && row.getLineCount() >= 2
+                                && row.getLayout().getEllipsisCount(0) == 0
+                                && row.getLayout().getEllipsisCount(row.getLineCount() - 1) == 0) layout.add(text);
+                    }
+                }
+            }
+        });
+        check(action + " has exactly one matching ledger row", List.of(expected).toString(), rows.toString());
+        check(action + " ledger row fits without ellipsis", "readable",
+                layout.equals(List.of(expected)) ? "readable" : "clipped or absent");
+        var node = awaitLedgerRow(activity, expected);
+        String observed = node == null ? "missing" : value(node.getContentDescription());
+        if (usesTalkBack()) {
+            ledgerAssertion(action + " row is visible to Android accessibility", expected, observed);
+            verifyLedgerFocus(action + " ledger row", expected::equals);
+        } else {
+            check(action + " row is visible to Android accessibility", expected, observed);
+        }
+        captureReadableLedger(screenshot);
+    }
+
+    private AccessibilityNodeInfo awaitLedgerRow(Activity activity, String expected) {
+        long deadline = SystemClock.uptimeMillis() + 6000;
+        do {
+            runOnMainSync(() -> {
+                var root = activity.getWindow().getDecorView();
+                var history = root.<android.widget.ScrollView>findViewWithTag("betting-history-list");
+                if (history == null || !history.isShown()
+                        || !(history.getChildAt(0) instanceof ViewGroup entries)) return;
+                for (int index = 0; index < entries.getChildCount(); index++) {
+                    if (entries.getChildAt(index) instanceof TextView row && expected.contentEquals(row.getText())) {
+                        reveal(row);
+                        var visible = new Rect();
+                        if (!row.getGlobalVisibleRect(visible) || visible.height() < row.getHeight()) {
+                            var bounds = new Rect();
+                            row.getDrawingRect(bounds);
+                            history.offsetDescendantRectToMyCoords(row, bounds);
+                            history.scrollTo(0, bounds.top);
+                            reveal(history);
+                        }
+                        break;
+                    }
+                }
+            });
+            var matches = collect(candidate -> expected.equals(value(candidate.getContentDescription())));
+            if (matches.size() == 1) return matches.get(0);
+            SystemClock.sleep(100);
+        } while (SystemClock.uptimeMillis() < deadline);
+        return null;
+    }
+
+
+    private void captureReadableLedger(String name) throws Exception {
+        for (int attempt = 0; attempt < 4; attempt++) {
+            awaitRenderedFrame(name);
+            var image = ui.takeScreenshot();
+            if (image != null && (hasRenderedPixels(image) || attempt == 3)) {
+                emitCapture(name, image);
+                return;
+            }
+            if (image != null) image.recycle();
+            SystemClock.sleep(200);
+        }
+        throw new AssertionError("Could not capture " + name);
+    }
+
+    private static boolean hasRenderedPixels(Bitmap image) {
+        int first = image.getPixel(0, 0);
+        for (int y = 1; y < 8; y++) {
+            for (int x = 1; x < 8; x++) {
+                if (image.getPixel(x * (image.getWidth() - 1) / 8, y * (image.getHeight() - 1) / 8) != first) return true;
+            }
+        }
+        return false;
+    }
+
+    private void verifyLedgerFocus(String name, Predicate<String> matchesDescription) throws Exception {
+        var matches = collect(node -> matchesDescription.test(value(node.getContentDescription())));
+        ledgerAssertion(name + " has one accessibility node", "1", Integer.toString(matches.size()));
+        boolean focused = false;
+        boolean dispatched = false;
+        for (int attempt = 0; attempt < 2 && matches.size() == 1; attempt++) {
+            var target = matches.get(0);
+            String description = value(target.getContentDescription());
+            dispatched |= target.performAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
+            if (awaitSeatFocus(description, 2000)) {
+                focused = true;
+                break;
+            }
+            // A turn redraw creates a new seat node and invalidates the previous focus request.
+            matches = collect(node -> matchesDescription.test(value(node.getContentDescription())));
+        }
+        actions.put("Request TalkBack accessibility focus for " + name);
+        var observed = ui.findFocus(AccessibilityNodeInfo.FOCUS_ACCESSIBILITY);
+        ledgerAssertion(name + " accepts focus with TalkBack", "focused", focused ? "focused"
+                : "request dispatched=" + dispatched + ", focus="
+                + (observed == null ? "none" : value(observed.getContentDescription())));
+    }
+
+    private void ledgerAssertion(String name, String expected, String actual) throws Exception {
+        assertions.put(new JSONObject().put("name", name).put("expected", expected)
+                .put("actual", actual).put("passed", expected.equals(actual)));
     }
 
     private String callDiagnostic(Activity activity, AccessibilityNodeInfo candidate) {
@@ -1797,16 +1998,19 @@ public final class TournamentSanity extends Instrumentation {
 
     private AccessibilityNodeInfo accessibilityRoot() {
         var active = ui.getRootInActiveWindow();
-        boolean requireApplication = "seat-metrics".equals(arguments.getString("mode"));
+        boolean requireApplication = usesTalkBack();
         if (active != null && (!requireApplication || isApplicationRoot(active))) return active;
         // TalkBack can expose an overlay as the active root while the app still owns input focus.
+        AccessibilityNodeInfo application = null;
         for (var window : ui.getWindows()) {
-            if (window.getType() == AccessibilityWindowInfo.TYPE_APPLICATION && window.isFocused()) {
-                var root = window.getRoot();
-                if (root != null && (!requireApplication || isApplicationRoot(root))) return root;
-            }
+            if (window.getType() != AccessibilityWindowInfo.TYPE_APPLICATION) continue;
+            if (!requireApplication && !window.isFocused()) continue;
+            var root = window.getRoot();
+            if (root == null || (requireApplication && !isApplicationRoot(root))) continue;
+            if (window.isFocused()) return root;
+            if (application == null) application = root;
         }
-        return null;
+        return application;
     }
 
     private boolean isApplicationRoot(AccessibilityNodeInfo root) {

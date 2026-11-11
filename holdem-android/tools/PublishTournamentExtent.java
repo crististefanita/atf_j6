@@ -29,6 +29,8 @@ class PublishTournamentExtent {
     private static final List<String> TOURNAMENT_ASSERTIONS = List.of("Opening hand", "First hand pot is paid",
             "Raise opens the amount editor", "Call remains accessible after closing Raise",
             "Opt-in shows the human win chance", "Unchecked setup leaves the win chance hidden",
+            "Check iteration identifies a player and its zero chip delta",
+            "Enter a custom Raise amount", "Raise has exactly one matching ledger row",
             "Third hand starts heads-up", "Winner sees congratulations",
             "Losing player sees the elimination result",
             "Achievement progress: Reach your first showdown",
@@ -56,7 +58,7 @@ class PublishTournamentExtent {
             "01b-opening-preflop.png", "01-call-ledger-visible.png", "01-betting-ledger-history.png", "01-hand-one-settled.png",
             "01a-settlement-retained.png", "02-two-seats-eliminated.png", "03-heads-up.png",
             "04-tournament-won.png", "04a-achievements-earned.png", "04b-achievements-parallel.png",
-            "04c-achievements-hard-progress.png", "05-tournament-lost.png");
+            "04c-achievements-hard-progress.png", "05-tournament-lost.png", "05a-confirmed-raise-ledger.png");
     private static final List<String> RELEASE_SMOKE_CAPTURES = List.of(
             "01-release-hand-setup.png", "02-release-tournament-setup.png", "03-achievements-easy.png",
             "04-achievements-medium.png", "05-achievements-hard.png", "05a-achievement-side-pot-detail.png",
@@ -186,6 +188,10 @@ class PublishTournamentExtent {
                             "Tournament setup offers Normal and Hard and defaults to Normal",
                             "5 settled hands align below their seat frames, including the viewer"),
                     List.of("01-compact-seat-metrics.png", "02-settled-seat-metrics.png", "03-five-seat-showdown-alignment.png"));
+            case "betting-ledger", "betting-ledger-compact", "betting-ledger-talkback" ->
+                    new Journey("BettingLedgerSanity", "Check and confirm a custom Raise through the Android table",
+                            "The ledger exposes each action once with its exact contribution", bettingLedgerAssertions(journey),
+                            List.of("01-checked-ledger.png", "05a-confirmed-raise-ledger.png"));
             case "table-geometry" -> new Journey("TableGeometryComponent", "Measure the table component with controlled frames",
                     "Live actors and the viewport preserve table geometry", tableGeometryAssertions(), List.of());
             default -> throw new IllegalArgumentException("Unknown native journey " + journey);
@@ -233,7 +239,7 @@ class PublishTournamentExtent {
                 var image = ImageIO.read(evidence.resolve(name).toFile());
                 boolean decodes = image != null && image.getWidth() > 0 && image.getHeight() > 0;
                 String dimensions = decodes ? image.getWidth() + " × " + image.getHeight() : "unreadable";
-                boolean requireDetail = List.of("seat-metrics", "settlement-award",
+                boolean requireDetail = journey.startsWith("betting-ledger") || List.of("seat-metrics", "settlement-award",
                         "settlement-multi-award", "settlement-static-award", "settlement-compact-award").contains(journey);
                 boolean usable = decodes && (!requireDetail || hasImageDetail(image));
                 passed &= usable;
@@ -266,6 +272,27 @@ class PublishTournamentExtent {
         }
         return new ReportArtifactProfile.Scenario(scenario, description, result,
                 List.of(new ReportArtifactProfile.Phase("TEST BODY", result, checkpointEvidence)));
+    }
+
+    private static List<String> bettingLedgerAssertions(String journey) {
+        var names = new ArrayList<String>();
+        boolean talkBack = journey.equals("betting-ledger-talkback");
+        if (!journey.equals("betting-ledger")) names.add("Compact betting ledger uses enlarged text");
+        if (talkBack) names.add("Google TalkBack touch exploration is active");
+        names.add("Enter a custom Raise amount");
+        for (String action : List.of("Check", "Raise")) {
+            names.add(action + " exposes the added chips and contribution");
+            names.add(action + " has exactly one matching ledger row");
+            names.add(action + " ledger row fits without ellipsis");
+            names.add(action + " row is visible to Android accessibility");
+            if (talkBack) {
+                for (String target : List.of(" seat", " ledger row")) {
+                    names.add(action + target + " has one accessibility node");
+                    names.add(action + target + " accepts focus with TalkBack");
+                }
+            }
+        }
+        return names;
     }
 
     private static List<String> tableGeometryAssertions() {

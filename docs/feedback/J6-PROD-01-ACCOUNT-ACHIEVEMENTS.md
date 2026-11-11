@@ -19,7 +19,7 @@ Checkpoint-ul păstrează sursa fiecărei mutări. Componentele verifică proven
 
 **Responsabil · acceptanța Android**
 
-Hold’em folosește ecranul și notificarea Card Table UI. Proba de instalare verifică redeschiderea detaliului și a celor trei filtre după recrearea activității. Proba de turneu verifică progresul salvat după redeschiderea listei. [Rapoartele ediției](../../release/0.16.0/reports/README.md#rapoarte-extent)
+Proba de instalare verifică restaurarea detaliului, căutării și filtrelor după recrearea activității. Proba de turneu verifică progresul salvat la redeschiderea listei. Rămân poziția listei filtrate și lizibilitatea pe ecran scund. [Strategia de testare](../testing/TEST_STRATEGY.md#realizări-de-joc)
 
 - Pe o listă filtrată cu mai multe rezultate, derulează înainte să deschizi un detaliu. După recrearea activității și închiderea detaliului, compară primul rând vizibil cu cel anterior. [Activitatea Realizări](../../holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementsActivity.java)
 - Pe profil compact cu font mărit, verifică accesul la textul eligibilității și la butonul de închidere. Măsoară contrastul stărilor obținut și în progres pe ecranul randat. [Proba nativă](../../holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java)

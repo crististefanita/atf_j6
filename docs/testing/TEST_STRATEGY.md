@@ -2,7 +2,13 @@
 
 ## Pe scurt
 
-J6 separă oracolul de componentă de probele pe Android. Suita documentară verifică orientarea README și legăturile către documentele responsabile. Regulile editoriale detaliate se verifică separat cu auditul J0.
+J6 separă oracolul de componentă de probele pe Android. Guvernanța documentară verifică separat orientarea, navigarea și traseul de descărcare al ediției curente.
+
+## Revizia documentației
+
+- Compară afirmațiile despre comportament cu implementarea și testul modulului responsabil.
+- Rulează `DocumentationGovernanceTest` pentru orientarea și navigarea README-urilor active. Rulează `ReleaseGovernanceTest` pentru blocul **Jocul** și integritatea dovezilor ediției.
+- Aplică validatorii ATF de documentație pentru titluri, proză, linkuri și ancore, căi portabile, diagrame și legende. Verifică editorial dacă prima diagramă răspunde la întrebarea cititorului. [Auditul documentației active și al dosarelor](../release/ATF_Release.md#audit-editorial-și-dosare-de-ediție)
 
 ## Niveluri
 

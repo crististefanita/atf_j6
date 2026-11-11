@@ -16,7 +16,7 @@ Comparația pereche schimbă numai profilul candidatului și păstrează bugetul
 
 ## Criterii de închidere
 
-- [ ] Confirmă textul localizat al selectorului și al meniului principal în română și engleză. Confirmă nivelul Hard în interfață după rotație și reluarea unei sesiuni salvate. Probele existente acoperă opțiunile Normal și Hard, selecția implicită Normal și pornirea unui turneu Hard la șase locuri. [Rapoarte 0.14.1](../../release/0.14.1/reports/README.md#rapoarte-extent)
+- [ ] Confirmă textul localizat al selectorului și al meniului principal în română și engleză. Verifică nivelul Hard după rotație și după reluarea unei sesiuni salvate. Probele native existente acoperă selectorul cu Normal implicit și pornirea unui turneu Hard la șase locuri. [Probele Android](../../holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java)
 - [ ] Joacă turnee Hard din interfață și confirmă că adversarii pot continua, renunța și mări pariul legal. Urmărește timpul de răspuns și schimbarea ecranului în timpul calculului.
 
 - Definiți înainte de evaluare metrica primară, baseline-urile și pragul de promovare. Separați reglajul de holdout. Comparația păstrează seed-urile, pozițiile, nivelurile și adversarii pereche. Raportați incertitudinea pe seed, chips/hand, bb/100 și drawdown.

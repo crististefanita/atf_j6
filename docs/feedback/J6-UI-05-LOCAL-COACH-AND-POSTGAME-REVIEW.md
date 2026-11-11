@@ -4,11 +4,7 @@ P1. Ownerul este interfața Android J6.
 
 ## Acoperirea existentă
 
-Componentele verifică sugestia legală, finalizarea mâinii curente prin AI și restaurarea intervalului de blinduri din sesiune. Contractul produsului descrie vizibilitatea cărților, limita coach-ului și controlul asupra mâinii curente. [Contract Android](../../holdem-android/README.md#contractul-mâinii) · [Teste ale mâinii](../../holdem-android/app/src/test/java/ro/atf/holdem/android/LocalHoldemGameTest.java) · [Teste ale turneului](../../holdem-android/app/src/test/java/ro/atf/holdem/android/LocalHoldemTournamentTest.java)
-
-Proba nativă verifică ascunderea cărților adversarilor la începutul mâinii și afișarea lor după decontare. [Rapoarte 0.14.1](../../release/0.14.1/reports/README.md#rapoarte-extent)
-
-Proba pereche confirmă că o schimbare a cărților ascunse păstrează recomandarea, explicația, revizia și checkpoint-ul. [Componenta coach](../../holdem-android/app/src/test/java/ro/atf/holdem/android/LocalHoldemGameTest.java)
+Componenta verifică legalitatea recomandării și faptul că ea rămâne aceeași dacă se schimbă numai cărțile ascunse. Traseul nativ verifică ascunderea cărților adverse înainte de decontare și afișarea lor la final. [Componenta coach](../../holdem-android/app/src/test/java/ro/atf/holdem/android/LocalHoldemGameTest.java) · [Traseul nativ](../../holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java)
 
 ## Criterii rămase
 

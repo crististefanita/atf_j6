@@ -6,8 +6,8 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 
 | Mod | Locuri | Jetoane inițiale | Blinduri |
 |---|---:|---:|---|
-| `Play a hand` | heads-up sau 4–6 | 2.000 per loc | fixe, 10/20 |
-| `Play a tournament` | 4–6 | 2.000 per loc | progresive; interval configurabil 1, 2, 3 sau 5 minute, implicit 1 |
+| Joacă o mână | 2, 4, 5 sau 6 | 2.000 per loc | Fixe, 10/20. |
+| Joacă un turneu | 4–6 | 2.000 per loc | Progresive, la 1, 2, 3 sau 5 minute. Implicit, 1 minut. |
 
 ## Ce vede și poate face jucătorul
 
@@ -20,7 +20,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 - Coach-ul oferă o recomandare locală. Bifa **Automat** sau **Auto play** din antet deleagă deciziile locului uman în mâna curentă. Debifarea revocă decizia locală încă neaplicată. În tura unui adversar, bifa stabilește cum va fi jucată următoarea tură proprie, iar adversarul își continuă mutarea.
 - Masa rezervă spațiu pentru mesaje, comenzi și marcajul actorului. La schimbarea turei, potul, cărțile, chenarele și numele își păstrează poziția, inclusiv când masa este derulată.
 - Textul secundar de pe masă păstrează minimum 4,5:1 față de fundal. Stilul se aplică actorului advers, recomandării, blindurilor și istoricului de pariuri.
-- Profilul, limba și o sesiune întreruptă pot fi reluate din meniul principal.
+- Din meniul principal poți schimba numele profilului și limba sau relua o sesiune întreruptă.
 
 ## Contractul mâinii
 
@@ -104,7 +104,8 @@ Proba măsoară chenarele, etichetele, potul și cărțile în pixeli la mese de
 | `settlement-static-award` | Cu animațiile oprite, masa păstrează numele, sumele și comanda pentru mâna următoare. |
 | `settlement-compact-award` | Pe fereastra de 320 × 328 dp, cu font 200%, rezumatul păstrează și premiul locului din afara ferestrei. Raportul verifică markerul locului vizibil și cadrele animației. |
 
-În fereastra compactă, potul și rezumatul premiilor apar înaintea categoriei mâinii și a blindurilor. Runnerul restaurează setările Android modificate înainte de a elibera emulatorul. [Calificarea release-ului](../docs/release/ATF_Release.md#calificare-reproductibilă)
+- În fereastra compactă, când potul are mai mulți beneficiari, suma plătită și premiile apar sub indicatorul etapei, înaintea chenarelor. Rezumatul include și beneficiarii aflați în afara zonei vizibile.
+- Markerul se animă către locurile vizibile. Runnerul restaurează setările Android înainte de a elibera emulatorul. [Calificarea release-ului](../docs/release/ATF_Release.md#calificare-reproductibilă)
 
 ### Spațierea acțiunilor
 

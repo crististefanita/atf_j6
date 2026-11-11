@@ -8,15 +8,16 @@ Indexul urmărește lacunele verificabile ale J6. Cerințele stabile apar în do
 
 | Prioritate | Subiect | Dovada care lipsește |
 |---|---|---|
-| P1 | [J6-UI-07 · Showdown](J6-UI-07-SHOWDOWN-WIN-CLARITY.md#dovezi-rămase) | Centrarea și alinierea perechilor în cazurile speciale, plus identitatea cărților decisive. |
-| Extern · la cerere | [J6-REL-01 · Vizibilitate publică](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | Investigație separată de calificarea autentificată a ediției curente. |
 | P1 | [J6-AI-02 · Calibrare](J6-AI-02-STRATEGY-CALIBRATION.md) | Reluarea nivelului Hard din interfață, evaluarea independentă și modelul de range. |
 | P1 | [J6-AI-04 · Ablație shove](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) | Efect repetat cu minimum 20 de seed-uri independente pe configurație. |
+| P1 | [J6-REL-07 · Proveniența descărcării](J6-REL-07-PUBLICATION-IDENTITY.md) | Legătura dintre README, tag, calificare și dovada de descărcare. |
 | P1 | [J6-UI-05 · Coach și Auto-play](J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md) | Traseul nativ de la delegare la o decizie confirmată și înapoi la control manual. Oracolul pentru combinație și verificarea reluării din interfață. |
-| P1 | [J6-UI-10 · Istoricul pariurilor](J6-UI-10-BETTING-ACTION-LEDGER.md) | Confirmarea unui Raise din editorul nativ. Proba de componentă verifică deja jurnalul și replay-ul. Rămân verificările vizuale și audio în fereastra scundă. |
+| P1 | [J6-UI-07 · Showdown](J6-UI-07-SHOWDOWN-WIN-CLARITY.md#dovezi-rămase) | Centrarea perechilor în cazuri speciale și identitatea celor cinci cărți decisive. |
+| P1 | [J6-UI-10 · Istoricul pariurilor](J6-UI-10-BETTING-ACTION-LEDGER.md) | Confirmarea unei măriri din editor, sincronizarea probei după Check și verificările TalkBack în fereastra scundă. |
+| P1 la extindere · P2 | [J6-PROD-01 · Realizări](J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md) | Credit manual dovedit pentru catalogul candidat, poziția listei filtrate pe ecran scund și ritmul în sesiuni manuale. |
 | P2 | [J6-UI-09 · Lizibilitate](J6-UI-09-SEAT-METRIC-HIERARCHY.md) | Anunțurile audio și parcurgerea tuturor locurilor prin gesturi. |
 | P2 | [J6-REL-03 · API minim](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) | Instalare și proba de recomandare AI pe API 26. |
-| P1 la extindere · P2 | [J6-PROD-01 · Realizări](J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md) | Credit manual dovedit pentru catalogul candidat, poziția listei filtrate pe ecran scund și ritmul în sesiuni manuale. |
+| Extern · la cerere | [J6-REL-01 · Vizibilitate publică](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | Investigație separată de calificarea autentificată a ediției curente. |
 
 ## Contracte și dovezi
 

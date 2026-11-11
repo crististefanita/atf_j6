@@ -16,11 +16,11 @@ Consola pornește o decizie locală și poate inspecta configurația online. Are
 
 ## Limite de dependențe
 
-- `holdem-core` nu depinde de AI, rețea sau UI;
-- `holdem-ai` consumă `Observation`, nu `FullState`;
-- `holdem-arena` poate folosi starea completă intern pentru simulare, dar filtrează observația înainte de policy;
-- `holdem-online` descrie endpointul, prezența credentialului și modul `dry-run`. Conexiunea și adaptarea mesajelor sunt contracte pentru o etapă viitoare.
-- `holdem-app` orchestrează, dar nu introduce reguli de poker.
+- `holdem-core` deține regulile, acțiunile legale și decontarea.
+- `holdem-ai` primește `HoldemObservation` prin portul `DecisionPolicy`. Observația conține cărțile actorului și informația publică.
+- `holdem-arena` conduce simularea și transmite politicii proiecția motorului pentru actorul curent.
+- `holdem-online` descrie endpointul, prezența credențialului și modul `dry-run`. Conexiunea și adaptarea mesajelor apar în cerințele unei etape viitoare.
+- `holdem-app` orchestrează exemplul de consolă prin API-ul motorului.
 
 ## Interfața Android locală
 
@@ -48,43 +48,42 @@ flowchart LR
 - Activity calculează în fundal propunerile adversarilor Hard și verifică din nou scena și tura înainte de aplicare.
 - La suspendare, Activity oprește ceasul și salvează checkpoint-ul. La restaurare, sesiunea verifică actorul și legalitatea mutărilor. [Integrarea Android](../../holdem-android/README.md)
 
+### Cum se salvează și se reia o mână
+
+Aplicația salvează mutările acceptate, apoi le reexecută prin motor la reluare.
+
 ```mermaid
 sequenceDiagram
     participant UI as HoldemActivity
-    participant Session as LocalHoldemGame
-    participant Engine as HoldemHand / Tournament
+    participant Game as Sesiune locală
+    participant Repo as Registru sesiune
     participant Store as Checkpoint privat
-    UI->>Session: comandă cu tokenul turei
-    Session->>Engine: validează actor și mutare
-    Engine-->>Session: stare nouă
-    Session-->>UI: snapshot vizibil
-    UI->>Store: jurnal + actori + metadate
-    Note over UI,Store: fiecare acțiune automată apare individual după 550 ms și un cadru vizibil
-    UI->>Session: onPause · oprește ceasul și salvează checkpoint-ul
-    Note over UI: rezultatul AI se aplică numai pentru scena și tura încă active
-    Store-->>UI: încărcare la redeschidere
-    UI->>Engine: replay ordonat al acțiunilor
-    Engine-->>UI: sesiune restaurată sau eroare explicită
+    UI->>Game: aplică mutarea pentru tura curentă
+    Game-->>UI: întoarce starea vizibilă
+    UI->>Repo: salvează sesiunea
+    Repo->>Store: scrie checkpoint-ul
+    UI->>Repo: încarcă sesiunea salvată
+    Repo->>Store: citește checkpoint-ul
+    Store-->>Repo: întoarce jurnalul
+    Repo->>Game: reconstruiește prin replay
+    Repo-->>UI: întoarce sesiunea sau eroarea
 ```
 
 <details>
 <summary><strong>Legendă — salvare și reluare</strong></summary>
 
-- **Tokenul turei** identifică mutarea pentru revizia acceptată.
+- **Sesiunea locală** leagă mutarea de revizia turei și aplică regulile motorului.
+- **Registrul sesiunii** este `HoldemSessionRepository`. El citește și scrie checkpoint-ul prin adaptorul de stocare.
 - **Checkpoint-ul** păstrează actorii, mutările și dificultatea. Sesiunile mai vechi se deschid în Normal.
 - **Restaurarea** revalidează mutările înainte să afișeze masa.
 
 </details>
 
-## Reducer și replay
+## Acțiuni legale și replay
 
-Motorul trebuie modelat ca reducer:
-
-```text
-FullState + Action -> Transition(FullState, PublicEvent, SettlementDelta)
-```
-
-Orice eveniment trebuie să poată fi serializat, verificat și aplicat din nou. Pentru online, reducerul local nu înlocuiește snapshot-ul autoritar al serverului; îl folosește ca verificare și fallback.
+- `HoldemHand.observeActor()` proiectează starea mâinii pentru politică. La `HoldemHand.act()`, motorul verifică din nou actorul și suma. [Motorul mâinii](../../holdem-core/src/main/java/ro/atf/holdem/core/HoldemHand.java)
+- Replay-ul reface distribuirea și aplică mutările în ordine. [Testele reluării](../../holdem-android/app/src/test/java/ro/atf/holdem/android/HoldemSessionRepositoryComponentTest.java)
+- O integrare online viitoare va trebui să reconcilieze starea locală cu răspunsul autoritar al serverului. [Cerințe online](../requirements/ONLINE_REQUIREMENTS.md)
 
 ## Configurare
 
@@ -115,4 +114,4 @@ flowchart LR
 
 `CashTableArena` reține stivele între mâini, nu mărește blind-urile și oprește sesiunea la limita de mâini ori când rămâne un singur loc finanțat. `TournamentArena` folosește nivelurile YAML și oprește după victoria unui singur jucător. Ambele folosesc același motor de mână și portul `DecisionPolicy`; diferența de structură nu se amestecă în politica AI.
 
-Politicile văd numai observația actorului. Monte Carlo elimină cărțile proprii și board-ul cunoscut, apoi eșantionează adversarii rămași și board-ul necunoscut. Acțiunile publice nu sunt folosite ca să reconstruiască o mână ascunsă; ele schimbă numai ponderile configurate pentru agresiune, numărul adversarilor și poziție. [Cerințele și limitele estimării](../requirements/AI_REQUIREMENTS.md)
+Estimatorul Monte Carlo folosit de politica de bază exclude cărțile proprii și board-ul cunoscut, apoi eșantionează uniform distribuțiile rămase. Istoricul public poate ajusta pragurile deciziei. Arena poate evalua separat candidați cu range-uri de răspuns condiționate de ofertă și reacție. [Cerințele și limitele estimării](../requirements/AI_REQUIREMENTS.md#equity-contra-range-ului-care-răspunde)

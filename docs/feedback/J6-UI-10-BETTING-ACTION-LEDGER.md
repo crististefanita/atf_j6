@@ -1,17 +1,12 @@
 # J6-UI-10 · Istoricul pariurilor
 
-**Prioritate:** P1  
-**Stare:** Revenirea la Call verificată pe API 28. Rămân corelarea unui Raise acceptat cu jurnalul curent și probele TalkBack în ferestre scunde.
+P1. Ownerul este instrumentarea mesei Android.
 
 ## Acoperirea existentă
 
 - În preflop, traseul deschide Raise, închide editorul și activează Call prin nodul Android de accesibilitate. Flopul și intrarea `Call +20` în jurnal confirmă acceptarea acțiunii.
 - Pe API 28, revenirea dintr-o fereastră modală poate lăsa rădăcina activă indisponibilă chiar dacă fereastra mesei are deja focus. Instrumentarea caută nodul în fereastra de aplicație focalizată când rădăcina activă lipsește. Raportul cere dovada clickului și păstrează diagnosticul dacă aceasta lipsește.
-- Proba verifică separat badge-urile vizibile și descrierile accesibile ale locurilor. [Turneu de sanity 0.14.1](../../release/0.14.1/reports/android-tournament-extent.html) · [Ghid Android](../../holdem-android/README.md)
-
-## Acoperirea editorului
-
-Proba de componentă leagă Raise-ul acceptat de motor de intrarea unică, contribuția cumulată și replay. Rămâne verificarea comenzii de confirmare din editorul Android. [Strategia Android](../testing/TEST_STRATEGY.md#interfața-android-locală)
+- Proba nativă verifică separat ultima acțiune vizibilă și descrierea accesibilă. Componenta corelează Raise cu intrarea unică în jurnal, contribuția și replay-ul. [Strategia Android](../testing/TEST_STRATEGY.md#interfața-android-locală)
 
 ## Acceptanță rămasă
 

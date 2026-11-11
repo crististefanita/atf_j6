@@ -2,42 +2,46 @@
 
 ## Pe scurt
 
-ATF J6 este un laborator pentru dezvoltarea și evaluarea locală a unui joc No-Limit Texas Hold’em. Motorul, politicile AI și arena de simulare funcționează fără serviciu extern.
-
-- `holdem-core` deține regulile, starea și acțiunile legale.
-- `holdem-ai` decide numai din observația permisă jucătorului curent.
-- `holdem-arena` rulează mese și turnee reproductibile, cu replay.
-- `holdem-android` oferă joc offline și revizuirea mâinii.
-- `holdem-online` este numai un scaffold `dry-run`: nu deschide WebSocket, nu intră în lobby și nu trimite acțiuni. Cerințele online sunt plan de lucru, nu funcție livrată.
+Hold’em Lab este un joc No-Limit Texas Hold’em pentru Android. Poți juca offline o mână de antrenament sau un turneu împotriva AI-ului. Motorul definește regulile mesei, iar arena permite compararea strategiilor pe aceleași distribuiri.
 
 ## Jocul
 
 - **[Hold'em Lab 0.17.0 — documentația release-ului](https://github.com/crististefanita/atf_j6/releases/tag/v0.17.0)**
 - **[Descarcă APK-ul Hold'em Lab 0.17.0](https://github.com/crististefanita/atf_j6/releases/download/v0.17.0/HoldemLab-0.17.0.apk)**
 
-## Bucla locală
+## Prima mână după instalare
 
-```text
-stare de joc → observația actorului → politică AI → acțiune legală
-      ↑                                           │
-      └──────────── motor și replay ──────────────┘
+La prima pornire, meniul este în engleză. Poți selecta româna din **Language**. Alege un mod de joc și confirmă cu **Deal cards** sau **Împarte cărțile**.
+
+```mermaid
+flowchart LR
+    Menu["Meniu"] -->|alegi| Hand["O mână"]
+    Menu -->|alegi| Tournament["Turneu"]
+    Hand -->|distribui| Table["Masa de joc"]
+    Tournament -->|distribui| Table
 ```
 
-- Motorul aplică tranziția și verifică acțiunea față de starea curentă.
-- Politica primește cărțile proprii, board-ul vizibil și informațiile publice.
-- Arena păstrează seed-ul și istoricul necesare reluării și comparației.
-- Rezultatele offline verifică implementarea și compară politici; nu dovedesc singure o strategie profesionistă sau profit financiar.
+<details>
+<summary><strong>Legendă — modurile de joc</strong></summary>
+
+- **Play a hand / Joacă o mână** oferă mese de 2, 4, 5 sau 6 locuri, cu blinduri fixe.
+- **Play a tournament / Joacă un turneu** oferă 4–6 locuri, nivel Normal sau Hard și blinduri progresive cu interval configurabil.
+- **Masa de joc** afișează cărțile proprii și opțiunile legale când îți vine rândul.
+
+</details>
+
+Pentru o sesiune existentă, folosește **Continue saved game / Continuă jocul salvat**. Din meniu poți deschide Realizările și clasamentul turneelor. [Ghidul Android](holdem-android/README.md) · [Verificarea fluxurilor Android](docs/testing/TEST_STRATEGY.md#interfața-android-locală)
 
 ## Module
 
 | Modul | Contract |
 |---|---|
 | `holdem-core` | Cărți, străzi, observația actorului, acțiuni legale și decontarea poturilor; fără Android sau rețea. |
-| `holdem-ai` | Politici baseline și estimator Monte Carlo reproductibil; ponderi de context configurate în YAML. |
+| `holdem-ai` | Politici de joc și estimare Monte Carlo reproductibilă, cu ponderi de context în YAML. |
 | `holdem-arena` | Turnee cu blinduri progresive, mese cash cu blinduri fixe, seed-uri și replay. |
-| `holdem-online` | Configurație și raportare `dry-run` doar; nu implementează transportul protocolului. Poate fi scos din produs până când online devine o etapă aprobată. |
-| `holdem-app` | Vertical slice de consolă pentru o decizie locală și inspecția scaffold-ului online. |
-| `holdem-android` | Interfață locală pentru mâini de antrenament și turnee de 4–6 locuri; Gradle folosește sursele comune ale motorului și AI-ului. |
+| `holdem-online` | Configurație inspectabilă în `dry-run`. Conectarea la o platformă externă este o etapă viitoare. |
+| `holdem-app` | Consolă pentru o decizie locală și inspecția configurației online. |
+| `holdem-android` | Joc local, salvare și reluare, Realizări și clasament de turnee. |
 
 ## Biblioteci comune
 
@@ -47,13 +51,8 @@ J6 consumă Core, Reporting, Console, Mock și Test Kit din perechile JAR/POM di
 
 ## Cerințe și documentație
 
-- [Cerințe generale](docs/requirements/README.md)
-- [Cerințe de produs](docs/requirements/PRODUCT_REQUIREMENTS.md)
-- [Cerințe de domeniu Hold’em](docs/requirements/DOMAIN_REQUIREMENTS.md)
-- [Reguli și simulare de turneu](docs/requirements/TOURNAMENT_RULES.md)
-- [Cerințe AI și evaluare](docs/requirements/AI_REQUIREMENTS.md)
-- [Cerințe online și siguranță](docs/requirements/ONLINE_REQUIREMENTS.md)
-- [Arhitectură](docs/architecture/ARCHITECTURE.md)
+- [Cerințe de produs, reguli de joc și evaluarea AI](docs/requirements/README.md)
+- [Arhitectura motorului, simulării și aplicației](docs/architecture/ARCHITECTURE.md)
 - [Proiectarea realizărilor într-un joc](docs/design/achievements/README.md)
 - [Strategie de testare](docs/testing/TEST_STRATEGY.md)
 - [Catalogul release-urilor](release/README.md)
@@ -62,42 +61,10 @@ J6 consumă Core, Reporting, Console, Mock și Test Kit din perechile JAR/POM di
 
 ## Construire locală
 
-### Cerințe
-
-- JDK 21 sau mai nou;
-- Maven 3.9 sau mai nou;
-- Android SDK platform 36 pentru aplicația Android;
-- PowerShell 7 recomandat pe Windows.
-
-### Maven
-
-Dintr-un checkout curat, setați `HOLDEM_MAVEN_REPOSITORY` la repository-ul Maven extern. Testele de guvernanță rulează fără un APK local. [Verificarea pachetului la promovare](docs/release/ATF_Release.md#promovare-și-descărcare) · [Calificarea Android](docs/release/ATF_Release.md#calificare-reproductibilă)
+Pentru componente și guvernanță, folosește JDK 21 sau mai nou și Maven 3.9 sau mai nou. Dintr-un checkout de lucru, setează `HOLDEM_MAVEN_REPOSITORY` la repository-ul Maven extern și rulează comanda. Pentru build-ul aplicației ai nevoie și de Android SDK platform 36. [Calificarea Android](docs/release/ATF_Release.md#calificare-reproductibilă)
 
 ```powershell
 mvn -B -ntp "-Dmaven.repo.local=$env:HOLDEM_MAVEN_REPOSITORY" test
 ```
 
-Pentru compilare fără rularea testelor:
-
-```powershell
-mvn -B -DskipTests package
-```
-
-Vertical slice-ul de consolă se poate porni astfel:
-
-```powershell
-mvn -B -pl holdem-app -am exec:java -Dexec.mainClass=ro.atf.holdem.app.LocalAppMain
-```
-
-Dacă pluginul Maven `exec` nu este disponibil, împachetați modulele și porniți `LocalAppMain` cu classpath-ul local. Execuția implicită nu trimite acțiuni către o platformă externă.
-
-## Reguli și limite
-
-- Motorul gestionează starea completă; politica vede numai observația actorului.
-- Motorul validează fiecare acțiune înainte de aplicare.
-- Evaluările păstrează seed-ul, versiunea politicii și replay-ul.
-- Politicile curente rămân euristice, iar estimatorul Monte Carlo nu modelează încă range-uri adversare.
-- Un client WebSocket real nu este implementat; orice integrare viitoare cere autorizarea explicită a platformei.
-- Nu se adaugă scraping, auto-click, real-time assistance interzisă sau ocolirea detecției.
-
-Pentru contractele și criteriile de acceptare, începeți din [indexul cerințelor](docs/requirements/README.md) și [strategia de testare](docs/testing/TEST_STRATEGY.md).
+Consola poate fi pornită din IDE după importul proiectului Maven. [Punctul de intrare](holdem-app/src/main/java/ro/atf/holdem/app/LocalAppMain.java)

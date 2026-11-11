@@ -1,12 +1,10 @@
 # J6-UI-07 · Cărțile decisive și semnalul premiului
 
-**Stare:** Alinierea verticală în fereastra compactă și traseul markerului au dovezi native. Rămân cazuri de poziționare și lizibilitatea marcajelor.
+P1. Ownerul este prezentarea mesei Android.
 
 ## Acoperirea existentă
 
-Proba compactă măsoară alinierea perechilor imediat sub chenare la cinci și șase locuri. Probele de decontare verifică plecarea din pot și sosirea markerului la beneficiar, inclusiv la split și la potul secundar. În fereastra scundă, rezumatul rămâne complet, iar markerul apare la chenarul vizibil. [Rapoarte 0.14.1](../../release/0.14.1/reports/README.md#rapoarte-extent) · [Contractul produsului](../requirements/PRODUCT_REQUIREMENTS.md#claritatea-rezultatului-mâinii)
-
-Proba de geometrie din 0.15.0 păstrează aceleași coordonate în timpul mâinii, la dimensiunea implicită, scundă și înaltă. Criteriile terminale de mai jos privesc perechile dezvăluite și cărțile decisive. [Rapoarte 0.15.0](../../release/0.15.0/reports/README.md#rapoarte-extent)
+Probele native acoperă alinierea verticală la cinci și șase locuri, markerul de premiu și rezumatul complet când un beneficiar este în afara ferestrei scunde. Criteriile rămase privesc perechile dezvăluite și marcarea cărților decisive. [Probe de decontare](../../holdem-android/README.md#probe-native-de-decontare) · [Contractul produsului](../requirements/PRODUCT_REQUIREMENTS.md#claritatea-rezultatului-mâinii)
 
 ## Dovezi rămase
 

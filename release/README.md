@@ -16,6 +16,7 @@ Dosarele de mai jos păstrează dovezile edițiilor. Când un fișier este inven
 
 | Versiune | Documentație | Identitatea pachetului |
 |---|---|---|
+| 0.17.0 | [Dosarul ediției](0.17.0/README.md) · `DRAFT` | [Manifestul ediției](0.17.0/release-validation.json) |
 | 0.16.0 | [Dosarul ediției](0.16.0/README.md) · `PREPARED` | [Manifestul ediției](0.16.0/release-validation.json) |
 | 0.15.0 | [Dosarul ediției](0.15.0/README.md) · `PREPARED` | [Manifestul ediției](0.15.0/release-validation.json) |
 | 0.14.1 | [Dosarul ediției](0.14.1/README.md) · `PREPARED` | [Manifestul ediției](0.14.1/release-validation.json) |
@@ -49,7 +50,7 @@ J0 continuă să raporteze aceste observații. Atribuirea la istoric cere fișie
 
 ### Ediții retrase
 
-GitHub distribuie ediția curentă 0.15.0 și cele două ediții anterioare, 0.14.1 și 0.14.0. [Release-uri GitHub](https://github.com/crististefanita/atf_j6/releases)
+Indexul selectează ediția curentă, iar pagina GitHub arată edițiile disponibile pentru descărcare. [Release-uri GitHub](https://github.com/crististefanita/atf_j6/releases)
 
 Pentru 0.13.0, tagul și dosarul sigilat păstrează sursa și dovezile calificării. Linkul de descărcare din dosarul sigilat consemnează distribuția de la data publicării. [Tagul v0.13.0](https://github.com/crististefanita/atf_j6/tree/v0.13.0)
 

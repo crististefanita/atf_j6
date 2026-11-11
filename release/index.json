@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.16.0",
-  "previousVersion": "0.15.0",
+  "currentVersion": "0.17.0",
+  "previousVersion": "0.16.0",
   "changeClass": "COMPATIBLE_FEATURE",
-  "changeRationale": "Adaugă lista comună de realizări cu filtre, detalii și progres din poturi secundare și împărțite.",
-  "state": "PREPARED",
+  "changeRationale": "Adaugă comanda revocabilă de joc automat în antet și actualizează căutarea și detaliile Realizărilor.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.16.0"
+    "0.17.0"
   ]
 }

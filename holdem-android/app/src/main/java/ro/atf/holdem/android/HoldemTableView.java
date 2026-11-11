@@ -107,11 +107,14 @@ final class HoldemTableView {
         menu.setBackgroundColor(Color.TRANSPARENT);
         menu.setStateListAnimator(null);
         boolean complete = frame.street() == Street.COMPLETE;
+        TextView awards = complete ? potAwardSummary(frame, names, compact) : null;
+        boolean awardsAboveTable = compact && awards != null;
         boolean alignSeatHands = HoldemTablePresentation.alignTerminalSeatHands(frame);
         var title = views.text(game.isTournament() ? text.get(R.string.tournament_hand_title, game.handNumber())
                 : text.get(R.string.local_table_name), compact ? 16 : 18, Color.WHITE, true);
         title.setTag("table-title");
-        title.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        title.setImportantForAccessibility(awardsAboveTable ? View.IMPORTANT_FOR_ACCESSIBILITY_YES
+                : View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         singleLine(title);
         boolean canDelegate = HoldemTablePresentation.canDelegate(frame);
         var control = complete ? null : new GameTitleBar.AutoPlay(text.get(R.string.auto_play),
@@ -119,25 +122,31 @@ final class HoldemTableView {
                 canDelegate && autoPlay, canDelegate, Color.WHITE, onAutoPlay);
         content.addView(new GameTitleBar(activity, menu, title, control), views.matchWrap());
 
-        var details = new LinearLayout(activity);
-        details.setGravity(Gravity.CENTER_VERTICAL);
-        var street = views.text(streetName(frame.street()), 13, 0xFFDDF4E9, true);
-        street.setTag("table-street");
-        singleLine(street);
-        street.setContentDescription(tableTitle(game, frame.street()));
-        details.addView(street, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         TextView winChance = null;
-        if (game.showsWinChance() && !complete) {
-            winChance = views.text(text.get(R.string.win_chance_pending), 12, 0xFFDDF4E9, true);
-            winChance.setTag("win-chance");
-            singleLine(winChance);
-            winChance.setPadding(views.dp(6), views.dp(3), views.dp(6), views.dp(3));
-            winChance.setBackground(views.roundedBackground(Color.rgb(32, 91, 73), ScreenViews.MUTED, 8));
-            int chanceWidth = widestText(winChance, List.of(text.get(R.string.win_chance_pending),
-                    text.get(R.string.win_chance, 100), text.get(R.string.win_chance_unavailable)));
-            details.addView(winChance, new LinearLayout.LayoutParams(chanceWidth, ViewGroup.LayoutParams.WRAP_CONTENT));
+        if (awardsAboveTable) {
+            // Keep all award amounts visible even when the compact board and lower seats scroll.
+            title.setContentDescription(tableTitle(game, frame.street()));
+            content.addView(awards, views.matchWrap());
+        } else {
+            var details = new LinearLayout(activity);
+            details.setGravity(Gravity.CENTER_VERTICAL);
+            var street = views.text(streetName(frame.street()), 13, 0xFFDDF4E9, true);
+            street.setTag("table-street");
+            singleLine(street);
+            street.setContentDescription(tableTitle(game, frame.street()));
+            details.addView(street, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+            if (game.showsWinChance() && !complete) {
+                winChance = views.text(text.get(R.string.win_chance_pending), 12, 0xFFDDF4E9, true);
+                winChance.setTag("win-chance");
+                singleLine(winChance);
+                winChance.setPadding(views.dp(6), views.dp(3), views.dp(6), views.dp(3));
+                winChance.setBackground(views.roundedBackground(Color.rgb(32, 91, 73), ScreenViews.MUTED, 8));
+                int chanceWidth = widestText(winChance, List.of(text.get(R.string.win_chance_pending),
+                        text.get(R.string.win_chance, 100), text.get(R.string.win_chance_unavailable)));
+                details.addView(winChance, new LinearLayout.LayoutParams(chanceWidth, ViewGroup.LayoutParams.WRAP_CONTENT));
+            }
+            content.addView(details, views.matchWrap());
         }
-        content.addView(details, views.matchWrap());
 
         var seatFrame = new PlayerSeatFrame(activity, compact);
         var seats = new ArrayList<View>(names.size());
@@ -209,7 +218,7 @@ final class HoldemTableView {
             seatView.setTag("settlement-target:seat:" + seat);
             seats.add(withCards);
         }
-        View center = board(frame, names, game, compact);
+        View center = board(frame, names, game, compact, awards);
         View table = compact ? compactTable(seats, center, alignSeatHands) : sharedTable(seats, center, policy);
         content.addView(table, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
@@ -512,7 +521,8 @@ final class HoldemTableView {
         return row;
     }
 
-    private View board(HoldemTableViewState frame, List<String> names, LocalHoldemGame game, boolean compact) {
+    private View board(HoldemTableViewState frame, List<String> names, LocalHoldemGame game, boolean compact,
+                       TextView awards) {
         var activity = views.activity();
         var center = new LinearLayout(activity);
         center.setOrientation(LinearLayout.VERTICAL);
@@ -544,17 +554,13 @@ final class HoldemTableView {
                 compact ? 15 : 20, Color.WHITE, true);
         pot.setGravity(Gravity.CENTER);
         pot.setTag("settlement-target:pot");
-        TextView summary = frame.street() == Street.COMPLETE ? potAwardSummary(frame, names, compact) : null;
-        boolean prioritizeAwards = compact && summary != null;
-        if (prioritizeAwards) {
-            center.addView(pot, views.matchWrap());
-            center.addView(summary, views.matchWrap());
-        }
+        boolean awardsAboveTable = compact && awards != null;
+        if (awardsAboveTable) center.addView(pot, views.matchWrap());
         center.addView(bestHand, views.matchWrap());
         center.addView(blinds, views.matchWrap());
-        if (!prioritizeAwards) {
+        if (!awardsAboveTable) {
             center.addView(pot, views.matchWrap());
-            if (summary != null) center.addView(summary, views.matchWrap());
+            if (awards != null) center.addView(awards, views.matchWrap());
         }
         var row = new LinearLayout(activity);
         row.setGravity(Gravity.CENTER);

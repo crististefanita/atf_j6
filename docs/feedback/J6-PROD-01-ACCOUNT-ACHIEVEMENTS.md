@@ -1,34 +1,34 @@
-# Realizări Hold’em — calibrarea dificultății
+# Realizări Hold’em — verificări deschise
 
 ## Pe scurt
 
-**P2 · De validat cu jucători.** Catalogul grupează obiectivele în funcție de rezultatele de la masă. Dificultatea relativă rămâne o ipoteză până vedem cum avansează profilurile în sesiuni reale.
+Rămân trei verificări. Proveniența deciziilor condiționează activarea obiectivelor candidate care cer joc manual. Interfața și ritmul de obținere au criterii separate. [Contractul Realizărilor](../requirements/PRODUCT_REQUIREMENTS.md#realizări)
 
-[Contractul implementat](../requirements/PRODUCT_REQUIREMENTS.md#realizări) · [Metoda de proiectare](../design/achievements/README.md)
+## P1 · Credit manual dovedit înaintea extinderii
 
-## Acoperirea existentă
+**Responsabil · motorul local și checkpoint-ul Android**
 
-- Hold’em și Rentz folosesc ecranul comun pentru listă, progres, detalii și notificări. J6 verifică manifestul și checksum-urile bibliotecii înainte de compilare.
-- Testele de componentă verifică filtrele, poturile, pragurile și notificarea după salvare.
-- Catalogul activ are criterii RO/EN. Calificarea offline compară Normal cu Greu.
+`LocalHoldemGame` salvează actorul și mutarea. Atât comanda din UI, cât și Auto-play pot ajunge la `play`, iar jurnalul le salvează în aceeași formă. [Jurnalul local](../../holdem-android/app/src/main/java/ro/atf/holdem/android/LocalHoldemGame.java) · [Intrările din interfață](../../holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java)
 
-[Contractul realizărilor](../requirements/PRODUCT_REQUIREMENTS.md#realizări) · [Testele Android](../../holdem-android/app/src/test/java/ro/atf/holdem/android/GameplayAchievementsComponentTest.java)
+- Persistă sursa la acceptarea mutării și păstrează eligibilitatea pe toată durata turneului. Pentru un checkpoint vechi, proveniența necunoscută trebuie să lase jocul reluabil și creditul manual neacordat.
+- Verifică aceleași mutări cu surse diferite, inclusiv o mutare Auto-play într-o mână anterioară ultimei. O victorie Hard la șase locuri, integral manuală, avansează exact o dată și după restart. Cazurile Normal, mixt și cu proveniență necunoscută au zero credit la obiectivul manual Hard.
+- Pentru titlurile la toate dimensiunile, folosește ID-ul persistent al profilului și dimensiunea inițială a mesei. Două titluri la aceeași dimensiune avansează o singură treaptă. Verifică 4, 5 și 6 locuri, reluarea și două profiluri cu același nume.
 
-## Extinderea catalogului
+[Regulile candidate](../../config/j6-achievement-expansion.yaml) · [Dovezile care lipsesc în replay](../../scripts/analyze-achievement-replays.cjs)
 
-- Prioritizează familiile de poker din contract. Alege pentru fiecare cel mai mic set de trepte cu criterii diferite și păstrează cheile existente. Verifică deblocările paralele și modificarea unui prag peste valorile inițiale.
-- Pentru obiectivele de execuție personală din catalogul candidat, expune proveniența manuală a deciziei. Verifică eligibilitatea la reluare.
-- Verifică pe Android filtrarea și revenirea după recrearea activității. Sesiunea trebuie să păstreze căutarea, filtrul, poziția și detaliul selectat.
-- Califică lista extinsă la font mare și pe ecran scund. Măsoară contrastul stărilor obținut și în progres pe culorile efectiv randate de ecranul comun.
+## P2 · Restaurarea listei pe Android
 
-Catalogul candidat are reguli bilingve și o probă offline. Prioritizează obiectivele confirmate pe mai multe seed-uri. Pentru evenimentele rare, verifică și cazuri controlate, apoi măsoară frecvența în sesiuni.
+**Responsabil · acceptanța Android**
 
-Înainte de activare, expune proveniența manuală pentru turneele Hard și identitatea persistentă necesară titlurilor la dimensiuni diferite de masă.
+Proba de instalare acoperă căutarea și deschiderea regulii unui obiectiv. Proba de turneu verifică progresul salvat după redeschiderea listei. [Rapoartele ediției](../../release/0.16.0/reports/README.md#rapoarte-extent)
 
-[Catalogul candidat](../../config/j6-achievement-expansion.yaml) · [Protocolul de calificare](../testing/TEST_STRATEGY.md#replay-pentru-catalogul-extins)
+- Combină căutarea cu nivelul și starea, derulează și deschide un detaliu. După recrearea activității, verifică aceleași filtre, același rând și același detaliu. [Activitatea Realizări](../../holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementsActivity.java)
+- Pe profil compact cu font mărit, verifică accesul la textul eligibilității și la butonul de închidere. Măsoară contrastul stărilor obținut și în progres pe ecranul randat. [Proba nativă](../../holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java)
 
-## Criterii de acceptanță
+## P2 · Ritmul în sesiuni jucate manual
 
-- Verifică dacă primul obiectiv al fiecărui nivel este înțeles fără explicații și dacă se vede progresul paralel.
-- Compară progresul simulat cu sesiuni reale pe Normal și Greu. Pentru seria de trei titluri, urmărește ferestre suficient de lungi pentru obiectivele repetate.
-- Adaugă obiective doar pentru situații observabile din joc. Pentru o tactică nouă, precizează evenimentul autoritar, ce o deosebește de un câștig întâmplător și testul care respinge un caz aproape identic.
+**Responsabil · produs și calibrare**
+
+Calibrarea existentă folosește Auto-play pentru profil. În sesiuni manuale Normal și Greu, măsoară dacă jucătorul înțelege primul obiectiv din fiecare nivel și observă progresul paralel.
+
+Pentru trei titluri, măsoară deblocarea pe ferestre de 6 și 12 turnee, cu numitorul explicit și sesiunile neterminate evidențiate. Folosește diferența față de simulare ca dovadă pentru o eventuală schimbare de prag. [Metoda de calibrare](../testing/TEST_STRATEGY.md#realizări-de-joc)

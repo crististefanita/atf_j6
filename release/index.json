@@ -5,7 +5,7 @@
   "previousVersion": "0.15.0",
   "changeClass": "COMPATIBLE_FEATURE",
   "changeRationale": "Adaugă lista comună de realizări cu filtre, detalii și progres din poturi secundare și împărțite.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.16.0"

@@ -1,0 +1,42 @@
+{
+  "sourceCommit": "49e9a39c277b0418aad9ff0a5686e7b2272f4a49",
+  "catalogSha256": "7e3ef49a34d8f8ebe5a822bfe2cd4297649e9e7d23ab11ef0426a8c40876a4df",
+  "evidence": [
+    {
+      "path": "calibration-HARD.csv",
+      "sha256": "f9d80c82de06e6f03b235b440472bd7a996e4e78734e60a7f2b59b0e64f0224c"
+    },
+    {
+      "path": "calibration-NORMAL.csv",
+      "sha256": "af1d92f286e18bc613bd1acd3c8d04e332451b1fe2992474af2dc6de9f3b043b"
+    },
+    {
+      "path": "holdout-HARD.csv",
+      "sha256": "47cda07c0a913f82a3635bc285e7276f1f58f95a407ca1e1c341c297dfd613e5"
+    },
+    {
+      "path": "holdout-NORMAL.csv",
+      "sha256": "1bb4b4ae34ee98e3b46ba806f63381c47a7925ce507ad0382dada9146b210158"
+    },
+    {
+      "path": "product-budget-HARD.csv",
+      "sha256": "2415a774910b3b57879bdffad602facb4d97f02280c1621bcc8b55ece64c6eaa"
+    },
+    {
+      "path": "product-budget-NORMAL.csv",
+      "sha256": "bd8dafa9e10cbe8daa9b545984df81e144251509b27d72689114fcccbe4c6896"
+    },
+    {
+      "path": "objective-results.json",
+      "sha256": "ab287ab59c6fedfbc6a1091910ca802f9d4945e65d95af758889dda9817bcc56"
+    },
+    {
+      "path": "holdem-achievements-extent.html",
+      "sha256": "775468e459cba317d23807c0d6851278525ea1aa56345eed5f158217e4e01e35"
+    }
+  ],
+  "releaseCommit": "6e9efadf22275849683548a59ff0d68686ca9501",
+  "candidateOnlyChanges": [
+    "holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java"
+  ]
+}

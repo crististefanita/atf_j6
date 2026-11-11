@@ -58,11 +58,12 @@ J6 consumă Core, Reporting, Console, Mock și Test Kit din perechile JAR/POM di
 - [Strategie de testare](docs/testing/TEST_STRATEGY.md)
 - [Catalogul release-urilor](release/README.md)
 - [Procesul de release Android](docs/release/ATF_Release.md)
+- [RAG pentru impactul unei schimbări](docs/release/ATF_Release.md#contextul-rag-consultativ)
 - [Feedback activ](docs/feedback/README.md)
 
 ## Construire locală
 
-Pentru componente și guvernanță, folosește JDK 21 sau mai nou și Maven 3.9 sau mai nou. Dintr-un checkout de lucru, setează `HOLDEM_MAVEN_REPOSITORY` la repository-ul Maven extern și rulează comanda. Pentru build-ul aplicației ai nevoie și de Android SDK platform 36. [Calificarea Android](docs/release/ATF_Release.md#calificare-reproductibilă)
+Pentru componente și guvernanță, folosește JDK 21 sau mai nou, Maven 3.9 sau mai nou, Git și PowerShell 7. Setează `HOLDEM_MAVEN_REPOSITORY` la repository-ul Maven extern și rulează comanda. Pentru build-ul aplicației ai nevoie și de Android SDK platform 36. [Calificarea Android](docs/release/ATF_Release.md#calificare-reproductibilă)
 
 ```powershell
 mvn -B -ntp "-Dmaven.repo.local=$env:HOLDEM_MAVEN_REPOSITORY" test

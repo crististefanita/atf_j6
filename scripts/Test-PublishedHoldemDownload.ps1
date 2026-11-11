@@ -8,11 +8,13 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = [IO.Path]::GetFullPath($ProjectRoot)
-$index = Get-Content -Raw -LiteralPath (Join-Path $ProjectRoot 'release/index.json') | ConvertFrom-Json
+$indexBytes = [IO.File]::ReadAllBytes((Join-Path $ProjectRoot 'release/index.json'))
+$index = [Text.Encoding]::UTF8.GetString($indexBytes).TrimStart([char]0xFEFF) | ConvertFrom-Json
 $version = [string]$index.currentVersion
 if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Catalog version must be semantic.' }
-$validationPath = Join-Path $ProjectRoot ("release/$version/release-validation.json")
-$validation = Get-Content -Raw -LiteralPath $validationPath | ConvertFrom-Json
+$validationPath = "release/$version/release-validation.json"
+$validationBytes = [IO.File]::ReadAllBytes((Join-Path $ProjectRoot $validationPath))
+$validation = [Text.Encoding]::UTF8.GetString($validationBytes).TrimStart([char]0xFEFF) | ConvertFrom-Json
 if ($index.state -notin @('PREPARED','PUBLISHED') -or $validation.publication.state -ne $index.state) {
     throw 'Authenticated download acceptance is available only for a PREPARED or PUBLISHED release.'
 }
@@ -81,6 +83,8 @@ function Get-AuthenticatedMetadata([string]$route) {
     Invoke-RestMethod ($apiRoot + $route) -Headers $metadataHeaders -MaximumRedirection 0 -TimeoutSec 30
 }
 
+. (Join-Path $PSScriptRoot 'HoldemReleaseProvenance.ps1')
+
 function Get-ReleaseAsset([string]$name, [string]$route) {
     $matches = @($githubRelease.assets | Where-Object { $_.name -ceq $name })
     if ($matches.Count -ne 1 -or $matches[0].state -cne 'uploaded' -or
@@ -118,14 +122,40 @@ try {
     throw
 }
 
+$revision = Get-AuthenticatedMetadata ('/commits/' + [Uri]::EscapeDataString($RemoteRef))
+$readmeCommit = [string]$revision.sha
+$treeSha = [string]$revision.commit.tree.sha
+if ($readmeCommit -cnotmatch '^[0-9a-f]{40}$' -or $treeSha -cnotmatch '^[0-9a-f]{40}$') {
+    throw 'GitHub did not return an immutable README commit and tree.'
+}
+$remoteTree = Get-AuthenticatedMetadata "/git/trees/${treeSha}?recursive=1"
+if ($remoteTree.sha -cne $treeSha -or $remoteTree.truncated -ne $false -or !$remoteTree.tree.Count) {
+    throw 'Pinned Git tree is incomplete or inconsistent.'
+}
+$pinnedTree = [Collections.Generic.Dictionary[string,object]]::new([StringComparer]::Ordinal)
+foreach ($entry in $remoteTree.tree) { $pinnedTree.Add($entry.path, $entry) }
+Assert-HoldemPinnedBlob $pinnedTree 'release/index.json' $indexBytes
+Assert-HoldemPinnedBlob $pinnedTree $validationPath $validationBytes
+$tagCommit = Get-HoldemTagCommit $tag
+$provenance = Get-HoldemQualificationProof $ProjectRoot $version $validation $pinnedTree $tagCommit
+$provenance.readmeCommit = $readmeCommit
+$provenance.tagCommit = $tagCommit
+$provenance.editionManifestSha256 = Get-HoldemSha256 $validationBytes
+
 $githubRelease = Get-AuthenticatedMetadata "/releases/tags/$tag"
 $releasePage = "https://github.com/$repository/releases/tag/$tag"
 if ($githubRelease.draft -or !$githubRelease.published_at -or $githubRelease.tag_name -cne $tag -or
+    $githubRelease.id -ne $validation.publication.releaseId -or
     $githubRelease.html_url -cne $releasePage) {
     throw "GitHub has no published release at $releasePage."
 }
-$remoteReadme = Get-AuthenticatedMetadata ('/contents/README.md?ref=' + [Uri]::EscapeDataString($RemoteRef))
-$remoteText = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($remoteReadme.content))
+$remoteReadme = Get-AuthenticatedMetadata ('/contents/README.md?ref=' + $readmeCommit)
+if ($remoteReadme.encoding -cne 'base64' -or !$remoteReadme.content -or
+    $remoteReadme.sha -cne $pinnedTree['README.md'].sha) { throw 'Pinned README blob does not match the Git tree.' }
+$remoteReadmeBytes = [Convert]::FromBase64String($remoteReadme.content)
+try { Assert-HoldemPinnedBlob $pinnedTree 'README.md' $remoteReadmeBytes }
+catch { throw 'Pinned README blob does not match the downloaded README bytes.' }
+$remoteText = [Text.Encoding]::UTF8.GetString($remoteReadmeBytes)
 $remoteSections = [regex]::Matches($remoteText, '(?ms)^## Jocul[^\S\r\n]*\r?\n(.*?)(?=^## |\z)')
 if ($remoteSections.Count -ne 1) { throw 'Remote README must contain one Jocul section.' }
 $remoteRoutes = [regex]::Matches($remoteSections[0].Groups[1].Value, '\]\((https://[^\s)]+/releases/(?:tag|download)/[^\s)]+)\)')
@@ -227,15 +257,16 @@ try {
         }
         finally { $checksumRequest.Dispose() }
 
+        if ((Get-HoldemTagCommit $tag) -cne $tagCommit) { throw 'GitHub tag moved during download.' }
         Move-Item -LiteralPath $partial -Destination $downloaded
         $receipt = [ordered]@{
-            schemaVersion=1; verified=$true; version=$version; tag=$tag; repository=$repository
+            schemaVersion=2; verified=$true; version=$version; tag=$tag; repository=$repository
             readme='README.md#jocul'; assetUrl=$url; finalHost=$finalUri.Host; httpStatus=200
             credentialMode='authenticated GitHub REST API'; assetId=$apkAsset.id; remoteRef=$RemoteRef; remoteReadmeBlob=$remoteReadme.sha
             bytes=$count; sha256=$hash; apk=$assetName; completedUtc=[datetime]::UtcNow.ToString('o')
         }
         $receiptPath = Join-Path $OutputDirectory 'download-receipt.json'
-        $receiptJson = [ordered]@{ authenticatedAssetDownload=$receipt; authenticatedChecksumDownload=$checksumReceipt } | ConvertTo-Json -Depth 4
+        $receiptJson = [ordered]@{ provenance=$provenance; authenticatedAssetDownload=$receipt; authenticatedChecksumDownload=$checksumReceipt } | ConvertTo-Json -Depth 4
         Set-Content -LiteralPath $receiptPath -Value $receiptJson -Encoding utf8NoBOM
         $receiptJson
         Write-Output "Downloaded APK: $downloaded"

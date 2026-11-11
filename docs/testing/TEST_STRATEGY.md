@@ -14,6 +14,9 @@ J6 separă oracolul de componentă de probele pe Android. Guvernanța documentar
 
 ### Contracte de componentă
 
+- `HoldemReleaseProvenanceTest` simulează GitHub pentru taguri simple și adnotate, citirea README-ului la un commit fix și detectarea unui manifest ori raport modificat.
+- Fixture-urile Git verifică continuarea pentru dovezi și resping schimbările de produs, inclusiv cele revenite ulterior. [Promovare și descărcare](../release/ATF_Release.md#promovare-și-descărcare)
+
 Testele curente acoperă ordinea actorilor, sizing-ul minim, menținerea stării după acțiuni ilegale, all-in-uri scurte cumulative, evaluarea mâinii și decontarea pe straturi. `config/j6-allin-challenges.yaml` este fixture-ul controlat pentru redeschidere, egalitate și jetoane impare; JUnit îl rulează prin motor, iar `audit-allin-challenge.cjs` reface separat acțiunile, clasificarea și plata.
 
 Un caz redus din turnee verifică plata parțială a ambelor blinduri, locurile eliminate și împărțirea potului. Aserțiunile verifică separat câștigul și restituirea în vederea publică a mesei. Un al doilea caz acoperă jetonul impar acordat după buton peste un loc eliminat, cu pot secundar și restituire distincte. [Testele motorului](../../holdem-core/src/test/java/ro/atf/holdem/core/HoldemRulesTest.java)

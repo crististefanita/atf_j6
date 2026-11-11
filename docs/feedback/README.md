@@ -10,7 +10,6 @@ Indexul urmărește lacunele verificabile ale J6. Cerințele stabile apar în do
 |---|---|---|
 | P1 | [J6-AI-02 · Calibrare](J6-AI-02-STRATEGY-CALIBRATION.md) | Reluarea nivelului Hard din interfață, evaluarea independentă și modelul de range. |
 | P1 | [J6-AI-04 · Ablație shove](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) | Efect repetat cu minimum 20 de seed-uri independente pe configurație. |
-| P1 | [J6-REL-07 · Proveniența descărcării](J6-REL-07-PUBLICATION-IDENTITY.md) | Legătura dintre README, tag, calificare și dovada de descărcare. |
 | P1 | [J6-UI-05 · Coach și Auto-play](J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md) | Traseul nativ de la delegare la o decizie confirmată și înapoi la control manual. Oracolul pentru combinație și verificarea reluării din interfață. |
 | P1 | [J6-UI-07 · Showdown](J6-UI-07-SHOWDOWN-WIN-CLARITY.md#dovezi-rămase) | Centrarea perechilor în cazuri speciale și identitatea celor cinci cărți decisive. |
 | P1 | [J6-UI-10 · Istoricul pariurilor](J6-UI-10-BETTING-ACTION-LEDGER.md) | Confirmarea unei măriri din editor, sincronizarea probei după Check și verificările TalkBack în fereastra scundă. |

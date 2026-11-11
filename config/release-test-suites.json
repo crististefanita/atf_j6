@@ -28,6 +28,7 @@
     { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.ComponentSuiteExtentPublisherTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.NativeTournamentExtentPublisherTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseImpactRagTest" },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.release.HoldemReleaseProvenanceTest", "impactPaths": ["scripts/HoldemReleaseProvenance.ps1", "scripts/Test-PublishedHoldemDownload.ps1", "scripts/Test-HoldemPromotion.ps1", "scripts/tests/PublishedHoldemDownload.Tests.ps1", "scripts/tests/HoldemContinuation.Tests.ps1"] },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseVersionPolicyTest" }
   ],
   "android": [

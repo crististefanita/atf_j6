@@ -42,7 +42,23 @@ Rulați verificările J0 pe arborele complet și păstrați rezultatul brut. În
 
 ## Contextul RAG consultativ
 
-Runnerul scrie în dosarul extern un context consultativ pentru diferența față de ediția precedentă. `CONTEXT_READY` indică surse și suite sugerate.
+Runnerul compară candidatul cu ediția precedentă și propune ce să verifici. `CONTEXT_READY` indică un context cu surse și suite sugerate.
+
+```mermaid
+flowchart LR
+    Diff["Diff Git"] -->|caută| Context["Contracte și suite"]
+    Context -->|propune| Selection["Selecție"]
+    Selection -->|rulează| Evidence["Dovezi"]
+```
+
+<details>
+<summary><strong>Legendă — impact și calificare</strong></summary>
+
+- **Diff Git** fixează baza și candidatul, inclusiv fișierele eliminate.
+- **Contracte și suite** sunt sursele citate din repository și inventarul de testare.
+- **Selecție** este confirmată de reviewer. Verdictul vine din suitele executate și dovezile lor.
+
+</details>
 
 - `ReleaseImpactRag` caută documente și suite pornind de la fișierele modificate, adăugate sau șterse. Fragmentele adăugate și eliminate contribuie la căutarea contractelor afectate, inclusiv atunci când diff-ul conține doar eliminări.
 - Pentru o suită care verifică un fișier din alt modul sau un script, declarați calea exactă în `impactPaths` din inventarul suitelor. O potrivire are prioritate față de relevanța lexicală și apare în `matchingChanges`, lângă digestul inventarului.
@@ -148,11 +164,15 @@ Auditul citește manifestul calificării și verifică APK-ul, checksum-ul, inte
 
    - Poarta compară octeții, SHA-256 și checksum-ul cu receipt-ul de calificare. Confirmă că smoke-ul instalării a folosit același APK.
    - `-BuildSource` permite o construcție externă explicită la inspectarea unei calificări mai vechi.
+   - Dacă APK-ul și tagul au commituri diferite, furnizați `-Continuation` cu `qualification-continuation.json`. Poarta verifică ascendența, fiecare commit intermediar, lista exactă a căilor și probele native reutilizate. O schimbare de produs cere recalificare, inclusiv dacă a fost ulterior revenită.
 
 3. Completați `release-validation.json` cu identitatea APK-ului, commit-ul sursă, calificarea și hash-urile documentelor. Păstrați raportul Extent al porții în dosarul extern al rulării.
 4. Commit-ul sursă și tag-ul `v<versiune>` identifică exact binarul. Împingeți commitul calificat și tag-ul împreună. Verificați pe remote commitul indicat de tag.
 5. Atașați APK-ul verificat și checksum-ul la GitHub Release, publicați și confruntați asset-urile cu manifestul. După o descărcare autentificată completă, păstrați receipt-ul, marcați ediția `PREPARED` și aliniați linkurile din README. Împingeți commitul separat al dovezilor, apoi citiți README-ul de pe branchul remote. Comparați pagina Release și URL-ul APK-ului cu metadatele GitHub și păstrați separat rezultatul descărcării directe și pe cel prin API.
-6. Cu catalogul în `PREPARED`, rulați `scripts/Test-PublishedHoldemDownload.ps1`. Politica RAG curentă este `AUTHENTICATED_ONLY`. Clientul citește README-ul remote și metadatele release-ului prin API-ul GitHub autentificat. Descarcă integral APK-ul și checksum-ul prin ID-urile asset-urilor, apoi compară lungimea, SHA-256 și numele din checksum.
+6. Cu catalogul în `PREPARED`, rulați `scripts/Test-PublishedHoldemDownload.ps1`. Clientul fixează commitul README-ului și rezolvă tagul la commitul sursă. Politica de distribuție este `AUTHENTICATED_ONLY`.
+   - Citește README-ul la commitul fixat și compară catalogul, manifestul ediției, calificarea și rapoartele inventariate cu arborele Git al acelui commit. Verifică și SHA-256 al fișierelor inventariate.
+   - Descarcă integral APK-ul și checksum-ul prin ID-urile asset-urilor. Verifică lungimea, SHA-256 și numele din checksum, apoi reconfirmă ținta tagului.
+   - Blocul `provenance` din dovadă fixează commiturile README, tag și build, SHA-256 al calificării și al manifestului ediției, plus hash-ul continuării dacă a fost folosită.
    - Păstrați ambele dovezi autentificate, `authenticatedAssetDownload` și `authenticatedChecksumDownload`. Verificarea din browser folosește aceeași rută directă din README, într-o sesiune GitHub autentificată.
    - Păstrați catalogul în `PREPARED` pentru distribuția calificată cu autentificare. `PUBLISHED` reprezintă o calificare distinctă pentru accesul anonim și rămâne în schema dosarelor istorice.
    - Folosiți `GH_TOKEN` sau o credențială GitHub deja salvată în Git. Dovada conține ruta canonică, metoda și hashul, fără credențiale sau URL semnat.

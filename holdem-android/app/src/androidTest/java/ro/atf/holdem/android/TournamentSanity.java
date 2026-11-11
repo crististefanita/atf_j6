@@ -699,12 +699,50 @@ public final class TournamentSanity extends Instrumentation {
         var activity = launchHoldem();
         try {
             resumeLedgerFixture(activity);
-            tap(revealTaggedControl(activity, "CHECK"));
-            inspectActionLedger(activity, "Check", ordinal, 0, 20, "Flop", "01-checked-ledger");
+            String label = revealTaggedControl(activity, "CHECK");
+            if (usesTalkBack()) focusCheckControl(activity);
+            tap(label);
+            inspectActionLedger(activity, game.view().viewer(), "Check", ordinal, 0, 20, "Flop", "01-checked-ledger");
         } finally {
-            runOnMainSync(activity::finish);
-            waitForIdleSync();
+            finishFixture(activity);
         }
+    }
+
+    private void focusCheckControl(Activity activity) throws Exception {
+        long deadline = SystemClock.uptimeMillis() + 6000;
+        do {
+            var focused = new boolean[1];
+            runOnMainSync(() -> {
+                var root = activity.getWindow().getDecorView();
+                HoldemViewport viewport = root.findViewWithTag("holdem-game-viewport");
+                View control = root.findViewWithTag("CHECK");
+                if (viewport == null || control == null || !control.isLaidOut()) return;
+                HoldemViewport.revealWithin(viewport, control);
+                if (!control.isAccessibilityFocused()) {
+                    control.performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
+                }
+                focused[0] = control.isAccessibilityFocused();
+            });
+            if (focused[0]) {
+                check("Check starts with TalkBack focus on its control", "focused", "focused");
+                return;
+            }
+            SystemClock.sleep(100);
+        } while (SystemClock.uptimeMillis() < deadline);
+        check("Check starts with TalkBack focus on its control", "focused", "unfocused");
+    }
+
+    private void finishFixture(Activity activity) {
+        runOnMainSync(activity::finish);
+        long deadline = SystemClock.uptimeMillis() + 15000;
+        do {
+            var destroyed = new boolean[1];
+            runOnMainSync(() -> destroyed[0] = activity.isDestroyed());
+            if (destroyed[0]) return;
+            SystemClock.sleep(80);
+        } while (SystemClock.uptimeMillis() < deadline);
+        // onPause writes the current game. Finish it before storing the next fixture.
+        throw new AssertionError("Previous fixture did not finish saving");
     }
 
     private void resumeLedgerFixture(Activity activity) throws Exception {
@@ -740,7 +778,8 @@ public final class TournamentSanity extends Instrumentation {
 
     private void inspectConfirmedRaiseLedger() throws Exception {
         var sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir()));
-        sessions.save(new LocalHoldemGame(2, 0, 62), false);
+        var game = new LocalHoldemGame(2, 0, 62);
+        sessions.save(game, false);
         var activity = launchHoldem();
         try {
             resumeLedgerFixture(activity);
@@ -759,20 +798,20 @@ public final class TournamentSanity extends Instrumentation {
                     && node.isClickable() && node.isEnabled()
                     && "android:id/button1".equals(node.getViewIdResourceName())
                     && "Raise".equalsIgnoreCase(value(node.getText()))));
-            inspectActionLedger(activity, "Raise", 3, 60, 70, "Preflop", "05a-confirmed-raise-ledger");
+            inspectActionLedger(activity, game.view().viewer(), "Raise", 3, 60, 70, "Preflop", "05a-confirmed-raise-ledger");
         } finally {
-            runOnMainSync(activity::finish);
+            finishFixture(activity);
         }
     }
 
-    private void inspectActionLedger(Activity activity, String action, int ordinal, int chips, int total,
+    private void inspectActionLedger(Activity activity, int viewer, String action, int ordinal, int chips, int total,
                                      String street, String screenshot) throws Exception {
+        boolean isCheck = action.equals("Check");
+        boolean checkFocus = isCheck && usesTalkBack();
+        awaitNextPlayerDecision(action, isCheck ? Street.TURN : Street.FLOP, ordinal);
         var expectedAction = new BettingActionObservation.Expectation(ordinal, "You", action, chips, total);
-        var result = BettingActionObservation.await(() -> {
-            // A passive opponent can redraw the table while it is scrolled to the action controls.
-            runOnMainSync(() -> reveal(seatFrame(activity.getWindow().getDecorView(), 0)));
-            return bettingActionDescriptions(false);
-        }, SystemClock::uptimeMillis, SystemClock::sleep, 5000, expectedAction);
+        var result = BettingActionObservation.await(() -> ledgerSeatDescriptions(activity, viewer, checkFocus),
+                SystemClock::uptimeMillis, SystemClock::sleep, 6000, expectedAction);
         var entry = result.matched();
         if (entry == null && BETTING_LEDGER_MODES.contains(arguments.getString("mode"))) {
             capture("01a-ledger-action-unavailable");
@@ -781,8 +820,13 @@ public final class TournamentSanity extends Instrumentation {
                 expectedAction.description(), result.diagnostic(), entry != null);
         if (usesTalkBack()) {
             String actionDetail = entry.description().substring(entry.description().lastIndexOf("Action #"));
-            verifyLedgerFocus(action + " seat", candidate -> candidate.endsWith(actionDetail));
+            Predicate<String> matchesAction = candidate -> candidate.endsWith(actionDetail);
+            if (checkFocus) verifyRetainedCheckFocus(matchesAction);
+            else verifyLedgerFocus(action + " seat", matchesAction);
         }
+        awaitRenderedFrame(action + " seat badge");
+        verifyLedgerText(activity, "latest-seat-action:" + viewer, action + " badge renders the action and amount",
+                action, "+" + chips, false);
         String expected = "#" + ordinal + " · You · " + action + " +" + chips + "\n" + street + " · total " + total;
         tap(revealTaggedControl(activity, "betting-history-toggle"));
         var rows = new ArrayList<String>();
@@ -815,8 +859,30 @@ public final class TournamentSanity extends Instrumentation {
             verifyLedgerFocus(action + " ledger row", expected::equals);
         } else {
             check(action + " row is visible to Android accessibility", expected, observed);
+            node.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.getId());
         }
+        awaitRenderedFrame(screenshot);
+        verifyLedgerText(activity, "betting-action:" + ordinal, action + " ledger row is fully visible",
+                action, "total " + total, true);
         captureReadableLedger(screenshot);
+    }
+
+    private List<String> ledgerSeatDescriptions(Activity activity, int viewer, boolean checkFocus) {
+        if (usesTalkBack() && checkFocus) return bettingActionDescriptions(false);
+        var description = new String[]{""};
+        runOnMainSync(() -> {
+            var root = activity.getWindow().getDecorView();
+            View seat = root.findViewWithTag("settlement-target:seat:" + viewer);
+            if (seat == null || !seat.isLaidOut()) return;
+            if (usesTalkBack()) {
+                HoldemViewport viewport = root.findViewWithTag("holdem-game-viewport");
+                if (viewport != null) HoldemViewport.revealWithin(viewport, seat);
+            } else {
+                // The compact viewport may be scrolled away from the seat while reading its badge.
+                description[0] = value(seat.createAccessibilityNodeInfo().getContentDescription());
+            }
+        });
+        return usesTalkBack() ? bettingActionDescriptions(false) : List.of(description[0]);
     }
 
     private AccessibilityNodeInfo awaitLedgerRow(Activity activity, String expected) {
@@ -829,15 +895,7 @@ public final class TournamentSanity extends Instrumentation {
                         || !(history.getChildAt(0) instanceof ViewGroup entries)) return;
                 for (int index = 0; index < entries.getChildCount(); index++) {
                     if (entries.getChildAt(index) instanceof TextView row && expected.contentEquals(row.getText())) {
-                        reveal(row);
-                        var visible = new Rect();
-                        if (!row.getGlobalVisibleRect(visible) || visible.height() < row.getHeight()) {
-                            var bounds = new Rect();
-                            row.getDrawingRect(bounds);
-                            history.offsetDescendantRectToMyCoords(row, bounds);
-                            history.scrollTo(0, bounds.top);
-                            reveal(history);
-                        }
+                        row.performAccessibilityAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.getId(), null);
                         break;
                     }
                 }
@@ -849,6 +907,60 @@ public final class TournamentSanity extends Instrumentation {
         return null;
     }
 
+
+    private void awaitNextPlayerDecision(String action, Street street, int ordinal) throws Exception {
+        var sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir()));
+        long deadline = SystemClock.uptimeMillis() + 15000;
+        String observed = "checkpoint unavailable";
+        String assertion = "Opponents complete their turns after " + action;
+        do {
+            var saved = sessions.load().resumed();
+            if (saved != null) {
+                var frame = saved.game().view();
+                observed = frame.street() + " · actor " + frame.actor() + " · " + frame.bettingActions().size() + " actions";
+                if (frame.street() == street && frame.actor() == frame.viewer() && frame.bettingActions().size() > ordinal) {
+                    check(assertion, "next player decision", "next player decision");
+                    awaitRenderedFrame("next player decision");
+                    return;
+                }
+            }
+            SystemClock.sleep(120);
+        } while (SystemClock.uptimeMillis() < deadline);
+        check(assertion, "next player decision", observed);
+    }
+
+    private void verifyRetainedCheckFocus(Predicate<String> matchesAction) throws Exception {
+        var seats = collect(node -> matchesAction.test(value(node.getContentDescription())));
+        ledgerAssertion("Check seat has one accessibility node", "1", Integer.toString(seats.size()));
+        var focused = awaitMatch(node -> node.isAccessibilityFocused()
+                && matchesAction.test(value(node.getContentDescription())));
+        ledgerAssertion("Check seat retains focus with TalkBack", "focused", focused == null ? "unfocused" : "focused");
+    }
+
+    private void verifyLedgerText(Activity activity, String tag, String assertion, String action, String amount,
+                                  boolean fullyVisible) throws Exception {
+        var result = new String[]{"view unavailable"};
+        runOnMainSync(() -> {
+            var root = activity.getWindow().getDecorView();
+            TextView view = root.findViewWithTag(tag);
+            if (view == null || view.getLayout() == null) return;
+            String label = value(view.getText());
+            var layout = view.getLayout();
+            int lastLine = layout.getLineCount() - 1;
+            int available = view.getWidth() - view.getCompoundPaddingLeft() - view.getCompoundPaddingRight();
+            boolean fits = lastLine >= 0 && layout.getLineEnd(lastLine) == label.length()
+                    && label.contains(action) && label.contains(amount);
+            for (int line = 0; line <= lastLine; line++) {
+                fits &= layout.getEllipsisCount(line) == 0 && layout.getLineWidth(line) <= available + 1;
+            }
+            var visible = new Rect();
+            boolean inViewport = view.getLocalVisibleRect(visible)
+                    && visible.contains(0, 0, view.getWidth(), view.getHeight());
+            result[0] = fits && (!fullyVisible || inViewport) ? "complete"
+                    : label + " / view " + view.getWidth() + "×" + view.getHeight() + " / visible " + visible;
+        });
+        ledgerAssertion(assertion, "complete", result[0]);
+    }
 
     private void captureReadableLedger(String name) throws Exception {
         for (int attempt = 0; attempt < 4; attempt++) {
@@ -1019,7 +1131,7 @@ public final class TournamentSanity extends Instrumentation {
             assertTournamentStandingsHavePlayerNames();
             capture("05-tournament-lost");
         } finally {
-            runOnMainSync(activity::finish);
+            finishFixture(activity);
         }
     }
 

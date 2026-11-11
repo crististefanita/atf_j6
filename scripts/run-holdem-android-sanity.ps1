@@ -35,8 +35,20 @@ $installed = [Collections.Generic.List[string]]::new()
 $originalDisplay = $null
 $originalAccessibility = $null
 $originalAnimatorScale = $null
+function OpenLeaseStream([IO.FileMode]$Mode, [IO.FileAccess]$Access, [IO.FileShare]$Share) {
+    for ($attempt = 0; ; $attempt++) {
+        try {
+            return [IO.File]::Open($leaseFile, $Mode, $Access, $Share)
+        } catch {
+            $cause = $_.Exception.GetBaseException()
+            $sharingViolation = $cause -is [IO.IOException] -and ($cause.HResult -band 0xffff) -in @(32, 33)
+            if (!$sharingViolation -or $attempt -ge 14) { throw }
+            Start-Sleep -Milliseconds 100
+        }
+    }
+}
 function UpdateLease([bool]$acquire) {
-    $stream = [IO.File]::Open($leaseFile, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+    $stream = OpenLeaseStream OpenOrCreate ReadWrite None
     try {
         $reader = [IO.StreamReader]::new($stream, [Text.Encoding]::UTF8, $true, 1024, $true)
         try { $current = $reader.ReadToEnd() } finally { $reader.Dispose() }
@@ -52,7 +64,7 @@ function UpdateLease([bool]$acquire) {
     } finally { $stream.Dispose() }
 }
 function AssertLeaseOwnership() {
-    $stream = [IO.File]::Open($leaseFile, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
+    $stream = OpenLeaseStream Open Read Read
     try {
         $reader = [IO.StreamReader]::new($stream, [Text.Encoding]::UTF8, $true, 1024, $true)
         try { $current = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }

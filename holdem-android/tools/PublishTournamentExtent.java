@@ -278,17 +278,24 @@ class PublishTournamentExtent {
         var names = new ArrayList<String>();
         boolean talkBack = journey.equals("betting-ledger-talkback");
         if (!journey.equals("betting-ledger")) names.add("Compact betting ledger uses enlarged text");
-        if (talkBack) names.add("Google TalkBack touch exploration is active");
+        if (talkBack) {
+            names.add("Google TalkBack touch exploration is active");
+            names.add("Check starts with TalkBack focus on its control");
+            names.add("Opponents complete their turns after Check");
+        }
         names.add("Enter a custom Raise amount");
         for (String action : List.of("Check", "Raise")) {
             names.add(action + " exposes the added chips and contribution");
             names.add(action + " has exactly one matching ledger row");
             names.add(action + " ledger row fits without ellipsis");
             names.add(action + " row is visible to Android accessibility");
+            names.add(action + " badge renders the action and amount");
+            names.add(action + " ledger row is fully visible");
             if (talkBack) {
                 for (String target : List.of(" seat", " ledger row")) {
                     names.add(action + target + " has one accessibility node");
-                    names.add(action + target + " accepts focus with TalkBack");
+                    String focus = action.equals("Check") && target.equals(" seat") ? " retains" : " accepts";
+                    names.add(action + target + focus + " focus with TalkBack");
                 }
             }
         }

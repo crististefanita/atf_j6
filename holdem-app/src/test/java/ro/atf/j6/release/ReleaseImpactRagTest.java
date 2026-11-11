@@ -423,6 +423,30 @@ class ReleaseImpactRagTest {
         assertAdvisory(review);
     }
 
+    @Test void wagerEditorChangeRecommendsAllThreeLedgerProfiles(@TempDir Path temp) throws Exception {
+        Path root = project(temp, "0.3.1", "holdem-android", "ro.atf.holdem.android.WagerConfirmationComponentTest");
+        String inventoryPath = "config/release-test-suites.json";
+        Path actualInventory = Path.of(inventoryPath);
+        if (!Files.isRegularFile(actualInventory)) actualInventory = Path.of("..").resolve(inventoryPath);
+        write(root, inventoryPath, Files.readString(actualInventory));
+        String base = commit(root, "ledger baseline");
+        String editor = "holdem-android/app/src/main/java/ro/atf/holdem/android/WagerConfirmation.java";
+        write(root, editor, "class WagerConfirmation { int addedChips; }\n");
+        String head = commit(root, "change wager editor");
+        var review = ReleaseImpactRag.review(root, "0.3.0", base, head, "0.3.1", temp.resolve("ledger.json"));
+
+        var suggestions = review.path("suggestedNativeJourneys");
+        assertEquals(1, suggestions.size());
+        var suggestion = suggestions.get(0);
+        assertEquals("betting-ledger", suggestion.path("mode").asText());
+        assertEquals("-IncludeBettingLedger", suggestion.path("releaseSwitch").asText());
+        assertEquals(JSON.valueToTree(List.of("betting-ledger-compact", "betting-ledger-talkback")),
+                suggestion.path("companionModes"));
+        assertEquals(JSON.valueToTree(List.of(editor)), suggestion.path("matchingChanges"));
+        assertEquals(head, suggestion.path("indexedCommit").asText());
+        assertAdvisory(review);
+    }
+
     private static Path project(Path temp, String version, String module, String testClass) throws Exception {
         Path root = temp.resolve("project");
         Files.createDirectories(root);

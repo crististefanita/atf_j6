@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Build;
+import android.os.Bundle;
 import android.text.InputType;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -14,6 +15,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
+import android.view.accessibility.AccessibilityManager;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -54,8 +57,13 @@ import java.util.function.Predicate;
 final class HoldemTableView {
     // BoardLayout gives this center the full measured width. Its width hint only has to fit that region.
     private static final int FULL_WIDTH_CENTER_HINT_DP = 1;
-    private record ViewportPosition(int tableY, boolean historyExpanded, int historyY) {
-        private static final ViewportPosition TOP = new ViewportPosition(0, false, 0);
+    private static final String SEAT_TAG = "settlement-target:seat:";
+    private static final String LEDGER_ACTION_TAG = "betting-action:";
+    private static final String LEDGER_TOGGLE_TAG = "betting-history-toggle";
+    private static final String LEDGER_LIST_TAG = "betting-history-list";
+
+    private record ViewportPosition(int tableY, boolean historyExpanded, int historyY, String focusTag) {
+        private static final ViewportPosition TOP = new ViewportPosition(0, false, 0, null);
     }
     record Labels(TextView advice, TextView winChance, android.widget.FrameLayout achievementSlot) { }
     interface Text { String get(int resource, Object... arguments); }
@@ -85,7 +93,8 @@ final class HoldemTableView {
         var viewport = activity.getResources().getConfiguration();
         var policy = new TableViewportPolicy(viewport.screenHeightDp, viewport.fontScale);
         boolean compact = policy.isCompact() || viewport.screenWidthDp < 340 || names.size() == 2;
-        var position = viewportPosition(game, frame.street());
+        boolean largeCompactBadges = compact && viewport.fontScale >= 1.5f;
+        var position = viewportPosition(game, frame);
         LinearLayout root = views.gamePage();
         var scroll = new HoldemViewport(activity);
         compactViewport = compact ? scroll : null;
@@ -206,7 +215,8 @@ final class HoldemTableView {
             }
             addSeatFacts(seatView, facts, active, compact, reservedDigits);
             addSeatAction(seatView, latestForSeat,
-                    latestForSeat != null && latestForSeat.ordinal() == latestActionOrdinal, active, compact, !complete);
+                    latestForSeat != null && latestForSeat.ordinal() == latestActionOrdinal, active, compact,
+                    largeCompactBadges, !complete);
             View framedSeat = seatView;
             if (!compact) {
                 framedSeat = new PlayerSeatView(activity, seatView, text.get(R.string.actor), active, seat, false);
@@ -214,7 +224,7 @@ final class HoldemTableView {
                         .setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             }
             View withCards = withTerminalCards(framedSeat, compact, seat, frame, alignSeatHands);
-            seatView.setTag("settlement-target:seat:" + seat);
+            seatView.setTag(SEAT_TAG + seat);
             seats.add(withCards);
         }
         View center = board(frame, names, game, compact, awardsAboveTable ? null : pot,
@@ -236,7 +246,7 @@ final class HoldemTableView {
             }
         }
 
-        addBettingLedger(content, frame, names, compact, position);
+        addBettingLedger(scroll, content, frame, names, compact, position);
 
         TextView advice = null;
         android.widget.FrameLayout achievementSlot = null;
@@ -262,6 +272,7 @@ final class HoldemTableView {
 
             actions(content, manual ? frame.legalActions() : List.of(), compact, submit);
         }
+        restoreAccessibilityFocus(scroll, content, position.focusTag());
         return new Labels(advice, winChance, achievementSlot);
     }
 
@@ -279,24 +290,39 @@ final class HoldemTableView {
         return (int) Math.ceil(width) + view.getCompoundPaddingLeft() + view.getCompoundPaddingRight();
     }
 
-    private ViewportPosition viewportPosition(LocalHoldemGame game, Street street) {
-        if (game != displayedGame || displayedHand != game.handNumber() || street == Street.COMPLETE
+    private ViewportPosition viewportPosition(LocalHoldemGame game, HoldemTableViewState frame) {
+        if (game != displayedGame || displayedHand != game.handNumber() || frame.street() == Street.COMPLETE
                 || settlementFrame.street() == Street.COMPLETE || !contentRoot.isAttachedToWindow())
             return ViewportPosition.TOP;
         var viewport = (ScrollView) contentRoot.getParent();
-        ScrollView history = contentRoot.findViewWithTag("betting-history-list");
-        return new ViewportPosition(viewport.getScrollY(), history.getVisibility() == View.VISIBLE, history.getScrollY());
+        ScrollView history = contentRoot.findViewWithTag(LEDGER_LIST_TAG);
+        var accessibility = views.activity().getSystemService(AccessibilityManager.class);
+        String focus = accessibility.isTouchExplorationEnabled() ? HoldemViewport.focusedTag(contentRoot) : null;
+        if (ActionType.CHECK.name().equals(focus) && frame.bettingActions().size() > settlementFrame.bettingActions().size()) {
+            var last = frame.bettingActions().get(frame.bettingActions().size() - 1);
+            if (last.seat() == frame.viewer() && last.kind() == BettingAction.Kind.CHECK) {
+                focus = SEAT_TAG + frame.viewer();
+            }
+        }
+        return new ViewportPosition(viewport.getScrollY(), history.isShown(), history.getScrollY(), focus);
+    }
+
+    // Keep the user's existing focus through a same-hand redraw that replaces the focused View.
+    private void restoreAccessibilityFocus(HoldemViewport viewport, ViewGroup content, String tag) {
+        if (tag == null || !(tag.startsWith(SEAT_TAG) || tag.startsWith(LEDGER_ACTION_TAG)
+                || tag.equals(LEDGER_TOGGLE_TAG))) return;
+        View target = content.findViewWithTag(tag);
+        if (target == null) return;
+        HoldemViewport.afterLayout(viewport, () -> {
+            if (contentRoot != content || !target.isShown()) return;
+            HoldemViewport.revealWithin(viewport, target);
+            //noinspection AccessibilityFocus
+            target.performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
+        });
     }
 
     private static void restoreScrollOnLayout(ScrollView scroll, int y) {
-        if (y == 0) return;
-        scroll.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-            @Override public void onLayoutChange(View view, int left, int top, int right, int bottom,
-                                                 int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                scroll.removeOnLayoutChangeListener(this);
-                scroll.scrollTo(0, y);
-            }
-        });
+        if (y != 0) HoldemViewport.afterLayout(scroll, () -> scroll.scrollTo(0, y));
     }
 
     void renderWinChance(TextView label, Integer percent) {
@@ -321,15 +347,20 @@ final class HoldemTableView {
     }
 
     private void addSeatAction(LinearLayout seat, HoldemTablePresentation.ActionRow row,
-                              boolean latest, boolean active, boolean compact, boolean reserve) {
+                              boolean latest, boolean active, boolean compact, boolean largeCompact, boolean reserve) {
         if (row == null && !reserve) return;
         var style = HoldemTablePresentation.seatActionStyle(compact, latest, active);
-        String label = row == null ? "" : text.get(R.string.seat_latest_action, row.ordinal(),
-                text.get(seatActionLabel(row.kind())), row.amount());
+        String label = "";
+        if (row != null) {
+            String action = text.get(seatActionLabel(row.kind()));
+            label = largeCompact ? text.get(R.string.seat_latest_action_stacked, action, row.amount())
+                    : text.get(R.string.seat_latest_action, row.ordinal(), action, row.amount());
+        }
         var badge = views.text(label, style.textSp(), style.textColor(), true);
         if (row == null) badge.setVisibility(View.INVISIBLE);
         else badge.setTag("latest-seat-action:" + row.physicalSeat());
-        singleLine(badge);
+        if (largeCompact) badge.setLines(2);
+        else singleLine(badge);
         badge.setGravity(Gravity.CENTER);
         badge.setPadding(views.dp(3), views.dp(1), views.dp(3), views.dp(1));
         badge.setContentDescription(null);
@@ -608,15 +639,15 @@ final class HoldemTableView {
         return text.get(R.string.best_hand, text.get(categoryLabel(HandRank.categoryOf(cards))));
     }
 
-    private void addBettingLedger(LinearLayout parent, HoldemTableViewState frame, List<String> names, boolean compact,
-                                  ViewportPosition position) {
+    private void addBettingLedger(HoldemViewport viewport, LinearLayout parent, HoldemTableViewState frame,
+                                  List<String> names, boolean compact, ViewportPosition position) {
         var section = new LinearLayout(views.activity());
         section.setOrientation(LinearLayout.VERTICAL);
         section.setPadding(views.dp(8), views.dp(2), views.dp(8), views.dp(2));
         var title = views.text(text.get(R.string.betting_history_title), compact ? 10 : 11,
                 HoldemTablePresentation.SECONDARY_TABLE_TEXT, true);
         title.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-        title.setTag("betting-history-toggle");
+        title.setTag(LEDGER_TOGGLE_TAG);
         title.setClickable(true);
         title.setFocusable(true);
         title.setPadding(views.dp(4), views.dp(4), views.dp(4), views.dp(4));
@@ -624,6 +655,7 @@ final class HoldemTableView {
                 ? R.string.betting_history_hide : R.string.betting_history_show));
         title.setSelected(position.historyExpanded());
         section.addView(title, views.matchWrap());
+        var history = new ScrollView(views.activity());
         var entries = new LinearLayout(views.activity());
         entries.setOrientation(LinearLayout.VERTICAL);
         var rows = HoldemTablePresentation.actionRows(frame, names);
@@ -634,15 +666,27 @@ final class HoldemTableView {
             String entry = text.get(R.string.betting_ledger_entry, row.ordinal(), row.player(), label, row.amount(),
                     text.get(street), row.totalContribution());
             var line = views.text(entry, style.textSp(), style.textColor(), true);
-            line.setTag("betting-action:" + row.ordinal());
+            line.setTag(LEDGER_ACTION_TAG + row.ordinal());
             line.setPadding(views.dp(5), views.dp(2), views.dp(5), views.dp(2));
             line.setBackground(views.roundedBackground(0x1affffff, style.borderColor(), 4));
             line.setContentDescription(entry);
             line.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+            line.setAccessibilityDelegate(new View.AccessibilityDelegate() {
+                @Override public boolean performAccessibilityAction(View host, int action, Bundle arguments) {
+                    if (action == AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.getId()) {
+                        revealLedgerRow(viewport, history, host);
+                        return true;
+                    }
+                    boolean handled = super.performAccessibilityAction(host, action, arguments);
+                    if (handled && action == AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS) {
+                        revealLedgerRow(viewport, history, host);
+                    }
+                    return handled;
+                }
+            });
             entries.addView(line, views.matchWrap());
         }
-        var history = new ScrollView(views.activity());
-        history.setTag("betting-history-list");
+        history.setTag(LEDGER_LIST_TAG);
         history.setContentDescription(text.get(R.string.betting_history_list_description));
         history.setFillViewport(false);
         history.setVerticalScrollBarEnabled(true);
@@ -659,10 +703,20 @@ final class HoldemTableView {
             title.setContentDescription(text.get(expanded
                     ? R.string.betting_history_hide : R.string.betting_history_show));
             title.setSelected(expanded);
-            if (expanded) history.post(() -> history.fullScroll(View.FOCUS_DOWN));
+            if (expanded && entries.getChildCount() > 0) {
+                View newest = entries.getChildAt(entries.getChildCount() - 1);
+                HoldemViewport.afterLayout(history, () -> history.post(() -> {
+                    if (history.isShown()) revealLedgerRow(viewport, history, newest);
+                }));
+            }
         });
         if (frame.bettingActions().isEmpty()) section.setVisibility(View.INVISIBLE);
         parent.addView(section, views.matchWrap());
+    }
+
+    private static void revealLedgerRow(HoldemViewport viewport, ScrollView history, View row) {
+        HoldemViewport.revealWithin(history, row);
+        HoldemViewport.revealWithin(viewport, row);
     }
 
     private int streetLabel(Street street) {

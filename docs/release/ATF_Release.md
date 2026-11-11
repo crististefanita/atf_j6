@@ -117,6 +117,8 @@ $sourceCommit = (git rev-parse HEAD).Trim()
 
 Pentru o ediție care schimbă chenarele, cărțile terminale sau selectorul de dificultate, adăugați `-IncludeSeatMetrics` la runner. Acesta cere Android Accessibility Suite și include dovada Extent a afișajului compact. [Strategia de testare Android](../testing/TEST_STRATEGY.md#interfața-android-locală)
 
+Pentru schimbări ale editorului, jurnalului sau focusului mesei, selectați `-IncludeBettingLedger` când RAG indică impactul. Runnerul execută profilurile standard, compact și compact cu TalkBack pe APK-ul sanity și înregistrează rapoartele și verdictul fiecărei probe în manifestul calificării. [Criteriile jurnalului](../testing/TEST_STRATEGY.md#confirmarea-unui-raise-din-editor)
+
 Pentru o ediție care schimbă decontarea, premiul sau animația lui, includeți `-IncludeSettlementAward`. Pe același APK sanity, runnerul execută cele patru probe:
 
 | Traseu | Contract | Câmp în calificare |

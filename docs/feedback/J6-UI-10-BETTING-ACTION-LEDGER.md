@@ -1,22 +1,15 @@
 # J6-UI-10 · Istoricul pariurilor
 
-P1. Ownerul este instrumentarea mesei Android.
+Rezolvat pentru Check și Raise 60. Ownerul este masa Android și instrumentarea ei.
 
-## Acoperirea existentă
+## Comportament verificat
 
-- În preflop, traseul deschide Raise, închide editorul și activează Call prin nodul Android de accesibilitate. Flopul și intrarea `Call +20` în jurnal confirmă acceptarea acțiunii.
-- Pe API 28, revenirea dintr-o fereastră modală poate lăsa rădăcina activă indisponibilă chiar dacă fereastra mesei are deja focus. Instrumentarea caută nodul în fereastra de aplicație când rădăcina activă lipsește. Raportul păstrează diagnosticul dacă clickul nu a fost observat.
-- Componentele acoperă suma exactă din editor, confirmarea repetată, reîncercarea după respingere și replay. După Check, proba așteaptă ordinalul corect și diagnostichează un nod vechi sau expirarea așteptării. [Strategia de testare](../testing/TEST_STRATEGY.md#sincronizarea-jurnalului-după-check)
+- În profilul compact de 320 × 328 dp, cu font 2,0 și TalkBack activ, comanda Check transferă focusul la locul jucătorului. Focusul rămâne acolo până la următoarea decizie, după acțiunile adversarilor.
+- Badge-ul mărit afișează acțiunea și suma pe două linii. Istoricul păstrează ordinalul și aduce rândul întreg în fereastră când primește focus.
+- Check adaugă 0 și păstrează contribuția la 20. Raise din editor adaugă 60 și duce contribuția la 70 cu blindul deja plătit. Fiecare acțiune are un singur rând. [Probe și criterii](../testing/TEST_STRATEGY.md#confirmarea-unui-raise-din-editor)
 
-## Verificat pe Android
+## Regresii și calificare
 
-Pe API 28, jurnalul a conținut câte un singur rând pentru Check (+0, total 20) și Raise (+60, total 70), atât pe profilul standard, cât și în fereastra de 320 × 328 dp cu font 2,0. Probele au verificat descrierile accesibile și au păstrat capturile originale în Extent. [Comenzi și criterii](../testing/TEST_STRATEGY.md#confirmarea-unui-raise-din-editor)
-
-- Cu TalkBack activ, rândurile Check și Raise au expus aceleași valori, fiecare o singură dată, și au primit focus. Locul Raise a primit focus. La ultima rulare, nodul locului Check nu a mai fost disponibil când proba a cerut focus, iar verdictul a rămas `FAIL`.
-- În capturile compacte, badge-ul Check este trunchiat, iar după deschiderea jurnalului contribuția de pe al doilea rând de text rămâne sub marginea ferestrei. Descrierea accesibilă a păstrat contribuția completă.
-
-## Acceptanță rămasă
-
-- După Check la font 2,0, stabilizează focalizarea locului peste schimbarea actorului. La deschiderea jurnalului și la focalizarea unui rând, păstrează ambele linii ale rândului vizibile și textul badge-ului lizibil. Verifică limitele randate după stabilizarea focusului, inclusiv când locul uman se află la baza mesei.
-- Pe fereastra scundă, parcurge jurnalul și toate locurile prin gesturi. Verifică nume lungi și ascultă anunțurile în română și engleză. Fiecare loc trebuie să rostească numele, acțiunea, suma și contribuția o singură dată. [Matricea J6-UI-09](J6-UI-09-SEAT-METRIC-HIERARCHY.md)
-- Declară profilurile jurnalului în inventarul de release și adaugă în RAG căile exacte pentru editor, proba nativă și proiecția jurnalului. Când se schimbă oricare, contextul trebuie să propună explicit rularea compactă cu TalkBack și să citeze opțiunea de rulare. [Contractul RAG](../release/ATF_Release.md#contextul-rag-consultativ)
+- Traseul de turneu verifică și revenirea la Call după închiderea editorului Raise. Testele de componentă acoperă confirmarea repetată, respingerea, replay-ul și așteptarea ordinalului corect după Check. [Sincronizarea jurnalului](../testing/TEST_STRATEGY.md#sincronizarea-jurnalului-după-check)
+- Inventarul RAG propune `-IncludeBettingLedger` pentru căile declarate. Opțiunea rulează profilurile standard, compact și compact cu TalkBack și publică dovezile Extent. [Calificarea de release](../release/ATF_Release.md#calificare-reproductibilă)
+- Parcurgerea prin gesturi și anunțurile audio pentru toate locurile și ambele limbi rămân în matricea de accesibilitate. [J6-UI-09](J6-UI-09-SEAT-METRIC-HIERARCHY.md)

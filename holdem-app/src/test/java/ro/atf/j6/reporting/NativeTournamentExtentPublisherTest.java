@@ -163,12 +163,15 @@ class NativeTournamentExtentPublisherTest {
         receipt.putArray("captures").add("01-checked-ledger.png").add("05a-confirmed-raise-ledger.png");
         var assertions = receipt.putArray("assertions");
         for (String name : List.of("Compact betting ledger uses enlarged text",
-                "Google TalkBack touch exploration is active", "Enter a custom Raise amount",
+                "Google TalkBack touch exploration is active", "Check starts with TalkBack focus on its control",
+                "Opponents complete their turns after Check", "Enter a custom Raise amount",
                 "Check exposes the added chips and contribution", "Check has exactly one matching ledger row",
                 "Check ledger row fits without ellipsis", "Check row is visible to Android accessibility",
-                "Check seat has one accessibility node", "Check seat accepts focus with TalkBack",
+                "Check badge renders the action and amount", "Check ledger row is fully visible",
+                "Check seat has one accessibility node", "Check seat retains focus with TalkBack",
                 "Check ledger row has one accessibility node", "Check ledger row accepts focus with TalkBack",
                 "Raise exposes the added chips and contribution", "Raise ledger row fits without ellipsis",
+                "Raise badge renders the action and amount",
                 "Raise row is visible to Android accessibility", "Raise seat has one accessibility node",
                 "Raise seat accepts focus with TalkBack", "Raise ledger row has one accessibility node")) {
             assertions.add(assertion(name, true));
@@ -177,6 +180,7 @@ class NativeTournamentExtentPublisherTest {
         var result = publish(temp, receipt);
         assertAuditedFailure(result, "Raise has exactly one matching ledger row");
         assertTrue(result.html().contains("Raise ledger row accepts focus with TalkBack"));
+        assertTrue(result.html().contains("Raise ledger row is fully visible"));
     }
 
     private static ObjectNode seatMetricsReceipt() {

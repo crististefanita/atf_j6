@@ -8,10 +8,11 @@ param(
     [switch]$IncludeHardSix,
     [switch]$IncludeSeatMetrics,
     [switch]$IncludeSettlementAward,
+    [switch]$IncludeBettingLedger,
     [switch]$TableGeometryOnly
 )
 $ErrorActionPreference = 'Stop'
-if ($TableGeometryOnly -and ($IncludeHardSix -or $IncludeSeatMetrics -or $IncludeSettlementAward)) {
+if ($TableGeometryOnly -and ($IncludeHardSix -or $IncludeSeatMetrics -or $IncludeSettlementAward -or $IncludeBettingLedger)) {
     throw 'TableGeometryOnly cannot be combined with end-to-end journeys.'
 }
 $sourceRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
@@ -220,6 +221,33 @@ try {
 
     $publisher = Join-Path $appRoot 'tools/PublishTournamentExtent.java'
     $nativeProofs = [ordered]@{}
+    function Invoke-SanityJourneyProof([string]$Mode) {
+        $evidence = Join-Path $RunRoot "android-$Mode"
+        $report = "android-$Mode-extent.html"
+        $runError = $null
+        try {
+            Invoke-NativeQualification -Mode $Mode
+        } catch {
+            $runError = $_
+        }
+        $receiptPath = Join-Path $evidence 'native.json'
+        if (!(Test-Path -LiteralPath $receiptPath)) {
+            if ($runError) { throw $runError }
+            throw "$Mode did not produce a native receipt."
+        }
+        & $java -cp $classPath $publisher (Join-Path $reports $report) $evidence $sanityApk
+        $reportExit = $LASTEXITCODE
+        $receipt = Get-Content -Raw -LiteralPath $receiptPath | ConvertFrom-Json
+        if ($reportExit -ne 0 -or $runError -or $receipt.journey -cne $Mode -or
+                $receipt.status -ne 'PASS' -or $receipt.apkSha256 -ne $sanityHash) {
+            throw "$Mode qualification failed. Inspect the native receipt and Extent."
+        }
+        return [ordered]@{
+            status=$receipt.status; api=$receipt.api; window=$receipt.window; apkSha256=$receipt.apkSha256
+            assertions=$receipt.assertions.Count; screenshots=$receipt.captures.Count; report=$report
+        }
+    }
+
     if ($TableGeometryOnly) {
         $geometry = [ordered]@{}
         foreach ($profile in @('device','short','tall')) {
@@ -301,30 +329,15 @@ try {
                 settlementCompactAward='settlement-compact-award'
             }
             foreach ($entry in $awardModes.GetEnumerator()) {
-                $mode = $entry.Value
-                $awardEvidence = Join-Path $RunRoot "android-$mode"
-                $awardReport = "android-$mode-extent.html"
-                $awardError = $null
-                try {
-                    Invoke-NativeQualification -Mode $mode
-                } catch {
-                    $awardError = $_
-                }
-                $receiptPath = Join-Path $awardEvidence 'native.json'
-                if (!(Test-Path -LiteralPath $receiptPath)) {
-                    if ($awardError) { throw $awardError }
-                    throw "$mode did not produce a native receipt."
-                }
-                & $java -cp $classPath $publisher (Join-Path $reports $awardReport) $awardEvidence $sanityApk
-                $award = Get-Content -Raw -LiteralPath $receiptPath | ConvertFrom-Json
-                if ($LASTEXITCODE -ne 0 -or $awardError -or $award.status -ne 'PASS' -or $award.apkSha256 -ne $sanityHash) {
-                    throw "$mode qualification failed. Inspect the native receipt and Extent."
-                }
-                $settlementProofs[$entry.Key] = [ordered]@{
-                    status=$award.status; api=$award.api; window=$award.window; apkSha256=$award.apkSha256
-                    assertions=$award.assertions.Count; screenshots=$award.captures.Count; report=$awardReport
-                }
+                $settlementProofs[$entry.Key] = Invoke-SanityJourneyProof $entry.Value
             }
+        }
+        if ($IncludeBettingLedger) {
+            $ledgerProofs = [ordered]@{}
+            foreach ($mode in @('betting-ledger', 'betting-ledger-compact', 'betting-ledger-talkback')) {
+                $ledgerProofs[$mode] = Invoke-SanityJourneyProof $mode
+            }
+            $nativeProofs.bettingLedger = $ledgerProofs
         }
     }
     Get-ChildItem -LiteralPath (Join-Path $reports 'maven') -File -Filter '*.html' | ForEach-Object {

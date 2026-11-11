@@ -1,7 +1,9 @@
 package ro.atf.holdem.android;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ScrollView;
 import ro.cardtable.ui.cards.CardFaceMetrics;
 
@@ -19,6 +21,37 @@ final class HoldemViewport extends ScrollView {
         setFillViewport(true);
         setOverScrollMode(OVER_SCROLL_NEVER);
         setTag("holdem-game-viewport");
+    }
+
+    static String focusedTag(View view) {
+        if (view.isAccessibilityFocused()) return view.getTag() instanceof String tag ? tag : null;
+        if (view instanceof ViewGroup group) {
+            for (int index = 0; index < group.getChildCount(); index++) {
+                String tag = focusedTag(group.getChildAt(index));
+                if (tag != null) return tag;
+            }
+        }
+        return null;
+    }
+
+    static void afterLayout(View view, Runnable action) {
+        view.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override public void onLayoutChange(View target, int left, int top, int right, int bottom,
+                                                 int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                target.removeOnLayoutChangeListener(this);
+                action.run();
+            }
+        });
+    }
+
+    static void revealWithin(ScrollView viewport, View target) {
+        var bounds = new Rect();
+        target.getDrawingRect(bounds);
+        viewport.offsetDescendantRectToMyCoords(target, bounds);
+        int top = viewport.getScrollY() + viewport.getPaddingTop();
+        int bottom = viewport.getScrollY() + viewport.getHeight() - viewport.getPaddingBottom();
+        if (bounds.top < top) viewport.scrollBy(0, bounds.top - top);
+        else if (bounds.bottom > bottom) viewport.scrollBy(0, bounds.bottom - bottom);
     }
 
     void fitCard(View card, int preferredDp) {

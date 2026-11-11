@@ -69,6 +69,24 @@
       ]
     },
     {
+      "mode": "betting-ledger",
+      "switch": "-IncludeBettingLedger",
+      "companionModes": ["betting-ledger-compact", "betting-ledger-talkback"],
+      "impactPaths": [
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTablePresentation.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemViewport.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/WagerConfirmation.java",
+        "holdem-android/app/src/main/res/values/strings.xml",
+        "holdem-android/app/src/main/res/values-ro/strings.xml",
+        "holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java",
+        "holdem-android/app/src/testSupport/java/ro/atf/holdem/android/BettingActionObservation.java",
+        "holdem-android/tools/PublishTournamentExtent.java",
+        "scripts/run-holdem-android-sanity.ps1"
+      ]
+    },
+    {
       "mode": "settlement-award",
       "switch": "-IncludeSettlementAward",
       "companionModes": ["settlement-multi-award", "settlement-static-award", "settlement-compact-award"],

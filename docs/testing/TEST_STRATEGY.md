@@ -110,8 +110,8 @@ Un caz redus din turnee verifică plata parțială a ambelor blinduri, locurile 
 ### Confirmarea unui Raise din editor
 
 - `WagerConfirmationComponentTest` conectează confirmarea editorului la motor. Verifică suma adăugată, contribuția cumulată și o singură intrare după o confirmare repetată și după replay. [Testele JVM](../../holdem-android/app/src/test/java/ro/atf/holdem/android/WagerConfirmationComponentTest.java)
-- Pentru o verificare scurtă, rulează `scripts/run-holdem-android-sanity.ps1` cu `-Mode betting-ledger`, apoi cu `betting-ledger-compact` și `betting-ledger-talkback`. Ultimele două folosesc fereastra scundă la cel mult 320 dp și font 2,0. Profilul TalkBack cere explorare tactilă activă și verifică focalizarea pe locul jucătorului și pe rândul din jurnal.
-- Parcursul reia câte un checkpoint înainte de acțiune. Pentru Check verifică zero jetoane adăugate și contribuția de 20. Pentru Raise introduce 60 și verifică o contribuție de 70 cu blindul deja plătit. Proba confruntă fiecare sumă cu descrierea accesibilă, numără rândurile din jurnalul extins și păstrează câte o captură nativă. [J6-UI-10](../feedback/J6-UI-10-BETTING-ACTION-LEDGER.md)
+- Pentru o verificare scurtă, rulează `scripts/run-holdem-android-sanity.ps1` cu `-Mode betting-ledger`, apoi cu `betting-ledger-compact` și `betting-ledger-talkback`. Ultimele două folosesc fereastra scundă la cel mult 320 dp și font 2,0. Profilul TalkBack pornește cu focus pe comanda Check și urmărește transferul la locul jucătorului până la următoarea decizie, după răspunsul adversarilor.
+- Parcursul reia câte un checkpoint înainte de acțiune. Pentru Check verifică zero jetoane adăugate și contribuția de 20. Pentru Raise introduce 60 și verifică o contribuție de 70 cu blindul deja plătit. Proba confruntă sumele cu descrierile accesibile și numără rândurile din jurnalul extins. Măsoară textul badge-ului și cere ca rândul întreg, inclusiv totalul, să intre în fereastră după focus. [J6-UI-10](../feedback/J6-UI-10-BETTING-ACTION-LEDGER.md)
 
 ### Realizări de joc
 

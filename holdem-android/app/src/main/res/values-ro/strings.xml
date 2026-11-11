@@ -76,6 +76,7 @@
     <string name="betting_history_hide">Ascunde istoricul complet al pariurilor</string>
     <string name="betting_history_list_description">Lista istoricului pariurilor</string>
     <string name="seat_latest_action">#%1$d · %2$s +%3$d</string>
+    <string name="seat_latest_action_stacked">%1$s\n+%2$d</string>
     <string name="seat_action_description">Mutarea #%1$d · %2$s · %3$s +%4$d · %5$s · contribuție %6$d</string>
     <string name="small_blind_short">SB</string>
     <string name="big_blind_short">BB</string>

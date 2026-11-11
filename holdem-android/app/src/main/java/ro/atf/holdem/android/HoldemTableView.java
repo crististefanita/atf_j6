@@ -921,17 +921,10 @@ final class HoldemTableView {
             opener.requestRectangleOnScreen(new Rect(0, 0, opener.getWidth(), opener.getHeight()), true);
         }));
         dialog.show();
+        var confirmation = new WagerConfirmation(option, submit);
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(ignored -> {
-            try {
-                int amount = Integer.parseInt(input.getText().toString());
-                if (submit.test(new LocalHoldemGame.Move(option.type(), amount))) {
-                    dialog.dismiss();
-                    return;
-                }
-            } catch (NumberFormatException invalid) {
-                // Invalid text never reaches the engine.
-            }
-            error.setVisibility(View.VISIBLE);
+            if (confirmation.confirm(input.getText())) dialog.dismiss();
+            else error.setVisibility(View.VISIBLE);
         });
     }
 

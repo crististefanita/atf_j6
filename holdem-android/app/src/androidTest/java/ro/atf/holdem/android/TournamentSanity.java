@@ -79,6 +79,7 @@ public final class TournamentSanity extends Instrumentation {
             if (journey.equals("tournament")) {
                 winAcrossThreeHands();
                 loseOnTheOpeningAllIn();
+                inspectConfirmedRaiseLedger();
             } else if (journey.equals("release-smoke")) {
                 releaseEntryNavigation();
             } else if (journey.equals("hard-six")) {
@@ -654,6 +655,50 @@ public final class TournamentSanity extends Instrumentation {
                 clicked ? dispatched : callDiagnostic(activity, call));
         actions.put("Call · 20 via Android accessibility after closing Raise");
         waitForIdleSync();
+    }
+
+    private void inspectConfirmedRaiseLedger() throws Exception {
+        var sessions = new HoldemSessionRepository(new FileHoldemSessionStorage(getTargetContext().getFilesDir()));
+        sessions.save(new LocalHoldemGame(2, 0, 62), false);
+        var activity = launchHoldem();
+        try {
+            tap("Continue saved game");
+            tap(revealTaggedControl(activity, "RAISE"));
+            var field = awaitMatch(node -> node.isEditable()
+                    && (value(node.getContentDescription()).startsWith("Add now ·")
+                    || value(node.getContentDescription()).startsWith("Chips to add now ·")));
+            var input = new Bundle();
+            input.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, "60");
+            boolean entered = field != null && field.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, input);
+            check("Enter a custom Raise amount", "60", entered && awaitMatch(node -> node.isEditable()
+                    && "60".equals(value(node.getText()))) != null ? "60" : "editable amount unavailable");
+            actions.put("Enter 60 in the Raise editor");
+            int editorWindow = field.getWindowId();
+            tap("Confirm Raise in the editor", awaitMatch(node -> node.getWindowId() == editorWindow
+                    && node.isClickable() && node.isEnabled() && "Raise".equals(value(node.getText()))));
+            seeBettingAction("Confirmed Raise exposes 60 added chips and 70 total",
+                    new BettingActionObservation.Expectation(3, "You", "Raise", 60, 70), false);
+
+            String expected = "#3 · You · Raise +60\nPreflop · total 70";
+            tap(revealTaggedControl(activity, "betting-history-toggle"));
+            scrollBackUntilVisible(expected);
+            var entries = new ArrayList<String>();
+            runOnMainSync(() -> {
+                var history = activity.getWindow().getDecorView().findViewWithTag("betting-history-list");
+                if (!(history instanceof android.widget.ScrollView scroll) || !scroll.isShown()
+                        || !(scroll.getChildAt(0) instanceof ViewGroup rows)) return;
+                for (int index = 0; index < rows.getChildCount(); index++) {
+                    if (rows.getChildAt(index) instanceof TextView row) entries.add(value(row.getText()));
+                }
+            });
+            var raiseOrOrdinal = entries.stream().filter(entry -> entry.startsWith("#3 · ")
+                    || entry.contains(" · You · Raise +")).toList();
+            check("Confirmed Raise has exactly one entry in the expanded ledger", List.of(expected).toString(),
+                    raiseOrOrdinal.toString(), raiseOrOrdinal.equals(List.of(expected)));
+            capture("06-confirmed-raise-ledger");
+        } finally {
+            runOnMainSync(activity::finish);
+        }
     }
 
     private String callDiagnostic(Activity activity, AccessibilityNodeInfo candidate) {

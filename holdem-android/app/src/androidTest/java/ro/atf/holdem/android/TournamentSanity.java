@@ -1,6 +1,5 @@
 package ro.atf.holdem.android;
 
-import ro.cardtable.ui.screens.GameTitleBar;
 
 import android.animation.ValueAnimator;
 import android.app.Activity;
@@ -44,6 +43,7 @@ import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import ro.cardtable.ui.screens.GameTitleBar;
 
 /** A small device suite that drives the same accessible controls as the player. */
@@ -560,21 +560,20 @@ public final class TournamentSanity extends Instrumentation {
             inspectRaiseEditorAndCall(activity);
             see("First hand reaches the flop", "Hand 1 · Flop");
             awaitWinChance("The win chance remains visible on the flop", true);
-            var flopCheck = awaitMatch(node -> node.isEnabled() && node.isClickable()
-                    && "Check".equals(value(node.getText())));
+            var flopCheck = awaitMatch(TournamentSanity::isCheckControl);
             check("Flop actions have returned to the player", "Check available",
                     flopCheck == null ? "Check unavailable" : "Check available");
             capture("01-call-ledger-visible");
             checkSeatActions(activity, 4);
             seeActionForPlayer("You", "Call", 20);
-            seeLatestAction("Latest seat action names the most recent player, move and running hand total",
-                    "Check", 0, "contribution 20");
+            var beforeCheck = seeBettingAction("Latest seat action names the most recent player, move and running hand total",
+                    new BettingActionObservation.Expectation(0, null, "Check", 0, 20), true);
             tap("Hand history");
             scrollBackUntilVisible("#3 · You · Call +20");
             capture("01-betting-ledger-history");
             tap("Check");
-            seeLatestAction("Check iteration identifies a player and its zero chip delta",
-                    "Check", 0, "contribution 20");
+            seeBettingAction("Check iteration identifies a player and its zero chip delta",
+                    new BettingActionObservation.Expectation(beforeCheck.ordinal() + 1, "You", "Check", 0, 20), false);
             see("First hand reaches the turn", "Hand 1 · Turn");
             tap("Check");
             see("First hand reaches the river", "Hand 1 · River");
@@ -1666,60 +1665,30 @@ public final class TournamentSanity extends Instrumentation {
                 "one visible action badge for " + player, Integer.toString(matches.size()), matches.size() == 1);
     }
 
-    private void seeLatestAction(String name, String action, int amount, String total) throws Exception {
-        long deadline = SystemClock.uptimeMillis() + 2500;
-        List<AccessibilityNodeInfo> matches;
-        do {
-            matches = collect(node -> value(node.getContentDescription()).contains(", Action #")
-                    || value(node.getText()).contains("Action #"));
-            if (!matches.isEmpty()) break;
-            SystemClock.sleep(80);
-        } while (SystemClock.uptimeMillis() < deadline);
-        if (matches.isEmpty()) {
-            var candidates = collect(node -> value(node.getContentDescription()).contains("Action")
-                    || value(node.getText()).contains("Action")
-                    || value(node.getContentDescription()).contains("hand total")
-                    || value(node.getText()).contains("hand total"));
-            String observed = candidates.stream().limit(8)
-                    .map(node -> value(node.getContentDescription()).isBlank()
-                            ? value(node.getText()) : value(node.getContentDescription()))
-                    .filter(value -> !value.isBlank()).toList().toString();
-            check(name, "accessible latest action with player, move and total",
-                    observed.isBlank() ? "latest action node absent; no matching visible accessibility text" : observed,
-                    false);
-            return;
-        }
-        AccessibilityNodeInfo node = null;
-        int latestOrdinal = -1;
-        for (var candidate : matches) {
-            String description = value(candidate.getContentDescription());
-            String candidateText = description.contains("Action #") ? description : value(candidate.getText());
-            int hash = candidateText.indexOf('#');
-            int separator = candidateText.indexOf(" · ", hash);
-            if (hash < 0 || separator < 0) continue;
-            try {
-                int ordinal = Integer.parseInt(candidateText.substring(hash + 1, separator));
-                if (ordinal > latestOrdinal) {
-                    latestOrdinal = ordinal;
-                    node = candidate;
-                }
-            } catch (NumberFormatException ignored) {
-                // Ignore non-action labels that happen to use the same prefix.
-            }
-        }
-        if (node == null) throw new AssertionError("Could not identify the latest per-seat action ordinal");
+    private BettingActionObservation.Entry seeBettingAction(String name, BettingActionObservation.Expectation expected,
+                                                            boolean requireCheckControl) throws Exception {
+        var result = BettingActionObservation.await(() -> bettingActionDescriptions(requireCheckControl),
+                SystemClock::uptimeMillis, SystemClock::sleep, 2500, expected);
+        check(name, expected.description(), result.diagnostic(), result.matched() != null);
+        return result.matched();
+    }
+
+    private List<String> bettingActionDescriptions(boolean requireCheckControl) {
+        // The pre-click ordinal and the available Check must come from the same accessibility tree.
+        var nodes = collect(node -> bettingActionDescription(node).contains("Action #")
+                || (requireCheckControl && isCheckControl(node)));
+        if (requireCheckControl && nodes.stream().noneMatch(TournamentSanity::isCheckControl)) return List.of();
+        return nodes.stream().map(TournamentSanity::bettingActionDescription)
+                .filter(description -> description.contains("Action #")).collect(Collectors.toList());
+    }
+
+    private static boolean isCheckControl(AccessibilityNodeInfo node) {
+        return node.isEnabled() && node.isClickable() && "Check".equals(value(node.getText()));
+    }
+
+    private static String bettingActionDescription(AccessibilityNodeInfo node) {
         String description = value(node.getContentDescription());
-        String actual = description.contains("Action #") ? description : value(node.getText());
-        int detailStart = actual.indexOf("Action #");
-        String actionMarker = " · " + action + " +" + amount;
-        int playerStart = detailStart < 0 ? -1 : actual.indexOf(" · ", detailStart);
-        int actionOffset = playerStart < 0 ? -1 : actual.indexOf(actionMarker, playerStart + 3);
-        String player = playerStart >= 0 && actionOffset > playerStart
-                ? actual.substring(playerStart + 3, actionOffset).trim() : "";
-        boolean hasPlayer = detailStart >= 0 && !player.isBlank();
-        boolean hasTotal = actual.contains(total);
-        check(name, "accessible latest action includes player, " + action + " +" + amount + " and " + total,
-                actual, hasPlayer && hasTotal);
+        return description.contains("Action #") ? description : value(node.getText());
     }
 
     private void scrollBackUntilVisible(String fragment) throws Exception {

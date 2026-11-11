@@ -101,6 +101,12 @@ Un caz redus din turnee verifică plata parțială a ambelor blinduri, locurile 
 
 [Procesul de release](../release/ATF_Release.md)
 
+### Sincronizarea jurnalului după Check
+
+- Sanity-ul citește ultimul ordinal din același arbore de accesibilitate în care comanda Check este disponibilă. După tap, așteaptă intrarea următoare pentru jucătorul uman, cu acțiunea, suma și contribuția așteptate.
+- La expirare, aserțiunea înregistrează ultimul ordinal citit și descrierea nodului. Un cadru gol ulterior păstrează diagnosticul.
+- `BettingActionObservationComponentTest` simulează cadre și timp. Verifică nodul vechi, un adversar care avansează jurnalul, câmpurile incorecte și termenul de așteptare. [Testele JVM](../../holdem-android/app/src/test/java/ro/atf/holdem/android/BettingActionObservationComponentTest.java)
+
 ### Realizări de joc
 
 - Pentru o familie nouă, păstrați un caz pozitiv mic și un caz aproape identic care nu primește credit. Exemplele de decontare se reduc la stivele inițiale, poziții, acțiuni acceptate și rezultatul verificat independent.

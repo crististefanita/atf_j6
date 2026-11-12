@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.17.3",
+  "currentVersion": "0.18.0",
   "previousVersion": "0.17.2",
   "changeClass": "REFACTOR_ONLY",
   "changeRationale": "Face scorecard-ul feedbackului verificabil și leagă planul RAG de verificarea downloadului din README pe ramura principală, fără modificări de joc.",
   "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.17.3"
+    "0.18.0"
   ]
 }

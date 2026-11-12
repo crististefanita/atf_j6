@@ -1,4 +1,4 @@
-# Note de versiune 0.17.3
+# Note de versiune 0.18.0
 
 - Scorecard-ul feedbackului are scoruri explicabile, ordonate și verificate automat.
 - Planul RAG include verificarea deploy-ului pe ramura implicită și descărcarea APK-ului din README-ul principal.

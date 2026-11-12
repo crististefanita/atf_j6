@@ -1,4 +1,4 @@
-# Hold’em Lab 0.17.3
+# Hold’em Lab 0.18.0
 
 ## Pe scurt
 

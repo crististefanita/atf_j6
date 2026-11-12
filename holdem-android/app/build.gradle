@@ -21,7 +21,7 @@ android {
         minSdk 26
         targetSdk 36
         versionCode 29
-        versionName '0.17.3'
+        versionName '0.18.0'
         testApplicationId 'ro.atf.holdem.android.test'
         testInstrumentationRunner 'ro.atf.holdem.android.TournamentSanity'
     }

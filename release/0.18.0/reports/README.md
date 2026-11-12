@@ -1,4 +1,4 @@
-# Rapoarte de calificare 0.17.3
+# Rapoarte de calificare 0.18.0
 
 ## Pe scurt
 

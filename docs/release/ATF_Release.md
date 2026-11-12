@@ -133,6 +133,7 @@ $sourceCommit = (git rev-parse HEAD).Trim()
 
 - Testele lipsă, duplicate, sărite sau eșuate, diferențele de hash și emulatorul ocupat blochează calificarea.
 - Manifestul ediției leagă rapoartele selectate. Dosarul extern păstrează XML-urile și capturile originale.
+- Snapshotul de build păstrează manifestele edițiilor anterioare pentru RAG, dar nu recopiază rapoartele Extent HTML deja arhivate; ele nu sunt intrări ale buildului curent.
 
 [Catalogul edițiilor](../../release/README.md)
 

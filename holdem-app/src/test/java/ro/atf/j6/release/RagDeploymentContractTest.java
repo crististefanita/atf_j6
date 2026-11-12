@@ -31,6 +31,11 @@ class RagDeploymentContractTest {
         add(checks, "RAG context stays advisory until deployment", "runner validates advisory context and not a test verdict",
                 runner.contains("$impactContext.gateEffect -ne 'NONE'")
                         && runner.contains("$impactContext.testReceiptState -ne 'NOT_EVALUATED'"));
+        add(checks, "Build snapshot skips historical report payloads", "prior release manifests stay available without recopying old Extent HTML",
+                runner.contains("$historicalReportDirectories")
+                        && runner.contains("release/(\\d+\\.\\d+\\.\\d+)/reports/")
+                        && runner.contains("release-validation.json")
+                        && runner.contains("Get-SourceManifest $sourceRoot"));
         add(checks, "Deployment gate requires the remote default branch", "clean local and remote branch identities match",
                 gate.contains("symbolic-ref --quiet --short refs/remotes/origin/HEAD")
                         && gate.contains("ls-remote origin")

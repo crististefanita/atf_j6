@@ -63,13 +63,23 @@ $stage = Join-Path $RunRoot 'source'
 $temp = Join-Path $RunRoot 'tmp'
 $reports = Join-Path $RunRoot 'reports'
 New-Item -ItemType Directory -Force -Path $temp,$reports | Out-Null
-$copy = & robocopy $sourceRoot $stage /E /COPY:DAT /R:2 /W:1 /XD .git .gradle target build .idea infrastructure/signing /XF local.properties *.apk *.apk.sha256
+$historicalReportDirectories = @(Get-ChildItem -LiteralPath (Join-Path $sourceRoot 'release') -Directory |
+    Where-Object { $_.Name -match '^\d+\.\d+\.\d+$' -and [version]$_.Name -lt [version]$version } |
+    ForEach-Object {
+        $reportDirectory = Join-Path $_.FullName 'reports'
+        if (Test-Path -LiteralPath $reportDirectory -PathType Container) { $reportDirectory }
+    })
+$excludedDirectories = @('.git','.gradle','target','build','.idea','infrastructure/signing') + $historicalReportDirectories
+$copyArguments = @($sourceRoot,$stage,'/E','/COPY:DAT','/R:2','/W:1','/XD') + $excludedDirectories +
+    @('/XF','local.properties','*.apk','*.apk.sha256')
+$copy = & robocopy @copyArguments
 if ($LASTEXITCODE -ge 8) { throw 'Could not create the external source snapshot; inspect the copy result.' }
 function Get-SourceManifest([string]$Directory) {
     @(Get-ChildItem -LiteralPath $Directory -Recurse -File | ForEach-Object {
         $relative = [IO.Path]::GetRelativePath($Directory, $_.FullName).Replace('\','/')
         if ($relative -match '(^|/)(\.git|\.gradle|target|build|\.idea|infrastructure/signing)(/|$)' -or
             $relative -match '(^|/)local\.properties$' -or $relative -match '\.(apk|apk\.sha256)$') { return }
+        if ($relative -match '^release/(\d+\.\d+\.\d+)/reports/' -and [version]$Matches[1] -lt [version]$version) { return }
         [pscustomobject]@{ path=$relative; sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
     } | Sort-Object path)
 }

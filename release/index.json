@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.17.1",
-  "previousVersion": "0.17.0",
+  "currentVersion": "0.17.2",
+  "previousVersion": "0.17.1",
   "changeClass": "PATCH_FIX",
-  "changeRationale": "Corectează focalizarea după Check, confirmarea Raise și afișarea jurnalului de pariuri în fereastra compactă.",
-  "state": "PREPARED",
+  "changeRationale": "Corectează calificarea Android când lipsesc probe native selectate sau când receipt-ul indică un alt profil.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.17.1"
+    "0.17.2"
   ]
 }

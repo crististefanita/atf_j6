@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "sourceCommit": "e428e71a9f758b51119c6ff0fc763665662fa7f2",
+  "apkSha256": "01a37ee1612b3307a848f24ce7ca1675b614cd3bd7640ed4d93d95607a9d150f",
+  "reportsVerified": 18,
+  "nativePlanSha256": "d8e8678632a54d74e114fc7c941c6313211c19224936b7f58aae546461573fda",
+  "native": [
+    {
+      "journey": "tournamentSanity",
+      "apkSha256": "8ceb90ec9a098e60217c5c2a20ddd16cdc1cba2daab69cd8c413268dd9443457",
+      "assertions": 109,
+      "captures": 13
+    },
+    {
+      "journey": "releaseInstallSmoke",
+      "apkSha256": "01a37ee1612b3307a848f24ce7ca1675b614cd3bd7640ed4d93d95607a9d150f",
+      "assertions": 80,
+      "captures": 13
+    }
+  ],
+  "optionalNative": [
+    {
+      "journey": "betting-ledger",
+      "status": "PASS",
+      "apkVariant": "sanity",
+      "apkSha256": "8ceb90ec9a098e60217c5c2a20ddd16cdc1cba2daab69cd8c413268dd9443457",
+      "assertions": 27,
+      "captures": 2,
+      "report": "android-betting-ledger-extent.html"
+    },
+    {
+      "journey": "betting-ledger-compact",
+      "status": "PASS",
+      "apkVariant": "sanity",
+      "apkSha256": "8ceb90ec9a098e60217c5c2a20ddd16cdc1cba2daab69cd8c413268dd9443457",
+      "assertions": 28,
+      "captures": 2,
+      "report": "android-betting-ledger-compact-extent.html"
+    },
+    {
+      "journey": "betting-ledger-talkback",
+      "status": "PASS",
+      "apkVariant": "sanity",
+      "apkSha256": "8ceb90ec9a098e60217c5c2a20ddd16cdc1cba2daab69cd8c413268dd9443457",
+      "assertions": 38,
+      "captures": 2,
+      "report": "android-betting-ledger-talkback-extent.html"
+    }
+  ]
+}

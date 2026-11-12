@@ -5,7 +5,7 @@
   "previousVersion": "0.17.1",
   "changeClass": "PATCH_FIX",
   "changeRationale": "Corectează calificarea Android când lipsesc probe native selectate sau când receipt-ul indică un alt profil.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.17.2"

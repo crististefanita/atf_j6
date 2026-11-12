@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 2,
+  "status": "PASS",
+  "sourceCommit": "e428e71a9f758b51119c6ff0fc763665662fa7f2",
+  "versionName": "0.17.2",
+  "apkName": "HoldemLab-0.17.2.apk",
+  "validationScope": "FULL",
+  "sanityApkSha256": "8ceb90ec9a098e60217c5c2a20ddd16cdc1cba2daab69cd8c413268dd9443457",
+  "nativePlan": {
+    "path": "native-plan.json",
+    "sha256": "d8e8678632a54d74e114fc7c941c6313211c19224936b7f58aae546461573fda"
+  },
+  "apkBytes": 866702,
+  "sha256": "01a37ee1612b3307a848f24ce7ca1675b614cd3bd7640ed4d93d95607a9d150f",
+  "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
+  "debuggable": false,
+  "targetSdk": 36,
+  "minSdk": 26,
+  "qualification": {
+    "maven": {
+      "suites": 30,
+      "tests": 217.0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mavenComponentExtent": {
+      "path": "maven-component-suites-extent.html",
+      "suites": 30,
+      "tests": 217.0
+    },
+    "androidJvm": {
+      "suites": 10,
+      "tests": 108.0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "androidComponentExtent": {
+      "path": "android-component-suites-extent.html",
+      "suites": 10,
+      "tests": 108.0
+    },
+    "releaseImpactContext": {
+      "path": "release-impact-context.json",
+      "contextState": "CONTEXT_READY",
+      "advisoryOnly": true,
+      "sha256": "a266b14674d7250b215f57277515f9952fe334d98453640de8ef82f587b14043"
+    },
+    "versionPolicy": {
+      "previousVersion": "0.17.1",
+      "changeClass": "PATCH_FIX",
+      "candidateVersion": "0.17.2",
+      "rationale": "Corectează calificarea Android când lipsesc probe native selectate sau când receipt-ul indică un alt profil."
+    },
+    "lint": {
+      "status": "PASS",
+      "warnings": []
+    },
+    "tournamentSanity": {
+      "status": "PASS",
+      "api": 28,
+      "window": "392 × 626 dp",
+      "fontScale": 1,
+      "apkSha256": "8ceb90ec9a098e60217c5c2a20ddd16cdc1cba2daab69cd8c413268dd9443457",
+      "assertions": 109,
+      "screenshots": 13,
+      "report": "android-tournament-extent.html"
+    },
+    "releaseInstallSmoke": {
+      "status": "PASS",
+      "api": 28,
+      "window": "392 × 626 dp",
+      "fontScale": 1,
+      "apkSha256": "01a37ee1612b3307a848f24ce7ca1675b614cd3bd7640ed4d93d95607a9d150f",
+      "assertions": 80,
+      "screenshots": 13,
+      "report": "android-release-smoke-extent.html"
+    },
+    "bettingLedger": {
+      "betting-ledger": {
+        "status": "PASS",
+        "api": 28,
+        "window": "392 × 626 dp",
+        "fontScale": 1,
+        "apkSha256": "8ceb90ec9a098e60217c5c2a20ddd16cdc1cba2daab69cd8c413268dd9443457",
+        "assertions": 27,
+        "screenshots": 2,
+        "report": "android-betting-ledger-extent.html"
+      },
+      "betting-ledger-compact": {
+        "status": "PASS",
+        "api": 28,
+        "window": "320 × 328 dp",
+        "fontScale": 2,
+        "apkSha256": "8ceb90ec9a098e60217c5c2a20ddd16cdc1cba2daab69cd8c413268dd9443457",
+        "assertions": 28,
+        "screenshots": 2,
+        "report": "android-betting-ledger-compact-extent.html"
+      },
+      "betting-ledger-talkback": {
+        "status": "PASS",
+        "api": 28,
+        "window": "320 × 328 dp",
+        "fontScale": 2,
+        "apkSha256": "8ceb90ec9a098e60217c5c2a20ddd16cdc1cba2daab69cd8c413268dd9443457",
+        "assertions": 38,
+        "screenshots": 2,
+        "report": "android-betting-ledger-talkback-extent.html"
+      }
+    }
+  },
+  "reports": [
+    {
+      "path": "android-betting-ledger-compact-extent.html",
+      "bytes": 2732826,
+      "sha256": "87622ad6521ee41346e6e8964a9dffdcc99cc053cfe14db3c0d331fc1d566f47"
+    },
+    {
+      "path": "android-betting-ledger-extent.html",
+      "bytes": 2853135,
+      "sha256": "cfca9d22efcdbc7e660970307672c55c046a9123feda38f6b6055652c00b9e6b"
+    },
+    {
+      "path": "android-betting-ledger-talkback-extent.html",
+      "bytes": 2720064,
+      "sha256": "2eea9efe0b9e804aa55435d2eaf61bf0ab0e31d1377cb812d462df890d3afdfb"
+    },
+    {
+      "path": "android-component-suites-extent.html",
+      "bytes": 2524801,
+      "sha256": "850c06155bfbae59545fbec08665498854a9b48f3a314e1b6adc3c97096dc862"
+    },
+    {
+      "path": "android-release-smoke-extent.html",
+      "bytes": 4821070,
+      "sha256": "832f010420d11c6dfbc407668f919d9cef51acfb67bbe079918e0781cb56812c"
+    },
+    {
+      "path": "android-tournament-extent.html",
+      "bytes": 5003794,
+      "sha256": "dd2a4aed265bfdbb9ba0c9fcb573ee78051a23d136d84c1c096372c5e6f634b7"
+    },
+    {
+      "path": "j6-library-component-1794495672430.html",
+      "bytes": 2412219,
+      "sha256": "61fb62f7ab75dea61f60438bfbb1aee19e24151011fb8908e3b42bd7efb6258b"
+    },
+    {
+      "path": "J6AndroidRuntimeApiGovernance-1794495707848.html",
+      "bytes": 2412315,
+      "sha256": "94095d2bf3250b438ceba7ad4a522c92a4f15b9a1c9846bf0ec4e78cb2fd5d26"
+    },
+    {
+      "path": "J6CheckoutEvidenceGovernance-1794495700679.html",
+      "bytes": 2412999,
+      "sha256": "782e88bcb93c3df04883770de15fb92e89c20cff193237ef6532a96c5567a454"
+    },
+    {
+      "path": "J6DocumentationGovernance-1794495676805.html",
+      "bytes": 2421319,
+      "sha256": "8b83ab9d0078a7f90e602458402b3886f112725a5e6432530d7e6162db4086d4"
+    },
+    {
+      "path": "J6EditionEvidenceMutationGovernance-1794495697846.html",
+      "bytes": 2411759,
+      "sha256": "3dbd2f925dcd71de5082e264f2c946ade6e16fe2e8d5f4f74ee2a42a4d99e350"
+    },
+    {
+      "path": "J6ExtentSuiteGovernance-1794495709075.html",
+      "bytes": 2412075,
+      "sha256": "70a686fbb009a52fca8b4aa58d6210598f51b0d92e3f343e44e1c27b34217c2e"
+    },
+    {
+      "path": "J6MainReadmeGovernance-1794495705656.html",
+      "bytes": 2413634,
+      "sha256": "52d14eff185adb1526cfb905fba506e5e2b0ec7a8467970ed42228d4d8df1d83"
+    },
+    {
+      "path": "J6ReleaseDownloadRouteGovernance-1794495699616.html",
+      "bytes": 2413376,
+      "sha256": "ed8a5de7c95e9abd7ff229d794638cf1e84a44097b049c0315b0eb4b2a7374d1"
+    },
+    {
+      "path": "J6ReleaseGovernance-1794495701649.html",
+      "bytes": 2416871,
+      "sha256": "2f082debfb83e816afeb5b364bf0356462c09637a5969e43de7e282ab2f68d2e"
+    },
+    {
+      "path": "J6SharedUiImpactGovernance-1794495702580.html",
+      "bytes": 2411762,
+      "sha256": "2b26a6bc0305df49a3869b8b370585ebaf5c7e79bd8acf0e29c140e1ce297e6e"
+    },
+    {
+      "path": "J6TestInventoryGovernance-1794495928935.html",
+      "bytes": 2416398,
+      "sha256": "96d06c8ab8e107d3a3dba3d30752c1e758c6c64590e0270b7653cae0fe29e15a"
+    },
+    {
+      "path": "maven-component-suites-extent.html",
+      "bytes": 2721752,
+      "sha256": "9b8cd9e8cbaf3b13c1ed6d0e16a658327892b45787fc0e08948f45069a1aa0b5"
+    }
+  ],
+  "runRoot": "C:\\work\\holdem_back\\release-runs\\j6-0.17.2-final-20261112",
+  "completedUtc": "2026-11-12T15:18:43.4627265Z"
+}

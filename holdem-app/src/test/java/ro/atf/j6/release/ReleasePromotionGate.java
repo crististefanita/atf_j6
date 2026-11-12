@@ -66,7 +66,12 @@ public final class ReleasePromotionGate {
             return;
         }
         String apkName = "HoldemLab-" + version + ".apk";
-        compare(checks, "Qualification schema", "1", receipt.path("schemaVersion").asText());
+        int schema = receipt.path("schemaVersion").asInt(-1);
+        compare(checks, "Qualification schema", "1 or 2",
+                receipt.path("schemaVersion").isIntegralNumber() && (schema == 1 || schema == 2) ? "1 or 2" : "invalid");
+        if (schema == 2) {
+            verifyNativePlan(qualification.resolveSibling("native-plan.json"), receipt, checks);
+        }
         compare(checks, "Qualification status", "PASS", receipt.path("status").asText());
         compare(checks, "Qualified version", version, receipt.path("versionName").asText());
         compare(checks, "Qualified source commit", commit, receipt.path("sourceCommit").asText());
@@ -118,6 +123,32 @@ public final class ReleasePromotionGate {
         if (checksumPresent) {
             compare(checks, "Candidate checksum identifies the qualified APK", expectedHash + "  " + apkName,
                     Files.size(checksum) <= 256 ? Files.readString(checksum).strip() : "checksum exceeds 256 bytes");
+        }
+    }
+
+    private static void verifyNativePlan(Path path, JsonNode qualification, List<AtfAssertion> checks) throws Exception {
+        var reference = qualification.path("nativePlan");
+        String expected = reference.path("sha256").asText();
+        if (!reference.path("path").asText().equals("native-plan.json") || !expected.matches(SHA256)
+                || !Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
+            compare(checks, "Native plan reference", "regular plan with a recorded SHA-256", "missing or invalid");
+            return;
+        }
+        byte[] bytes = Files.readAllBytes(path);
+        String actual = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+        compare(checks, "Native plan SHA-256", expected, actual);
+        if (!expected.equals(actual)) return;
+        var plan = JSON.readTree(bytes);
+        if (plan == null || !plan.isObject()) {
+            compare(checks, "Native plan JSON", "object", "missing or invalid");
+            return;
+        }
+        compare(checks, "Native plan schema", "1", plan.path("schemaVersion").asText());
+        var journeys = plan.path("journeys");
+        compare(checks, "Native plan contains journeys", "non-empty array",
+                journeys.isArray() && !journeys.isEmpty() ? "non-empty array" : "missing or invalid");
+        for (String key : List.of("sourceCommit", "versionName", "validationScope")) {
+            compare(checks, "Native plan " + key, qualification.path(key).asText(), plan.path(key).asText());
         }
     }
 

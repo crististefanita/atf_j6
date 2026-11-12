@@ -148,7 +148,9 @@ Păstrați inventarul `config/release-test-suites.json` sincronizat cu suitele M
 
 Auditul citește manifestul calificării și verifică APK-ul, checksum-ul, integritatea rapoartelor și capturile originale în Extent. Dosarul extern păstrează și XML-urile, receipt-urile native și contextul RAG.
 
-Pentru calificarea `FULL`, o probă declarată în manifest sau în inventarul rapoartelor activează verificarea întregii familii. Auditorul confruntă `device.json`, `native.json` și Extent pentru fiecare profil. Verifică identitatea APK-ului, verdictul și aserțiunile, apoi caută octeții fiecărei capturi originale o singură dată în atașamentul inline.
+- **Selecție.** Runnerul salvează `native-plan.json` înainte de execuție. Planul fixează commitul, versiunea, scopul, opțiunile și probele, cu varianta APK, cheia din calificare și raportul pentru fiecare. Runnerul și RAG folosesc familiile din catalogul de release.
+- **Integritate.** În schema 2, `qualification.json` fixează SHA-256 al planului și al variantei `sanity`. Auditorul cere dovada fiecărui profil planificat, inclusiv când lipsește întreaga familie. Pentru schema 1, selectează familiile din probele declarate și din inventarul rapoartelor.
+- **Identitate.** Runnerul și auditorul folosesc același validator pentru profil, API și SHA-256 în `device.json` și `native.json`. Auditorul confruntă aserțiunile cu manifestul și verifică prezența fiecărei capturi originale o singură dată în Extent.
 
 | Familie | Profiluri obligatorii dacă familia a fost selectată | Referința pentru SHA-256 |
 |---|---|---|
@@ -157,7 +159,7 @@ Pentru calificarea `FULL`, o probă declarată în manifest sau în inventarul r
 | Decontare | `settlement-award`, `settlement-multi-award`, `settlement-static-award`, `settlement-compact-award` | APK-ul `sanity` atestat de turneu |
 | Jurnal de pariuri | `betting-ledger`, `betting-ledger-compact`, `betting-ledger-talkback` | APK-ul `sanity` atestat de turneu |
 
-Rezultatul JSON enumeră în `optionalNative` profilurile auditate, varianta APK-ului și raportul Extent. Un manifest fără probe opționale produce o listă goală. Rulările `TABLE_GEOMETRY_COMPONENT` folosesc inventarul propriu de profile și receipt-uri. [Scriptul de audit](../../scripts/Test-HoldemReleaseEvidence.ps1)
+Rezultatul JSON enumeră în `optionalNative` profilurile auditate, varianta APK-ului și raportul Extent. Rulările `TABLE_GEOMETRY_COMPONENT` consemnează măsurătorile pentru `device`, `short` și `tall`. Pentru schema 2, dosarul ediției include planul și toate rapoartele planificate în inventarul cu SHA-256 verificat la descărcare. [Scriptul de audit](../../scripts/Test-HoldemReleaseEvidence.ps1)
 
 ## Promovare și descărcare
 

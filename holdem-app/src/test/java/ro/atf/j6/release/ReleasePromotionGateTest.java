@@ -45,6 +45,26 @@ class ReleasePromotionGateTest {
         assertTrue(gate("exact"));
     }
 
+    @Test void schemaTwoBindsTheNativePlanToTheQualifiedSource() throws Exception {
+        receipt.put("schemaVersion", 2).put("validationScope", "FULL");
+        assertFalse(gate("native-plan-missing"));
+        Path planPath = tmp.resolve("native-plan.json");
+        ObjectNode plan = JSON.createObjectNode().put("schemaVersion", 1).put("sourceCommit", COMMIT)
+                .put("versionName", VERSION).put("validationScope", "FULL");
+        plan.putArray("journeys").addObject().put("mode", "tournament");
+        JSON.writeValue(planPath.toFile(), plan);
+        var reference = receipt.putObject("nativePlan").put("path", "native-plan.json");
+        reference.put("sha256", HexFormat.of().formatHex(
+                MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(planPath))));
+        assertTrue(gate("native-plan-exact"));
+        plan.put("sourceCommit", "b".repeat(40));
+        JSON.writeValue(planPath.toFile(), plan);
+        assertFalse(gate("native-plan-tampered"));
+        reference.put("sha256", HexFormat.of().formatHex(
+                MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(planPath))));
+        assertFalse(gate("native-plan-wrong-source"));
+    }
+
     @Test void componentQualificationRequiresEachProfileOnTheExactApk() throws Exception {
         receipt.put("validationScope", "TABLE_GEOMETRY_COMPONENT");
         var geometry = ((ObjectNode) receipt.path("qualification")).putObject("tableGeometry");

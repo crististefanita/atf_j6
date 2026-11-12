@@ -1,3 +1,5 @@
+. (Join-Path $PSScriptRoot 'HoldemNativeQualification.ps1')
+
 function Get-HoldemBlobSha([byte[]]$Bytes) {
     $header = [Text.Encoding]::ASCII.GetBytes("blob $($Bytes.Length)`0")
     $digest = [Security.Cryptography.IncrementalHash]::CreateHash([Security.Cryptography.HashAlgorithmName]::SHA1)
@@ -121,7 +123,7 @@ function Get-HoldemQualificationProof([string]$Root, [string]$Version, $Validati
     }
     $qualification = $documents['qualification.json']
     $release = $Validation.release
-    if (!$qualification -or $qualification.schemaVersion -ne 1 -or $qualification.status -cne 'PASS' -or
+    if (!$qualification -or $qualification.schemaVersion -notin 1,2 -or $qualification.status -cne 'PASS' -or
         (Get-HoldemQualificationBuildCommit $qualification $candidateCommit) -cne $buildCommit -or
         $qualification.versionName -cne $Version -or
         $qualification.apkName -cne $release.apkName -or $qualification.apkBytes -ne $release.apkBytes -or
@@ -131,6 +133,10 @@ function Get-HoldemQualificationProof([string]$Root, [string]$Version, $Validati
         throw 'Qualification does not match the declared build, APK and signing identity.'
     }
     $scope = $qualification.validationScope ?? 'FULL'
+    if ($qualification.schemaVersion -eq 2 -and !$inventory.ContainsKey('native-plan.json')) {
+        throw 'Missing inventoried native plan: native-plan.json'
+    }
+    $plan = Read-HoldemNativePlan (Join-Path $Root $prefix) $qualification
     switch -CaseSensitive ($scope) {
         'FULL' {
             $smoke = $qualification.qualification.releaseInstallSmoke
@@ -150,6 +156,7 @@ function Get-HoldemQualificationProof([string]$Root, [string]$Version, $Validati
         }
         default { throw "Unsupported qualification scope: $scope" }
     }
+    if ($plan) { $required = @($plan.journeys | ForEach-Object { $_.report }) }
     $reports = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     foreach ($report in $qualification.reports) {
         $path = "reports/$($report.path)"
@@ -169,6 +176,7 @@ function Get-HoldemQualificationProof([string]$Root, [string]$Version, $Validati
         qualificationPath = "$prefix/qualification.json"
         qualificationSha256 = $inventory['qualification.json'].sha256
         qualificationScope = $scope
+        nativePlanSha256 = if ($plan) { $qualification.nativePlan.sha256 }
         inventoriedFilesVerified = $inventory.Count
         continuationSha256 = if ($continuation) { $inventory['qualification-continuation.json'].sha256 }
     }

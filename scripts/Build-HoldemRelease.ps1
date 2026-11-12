@@ -12,6 +12,7 @@ param(
     [switch]$TableGeometryOnly
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'HoldemNativeQualification.ps1')
 if ($TableGeometryOnly -and ($IncludeHardSix -or $IncludeSeatMetrics -or $IncludeSettlementAward -or $IncludeBettingLedger)) {
     throw 'TableGeometryOnly cannot be combined with end-to-end journeys.'
 }
@@ -50,6 +51,14 @@ $identityPath = Join-Path $signingDirectory 'identity.json'
 if (!(Test-Path -LiteralPath $identityPath)) { throw 'Run Initialize-HoldemSigning.ps1 before release qualification.' }
 $identity = Get-Content -Raw -LiteralPath $identityPath | ConvertFrom-Json
 New-Item -ItemType Directory -Force -Path $RunRoot | Out-Null
+$scope = if ($TableGeometryOnly) { 'TABLE_GEOMETRY_COMPONENT' } else { 'FULL' }
+$selectedSwitches = @($PSBoundParameters.GetEnumerator() | Where-Object {
+    $_.Key -cne 'TableGeometryOnly' -and $_.Value -is [switch] -and $_.Value.IsPresent
+} | ForEach-Object { '-' + $_.Key })
+$nativePlan = New-HoldemNativePlan (Join-Path $sourceRoot 'config/release-test-suites.json') $sourceCommit $version $scope $selectedSwitches
+$nativePlanPath = Join-Path $RunRoot 'native-plan.json'
+$nativePlan | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $nativePlanPath -Encoding utf8NoBOM
+$nativePlanDigest = Get-HoldemNativeDigest $nativePlanPath
 $stage = Join-Path $RunRoot 'source'
 $temp = Join-Path $RunRoot 'tmp'
 $reports = Join-Path $RunRoot 'reports'
@@ -221,124 +230,43 @@ try {
 
     $publisher = Join-Path $appRoot 'tools/PublishTournamentExtent.java'
     $nativeProofs = [ordered]@{}
-    function Invoke-SanityJourneyProof([string]$Mode) {
-        $evidence = Join-Path $RunRoot "android-$Mode"
-        $report = "android-$Mode-extent.html"
+    $sanityHash = Get-HoldemNativeDigest $sanityApk
+    foreach ($entry in $nativePlan.journeys) {
+        $mode = $entry.mode
         $runError = $null
-        try {
-            Invoke-NativeQualification -Mode $Mode
-        } catch {
-            $runError = $_
-        }
+        try { Invoke-NativeQualification -Mode $mode -GeometryProfile $entry.geometryProfile }
+        catch { $runError = $_ }
+        $evidence = Join-Path $RunRoot $entry.folder
         $receiptPath = Join-Path $evidence 'native.json'
-        if (!(Test-Path -LiteralPath $receiptPath)) {
+        if (!(Test-Path -LiteralPath $receiptPath -PathType Leaf)) {
             if ($runError) { throw $runError }
-            throw "$Mode did not produce a native receipt."
+            throw "$mode did not produce a native receipt."
         }
-        & $java -cp $classPath $publisher (Join-Path $reports $report) $evidence $sanityApk
-        $reportExit = $LASTEXITCODE
-        $receipt = Get-Content -Raw -LiteralPath $receiptPath | ConvertFrom-Json
-        if ($reportExit -ne 0 -or $runError -or $receipt.journey -cne $Mode -or
-                $receipt.status -ne 'PASS' -or $receipt.apkSha256 -ne $sanityHash) {
-            throw "$Mode qualification failed. Inspect the native receipt and Extent."
+        $releaseVariant = $entry.apkVariant -ceq 'release'
+        $installedApk = if ($releaseVariant) { $releaseApk } else { $sanityApk }
+        $expectedHash = if ($releaseVariant) { $apkHash } else { $sanityHash }
+        & $java -cp $classPath $publisher (Join-Path $reports $entry.report) $evidence $installedApk
+        if ($LASTEXITCODE -ne 0 -or $runError) {
+            throw "$($entry.folder) qualification failed. Inspect the native receipt and Extent."
         }
-        return [ordered]@{
-            status=$receipt.status; api=$receipt.api; window=$receipt.window; apkSha256=$receipt.apkSha256
-            assertions=$receipt.assertions.Count; screenshots=$receipt.captures.Count; report=$report
-        }
-    }
-
-    if ($TableGeometryOnly) {
-        $geometry = [ordered]@{}
-        foreach ($profile in @('device','short','tall')) {
-            Invoke-NativeQualification -Mode table-geometry -GeometryProfile $profile
-            $evidence = Join-Path $RunRoot "android-table-geometry-$profile"
-            $report = "android-table-geometry-$profile-extent.html"
-            & $java -cp $classPath $publisher (Join-Path $reports $report) $evidence $releaseApk
-            if ($LASTEXITCODE -ne 0) { throw "Table geometry Extent failed for $profile." }
-            $receiptPath = Join-Path $evidence 'native.json'
-            $receipt = Get-Content -Raw -LiteralPath $receiptPath | ConvertFrom-Json
-            if ($receipt.status -cne 'PASS' -or $receipt.apkSha256 -cne $apkHash -or $receipt.assertions.Count -ne 18) {
-                throw "Table geometry proof does not match the release APK for $profile."
+        $receipt = Read-HoldemNativeReceipt $RunRoot $entry $expectedHash
+        $proof = [ordered]@{status=$receipt.status; api=$receipt.api; window=$receipt.window
+            fontScale=$receipt.fontScale; apkSha256=$expectedHash; assertions=$receipt.assertions.Count
+            screenshots=$receipt.captures.Count; report=$entry.report}
+        if ($entry.geometryProfile) {
+            $profile = $entry.geometryProfile
+            if ($proof.assertions -ne 18 -or $proof.screenshots -or $receipt.window -notmatch '^(\d+) × (\d+) dp$') {
+                throw "Invalid table geometry evidence for $profile."
             }
-            if ($receipt.window -notmatch '^(\d+) × (\d+) dp$') { throw 'The component did not report its display dimensions.' }
             $widthDp = [int]$Matches[1]
             $heightDp = [int]$Matches[2]
-            if (($profile -eq 'short' -and ($widthDp -gt 320 -or $heightDp -gt 360 -or $receipt.fontScale -ne 2)) -or
-                ($profile -eq 'tall' -and ($widthDp -lt 400 -or $heightDp -lt 800 -or $receipt.fontScale -ne 1))) {
+            if (($profile -ceq 'short' -and ($widthDp -gt 320 -or $heightDp -gt 360 -or $receipt.fontScale -ne 2)) -or
+                ($profile -ceq 'tall' -and ($widthDp -lt 400 -or $heightDp -lt 800 -or $receipt.fontScale -ne 1))) {
                 throw "The component did not run on the requested $profile display."
             }
-            $geometry[$profile] = [ordered]@{status=$receipt.status; apkSha256=$receipt.apkSha256;
-                assertions=$receipt.assertions.Count; window=$receipt.window; fontScale=$receipt.fontScale; report=$report
-                receiptSha256=(Get-FileHash -LiteralPath $receiptPath -Algorithm SHA256).Hash.ToLowerInvariant()}
+            $proof.receiptSha256 = Get-HoldemNativeDigest $receiptPath
         }
-        $nativeProofs.tableGeometry = $geometry
-    } else {
-        Invoke-NativeQualification -Mode tournament
-        Invoke-NativeQualification -Mode release-smoke
-
-        $tournamentEvidence = Join-Path $RunRoot 'android-tournament-sanity'
-        $releaseEvidence = Join-Path $RunRoot 'android-release-smoke'
-        & $java -cp $classPath $publisher (Join-Path $reports 'android-tournament-extent.html') $tournamentEvidence $sanityApk
-        if ($LASTEXITCODE -ne 0) { throw 'Tournament Extent publication failed.' }
-        & $java -cp $classPath $publisher (Join-Path $reports 'android-release-smoke-extent.html') $releaseEvidence $releaseApk
-        if ($LASTEXITCODE -ne 0) { throw 'Release smoke Extent publication failed.' }
-        $tournament = Get-Content -Raw -LiteralPath (Join-Path $tournamentEvidence 'native.json') | ConvertFrom-Json
-        $releaseSmoke = Get-Content -Raw -LiteralPath (Join-Path $releaseEvidence 'native.json') | ConvertFrom-Json
-        $sanityHash = (Get-FileHash -LiteralPath $sanityApk -Algorithm SHA256).Hash.ToLowerInvariant()
-        if ($tournament.status -ne 'PASS' -or $releaseSmoke.status -ne 'PASS' -or
-            $tournament.apkSha256 -ne $sanityHash -or $releaseSmoke.apkSha256 -ne $apkHash) {
-            throw 'Native receipts do not prove the exact release APK and the tournament flow.'
-        }
-        $nativeProofs.tournamentSanity = [ordered]@{status=$tournament.status;api=$tournament.api;assertions=$tournament.assertions.Count;screenshots=$tournament.captures.Count;apkSha256=$tournament.apkSha256}
-        $nativeProofs.releaseInstallSmoke = [ordered]@{status=$releaseSmoke.status;api=$releaseSmoke.api;assertions=$releaseSmoke.assertions.Count;screenshots=$releaseSmoke.captures.Count;apkSha256=$releaseSmoke.apkSha256}
-        $hardSix = $null
-        if ($IncludeHardSix) {
-            Invoke-NativeQualification -Mode hard-six
-            $hardSixEvidence = Join-Path $RunRoot 'android-hard-six'
-            $hardSixReceipt = Get-Content -Raw -LiteralPath (Join-Path $hardSixEvidence 'native.json') | ConvertFrom-Json
-            & $java -cp $classPath $publisher (Join-Path $reports 'android-hard-six-extent.html') $hardSixEvidence $releaseApk
-            if ($LASTEXITCODE -ne 0 -or $hardSixReceipt.status -ne 'PASS' -or $hardSixReceipt.apkSha256 -ne $apkHash) {
-                throw 'The Hard six-seat smoke did not qualify the exact signed APK.'
-            }
-            $hardSix = [ordered]@{
-                status=$hardSixReceipt.status; api=$hardSixReceipt.api; assertions=$hardSixReceipt.assertions.Count
-                screenshots=$hardSixReceipt.captures.Count; apkSha256=$hardSixReceipt.apkSha256
-            }
-        }
-        $seatMetrics = $null
-        if ($IncludeSeatMetrics) {
-            Invoke-NativeQualification -Mode seat-metrics
-            $seatEvidence = Join-Path $RunRoot 'android-seat-metrics'
-            $seatReceipt = Get-Content -Raw -LiteralPath (Join-Path $seatEvidence 'native.json') | ConvertFrom-Json
-            & $java -cp $classPath $publisher (Join-Path $reports 'android-seat-metrics-extent.html') $seatEvidence $releaseApk
-            if ($LASTEXITCODE -ne 0 -or $seatReceipt.status -ne 'PASS' -or $seatReceipt.apkSha256 -ne $apkHash) {
-                throw 'Compact seat metrics Extent or installed APK identity failed.'
-            }
-            $seatMetrics = [ordered]@{
-                status=$seatReceipt.status; api=$seatReceipt.api; window=$seatReceipt.window; fontScale=$seatReceipt.fontScale
-                assertions=$seatReceipt.assertions.Count; screenshots=$seatReceipt.captures.Count; apkSha256=$seatReceipt.apkSha256
-            }
-        }
-        $settlementProofs = [ordered]@{}
-        if ($IncludeSettlementAward) {
-            $awardModes = [ordered]@{
-                settlementAward='settlement-award'
-                settlementMultiAward='settlement-multi-award'
-                settlementStaticAward='settlement-static-award'
-                settlementCompactAward='settlement-compact-award'
-            }
-            foreach ($entry in $awardModes.GetEnumerator()) {
-                $settlementProofs[$entry.Key] = Invoke-SanityJourneyProof $entry.Value
-            }
-        }
-        if ($IncludeBettingLedger) {
-            $ledgerProofs = [ordered]@{}
-            foreach ($mode in @('betting-ledger', 'betting-ledger-compact', 'betting-ledger-talkback')) {
-                $ledgerProofs[$mode] = Invoke-SanityJourneyProof $mode
-            }
-            $nativeProofs.bettingLedger = $ledgerProofs
-        }
+        Set-HoldemNativeProof $nativeProofs $entry $proof
     }
     Get-ChildItem -LiteralPath (Join-Path $reports 'maven') -File -Filter '*.html' | ForEach-Object {
         Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $reports $_.Name)
@@ -351,8 +279,9 @@ try {
         throw 'Pinned source changed during qualification.'
     }
     $result = [ordered]@{
-        schemaVersion=1; status='PASS'; sourceCommit=$sourceCommit; versionName=$version; apkName=[IO.Path]::GetFileName($finalApk)
-        validationScope=if ($TableGeometryOnly) { 'TABLE_GEOMETRY_COMPONENT' } else { 'FULL' }
+        schemaVersion=2; status='PASS'; sourceCommit=$sourceCommit; versionName=$version; apkName=[IO.Path]::GetFileName($finalApk)
+        validationScope=$scope; sanityApkSha256=$sanityHash
+        nativePlan=[ordered]@{path='native-plan.json'; sha256=$nativePlanDigest}
         apkBytes=$apkBytes; sha256=$apkHash; certificateSha256=$certificate; debuggable=$false; targetSdk=36; minSdk=26
         qualification=[ordered]@{
             maven=[ordered]@{suites=$mavenSuites.Count;tests=$mavenTests;failures=0;errors=0;skipped=0}
@@ -367,11 +296,7 @@ try {
         runRoot=$RunRoot; completedUtc=[datetime]::UtcNow.ToString('o')
     }
     foreach ($entry in $nativeProofs.GetEnumerator()) { $result.qualification[$entry.Key] = $entry.Value }
-    if ($IncludeHardSix) { $result.qualification.hardSix = $hardSix }
-    if ($IncludeSeatMetrics) { $result.qualification.seatMetrics = $seatMetrics }
-    if ($IncludeSettlementAward) {
-        foreach ($entry in $settlementProofs.GetEnumerator()) { $result.qualification[$entry.Key] = $entry.Value }
-    }
+    if ((Get-HoldemNativeDigest $nativePlanPath) -cne $nativePlanDigest) { throw 'Native plan changed during qualification.' }
     $result | ConvertTo-Json -Depth 9 | Set-Content -LiteralPath (Join-Path $RunRoot 'qualification.json') -Encoding utf8NoBOM
     $exitCode = 0
 }

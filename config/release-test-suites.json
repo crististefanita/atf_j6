@@ -29,7 +29,7 @@
     { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.ComponentSuiteExtentPublisherTest", "impactPaths": ["scripts/Publish-HoldemJvmExtent.ps1"] },
     { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.NativeTournamentExtentPublisherTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseImpactRagTest" },
-    { "module": "holdem-app", "testClass": "ro.atf.j6.release.HoldemReleaseProvenanceTest", "level": "integration", "impactPaths": ["scripts/HoldemReleaseProvenance.ps1", "scripts/Test-PublishedHoldemDownload.ps1", "scripts/Test-HoldemPromotion.ps1", "scripts/Test-HoldemReleaseEvidence.ps1", "scripts/tests/PublishedHoldemDownload.Tests.ps1", "scripts/tests/HoldemContinuation.Tests.ps1", "scripts/tests/HoldemNativeEvidenceAudit.Tests.ps1"] },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.release.HoldemReleaseProvenanceTest", "level": "integration", "impactPaths": ["scripts/Build-HoldemRelease.ps1", "scripts/HoldemNativeQualification.ps1", "scripts/HoldemReleaseProvenance.ps1", "scripts/Test-PublishedHoldemDownload.ps1", "scripts/Test-HoldemPromotion.ps1", "scripts/Test-HoldemReleaseEvidence.ps1", "scripts/tests/PublishedHoldemDownload.Tests.ps1", "scripts/tests/HoldemContinuation.Tests.ps1", "scripts/tests/HoldemNativeEvidenceAudit.Tests.ps1"] },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseVersionPolicyTest", "level": "unit" }
   ],
   "android": [
@@ -48,6 +48,8 @@
     {
       "mode": "hard-six",
       "switch": "-IncludeHardSix",
+      "apkVariant": "release",
+      "proofKeys": ["hardSix"],
       "impactPaths": [
         "holdem-ai/src/main/java/ro/atf/holdem/ai/TournamentPlayStyles.java",
         "holdem-android/app/src/main/java/ro/atf/holdem/android/LocalHoldemGame.java",
@@ -57,6 +59,8 @@
     {
       "mode": "seat-metrics",
       "switch": "-IncludeSeatMetrics",
+      "apkVariant": "release",
+      "proofKeys": ["seatMetrics"],
       "impactPaths": [
         "holdem-android/app/src/main/java/ro/atf/holdem/android/CompactSeatRows.java",
         "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java",
@@ -70,9 +74,30 @@
       ]
     },
     {
+      "mode": "settlement-award",
+      "switch": "-IncludeSettlementAward",
+      "companionModes": ["settlement-multi-award", "settlement-static-award", "settlement-compact-award"],
+      "apkVariant": "sanity",
+      "proofKeys": ["settlementAward", "settlementMultiAward", "settlementStaticAward", "settlementCompactAward"],
+      "impactPaths": [
+        "holdem-core/src/main/java/ro/atf/holdem/core/HoldemHand.java",
+        "holdem-core/src/main/java/ro/atf/holdem/core/PotSettlement.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTablePresentation.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java",
+        "holdem-android/app/src/androidTest/java/ro/atf/holdem/android/SettlementAwardObservation.java",
+        "holdem-android/app/src/testSupport/java/ro/atf/holdem/android/SettlementAwardFixture.java",
+        "holdem-android/app/src/main/res/values/strings.xml",
+        "holdem-android/app/src/main/res/values-ro/strings.xml"
+      ]
+    },
+    {
       "mode": "betting-ledger",
       "switch": "-IncludeBettingLedger",
       "companionModes": ["betting-ledger-compact", "betting-ledger-talkback"],
+      "apkVariant": "sanity",
+      "proofGroup": "bettingLedger",
+      "proofKeys": ["betting-ledger", "betting-ledger-compact", "betting-ledger-talkback"],
       "impactPaths": [
         "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java",
         "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java",
@@ -85,22 +110,6 @@
         "holdem-android/app/src/testSupport/java/ro/atf/holdem/android/BettingActionObservation.java",
         "holdem-android/tools/PublishTournamentExtent.java",
         "scripts/run-holdem-android-sanity.ps1"
-      ]
-    },
-    {
-      "mode": "settlement-award",
-      "switch": "-IncludeSettlementAward",
-      "companionModes": ["settlement-multi-award", "settlement-static-award", "settlement-compact-award"],
-      "impactPaths": [
-        "holdem-core/src/main/java/ro/atf/holdem/core/HoldemHand.java",
-        "holdem-core/src/main/java/ro/atf/holdem/core/PotSettlement.java",
-        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java",
-        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTablePresentation.java",
-        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java",
-        "holdem-android/app/src/androidTest/java/ro/atf/holdem/android/SettlementAwardObservation.java",
-        "holdem-android/app/src/testSupport/java/ro/atf/holdem/android/SettlementAwardFixture.java",
-        "holdem-android/app/src/main/res/values/strings.xml",
-        "holdem-android/app/src/main/res/values-ro/strings.xml"
       ]
     }
   ]

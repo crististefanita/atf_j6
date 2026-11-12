@@ -17,6 +17,7 @@ if ($paths[2].StartsWith($sourceRoot, [StringComparison]::OrdinalIgnoreCase)) {
     throw 'Write promotion evidence outside the source checkout.'
 }
 $receipt = Get-Content -Raw -LiteralPath $paths[1] | ConvertFrom-Json
+$null = Read-HoldemNativePlan (Split-Path -Parent $paths[1]) $receipt
 $buildCommit = Get-HoldemQualificationBuildCommit $receipt $SourceCommit
 $continuationEvidence = if ($Continuation) { Get-Content -Raw -LiteralPath $Continuation | ConvertFrom-Json }
 Assert-HoldemContinuation $sourceRoot $Version $buildCommit $SourceCommit $continuationEvidence ($receipt.validationScope ?? 'FULL')

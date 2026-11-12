@@ -2,7 +2,8 @@
 param(
     [Parameter(Mandatory)][string]$Scratch,
     [Parameter(Mandatory)]
-    [ValidateSet('all-optionals','legacy','missing-profile','orphan-report','wrong-apk','changed-capture','duplicate-capture')]
+    [ValidateSet('all-optionals','legacy','missing-profile','orphan-report','wrong-apk','changed-capture','duplicate-capture',
+        'planned','missing-family','wrong-required-journey','changed-plan','missing-plan')]
     [string]$Scenario
 )
 $ErrorActionPreference = 'Stop'
@@ -68,6 +69,20 @@ if ($Scenario -ne 'legacy') {
 }
 
 $expectedError = switch ($Scenario) {
+    'missing-family' {
+        $qualification.Remove('bettingLedger')
+        foreach ($mode in $ledger) { [void]$reportNames.Remove("android-$mode-extent.html") }
+        'Missing optional native profile: betting-ledger'
+    }
+    'wrong-required-journey' {
+        $path = "$root/android-tournament-sanity/native.json"
+        $receipt = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable
+        $receipt.journey = 'release-smoke'
+        Save-Json $path $receipt
+        'Native journey mismatch: tournament'
+    }
+    'changed-plan' { 'Native plan SHA-256 mismatch.' }
+    'missing-plan' { 'Missing native plan for qualification schema 2.' }
     'missing-profile' {
         $qualification.bettingLedger.Remove('betting-ledger-talkback')
         [void]$reportNames.Remove('android-betting-ledger-talkback-extent.html')
@@ -98,6 +113,41 @@ $manifest = [ordered]@{
     })
 }
 if ($Scenario -ne 'legacy') { $manifest.validationScope = 'FULL' }
+if ($Scenario -in @('planned','missing-family','changed-plan','missing-plan')) {
+    function PlanEntry($mode, $variant, $proofPath, $optional, $folder = "android-$mode") {
+        @{mode=$mode; apkVariant=$variant; proofPath=@($proofPath); optional=$optional
+            folder=$folder; report="android-$mode-extent.html"}
+    }
+    $entries = @(
+        PlanEntry 'tournament' 'sanity' 'tournamentSanity' $false 'android-tournament-sanity'
+        PlanEntry 'release-smoke' 'release' 'releaseInstallSmoke' $false
+        foreach ($key in $profiles.Keys) {
+            $variant = if ($key -in @('hardSix','seatMetrics')) { 'release' } else { 'sanity' }
+            PlanEntry $profiles[$key] $variant $key $true
+        }
+        foreach ($mode in $ledger) { PlanEntry $mode 'sanity' @('bettingLedger',$mode) $true }
+    )
+    $manifest.schemaVersion = 2
+    $manifest.sanityApkSha256 = $sanityHash
+    $planPath = "$root/native-plan.json"
+    if ($Scenario -ne 'missing-plan') {
+        $switches = @('-IncludeHardSix','-IncludeSeatMetrics','-IncludeSettlementAward','-IncludeBettingLedger')
+        $plan = if ($Scenario -eq 'planned') {
+            . (Join-Path $PSScriptRoot '../HoldemNativeQualification.ps1')
+            $catalog = Join-Path $PSScriptRoot '../../config/release-test-suites.json'
+            $geometry = New-HoldemNativePlan $catalog $manifest.sourceCommit $version 'TABLE_GEOMETRY_COMPONENT'
+            if (($geometry.journeys.geometryProfile -join ',') -cne 'device,short,tall' -or
+                @($geometry.journeys | Where-Object apkVariant -CNE 'release').Count) { throw 'Wrong geometry plan' }
+            New-HoldemNativePlan $catalog $manifest.sourceCommit $version 'FULL' $switches
+        } else {
+            @{schemaVersion=1; sourceCommit=$manifest.sourceCommit; versionName=$version
+                validationScope='FULL'; selectedSwitches=$switches; journeys=$entries}
+        }
+        Save-Json $planPath $plan
+        $manifest.nativePlan = @{path='native-plan.json'; sha256=(Get-FileHash -LiteralPath $planPath).Hash.ToLowerInvariant()}
+        if ($Scenario -eq 'changed-plan') { Add-Content -LiteralPath $planPath -Value ' ' }
+    }
+}
 Save-Json "$root/qualification.json" $manifest
 
 if ($expectedError) {
@@ -116,7 +166,8 @@ $result = & $auditor -RunRoot $root | ConvertFrom-Json
 $expectedModes = @(if ($Scenario -ne 'legacy') { @($profiles.Values) + $ledger })
 $actualModes = @(foreach ($profile in $result.optionalNative) { $profile.journey })
 if ($result.status -cne 'PASS' -or $result.native.Count -ne 2 -or $actualModes.Count -ne $expectedModes.Count -or
-    ($actualModes -join ',') -cne ($expectedModes -join ',')) {
+    ($actualModes -join ',') -cne ($expectedModes -join ',') -or
+    ($Scenario -eq 'planned' -and $result.nativePlanSha256 -cne $manifest.nativePlan.sha256)) {
     throw "Expected PASS and profiles '$($expectedModes -join ',')', observed '$($actualModes -join ',')'."
 }
 foreach ($proof in $result.optionalNative) {

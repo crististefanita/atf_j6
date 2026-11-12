@@ -175,3 +175,33 @@ foreach ($mutation in @(
 }
 $record.path = '../qualification.json'
 Assert-ProofRejection 'path traversal in evidence inventory' 'Invalid or duplicate qualification inventory path'
+$record.path = 'qualification.json'
+
+$planName = 'native-plan.json'
+$tournamentReport = 'reports/android-tournament-extent.html'
+$catalog = Join-Path $PSScriptRoot '../../config/release-test-suites.json'
+Save-Json "$edition/$planName" (New-HoldemNativePlan $catalog $build '1.2.3' 'FULL')
+Copy-Item -LiteralPath "$edition/reports/android-release-smoke-extent.html" -Destination "$edition/$tournamentReport"
+$planIdentity = Get-Identity "$edition/$planName"
+$tournamentIdentity = Get-Identity "$edition/$tournamentReport"
+$q = [Text.Encoding]::UTF8.GetString($storedQualification) | ConvertFrom-Json -AsHashtable
+$q.schemaVersion = 2
+$q.validationScope = 'FULL'
+$q.nativePlan = @{path=$planName; sha256=$planIdentity.sha256}
+$q.reports += @{path='android-tournament-extent.html'; bytes=$tournamentIdentity.bytes; sha256=$tournamentIdentity.sha256}
+Save-Json $qualificationPath $q
+$updated = Get-Identity $qualificationPath
+$qualificationEntry.sha = $updated.blob
+$record.sha256 = $updated.sha256
+$record.bytes = $updated.bytes
+Assert-ProofRejection 'plan omitted from edition inventory' 'Missing inventoried native plan'
+$pinned.Add("release/1.2.3/$planName", @{type='blob'; mode='100644'; sha=$planIdentity.blob})
+$validation.integrity.files += @{path=$planName; bytes=$planIdentity.bytes; sha256=$planIdentity.sha256}
+Assert-ProofRejection 'planned report omitted from edition inventory' 'Missing inventoried qualification report: android-tournament-extent.html'
+$pinned.Add("release/1.2.3/$tournamentReport", @{type='blob'; mode='100644'; sha=$tournamentIdentity.blob})
+$validation.integrity.files += @{path=$tournamentReport; bytes=$tournamentIdentity.bytes; sha256=$tournamentIdentity.sha256}
+$proof = Get-HoldemQualificationProof $root '1.2.3' $validation $pinned $build
+if ($proof.nativePlanSha256 -cne $planIdentity.sha256 -or $proof.inventoriedFilesVerified -ne 4) {
+    throw 'The accepted proof is missing the native plan identity.'
+}
+'PASS exact plan and planned reports pinned in edition inventory'

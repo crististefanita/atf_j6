@@ -376,6 +376,15 @@ class ReleaseImpactRagTest {
         assertFalse(review.path("canChangeReleaseIndex").asBoolean(true));
         assertFalse(review.path("canDeclareTestPass").asBoolean(true));
         assertEquals("NOT_EVALUATED", review.path("testReceiptState").asText());
+        JsonNode deployment = review.path("deploymentPlan");
+        assertEquals("PENDING", deployment.path("state").asText());
+        assertEquals("main", deployment.path("targetBranch").asText());
+        assertEquals("README.md", deployment.path("primaryReadme").asText());
+        assertEquals("release/index.json", deployment.path("releaseIndex").asText());
+        assertEquals("v" + review.path("candidateVersion").asText(), deployment.path("tag").asText());
+        assertEquals("scripts/Test-HoldemRagDeployment.ps1", deployment.path("verificationScript").asText());
+        assertTrue(deployment.path("requiredChecks").toString().contains("main README"));
+        assertTrue(deployment.path("requiredChecks").toString().contains("authenticated APK and checksum"));
     }
 
     @Test

@@ -42,4 +42,4 @@ Declarați, de exemplu, `atf.api:atf-reporting:<versiunea din POM>` în dependen
 
 ## Mentenanță și feedback
 
-Bibliotecile comune se întrețin la producător. Raportează defectele cu JAR-ul, SHA-256, pașii de reproducere și valorile așteptate și observate. J6 verifică local adopția perechilor declarate. [Proveniență](../library-provenance.json)
+Fiecare bibliotecă este consumată prin perechea JAR/POM declarată și verificată local. Pentru o problemă, notează coordonatele, SHA-256, pașii de reproducere și valorile așteptate și observate. Actualizarea unei perechi cere proveniență verificabilă și acceptanță pe classpath-ul consumerului. [Proveniență](../library-provenance.json)

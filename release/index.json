@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.17.2",
-  "previousVersion": "0.17.1",
-  "changeClass": "PATCH_FIX",
-  "changeRationale": "Corectează calificarea Android când lipsesc probe native selectate sau când receipt-ul indică un alt profil.",
-  "state": "PREPARED",
+  "currentVersion": "0.17.3",
+  "previousVersion": "0.17.2",
+  "changeClass": "REFACTOR_ONLY",
+  "changeRationale": "Face scorecard-ul feedbackului verificabil și leagă planul RAG de verificarea downloadului din README pe ramura principală, fără modificări de joc.",
+  "state": "DRAFT",
   "published": false,
   "versions": [
-    "0.17.2"
+    "0.17.3"
   ]
 }

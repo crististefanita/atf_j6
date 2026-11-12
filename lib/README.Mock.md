@@ -45,4 +45,4 @@ var response = mock.send(ApiRequest.of("GET", "/health"),
 
 ---
 
-Mentenanța codului și testelor Mock aparține proiectului separat `atf_j0/atf-mock`; [feedback-ul și sincronizarea](README.md#mentenanță-și-feedback) pornesc de la J0.
+Consumerul verifică local rutele, condițiile de request și integrarea Mock în teste offline. Pentru schimbarea unei perechi binare, urmează [procesul de mentenanță și feedback](README.md#mentenanță-și-feedback).

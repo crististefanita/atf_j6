@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 
-/** Publishes observed native Android E2E results using the admitted J0 Reporting JAR. */
+/** Publishes observed native Android E2E results using the pinned Reporting JAR. */
 class PublishTournamentExtent {
     private static final List<String> TOURNAMENT_ASSERTIONS = List.of("Opening hand", "First hand pot is paid",
             "Raise opens the amount editor", "Call remains accessible after closing Raise",

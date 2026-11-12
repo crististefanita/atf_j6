@@ -6,8 +6,7 @@ Hold’em Lab este un joc No-Limit Texas Hold’em pentru Android. Poți juca of
 
 ## Jocul
 
-- **[Hold'em Lab 0.17.2 — documentația release-ului](https://github.com/crististefanita/atf_j6/releases/tag/v0.17.2)**
-- **[Descarcă APK-ul Hold'em Lab 0.17.2](https://github.com/crististefanita/atf_j6/releases/download/v0.17.2/HoldemLab-0.17.2.apk)**
+- **[Hold'em Lab 0.17.3 — dosarul ediției](release/0.17.3/README.md)**
 
 ## Prima mână după instalare
 
@@ -59,7 +58,7 @@ J6 consumă Core, Reporting, Console, Mock și Test Kit din perechile JAR/POM di
 - [Guvernanță locală](docs/governance/README.md)
 - [Catalogul release-urilor](release/README.md)
 - [Procesul de release Android](docs/release/ATF_Release.md)
-- [RAG pentru impactul unei schimbări](docs/release/ATF_Release.md#contextul-rag-consultativ)
+- [RAG pentru impact și deploy](docs/release/ATF_Release.md#planul-rag-pentru-deploy-pe-ramura-principală)
 - [Feedback activ](docs/feedback/README.md)
 
 ## Construire locală

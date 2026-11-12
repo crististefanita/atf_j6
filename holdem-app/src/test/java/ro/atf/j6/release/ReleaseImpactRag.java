@@ -142,6 +142,7 @@ public final class ReleaseImpactRag {
         result.put("distributionVerification", "AUTHENTICATED_ONLY");
         result.put("evidenceNote", enoughEvidence ? "Changed-text signals have versioned source and suite citations."
                 : "No sufficiently specific source and suite mapping was retrieved; human review is required.");
+        addDeploymentPlan(result, root, candidateVersion);
         ArrayNode files = result.putArray("changedFiles");
         changedFiles.forEach(files::add);
 
@@ -200,6 +201,35 @@ public final class ReleaseImpactRag {
         Files.createDirectories(target.getParent());
         JSON.writerWithDefaultPrettyPrinter().writeValue(target.toFile(), result);
         return result;
+    }
+
+    private static void addDeploymentPlan(ObjectNode result, Path root, String candidateVersion) {
+        ObjectNode plan = result.putObject("deploymentPlan");
+        plan.put("state", "PENDING");
+        plan.put("targetBranch", defaultBranch(root));
+        plan.put("primaryReadme", "README.md");
+        plan.put("releaseIndex", "release/index.json");
+        plan.put("tag", "v" + candidateVersion);
+        plan.put("apkAsset", "HoldemLab-" + candidateVersion + ".apk");
+        plan.put("checksumAsset", "HoldemLab-" + candidateVersion + ".apk.sha256");
+        plan.put("verificationScript", "scripts/Test-HoldemRagDeployment.ps1");
+        plan.putArray("requiredChecks")
+                .add("main branch contains the release evidence commit")
+                .add("main README links to the current release and exact APK asset")
+                .add("tag resolves to the qualified source commit")
+                .add("authenticated APK and checksum downloads match the qualified bytes");
+    }
+
+    private static String defaultBranch(Path root) {
+        try {
+            String reference = git(root, "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD").trim();
+            if (reference.startsWith("origin/") && reference.length() > "origin/".length()) {
+                return reference.substring("origin/".length());
+            }
+        } catch (Exception ignored) {
+            // Isolated RAG fixtures have no remote-tracking HEAD; the repository default is main.
+        }
+        return "main";
     }
 
     private static Corpus corpus(Path root) throws Exception {

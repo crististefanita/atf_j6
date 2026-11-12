@@ -77,6 +77,30 @@ flowchart LR
 
 [Teste pentru contextul de impact](../../holdem-app/src/test/java/ro/atf/j6/release/ReleaseImpactRagTest.java)
 
+### Planul RAG pentru deploy pe ramura principală
+
+Contextul RAG păstrează separat recomandarea de impact și planul de livrare. `deploymentPlan.state=PENDING` este intenționat: RAG-ul nu pretinde că a publicat versiunea și nu transformă recomandările în verdict de test. Planul fixează ramura implicită remote, `README.md`, `release/index.json`, tagul, numele APK-ului și verificările obligatorii.
+
+După calificare, integrați commitul sursă și dosarul de release pe ramura implicită (`main` în repository-ul curent), creați tagul asupra commitului calificat, publicați APK-ul și checksum-ul, apoi aliniați blocul `## Jocul` din README. Pentru politica `AUTHENTICATED_ONLY`, ambele linkuri trebuie să fie cele ale ediției curente; sesiunea GitHub autentificată trebuie să poată descărca octeții compleți.
+
+Ultima poartă consumă planul din contextul RAG și calificarea din același `RunRoot`:
+
+```powershell
+.\scripts\Test-HoldemRagDeployment.ps1 -RunRoot $run -RemoteRef main
+```
+
+Poarta verifică sursa și materialele publicate înainte să declare deploy-ul complet:
+
+- checkout-ul este curat, HEAD corespunde ramurii remote implicite, iar commitul calificat este strămoșul versiunii livrate;
+- tagul nu este mutat, iar `release/index.json` selectează versiunea calificată;
+- README-ul remote indică exact pagina ediției și APK-ul curent;
+- receipt-ul autentificat fixează commitul și blob-ul README-ului folosit la descărcare;
+- dimensiunea și SHA-256 ale APK-ului și checksum-ului corespund calificării.
+
+Poarta publică `rag-deployment-receipt.json` în dosarul extern al aceleiași rulări. **Ediția este livrată numai când acest receipt are `status=DEPLOYED`.** Receipt-ul reutilizează descărcarea deja verificată; APK-ul nu se descarcă a doua oară.
+
+Acest pas este verificarea de deploy a RAG-ului; `CONTEXT_READY` rămâne doar context de analiză, iar `qualification.status=PASS` rămâne doar calificarea locală. Nu copiați receipt-ul în contextul RAG și nu modificați contextul după calcularea hash-ului lui.
+
 ## Semnare J6
 
 J6 folosește o identitate Android proprie, distinctă de J4/J5. Inițializarea unică este:
@@ -184,13 +208,15 @@ Rezultatul JSON enumeră în `optionalNative` profilurile auditate, varianta APK
 3. Completați `release-validation.json` cu identitatea APK-ului, commit-ul sursă, calificarea și hash-urile documentelor. Păstrați raportul Extent al porții în dosarul extern al rulării.
 4. Commit-ul sursă și tag-ul `v<versiune>` identifică exact binarul. Împingeți commitul calificat și tag-ul împreună. Verificați pe remote commitul indicat de tag.
 5. Atașați APK-ul verificat și checksum-ul la GitHub Release, publicați și confruntați asset-urile cu manifestul. După o descărcare autentificată completă, păstrați receipt-ul, marcați ediția `PREPARED` și aliniați linkurile din README. Împingeți commitul separat al dovezilor, apoi citiți README-ul de pe branchul remote. Comparați pagina Release și URL-ul APK-ului cu metadatele GitHub și păstrați separat rezultatul descărcării directe și pe cel prin API.
-6. Cu catalogul în `PREPARED`, rulați `scripts/Test-PublishedHoldemDownload.ps1`. Clientul fixează commitul README-ului și rezolvă tagul la commitul sursă. Politica de distribuție este `AUTHENTICATED_ONLY`.
+6. Cu asset-urile încărcate și blocul `## Jocul` deja publicat pe ramura implicită, rulați o singură dată `scripts/Test-PublishedHoldemDownload.ps1`. Politica de distribuție este `AUTHENTICATED_ONLY`.
    - Citește README-ul la commitul fixat și compară catalogul, manifestul ediției, calificarea și rapoartele inventariate cu arborele Git al acelui commit. Verifică și SHA-256 al fișierelor inventariate.
    - Descarcă integral APK-ul și checksum-ul prin ID-urile asset-urilor. Verifică lungimea, SHA-256 și numele din checksum, apoi reconfirmă ținta tagului.
-   - Blocul `provenance` din dovadă fixează commiturile README, tag și build, SHA-256 al calificării și al manifestului ediției, plus hash-ul continuării dacă a fost folosită.
-   - Păstrați ambele dovezi autentificate, `authenticatedAssetDownload` și `authenticatedChecksumDownload`. Verificarea din browser folosește aceeași rută directă din README, într-o sesiune GitHub autentificată.
-   - Păstrați catalogul în `PREPARED` pentru distribuția calificată cu autentificare. `PUBLISHED` reprezintă o calificare distinctă pentru accesul anonim și rămâne în schema dosarelor istorice.
-   - Folosiți `GH_TOKEN` sau o credențială GitHub deja salvată în Git. Dovada conține ruta canonică, metoda și hashul, fără credențiale sau URL semnat.
+   - Blocul `provenance` fixează commiturile README, tag și build, hash-urile calificării și manifestului ediției, plus hash-ul continuării dacă a fost folosită.
+   - Păstrează dovezile `authenticatedAssetDownload` și `authenticatedChecksumDownload`; verificarea folosește ruta directă din README într-o sesiune GitHub autentificată.
+   - Păstrează catalogul în `PREPARED` pentru distribuția calificată cu autentificare. `PUBLISHED` reprezintă o calificare distinctă pentru accesul anonim și rămâne în schema dosarelor istorice.
+   - Folosește `GH_TOKEN` sau o credențială GitHub deja salvată în Git. Dovada conține ruta canonică, metoda și hashul, fără credențiale sau URL semnat.
+   - Integrează receipt-urile autentificate în manifestul ediției și publică acel commit pe ramura implicită. README-ul trebuie să rămână identic la nivel de blob.
+7. Rulați `scripts/Test-HoldemRagDeployment.ps1` dintr-un checkout curat al cărui HEAD coincide cu ramura implicită. Poarta reutilizează receipt-ul descărcării din `$run\deployment-download`, confirmă blob-ul README și scrie `rag-deployment-receipt.json` în `$run`.
 
 Pagina de Release și endpointul de download sunt distincte de `release/<versiune>/`, care rămâne catalogul tehnic și dovada locală.
 

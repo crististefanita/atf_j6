@@ -25,7 +25,8 @@ class DocumentationGovernanceTest {
             "(?ms)^## Cerințe și documentație[ \\t]*\\R(.*?)(?=^## |\\z)");
     private static final Pattern LINK_BULLET = Pattern.compile("- \\[[^\\[\\]]+]\\(([^()\\s]+)\\)");
     private static final Pattern FEEDBACK_ROW = Pattern.compile(
-            "(?m)^\\|[^|]+\\| *\\[[^]]+]\\((J6-[^#)]+\\.md)(?:#[^)]*)?\\) *\\| *([^|\\r\\n]+)\\| *$");
+            "(?m)^\\|(?:[^|\\r\\n]*\\|)*[^|\\r\\n]*\\((J6-[^#)]+\\.md)(?:#[^)]*)?\\)[^|\\r\\n]*\\|(?:[^|\\r\\n]*\\|)* *([^|\\r\\n]+) *\\|$");
+    private static final Pattern FEEDBACK_SCORE = Pattern.compile("^(\\d{1,3}) \\((\\d+)\\+(\\d+)\\+(\\d+)\\+(\\d+)\\)$");
 
     @Test
     void activeReadmesLeadWithOrientationAndPointToTheirOwners() throws Exception {
@@ -63,6 +64,8 @@ class DocumentationGovernanceTest {
             }
         }
         checkFeedback(root, checks);
+        checkFeedbackScorecard(root, checks);
+        checkActiveDocumentationHasNoExternalProjectReferences(root, version, catalog.required("state").asText().equals("DRAFT"), checks);
         Path reports = Path.of(System.getProperty("atf.test.reportDirectory", "target/atf-reports"));
         Files.createDirectories(reports);
         ReleaseAuditExtent.write(reports.resolve("J6DocumentationGovernance-" + System.currentTimeMillis() + ".html"),
@@ -120,9 +123,55 @@ class DocumentationGovernanceTest {
     void feedbackRowsNeedAResolvableCaseAndACriterion() {
         String file = "J6-UI-07-SHOWDOWN-WIN-CLARITY.md";
         String link = "[Showdown](" + file + "#dovezi-rămase)";
-        String row = "| P1 | " + link + " | Verifică marcajele. |";
+        String row = "| 1 | P1 | 86 (36+26+16+8) | " + link + " | Verifică marcajele. |";
         assertEquals(List.of(file, file), feedbackTargets(row + "\n" + row));
         assertEquals(List.of(), feedbackTargets("- " + link + "\n| P1 | " + link + " |   |"));
+    }
+
+    private static void checkFeedbackScorecard(Path root, List<AtfAssertion> checks) throws Exception {
+        String markdown = Files.readString(root.resolve("docs/feedback/README.md"));
+        var section = Pattern.compile("(?ms)^## Restanțe active, ordonate după impact\\R(.*?)(?=^## |\\z)").matcher(markdown);
+        boolean hasSection = section.find();
+        checks.add(new AtfAssertion("Feedback priorities have an active scorecard", "one ordered scorecard section",
+                hasSection ? "section present" : "section missing", hasSection));
+        if (!hasSection) return;
+
+        var scores = new ArrayList<Integer>();
+        var ids = new java.util.HashSet<String>();
+        for (String line : section.group(1).lines().filter(value -> value.startsWith("|")).toList()) {
+            String[] cells = line.split("\\|", -1);
+            if (cells.length < 7 || cells[1].isBlank() || cells[1].contains("---") || cells[3].contains("Scor")) continue;
+            String priority = cells[3].strip();
+            Matcher score = FEEDBACK_SCORE.matcher(priority);
+            String row = cells[2].strip();
+            Matcher feedback = FEEDBACK_ROW.matcher(line);
+            boolean uniqueLink = feedback.find() && ids.add(feedback.group(1));
+            boolean valid = score.matches();
+            int value = valid ? Integer.parseInt(score.group(1)) : 0;
+            int sum = valid ? Integer.parseInt(score.group(2)) + Integer.parseInt(score.group(3))
+                    + Integer.parseInt(score.group(4)) + Integer.parseInt(score.group(5)) : -1;
+            boolean criterion = !cells[cells.length - 2].isBlank();
+            boolean passed = valid && value >= 1 && value <= 100 && value == sum && uniqueLink && criterion;
+            checks.add(new AtfAssertion("Feedback row " + row, "score is 1..100, sums its four factors, and has one target and criterion",
+                    "score=" + priority + ", unique target=" + uniqueLink + ", criterion=" + criterion, passed));
+            if (valid) scores.add(value);
+        }
+        boolean descending = !scores.isEmpty();
+        for (int i = 1; i < scores.size(); i++) descending &= scores.get(i - 1) >= scores.get(i);
+        checks.add(new AtfAssertion("Feedback scorecard ordering", "scores descend by priority", scores.toString(), descending));
+    }
+
+    private static void checkActiveDocumentationHasNoExternalProjectReferences(Path root, String version,
+                                                                                boolean draft,
+                                                                                List<AtfAssertion> checks) throws Exception {
+        var external = Pattern.compile("(?i)atf[_-]j0|\\bJ0\\b");
+        var references = new ArrayList<String>();
+        for (Path document : activeDocuments(root, version, draft)) {
+            var matcher = external.matcher(Files.readString(document));
+            if (matcher.find()) references.add(root.relativize(document).toString());
+        }
+        checks.add(new AtfAssertion("Active documentation is self-contained", "no external project names in active Markdown",
+                references.isEmpty() ? "self-contained" : references.toString(), references.isEmpty()));
     }
 
     static Path projectRoot() {

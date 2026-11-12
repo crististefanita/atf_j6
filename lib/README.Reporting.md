@@ -65,4 +65,4 @@ Durata HTTP provine din `ReportResponse.duration()`; `detail(...)` păstrează t
 
 ---
 
-J0: [cod, teste și feedback](README.md#mentenanță-și-feedback).
+Consumerul verifică local artefactele Extent, capturile încorporate și contractul raportului. Pentru schimbarea unei perechi binare, urmează [procesul de mentenanță și feedback](README.md#mentenanță-și-feedback).

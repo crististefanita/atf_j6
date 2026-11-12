@@ -4,18 +4,26 @@
 
 Indexul urmărește lacunele verificabile ale J6. Cerințele stabile apar în documentele owner, iar rezultatele unei ediții rămân în catalogul ei. [Cerințe](../requirements/README.md) · [Strategie](../testing/TEST_STRATEGY.md) · [Catalogul edițiilor](../../release/README.md)
 
-## Priorități active
+## Restanțe active, ordonate după impact
 
-| Prioritate | Subiect | Dovada care lipsește |
-|---|---|---|
-| P1 | [J6-AI-02 · Calibrare](J6-AI-02-STRATEGY-CALIBRATION.md) | Reluarea nivelului Hard din interfață, evaluarea independentă și modelul de range. |
-| P1 | [J6-AI-04 · Ablație shove](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) | Efect repetat cu minimum 20 de seed-uri independente pe configurație. |
-| P1 | [J6-UI-05 · Coach și Auto-play](J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md) | Traseul nativ de la delegare la o decizie confirmată și înapoi la control manual. Oracolul pentru combinație și verificarea reluării din interfață. |
-| P1 | [J6-UI-07 · Showdown](J6-UI-07-SHOWDOWN-WIN-CLARITY.md#dovezi-rămase) | Centrarea perechilor în cazuri speciale și identitatea celor cinci cărți decisive. |
-| P1 la extindere · P2 | [J6-PROD-01 · Realizări](J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md) | Credit manual dovedit pentru catalogul candidat, poziția listei filtrate pe ecran scund și ritmul în sesiuni manuale. |
-| P2 | [J6-UI-09 · Lizibilitate](J6-UI-09-SEAT-METRIC-HIERARCHY.md) | Anunțurile audio și parcurgerea tuturor locurilor prin gesturi. |
-| P2 | [J6-REL-03 · API minim](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) | Instalare și proba de recomandare AI pe API 26. |
-| Extern · la cerere | [J6-REL-01 · Vizibilitate publică](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | Investigație separată de calificarea autentificată a ediției curente. |
+Scorul este **prioritatea de mentenanță**, nu nota de calitate, procentul de acoperire sau probabilitatea de eșec. Se calculează din impact (0–40), lipsa dovezilor (0–30), fezabilitate (0–20) și datorie documentară (0–10). Componentele înscrise între paranteze fac suma verificabilă; recalibrați scorul când se schimbă dovada sau costul.
+
+| Ordine | Nivel | Scor /100 | Owner și criteriu de închidere | Restanță concretă |
+|---:|---|---:|---|---|
+| 1 | P1 | 91 (38+27+17+9) | [J6-AI-02 · Calibrare](J6-AI-02-STRATEGY-CALIBRATION.md) · politici și arena | Verificare nativă a rotației și reluării Hard; apoi evaluare competitivă independentă și calificarea modelelor de range. |
+| 2 | P1 | 89 (36+27+18+8) | [J6-UI-05 · Coach și Auto-play](J6-UI-05-LOCAL-COACH-AND-POSTGAME-REVIEW.md) · aplicația Android | Oracol independent pentru combinație, recapitulare între mâini și flux nativ complet cu delegare, control manual și restaurare. |
+| 3 | P1 | 86 (36+26+16+8) | [J6-UI-07 · Showdown](J6-UI-07-SHOWDOWN-WIN-CLARITY.md) · prezentarea mesei | Centrare la cinci/șase locuri, cărțile decisive pentru showdown și board-play, descrieri accesibile și lizibilitate compactă. |
+| 4 | P1 | 84 (34+26+16+8) | [J6-AI-04 · Ablație shove](J6-AI-04-PUBLIC-SHOVE-ABLATION.md) · evaluarea strategiilor | Confirmarea efectului pe minimum 20 de seed-uri independente pentru fiecare mărime de masă, cu intervale și oportunități eligibile. |
+| 5 | P1 la extindere · P2 | 79 (31+23+17+8) | [J6-PROD-01 · Realizări](J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md) · produs și acceptanță | Dovada creditului manual, restaurarea poziției filtrate pe ecran scund și ritmul în sesiuni jucate manual. |
+| 6 | P2 | 72 (27+25+12+8) | [J6-REL-03 · API minim](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) · calificarea Android | Instalare pe API 26, pornire, navigare, recomandare AI și restaurarea unei sesiuni pe versiunea minimă. |
+| 7 | P2 | 68 (24+22+14+8) | [J6-UI-09 · Lizibilitate](J6-UI-09-SEAT-METRIC-HIERARCHY.md) · accesibilitate Android | Parcurgerea tuturor locurilor cu TalkBack, anunțurile RO/EN și informațiile corecte în timpul mâinii și la decontare. |
+| — | Extern, la cerere | 43 (25+12+2+4) | [J6-REL-01 · Vizibilitate publică](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) · titularul contului | Reia separat proba anonimă; nu blochează distribuția autentificată verificată în RAG. |
+
+Scorurile sunt revizuite odată cu fiecare calificare. O restanță se scoate din tabel numai după ce criteriul ei a fost demonstrat și contractul stabil a fost mutat în documentația owner; dosarul ediției păstrează rezultatul istoric.
+
+## Închise și mutate în contracte stabile
+
+- [J6-REL-05 · Contextul RAG](J6-REL-05-RELEASE-RAG-GOVERNANCE.md): regulile consultative sunt în procesul de release, iar testele le verifică local; acest feedback rămâne doar ca legătură istorică.
 
 ## Contracte și dovezi
 

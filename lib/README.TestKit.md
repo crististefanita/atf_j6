@@ -35,4 +35,4 @@ public static void verifyState(RecordedAssertions audit, String actual) {
 
 ---
 
-Mentenanță, cod, teste și feedback: [atf_j0](README.md#mentenanță-și-feedback).
+Consumerul verifică local selecția suitei, lifecycle-ul și raportarea aserțiunilor. Pentru schimbarea unei perechi binare, urmează [procesul de mentenanță și feedback](README.md#mentenanță-și-feedback).

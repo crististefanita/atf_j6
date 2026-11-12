@@ -28,3 +28,4 @@ Sursă calificată: `184d12e5cd2bea2662263b9b01f556e92c88e418`.
 - [Contextul RAG](release-impact-context.json)
 - [Auditul dovezilor](release-evidence-audit.json)
 - [Planul probelor native](native-plan.json)
+

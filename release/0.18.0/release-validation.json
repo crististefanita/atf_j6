@@ -112,17 +112,19 @@
   },
   "authenticatedBrowserDownload": {
     "verified": true,
-    "source": "GitHub Release asset opened from authenticated Browser MCP session",
+    "source": "Main README direct APK link clicked in authenticated Browser MCP session",
     "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.18.0/HoldemLab-0.18.0.apk",
     "httpStatus": 200,
     "bytes": 866702,
     "sha256": "7ef7dea68a9f0dcd55f0223eb0dcb91bcc6cd1bbdfda3fa19b4dfee003359e7f",
     "credentialMode": "authenticated Browser MCP session",
-    "completedUtc": "2026-11-12T21:42:46.1458971Z"
+    "completedUtc": "2026-11-12T21:48:20.7372014Z",
+    "remoteRef": "main",
+    "remoteReadmeBlob": "9af216ed27774e57d1ad0fd3f4baa1babc918942",
+    "readmeCommit": "1617da6267deb25ab5d0b7611c73e370d771c1d7"
   },
   "authenticatedChecksumDownload": {
     "verified": true,
-    "source": "GitHub Release checksum opened from authenticated Browser MCP session",
     "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.18.0/HoldemLab-0.18.0.apk.sha256",
     "httpStatus": 200,
     "bytes": 87,
@@ -130,15 +132,16 @@
     "credentialMode": "authenticated Browser MCP session",
     "apkSha256": "7ef7dea68a9f0dcd55f0223eb0dcb91bcc6cd1bbdfda3fa19b4dfee003359e7f",
     "apkName": "HoldemLab-0.18.0.apk",
-    "completedUtc": "2026-11-12T21:42:46.1458971Z"
+    "completedUtc": "2026-11-12T21:48:20.7372014Z",
+    "source": "GitHub checksum asset downloaded in authenticated Browser MCP session"
   },
   "integrity": {
     "algorithm": "SHA-256",
     "files": [
       {
         "path": "README.md",
-        "bytes": 1408,
-        "sha256": "f3ae1c4dd4b1b72c55dcd407eb98158f2a74e8050ec8b6c7e3152e294db84dac"
+        "bytes": 1410,
+        "sha256": "8339db3c13932e61258150af047b60a6049aa4540b582e37f3eae9e839de8c3a"
       },
       {
         "path": "release-notes.md",
@@ -194,6 +197,11 @@
         "path": "reports/android-release-smoke-extent.html",
         "bytes": 4852554,
         "sha256": "a279c410abe815000849a533f487e5d4c7b187653faa023393e1b7cc9ad9e7ef"
+      },
+      {
+        "path": "authenticated-download-receipt.json",
+        "bytes": 1476,
+        "sha256": "701ff208ce42474c5a4db1870331f594b55dcff1b8d081dd6bdbbc47863ee5da"
       }
     ]
   }

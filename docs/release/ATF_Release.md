@@ -148,7 +148,16 @@ Păstrați inventarul `config/release-test-suites.json` sincronizat cu suitele M
 
 Auditul citește manifestul calificării și verifică APK-ul, checksum-ul, integritatea rapoartelor și capturile originale în Extent. Dosarul extern păstrează și XML-urile, receipt-urile native și contextul RAG.
 
-Pentru probele opționale selectate de RAG, verifică și `native.json` pentru fiecare profil. Confruntă varianta și SHA-256 ale APK-ului, verdictul, aserțiunile și capturile cu manifestul calificării și cu raportul Extent corespunzător. [Auditul probelor opționale](../feedback/J6-REL-08-OPTIONAL-NATIVE-EVIDENCE.md)
+Pentru calificarea `FULL`, o probă declarată în manifest sau în inventarul rapoartelor activează verificarea întregii familii. Auditorul confruntă `device.json`, `native.json` și Extent pentru fiecare profil. Verifică identitatea APK-ului, verdictul și aserțiunile, apoi caută octeții fiecărei capturi originale o singură dată în atașamentul inline.
+
+| Familie | Profiluri obligatorii dacă familia a fost selectată | Referința pentru SHA-256 |
+|---|---|---|
+| Turneu la șase locuri | `hard-six` | APK-ul semnat `release` |
+| Chenare compacte | `seat-metrics` | APK-ul semnat `release` |
+| Decontare | `settlement-award`, `settlement-multi-award`, `settlement-static-award`, `settlement-compact-award` | APK-ul `sanity` atestat de turneu |
+| Jurnal de pariuri | `betting-ledger`, `betting-ledger-compact`, `betting-ledger-talkback` | APK-ul `sanity` atestat de turneu |
+
+Rezultatul JSON enumeră în `optionalNative` profilurile auditate, varianta APK-ului și raportul Extent. Un manifest fără probe opționale produce o listă goală. Rulările `TABLE_GEOMETRY_COMPONENT` folosesc inventarul propriu de profile și receipt-uri. [Scriptul de audit](../../scripts/Test-HoldemReleaseEvidence.ps1)
 
 ## Promovare și descărcare
 

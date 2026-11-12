@@ -42,6 +42,7 @@ Publisherul compară XML-urile cu inventarul versionat și semnalează clase lip
 
 - Integrarea `HoldemReleaseProvenanceTest` rulează scripturile locale cu un transport GitHub controlat. Verifică taguri simple și adnotate, citirea README-ului la un commit fix și detectarea unui manifest ori raport modificat.
 - Fixture-urile Git verifică continuarea pentru dovezi și resping schimbările de produs, inclusiv cele revenite ulterior. [Promovare și descărcare](../release/ATF_Release.md#promovare-și-descărcare)
+- Fixture-urile auditului nativ construiesc un manifest, receipt-uri și rapoarte Extent minimale. Verifică familiile complete, manifestul fără probe opționale și respingerea profilului lipsă, a APK-ului din altă variantă și a capturilor modificate sau duplicate. [Auditul artefactelor](../release/ATF_Release.md#auditul-artefactelor-după-rulare)
 
 Testele curente acoperă ordinea actorilor, sizing-ul minim, menținerea stării după acțiuni ilegale, all-in-uri scurte cumulative, evaluarea mâinii și decontarea pe straturi. `config/j6-allin-challenges.yaml` este fixture-ul controlat pentru redeschidere, egalitate și jetoane impare; JUnit îl rulează prin motor, iar `audit-allin-challenge.cjs` reface separat acțiunile, clasificarea și plata.
 

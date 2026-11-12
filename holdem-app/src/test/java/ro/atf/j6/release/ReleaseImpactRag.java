@@ -204,7 +204,8 @@ public final class ReleaseImpactRag {
 
     private static Corpus corpus(Path root) throws Exception {
         var files = new ArrayList<Path>();
-        for (String directory : List.of("docs/feedback", "docs/requirements", "docs/testing", "docs/release", "docs/architecture")) {
+        for (String directory : List.of("docs/feedback", "docs/requirements", "docs/testing", "docs/governance",
+                "docs/release", "docs/architecture")) {
             Path path = root.resolve(directory);
             if (Files.isDirectory(path)) try (var walk = Files.walk(path)) {
                 walk.filter(Files::isRegularFile).filter(file -> file.toString().endsWith(".md")).forEach(files::add);
@@ -319,12 +320,17 @@ public final class ReleaseImpactRag {
         return List.copyOf(rows);
     }
 
-    private static List<String> matchingImpactPaths(JsonNode entry, List<String> changes) {
-        List<String> matches = new ArrayList<>();
+    static List<String> matchingImpactPaths(JsonNode entry, List<String> changes) {
+        var matches = new java.util.LinkedHashSet<String>();
         for (JsonNode path : entry.path("impactPaths")) {
-            if (changes.contains(path.asText())) matches.add(path.asText());
+            String declared = path.asText();
+            for (String change : changes) {
+                if (declared.endsWith("/") ? change.startsWith(declared) : change.equals(declared)) {
+                    matches.add(change);
+                }
+            }
         }
-        return matches;
+        return List.copyOf(matches);
     }
 
     private static int suitePriority(String module, String testClass, List<String> changes) {

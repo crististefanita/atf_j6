@@ -1,5 +1,7 @@
 package ro.atf.holdem.ai;
 
+import atf.testkit.AtfComponentTest;
+
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -11,6 +13,7 @@ import ro.atf.holdem.core.PublicOpponentTendency;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfComponentTest
 class ShortStackResponseModelPolicyTest {
     @Test void quotesPriceFromTheRespondersPotOddsAndSeparatesCoverage() {
         var hand = afterOpeningRaise();

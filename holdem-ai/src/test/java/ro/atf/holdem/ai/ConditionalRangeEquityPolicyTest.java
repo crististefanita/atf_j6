@@ -1,5 +1,7 @@
 package ro.atf.holdem.ai;
 
+import atf.testkit.AtfComponentTest;
+
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +17,7 @@ import ro.atf.holdem.core.HoldemHand;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfComponentTest
 class ConditionalRangeEquityPolicyTest {
     @Test void partitionsTheFullDeckAndRecoversUniformEquityWithProportionalWeights() {
         var deck = HoldemHand.shuffledDeck(1);

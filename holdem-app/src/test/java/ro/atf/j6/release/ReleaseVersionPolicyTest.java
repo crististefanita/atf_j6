@@ -1,13 +1,13 @@
 package ro.atf.j6.release;
 
-import atf.testkit.AtfComponentTest;
+import atf.testkit.AtfUnitTest;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@AtfComponentTest
+@AtfUnitTest
 class ReleaseVersionPolicyTest {
     @Test
     void mapsEveryDeclaredChangeClassToOneDeterministicVersion() {

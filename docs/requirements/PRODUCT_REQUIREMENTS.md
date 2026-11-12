@@ -88,7 +88,7 @@ O comandă de continuare acceptată în timpul animației salvează destinația 
 
 ### Istoricul pariurilor
 
-- În timpul și după o mână, utilizatorul vede sumarul ultimei acțiuni și poate inspecta jurnalul ordonat: cine a făcut `bet`, `raise`, `call`, `check`, `fold` sau `all-in`, suma adăugată și contribuția cumulată după mutare. [Criteriile jurnalului](../feedback/J6-UI-10-BETTING-ACTION-LEDGER.md)
+- În timpul și după o mână, utilizatorul vede sumarul ultimei acțiuni și poate inspecta jurnalul ordonat. Fiecare rând arată actorul, acțiunea, suma adăugată și contribuția cumulată. Un Check păstrează contribuția, iar un Raise acceptat din editor apare o singură dată. La focusul de accesibilitate, rândul și totalul intră integral în fereastră. [Probe de jurnal](../testing/TEST_STRATEGY.md#confirmarea-unui-raise-din-editor)
 
 ### Ierarhia informației de la loc
 

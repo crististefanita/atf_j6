@@ -20,5 +20,5 @@ Indexul urmărește lacunele verificabile ale J6. Cerințele stabile apar în do
 ## Contracte și dovezi
 
 - [Masa, turneul și reluarea](../../holdem-android/README.md) · [Clasamentul](../requirements/PRODUCT_REQUIREMENTS.md#clasamentul-turneelor)
-- [Probe Android și acceptanța Extent](../testing/TEST_STRATEGY.md#interfața-android-locală) · [Istoricul pariurilor](J6-UI-10-BETTING-ACTION-LEDGER.md) · [Catalogul edițiilor](../../release/README.md)
+- [Probe Android și acceptanța Extent](../testing/TEST_STRATEGY.md#interfața-android-locală) · [Istoricul pariurilor](../requirements/PRODUCT_REQUIREMENTS.md#istoricul-pariurilor) · [Catalogul edițiilor](../../release/README.md)
 - [Guvernanța release-ului și contextul RAG](../release/ATF_Release.md) · [Poarta de promovare](../release/ATF_Release.md#promovare-și-descărcare) · [Evaluarea AI](../requirements/AI_REQUIREMENTS.md)

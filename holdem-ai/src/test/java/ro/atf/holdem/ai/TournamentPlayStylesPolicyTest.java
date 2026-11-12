@@ -1,5 +1,7 @@
 package ro.atf.holdem.ai;
 
+import atf.testkit.AtfComponentTest;
+
 import org.junit.jupiter.api.Test;
 import ro.atf.holdem.core.ActionType;
 import ro.atf.holdem.core.Card;
@@ -13,6 +15,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static ro.atf.holdem.ai.TournamentPlayStyles.Style.*;
 
+@AtfComponentTest
 class TournamentPlayStylesPolicyTest {
     @Test void originalSeatsDetermineTheHardRosterForEveryHumanPosition() {
         var roster = List.of(BALANCED, PRUDENT, ACTIVE, POSITIONAL, NORMAL);

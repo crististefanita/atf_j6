@@ -29,10 +29,10 @@ APK-urile intermediare, build-urile, cache-urile, logurile și capturile brute r
 
 | Domeniu | Ce intră | Cum tratăm constatările |
 |---|---|---|
-| Documentație activă | README-urile proiectului și modulelor, ghidurile, catalogul și documentele edițiilor aflate în pregătire. | Orice constatare J0 rămâne de rezolvat înainte de calificare. |
+| Documentație activă | README-urile proiectului și modulelor, ghidurile, catalogul și documentele edițiilor aflate în pregătire. | Guvernanța locală trebuie să treacă înainte de calificare. |
 | Dovezi de ediție | Fișierele din dosarul `PREPARED` sau `PUBLISHED` inventariate individual în `release-validation.json`. Regula se aplică și dosarului ediției curente. | Păstrați fișierele la octet. Separați numai observațiile editoriale existente enumerate în catalog, după verificarea căii, lungimii și SHA-256. |
 
-Rulați verificările J0 pe arborele complet și păstrați rezultatul brut. În rezumat, raportați separat observațiile active și pe cele editoriale deja consemnate în dosarele sigilate.
+Rulați guvernanța documentară din checkout și păstrați comparațiile Extent. Raportați separat constatările active și observațiile editoriale consemnate în dosarele sigilate. [Guvernanța locală](../governance/README.md)
 
 - O observație nouă sau un link rupt blochează acceptanța documentului afectat. Un fișier lipsă ori o abatere de integritate blochează folosirea dovezii respective și se raportează separat.
 - Pentru o ediție nouă, verificați titlul, secțiunea `Pe scurt`, proza și legăturile din README-ul ediției și din indexul rapoartelor înainte de inventariere.
@@ -61,7 +61,7 @@ flowchart LR
 </details>
 
 - `ReleaseImpactRag` caută documente și suite pornind de la fișierele modificate, adăugate sau șterse. Fragmentele adăugate și eliminate contribuie la căutarea contractelor afectate, inclusiv atunci când diff-ul conține doar eliminări.
-- Pentru o suită care verifică un fișier din alt modul sau un script, declarați calea exactă în `impactPaths` din inventarul suitelor. O potrivire are prioritate față de relevanța lexicală și apare în `matchingChanges`, lângă digestul inventarului.
+- În `impactPaths`, declarați calea exactă pentru un fișier sau terminați cu `/` pentru toate fișierele unui director. Potrivirile au prioritate față de relevanța lexicală. `matchingChanges` enumeră fișierele efectiv modificate, lângă digestul inventarului.
 - În documentele normative, puneți `<!-- rag:contract identificator -->` imediat după valoarea din cod inline.
 - În feedbackul activ, folosiți `<!-- rag:observed identificator -->` pentru aceeași regulă și unitate. Comparația citește commitul candidatului.
 

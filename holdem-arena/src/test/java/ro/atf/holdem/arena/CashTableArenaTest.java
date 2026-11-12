@@ -1,5 +1,7 @@
 package ro.atf.holdem.arena;
 
+import atf.testkit.AtfComponentTest;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -15,6 +17,7 @@ import ro.atf.holdem.core.BlindLevel;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfComponentTest
 class CashTableArenaTest {
     @Test void cashSessionKeepsFixedBlindsRotatesButtonAndConservesChips() {
         var rules = new CashTableArena.Rules(4, 800, new BlindLevel(10, 20, 20));

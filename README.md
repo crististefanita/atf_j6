@@ -48,7 +48,7 @@ Pentru o sesiune existentă, folosește **Continue saved game / Continuă jocul 
 
 J6 consumă Core, Reporting, Console, Mock și Test Kit din perechile JAR/POM din [lib](lib/README.md). POM-ul rădăcină fixează versiunile și instalarea; testele verifică proveniența și integrarea.
 
-[PlatformLibraryAdoptionTest](holdem-app/src/test/java/ro/atf/j6/libraries/PlatformLibraryAdoptionTest.java) verifică hash-urile binare, proveniența JSON, transportul mock și raportul Extent. Biblioteca comună este întreținută în J0; regulile Hold’em rămân în J6.
+[PlatformLibraryAdoptionTest](holdem-app/src/test/java/ro/atf/j6/libraries/PlatformLibraryAdoptionTest.java) verifică hash-urile binare, proveniența JSON, transportul mock și raportul Extent. Verificările rulează cu bibliotecile din proiect.
 
 ## Cerințe și documentație
 
@@ -56,6 +56,7 @@ J6 consumă Core, Reporting, Console, Mock și Test Kit din perechile JAR/POM di
 - [Arhitectura motorului, simulării și aplicației](docs/architecture/ARCHITECTURE.md)
 - [Proiectarea realizărilor într-un joc](docs/design/achievements/README.md)
 - [Strategie de testare](docs/testing/TEST_STRATEGY.md)
+- [Guvernanță locală](docs/governance/README.md)
 - [Catalogul release-urilor](release/README.md)
 - [Procesul de release Android](docs/release/ATF_Release.md)
 - [RAG pentru impactul unei schimbări](docs/release/ATF_Release.md#contextul-rag-consultativ)

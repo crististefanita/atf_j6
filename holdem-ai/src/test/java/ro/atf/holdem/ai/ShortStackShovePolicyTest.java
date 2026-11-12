@@ -1,10 +1,13 @@
 package ro.atf.holdem.ai;
 
+import atf.testkit.AtfComponentTest;
+
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import ro.atf.holdem.core.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfComponentTest
 class ShortStackShovePolicyTest {
     @Test void shortStackUsesPremiumUnopenedAllInOnlyWhenLegal() {
         var policy = new ShortStackShovePolicy(8);

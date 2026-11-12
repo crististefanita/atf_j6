@@ -1,5 +1,7 @@
 package ro.atf.holdem.arena;
 
+import atf.testkit.AtfComponentTest;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
@@ -11,6 +13,7 @@ import ro.atf.holdem.core.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfComponentTest
 class ControlledChallengeTest {
     private static final Path CHALLENGES = Path.of("config", "j6-allin-challenges.yaml");
 

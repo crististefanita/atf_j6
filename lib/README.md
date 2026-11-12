@@ -42,4 +42,4 @@ Declarați, de exemplu, `atf.api:atf-reporting:<versiunea din POM>` în dependen
 
 ## Mentenanță și feedback
 
-Codul, testele native și feedback-ul bibliotecilor aparțin `atf_j0` (`atf_j0/docs/feedback/README.md`). Remedierea și regresia în J0 preced sincronizarea și acceptanța locală; feedback-ul include JAR/hash, reproducere și așteptat/observat.
+Bibliotecile comune se întrețin la producător. Raportează defectele cu JAR-ul, SHA-256, pașii de reproducere și valorile așteptate și observate. J6 verifică local adopția perechilor declarate. [Proveniență](../library-provenance.json)

@@ -26,6 +26,15 @@ class ReleaseImpactRagTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     @Test
+    void aDirectoryRouteCoversItsDocumentsWithoutMatchingSiblingNames() {
+        var suite = JSON.createObjectNode();
+        suite.putArray("impactPaths").add("README.md").add("docs/").add("docs/governance/README.md");
+
+        assertEquals(List.of("README.md", "docs/governance/README.md"), ReleaseImpactRag.matchingImpactPaths(suite,
+                List.of("docs/governance/README.md", "docs-old/README.md", "README.md", "README.md.bak")));
+    }
+
+    @Test
     void retrievesTheContractWhenTheOnlyChangeDeletesAnImplementation(@TempDir Path temp) throws Exception {
         Path root = project(temp, "0.3.0", "holdem-android", "ro.atf.holdem.android.LocalHoldemGameTest");
         write(root, "docs/architecture/ARCHITECTURE.md", "# Settlement\nReconcile an unmatched overbet before awarding chips.\n");

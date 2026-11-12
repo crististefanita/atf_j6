@@ -1,10 +1,13 @@
 package ro.atf.holdem.arena;
 
+import atf.testkit.AtfComponentTest;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfComponentTest
 class PositionRotationExperimentTest {
     @Test void sameFixedDealsRotateEveryStyleThroughEverySeatPositionWithoutIllegalActions() {
         var output = new StringWriter();

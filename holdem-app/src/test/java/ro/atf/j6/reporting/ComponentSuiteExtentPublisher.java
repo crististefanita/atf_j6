@@ -104,7 +104,8 @@ public final class ComponentSuiteExtentPublisher {
                         !isExpected ? "Suite or module is not declared by config/release-test-suites.json"
                                 : !unique ? "Suite XML is duplicated" : "");
                 aggregate.add(suite.counts());
-                ReportArtifactProfile.Scenario scenario = publishSuite(session, suite, isExpected && unique);
+                ReportArtifactProfile.Scenario scenario = publishSuite(session, suite, isExpected && unique,
+                        isExpected ? expectedSpec.level() : "unclassified");
                 scenarios.add(scenario);
             }
 
@@ -112,7 +113,7 @@ public final class ComponentSuiteExtentPublisher {
                 if (observed.contains(missing.testClass())) continue;
                 SuiteResult absent = SuiteResult.missing(scope, missing);
                 aggregate.add(absent.counts());
-                scenarios.add(publishSuite(session, absent, false));
+                scenarios.add(publishSuite(session, absent, false, missing.level()));
             }
 
             List<AtfAssertion> inventoryChecks = List.of(
@@ -169,7 +170,7 @@ public final class ComponentSuiteExtentPublisher {
     }
 
     private static ReportArtifactProfile.Scenario publishSuite(ExtentReportSession session, SuiteResult suite,
-                                                               boolean allowedByContract) throws Exception {
+                                                               boolean allowedByContract, String level) throws Exception {
         List<AtfAssertion> assertions = new ArrayList<>(suite.assertions());
         assertions.add(new AtfAssertion("Suite is declared exactly once", "present in release suite contract",
                 allowedByContract ? "declared once" : suite.contractProblem(), allowedByContract));
@@ -184,9 +185,11 @@ public final class ComponentSuiteExtentPublisher {
         evidence.add(new ReportArtifactProfile.Assertions("THEN every JUnit test case outcome is recorded", assertions.stream()
                 .map(assertion -> new ReportArtifactProfile.Comparison(assertion.name(), assertion.resultStatus())).toList(), status));
         evidence.add(new ReportArtifactProfile.Observation("JUnit suite identity",
-                List.of("Module", "Test class", "JUnit XML", "JUnit XML SHA-256", "Declared test cases", "Recorded test cases"), List.of()));
-        try (var test = session.startScenario(suite.testClass(), "Component suite: " + suite.module(),
-                List.of("component", suite.module(), suite.scope().key));
+                List.of("Module", "Test class", "Test level", "JUnit XML", "JUnit XML SHA-256",
+                        "Declared test cases", "Recorded test cases"), List.of()));
+        String description = level + " JVM suite: " + suite.module();
+        try (var test = session.startScenario(suite.testClass(), description,
+                List.of(level, suite.module(), suite.scope().key));
              var phase = test.startPhase("TEST BODY")) {
             if (!suite.diagnostics().isEmpty()) {
                 phase.observation(new ReportObservation("JUnit failure diagnostics", List.of(
@@ -200,6 +203,7 @@ public final class ComponentSuiteExtentPublisher {
             phase.observation(new ReportObservation("JUnit suite identity", List.of(
                     new ReportField("Module", suite.module()),
                     new ReportField("Test class", suite.testClass()),
+                    new ReportField("Test level", level),
                     new ReportField("JUnit XML", suite.source()),
                     new ReportField("JUnit XML SHA-256", suite.sha256()),
                     new ReportField("Declared test cases", Integer.toString(suite.declaredTests())),
@@ -209,7 +213,7 @@ public final class ComponentSuiteExtentPublisher {
             phase.complete(status);
             test.complete(status);
         }
-        return new ReportArtifactProfile.Scenario(suite.testClass(), "Component suite: " + suite.module(), status,
+        return new ReportArtifactProfile.Scenario(suite.testClass(), description, status,
                 List.of(new ReportArtifactProfile.Phase("TEST BODY", status, evidence)));
     }
 
@@ -222,8 +226,13 @@ public final class ComponentSuiteExtentPublisher {
         for (JsonNode item : root.path(scope.key)) {
             String module = item.path("module").asText("");
             String testClass = item.path("testClass").asText("");
+            String level = item.path("level").asText("component");
             if (module.isBlank() || testClass.isBlank()) throw new IllegalArgumentException("Suite contract entry is incomplete.");
-            suites.add(new SuiteSpec(module, testClass));
+            if (!Set.of("unit", "component", "integration").contains(level)
+                    || (scope == Scope.ANDROID && !level.equals("component"))) {
+                throw new IllegalArgumentException("Invalid JVM test level for " + testClass + ": " + level);
+            }
+            suites.add(new SuiteSpec(module, testClass, level));
         }
         if (suites.isEmpty()) throw new IllegalArgumentException("No suites declared for scope " + scope.key);
         return List.copyOf(suites);
@@ -327,7 +336,7 @@ public final class ComponentSuiteExtentPublisher {
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content));
     }
 
-    private record SuiteSpec(String module, String testClass) { }
+    private record SuiteSpec(String module, String testClass, String level) { }
     private record Diagnostic(String testName, String text) { }
     private record Outcome(AtfReportStatus status, String actual, String diagnostic, String testName) { }
 

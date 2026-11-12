@@ -8,6 +8,7 @@
     </parent>
     <artifactId>holdem-ai</artifactId>
     <dependencies>
+        <dependency><groupId>atf.api</groupId><artifactId>atf-test-kit</artifactId><scope>test</scope></dependency>
         <dependency>
             <groupId>ro.atf.j6</groupId>
             <artifactId>holdem-core</artifactId>

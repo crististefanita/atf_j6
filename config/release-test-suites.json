@@ -3,9 +3,9 @@
   "maven": [
     { "module": "holdem-core", "testClass": "ro.atf.holdem.core.HoldemRulesTest" },
     { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.ContextualEquityPolicyTest" },
-    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.DeterministicBluffPolicyTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.DeterministicBluffPolicyTest", "level": "unit" },
     { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.HardPressurePolicyTest", "impactPaths": ["config/policy-tuning/j6-policy-hard-pressure.yaml", "holdem-ai/src/main/java/ro/atf/holdem/ai/ContextualEquityPolicy.java"] },
-    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.MonteCarloEquityEstimatorTest" },
+    { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.MonteCarloEquityEstimatorTest", "level": "unit" },
     { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.PolicyStyleTest" },
     { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.ShortStackShovePolicyTest" },
     { "module": "holdem-ai", "testClass": "ro.atf.holdem.ai.ConditionalRangeEquityPolicyTest" },
@@ -23,13 +23,14 @@
     { "module": "holdem-arena", "testClass": "ro.atf.holdem.arena.TournamentStrategyArenaTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.libraries.PlatformLibraryAdoptionTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseGovernanceTest", "impactPaths": ["scripts/Test-PublishedHoldemDownload.ps1"] },
-    { "module": "holdem-app", "testClass": "ro.atf.j6.release.DocumentationGovernanceTest" },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.release.DocumentationGovernanceTest", "impactPaths": ["README.md", "docs/", "holdem-android/README.md", "lib/README.md", "release/README.md", "holdem-app/src/test/java/ro/atf/j6/release/HoldemMarkdownRules.java"] },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.release.TestInventoryGovernanceTest", "level": "integration", "impactPaths": ["config/release-test-suites.json", "pom.xml", "holdem-core/pom.xml", "holdem-ai/pom.xml", "holdem-arena/pom.xml", "holdem-app/pom.xml", "holdem-android/app/build.gradle"] },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleasePromotionGateTest" },
-    { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.ComponentSuiteExtentPublisherTest" },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.ComponentSuiteExtentPublisherTest", "impactPaths": ["scripts/Publish-HoldemJvmExtent.ps1"] },
     { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.NativeTournamentExtentPublisherTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseImpactRagTest" },
-    { "module": "holdem-app", "testClass": "ro.atf.j6.release.HoldemReleaseProvenanceTest", "impactPaths": ["scripts/HoldemReleaseProvenance.ps1", "scripts/Test-PublishedHoldemDownload.ps1", "scripts/Test-HoldemPromotion.ps1", "scripts/tests/PublishedHoldemDownload.Tests.ps1", "scripts/tests/HoldemContinuation.Tests.ps1"] },
-    { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseVersionPolicyTest" }
+    { "module": "holdem-app", "testClass": "ro.atf.j6.release.HoldemReleaseProvenanceTest", "level": "integration", "impactPaths": ["scripts/HoldemReleaseProvenance.ps1", "scripts/Test-PublishedHoldemDownload.ps1", "scripts/Test-HoldemPromotion.ps1", "scripts/tests/PublishedHoldemDownload.Tests.ps1", "scripts/tests/HoldemContinuation.Tests.ps1"] },
+    { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseVersionPolicyTest", "level": "unit" }
   ],
   "android": [
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.WagerConfirmationComponentTest", "impactPaths": ["holdem-android/app/src/main/java/ro/atf/holdem/android/WagerConfirmation.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java", "holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java"] },

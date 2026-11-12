@@ -1,5 +1,7 @@
 package ro.atf.holdem.ai;
 
+import atf.testkit.AtfComponentTest;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +14,7 @@ import ro.atf.holdem.core.LegalAction;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfComponentTest
 class RaiseEvSizingPolicyTest {
     private static final RaiseEvSizing.Settings SETTINGS = new RaiseEvSizing.Settings(8, 20, List.of(50, 100, 150));
 

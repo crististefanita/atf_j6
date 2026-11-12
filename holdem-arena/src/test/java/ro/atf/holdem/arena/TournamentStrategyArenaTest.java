@@ -1,5 +1,7 @@
 package ro.atf.holdem.arena;
 
+import atf.testkit.AtfComponentTest;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.io.TempDir;
 import ro.atf.holdem.ai.NearbyRaiseSizing;
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfComponentTest
 class TournamentStrategyArenaTest {
     @Test void hardLineupAddsOnlyThePressureProfileToAnEqualBudgetControl() throws Exception {
         var lineup = TournamentStrategyLineups.load(config("j6-strategy-lineups-hard-pressure.yaml"));

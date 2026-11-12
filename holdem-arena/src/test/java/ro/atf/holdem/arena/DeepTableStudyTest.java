@@ -1,5 +1,7 @@
 package ro.atf.holdem.arena;
 
+import atf.testkit.AtfComponentTest;
+
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import ro.atf.holdem.ai.Decision;
@@ -7,6 +9,7 @@ import ro.atf.holdem.core.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfComponentTest
 class DeepTableStudyTest {
     @Test void changesStyleAtTheConfiguredHandAndPreservesFixedRoles() {
         var first = new PhaseStylePolicy.Phase(1, "open", o -> new Decision(ActionType.CHECK, 0, "first", "fixture"));

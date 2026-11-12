@@ -1,11 +1,14 @@
 package ro.atf.holdem.ai;
 
+import atf.testkit.AtfUnitTest;
+
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import ro.atf.holdem.core.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfUnitTest
 class MonteCarloEquityEstimatorTest {
     @Test void defaultSeedUsesStableVisibleCardValuesAndPublicHistory() {
         var observation = new HoldemObservation(11, 0, 2, 1, Street.FLOP,

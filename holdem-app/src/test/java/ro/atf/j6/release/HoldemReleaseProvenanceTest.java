@@ -1,5 +1,7 @@
 package ro.atf.j6.release;
 
+import atf.testkit.AtfIntegrationTest;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -10,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@AtfIntegrationTest
 class HoldemReleaseProvenanceTest {
     @TempDir Path scratch;
 

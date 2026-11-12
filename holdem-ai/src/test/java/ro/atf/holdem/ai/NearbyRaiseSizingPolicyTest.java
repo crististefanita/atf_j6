@@ -1,5 +1,7 @@
 package ro.atf.holdem.ai;
 
+import atf.testkit.AtfComponentTest;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,7 @@ import ro.atf.holdem.core.LegalAction;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfComponentTest
 class NearbyRaiseSizingPolicyTest {
     private static final NearbyRaiseSizing.Limits LIMITS = new NearbyRaiseSizing.Limits(100, 25, 5, 35);
     private static final Counts FOLDS = new Counts(40, 40, 0);

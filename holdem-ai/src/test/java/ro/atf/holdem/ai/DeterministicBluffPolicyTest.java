@@ -1,11 +1,14 @@
 package ro.atf.holdem.ai;
 
+import atf.testkit.AtfUnitTest;
+
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import ro.atf.holdem.core.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfUnitTest
 class DeterministicBluffPolicyTest {
     private static final DeterministicBluffPolicy POLICY = new DeterministicBluffPolicy();
     private static final List<Card> LOW_CARDS = List.of(card("2c"), card("3d"));

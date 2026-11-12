@@ -1,5 +1,7 @@
 package ro.atf.holdem.arena;
 
+import atf.testkit.AtfComponentTest;
+
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
@@ -9,6 +11,7 @@ import ro.atf.holdem.ai.*;
 import ro.atf.holdem.core.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfComponentTest
 class TournamentArenaTest {
     @TempDir Path temp;
 

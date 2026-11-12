@@ -8,13 +8,39 @@ J6 separă oracolul de componentă de probele pe Android. Guvernanța documentar
 
 - Compară afirmațiile despre comportament cu implementarea și testul modulului responsabil.
 - Rulează `DocumentationGovernanceTest` pentru orientarea README-urilor active și prezența unei singure legături către fiecare ghid responsabil în secțiunea de documentație. Rulează `ReleaseGovernanceTest` pentru blocul **Jocul** și integritatea dovezilor ediției.
-- Aplică validatorii ATF de documentație pentru titluri, proză, linkuri și ancore, căi portabile, diagrame și legende. Verifică editorial dacă prima diagramă răspunde la întrebarea cititorului. [Auditul documentației active și al dosarelor](../release/ATF_Release.md#audit-editorial-și-dosare-de-ediție)
+- Aplică validatorii locali pentru titluri, proză, linkuri, ancore și legende Mermaid. Verifică editorial dacă prima diagramă răspunde la întrebarea cititorului. [Reguli și execuție](../governance/README.md)
 
 ## Niveluri
 
+| Nivel | Alegerea testului și a dovezii |
+|---|---|
+| `@AtfUnitTest` | Regulă sau calcul determinist, cu intrări mici și valori așteptate explicite. |
+| `@AtfComponentTest` | Motor, politică, arenă sau adaptor în limita contractului, cu seed, ceas, fișiere sau transport controlate. |
+| `@AtfIntegrationTest` | Contract între module sau între proces și sistemul local, precum Git, PowerShell și catalogul. |
+| Android JVM | Componente JUnit 4 din inventarul Gradle. Proiecția, checkpoint-ul și catalogul rulează fără emulator. |
+| Android nativ | Componenta randată măsoară viewport-ul, iar smoke-ul verifică navigarea și integrarea cu sistemul pe APK-ul identificat. |
+
+Un caz de componentă pornește de la o regulă și o intrare controlată, cu rezultat așteptat independent. Verifică și cazul negativ cel mai apropiat. Păstrează în parcursul nativ comportamentul care depinde de randare, focus, gest sau reluarea procesului.
+
+### Rulare JVM și Extent
+
+Rulează într-un checkout izolat și folosește un director extern nou pentru rapoarte. Variabila `HOLDEM_DATA_ROOT` indică rădăcina externă de date.
+
+Grupurile Maven selectează atributele ATF. Pentru raportul complet, include toate nivelurile JVM.
+
+```powershell
+mvn -o -B -ntp "-Dgroups=unit | component | integration" test
+gradle -p holdem-android --offline :app:testSanityUnitTest
+.\scripts\Publish-HoldemJvmExtent.ps1 -ReportDirectory "$env:HOLDEM_DATA_ROOT/jvm-audit"
+```
+
+Publisherul compară XML-urile cu inventarul versionat și semnalează clase lipsă, duplicate sau rezultate incomplete. Fiecare suită afișează nivelul de test, numărul cazurilor și SHA-256 al XML-ului.
+
+În Extent, verifică întâi scenariul de inventar, apoi suita și comparațiile. Guvernanța produce și rapoarte cu așteptat, observat și rezultat pe document sau clasă. [Inventarul de release](../../config/release-test-suites.json) · [Guvernanță locală](../governance/README.md)
+
 ### Contracte de componentă
 
-- `HoldemReleaseProvenanceTest` simulează GitHub pentru taguri simple și adnotate, citirea README-ului la un commit fix și detectarea unui manifest ori raport modificat.
+- Integrarea `HoldemReleaseProvenanceTest` rulează scripturile locale cu un transport GitHub controlat. Verifică taguri simple și adnotate, citirea README-ului la un commit fix și detectarea unui manifest ori raport modificat.
 - Fixture-urile Git verifică continuarea pentru dovezi și resping schimbările de produs, inclusiv cele revenite ulterior. [Promovare și descărcare](../release/ATF_Release.md#promovare-și-descărcare)
 
 Testele curente acoperă ordinea actorilor, sizing-ul minim, menținerea stării după acțiuni ilegale, all-in-uri scurte cumulative, evaluarea mâinii și decontarea pe straturi. `config/j6-allin-challenges.yaml` este fixture-ul controlat pentru redeschidere, egalitate și jetoane impare; JUnit îl rulează prin motor, iar `audit-allin-challenge.cjs` reface separat acțiunile, clasificarea și plata.
@@ -50,6 +76,7 @@ Un caz redus din turnee verifică plata parțială a ambelor blinduri, locurile 
 | Turneu, 4–6 locuri | `audit-tournament.cjs` reconstruiește seed-ul, ordinea, legalitatea, clasarea și decontarea independent de motorul Java. |
 | Cash, 2–6 locuri | `audit-cash-sessions.cjs` verifică dealerul, blindurile fixe, durata, stivele și conservarea. Candidatul și controlul pornesc cu același seed și primul buton. |
 | Politică și lineup | CLI-ul verifică stilul efectiv cu și fără YAML explicit. `TournamentStrategyArenaTest` acoperă rotația rolurilor și jurnalul public, inclusiv lineup-ul adversarial separat. |
+| Istoric de shove | `--require-public-shove-history` reconstruiește oportunitățile din stivă și acțiunile legale. Compară numai contoarele mâinilor deja încheiate. |
 
 - **Opțiunea din blindul mare.** `HardPressurePolicyTest` joacă limp-ul în motor și verifică perechea premium, mâna slabă, stiva proprie și acoperirea sumei. Loaderul verifică valoarea booleană a opțiunii YAML.
 - **Raise cu preț pozitiv.** Testele variază discountul de call, poziția heads-up, agresiunea publică și acoperirea minimului legal. Verifică pragul separat și suma executată. Loaderul validează cheile și limitele ponderilor de raise.
@@ -58,7 +85,6 @@ Un caz redus din turnee verifică plata parțială a ambelor blinduri, locurile 
 - **Izolarea semnalelor.** Compară fold-ul și penalizarea de re-raise cu același model calibrat. Verifică pragul de call și suma propusă pe o observație comună, precum și contribuția zero când frecvența de re-raise este sub reper în modul de penalizare.
 - **Dimensionarea prin EV.** Verifică separat ramurile fold, call și re-raise. Reexecută oferta în motor, confruntă suma plătită și acoperă limitele, dovada insuficientă și alegerea pe aceeași decizie de raise.
 - **Reproductibilitate.** `MonteCarloEquityEstimatorTest` compară seed-ul implicit cu un reper numeric, la două bugete. Calificarea repetă partidele în procese JVM separate și auditează legalitatea și scorul independent.
-| Istoric de shove | `--require-public-shove-history` reconstruiește oportunitățile din stivă și acțiunile legale. Compară numai contoarele mâinilor deja încheiate. |
 
 - Cohortele `equity` și `legacy-equity` păstrează locurile candidate și seed-urile. Pragurile loose-aggressive se compară prin perechi YAML.
 - `run-button-position-tournaments.ps1` rotește butonul inițial, iar `audit-button-rotations.cjs` verifică fluxul de seed-uri și perechile cu același offset. Rotația redistribuie cărțile între locuri. Fixture-ul controlat păstrează cărțile private la aceleași locuri.
@@ -111,7 +137,7 @@ Un caz redus din turnee verifică plata parțială a ambelor blinduri, locurile 
 
 - `WagerConfirmationComponentTest` conectează confirmarea editorului la motor. Verifică suma adăugată, contribuția cumulată și o singură intrare după o confirmare repetată și după replay. [Testele JVM](../../holdem-android/app/src/test/java/ro/atf/holdem/android/WagerConfirmationComponentTest.java)
 - Pentru o verificare scurtă, rulează `scripts/run-holdem-android-sanity.ps1` cu `-Mode betting-ledger`, apoi cu `betting-ledger-compact` și `betting-ledger-talkback`. Ultimele două folosesc fereastra scundă la cel mult 320 dp și font 2,0. Profilul TalkBack pornește cu focus pe comanda Check și urmărește transferul la locul jucătorului până la următoarea decizie, după răspunsul adversarilor.
-- Parcursul reia câte un checkpoint înainte de acțiune. Pentru Check verifică zero jetoane adăugate și contribuția de 20. Pentru Raise introduce 60 și verifică o contribuție de 70 cu blindul deja plătit. Proba confruntă sumele cu descrierile accesibile și numără rândurile din jurnalul extins. Măsoară textul badge-ului și cere ca rândul întreg, inclusiv totalul, să intre în fereastră după focus. [J6-UI-10](../feedback/J6-UI-10-BETTING-ACTION-LEDGER.md)
+- Parcursul reia câte un checkpoint înainte de acțiune. Pentru Check verifică zero jetoane adăugate și contribuția de 20. Pentru Raise introduce 60 și verifică o contribuție de 70 cu blindul deja plătit. Proba confruntă sumele cu descrierile accesibile și numără rândurile din jurnalul extins. Măsoară textul badge-ului și cere ca rândul întreg, inclusiv totalul, să intre în fereastră după focus.
 
 ### Realizări de joc
 

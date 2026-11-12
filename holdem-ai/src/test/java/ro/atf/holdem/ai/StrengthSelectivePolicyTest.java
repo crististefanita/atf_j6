@@ -1,5 +1,7 @@
 package ro.atf.holdem.ai;
 
+import atf.testkit.AtfComponentTest;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -10,6 +12,7 @@ import ro.atf.holdem.core.HoldemHand;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfComponentTest
 class StrengthSelectivePolicyTest {
     private final StrengthSelectivePolicy policy = new StrengthSelectivePolicy(StrengthSelectivePolicy.Style.NARROW);
 

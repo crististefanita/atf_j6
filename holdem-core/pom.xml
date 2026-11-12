@@ -8,6 +8,7 @@
     </parent>
     <artifactId>holdem-core</artifactId>
     <dependencies>
+        <dependency><groupId>atf.api</groupId><artifactId>atf-test-kit</artifactId><scope>test</scope></dependency>
         <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
     </dependencies>
 </project>

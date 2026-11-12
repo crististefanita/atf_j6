@@ -1,5 +1,7 @@
 package ro.atf.holdem.ai;
 
+import atf.testkit.AtfComponentTest;
+
 import java.util.List;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
@@ -7,6 +9,7 @@ import ro.atf.holdem.core.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@AtfComponentTest
 class HardPressurePolicyTest {
     private static final List<Card> ROYAL = cards("Qs", "Js", "Ts", "2d", "3c");
     private static final List<LegalAction> BET = List.of(LegalAction.noAmount(ActionType.CHECK),

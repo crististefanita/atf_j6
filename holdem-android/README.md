@@ -57,7 +57,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 - La decontare, chenarul separă `Won` de `Returned`. Sumarul central arată potul plătit, fără restituiri. Fiecare marker arată premiul locului și ajunge în centrul chenarului beneficiar, când centrul lui este vizibil. La mai mulți beneficiari, rezumatul păstrează numele și suma fiecăruia, inclusiv cu animațiile Android dezactivate sau dacă un chenar iese din fereastră. Masa compactă afișează rezumatul imediat sub antet. Ultima poziție rămâne vizibilă pentru un cadru înainte de curățarea efectului.
 - Pe ferestre înguste sau cu font mărit, locurile se rearanjează în jurul potului și al board-ului; conținutul dialogului de raise derulează separat de acțiuni.
 - Masa compactă măsoară fereastra cu istoricul pliat și reduce proporțional fețele cărților doar când conținutul depășește spațiul disponibil. Dacă dimensiunea minimă încă depășește fereastra, derularea păstrează comenzile accesibile. Istoricul deschis are propria listă derulabilă.
-- Fundalurile butoanelor de pariere ocupă aproximativ 62,5% din înălțimea controlului. Butoanele păstrează ținta tactilă de minimum 48 dp.
+- Fundalurile butoanelor de pariere ocupă aproximativ 81,25% din înălțimea controlului. Butoanele păstrează ținta tactilă de minimum 48 dp.
 - Heads-up: dealerul postează small blind și acționează primul preflop; big blind-ul acționează primul după flop. [Poker TDA, regula 36-C](https://www.pokertda.com/view-poker-tda-rules/)
 
 ## Verificare locală
@@ -110,7 +110,7 @@ Proba măsoară chenarele, etichetele, potul și cărțile în pixeli la mese de
 
 ### Spațierea acțiunilor
 
-Perechile de butoane de sub mâna jucătorului au un spațiu orizontal de 1,5 dp, rotunjit la pixel. Fiecare buton păstrează o zonă tactilă de cel puțin 48 dp. Proba nativă măsoară ambele perechi la deschiderea turneului.
+Perechile de butoane de sub mâna jucătorului au un spațiu orizontal de 0,75 dp, rotunjit la pixel. Fiecare buton păstrează o zonă tactilă de cel puțin 48 dp. Proba nativă măsoară ambele perechi la deschiderea turneului.
 
 ## Documente owner
 

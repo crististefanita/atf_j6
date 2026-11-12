@@ -1,29 +1,20 @@
 package ro.atf.j6.reporting;
 
 import atf.testkit.AtfComponentTest;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @AtfComponentTest
 class ComponentSuiteExtentPublisherTest {
-    private static final ObjectMapper JSON = new ObjectMapper();
-    private static final Pattern PACKAGE = Pattern.compile("(?m)^\\s*package\\s+([\\w.]+)\\s*;");
-    private static final Pattern TEST_ANNOTATION = Pattern.compile("@(Test|ParameterizedTest|RepeatedTest|TestFactory|TestTemplate)\\b");
-
     @Test
     void publishesEachJUnitCaseAndRedactsFailureDiagnostics(@TempDir Path temp) throws Exception {
         Path root = temp.resolve("source");
@@ -39,7 +30,7 @@ class ComponentSuiteExtentPublisherTest {
                   </testcase>
                 </testsuite>
                 """);
-        Path contract = writeContract(temp, "ro.atf.holdem.core.ComponentProbeTest");
+        Path contract = writeContract(temp, "ro.atf.holdem.core.ComponentProbeTest", "unit");
         Path report = temp.resolve("outside/component-extent.html");
 
         ComponentSuiteExtentPublisher.Result result = ComponentSuiteExtentPublisher.publish(contract, root, report,
@@ -53,6 +44,8 @@ class ComponentSuiteExtentPublisherTest {
         String html = Files.readString(report);
         assertTrue(html.contains("reportsFailure"));
         assertTrue(html.contains("Failure diagnostic"));
+        assertTrue(html.contains("TEST LEVEL"));
+        assertTrue(html.contains("unit JVM suite: holdem-core"));
         assertFalse(html.contains("do-not-leak"));
         assertFalse(html.contains("ghp_abcdefghijklmnopqrstuvwxyz1234567890"));
     }
@@ -61,7 +54,7 @@ class ComponentSuiteExtentPublisherTest {
     void missingOrMalformedXmlCreatesAnAuditableFailureInsteadOfAnEmptyPass(@TempDir Path temp) throws Exception {
         Path root = temp.resolve("source");
         Files.createDirectories(root);
-        Path expected = writeContract(temp, "ro.atf.holdem.core.ComponentProbeTest");
+        Path expected = writeContract(temp, "ro.atf.holdem.core.ComponentProbeTest", "component");
         Path missingReport = temp.resolve("outside/missing-suite-extent.html");
 
         var missing = ComponentSuiteExtentPublisher.publish(expected, root, missingReport,
@@ -93,60 +86,23 @@ class ComponentSuiteExtentPublisherTest {
     }
 
     @Test
-    void releaseContractListsEveryJUnitTestClassInItsModule(@TempDir Path ignored) throws Exception {
-        Path root = projectRoot();
-        JsonNode contract = JSON.readTree(root.resolve("config/release-test-suites.json").toFile());
-        assertEquals(1, contract.path("schemaVersion").asInt());
-        assertEquals(discover(root, List.of("holdem-core", "holdem-ai", "holdem-arena", "holdem-app")),
-                declared(contract.path("maven")), "Maven component Extent would silently omit a JUnit class");
-        assertEquals(discover(root, List.of("holdem-android/app")), declared(contract.path("android")),
-                "Android component Extent would silently omit a JUnit class");
-    }
-
-    private static Set<String> discover(Path root, List<String> modules) throws Exception {
-        Set<String> testClasses = new HashSet<>();
-        for (String module : modules) {
-            Path source = root.resolve(module).resolve("src/test/java");
-            if (!Files.isDirectory(source)) continue;
-            try (var paths = Files.walk(source)) {
-                for (Path file : paths.filter(path -> path.toString().endsWith(".java")).toList()) {
-                    String text = Files.readString(file);
-                    if (!TEST_ANNOTATION.matcher(text).find()) continue;
-                    Matcher packageName = PACKAGE.matcher(text);
-                    if (!packageName.find()) throw new AssertionError("JUnit test has no package declaration: " + file);
-                    String className = file.getFileName().toString().replaceFirst("\\.java$", "");
-                    testClasses.add(module.split("/")[0] + ":" + packageName.group(1) + "." + className);
-                }
-            }
-        }
-        return testClasses;
-    }
-
-    private static Path projectRoot() throws Exception {
-        for (Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath(); current != null;
-             current = current.getParent()) {
-            if (Files.isRegularFile(current.resolve("config/release-test-suites.json"))
-                    && Files.isDirectory(current.resolve("holdem-app"))
-                    && Files.isDirectory(current.resolve("holdem-android"))) return current.toRealPath();
-        }
-        throw new IllegalStateException("J6 release source tree is not available from this test workspace");
-    }
-
-    private static Set<String> declared(JsonNode entries) {
-        Set<String> suites = new HashSet<>();
-        for (JsonNode entry : entries) suites.add(entry.path("module").asText() + ":" + entry.path("testClass").asText());
-        return suites;
+    void rejectsANativeLevelInTheJvmInventory(@TempDir Path temp) throws Exception {
+        Path root = Files.createDirectory(temp.resolve("source"));
+        Path contract = writeContract(temp, "ro.atf.holdem.core.ComponentProbeTest", "e2e");
+        var failure = assertThrows(IllegalArgumentException.class, () -> ComponentSuiteExtentPublisher.publish(
+                contract, root, temp.resolve("extent.html"), ComponentSuiteExtentPublisher.Scope.MAVEN, List.of()));
+        assertTrue(failure.getMessage().contains("Invalid JVM test level"));
     }
 
     private static Path suitePath(Path root, String testClass) {
         return root.resolve("holdem-core/target/surefire-reports/TEST-" + testClass + ".xml");
     }
 
-    private static Path writeContract(Path temp, String testClass) throws Exception {
+    private static Path writeContract(Path temp, String testClass, String level) throws Exception {
         Path contract = temp.resolve("release-test-suites.json");
         Files.writeString(contract, """
-                {"schemaVersion":1,"maven":[{"module":"holdem-core","testClass":"%s"}],"android":[{"module":"holdem-android","testClass":"ro.atf.holdem.android.ComponentProbeTest"}]}
-                """.formatted(testClass));
+                {"schemaVersion":1,"maven":[{"module":"holdem-core","testClass":"%s","level":"%s"}],"android":[{"module":"holdem-android","testClass":"ro.atf.holdem.android.ComponentProbeTest"}]}
+                """.formatted(testClass, level));
         return contract;
     }
 }

@@ -1,10 +1,13 @@
 package ro.atf.holdem.core;
 
+import atf.testkit.AtfComponentTest;
+
 import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static ro.atf.holdem.core.ActionType.*;
 
+@AtfComponentTest
 class HoldemRulesTest {
     @Test void duplicateDealsKeepPhysicalCardsAndBoardAfterButtonRotationOrElimination() {
         var deck = HoldemHand.shuffledDeck(1234);

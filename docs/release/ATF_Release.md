@@ -148,15 +148,17 @@ Păstrați inventarul `config/release-test-suites.json` sincronizat cu suitele M
 
 Auditul citește manifestul calificării și verifică APK-ul, checksum-ul, integritatea rapoartelor și capturile originale în Extent. Dosarul extern păstrează și XML-urile, receipt-urile native și contextul RAG.
 
+Pentru probele opționale selectate de RAG, verifică și `native.json` pentru fiecare profil. Confruntă varianta și SHA-256 ale APK-ului, verdictul, aserțiunile și capturile cu manifestul calificării și cu raportul Extent corespunzător. [Auditul probelor opționale](../feedback/J6-REL-08-OPTIONAL-NATIVE-EVIDENCE.md)
+
 ## Promovare și descărcare
 
 `ReleaseGovernanceTest` verifică legăturile locale din dosarul ediției și octeții inventarului de dovezi. Proba autentificată compară URL-ul din secțiunea `Jocul` a README-ului remote cu ruta canonică înainte de a descărca asset-urile.
 
-1. Copiați APK-ul semnat și `.sha256` din `$run` în `release/<versiune>/`; selectați rapoartele Extent relevante și încorporați capturile, fără copii PNG redundante.
+1. Păstrați APK-ul semnat și `.sha256` în `$run` pentru verificare și upload. În dosarul ediției includeți rapoartele Extent selectate, cu capturile încorporate.
 2. Verificați copia care va fi încărcată față de `qualification.json` din rularea calificată și față de versiunea și commit-ul selectate pentru tag. Folosiți raportul Extent din afara checkout-ului. Un fișier lipsă, un checksum necorespunzător sau o identitate diferită opresc promovarea.
 
    ```powershell
-   $candidate = ".\release\$version"
+   $candidate = $run
    .\scripts\Test-HoldemPromotion.ps1 -CandidateDirectory $candidate `
        -Qualification "$run\qualification.json" -Version $version -SourceCommit $sourceCommit `
        -Report "$run\promotion-extent.html"

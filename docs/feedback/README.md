@@ -15,6 +15,7 @@ Indexul urmărește lacunele verificabile ale J6. Cerințele stabile apar în do
 | P1 la extindere · P2 | [J6-PROD-01 · Realizări](J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md) | Credit manual dovedit pentru catalogul candidat, poziția listei filtrate pe ecran scund și ritmul în sesiuni manuale. |
 | P2 | [J6-UI-09 · Lizibilitate](J6-UI-09-SEAT-METRIC-HIERARCHY.md) | Anunțurile audio și parcurgerea tuturor locurilor prin gesturi. |
 | P2 | [J6-REL-03 · API minim](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) | Instalare și proba de recomandare AI pe API 26. |
+| P2 | [J6-REL-08 · Auditul probelor native opționale](J6-REL-08-OPTIONAL-NATIVE-EVIDENCE.md) | Revalidarea receipt-urilor, identității APK-ului și capturilor pentru fiecare profil selectat. |
 | Extern · la cerere | [J6-REL-01 · Vizibilitate publică](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) | Investigație separată de calificarea autentificată a ediției curente. |
 
 ## Contracte și dovezi

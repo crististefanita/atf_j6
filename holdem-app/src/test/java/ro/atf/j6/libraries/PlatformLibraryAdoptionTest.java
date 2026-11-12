@@ -18,11 +18,15 @@ import atf.reporting.model.timing.ReportPhaseTiming;
 import atf.testkit.AtfComponentTest;
 import atf.testkit.assertions.RecordedAssertions;
 import atf.testkit.lifecycle.FailureAwareCleanup;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.*;
 import java.security.MessageDigest;
 import java.util.*;
+import java.util.jar.JarFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Consumer adoption only: exact local binaries plus a small offline composition, without producer sources. */
@@ -93,10 +97,44 @@ class PlatformLibraryAdoptionTest {
         checks.equals("Mock body", "ready", JsonDocuments.read(response.body()).path("state").asText());
     }
 
+    @Test void publishedPomsMatchTheEmbeddedProducerCopies() throws Exception {
+        var provenance = JsonDocuments.read(Files.readString(root().resolve("library-provenance.json")));
+        List<JsonNode> publications = new ArrayList<>();
+        provenance.required("libraries").forEach(entry -> publications.add(entry.has("release") ? entry.required("release") : entry));
+        provenance.required("platformLibraries").forEach(publications::add);
+        assertEquals(5, publications.size(), "Published JAR/POM pairs");
+
+        Path libraries = root().resolve("lib");
+        var pairs = new HashSet<String>();
+        for (var publication : publications) {
+            String[] coordinate = publication.required("coordinate").textValue().split(":");
+            String stem = coordinate[1] + "-" + coordinate[2];
+            assertTrue(pairs.add(stem), "Duplicate publication " + stem);
+            Path jar = libraries.resolve(stem + ".jar");
+            Path pom = libraries.resolve(stem + ".pom");
+            assertEquals(publication.required("binarySha256").textValue().toLowerCase(Locale.ROOT), digest(jar), stem + " JAR hash");
+            String expectedPom = publication.required("publishedPomSha256").textValue().toLowerCase(Locale.ROOT);
+            assertEquals(expectedPom, digest(pom), stem + " flat POM hash");
+            try (var archive = new JarFile(jar.toFile())) {
+                var entry = archive.getJarEntry("META-INF/maven/" + coordinate[0] + "/" + coordinate[1] + "/pom.xml");
+                assertNotNull(entry, stem + " embedded POM");
+                try (var embedded = archive.getInputStream(entry)) {
+                    assertEquals(expectedPom, digest(embedded.readAllBytes()), stem + " embedded POM hash");
+                }
+            }
+        }
+    }
+
     private static Path root() {
         for (Path path = Path.of(System.getProperty("user.dir")).toAbsolutePath(); path != null; path = path.getParent())
             if (Files.isDirectory(path.resolve("lib")) && Files.isDirectory(path.resolve("holdem-app"))) return path;
         throw new IllegalStateException("J6 binary library root is unavailable");
     }
-    private static String digest(Path path) throws Exception { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(path))); }
+    private static String digest(Path path) throws Exception {
+        return digest(Files.readAllBytes(path));
+    }
+
+    private static String digest(byte[] bytes) throws Exception {
+        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+    }
 }

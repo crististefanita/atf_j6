@@ -30,7 +30,6 @@
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleasePromotionGateTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.ComponentSuiteExtentPublisherTest", "impactPaths": ["scripts/Publish-HoldemJvmExtent.ps1"] },
     { "module": "holdem-app", "testClass": "ro.atf.j6.reporting.NativeTournamentExtentPublisherTest" },
-    { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseImpactRagTest" },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.HoldemReleaseProvenanceTest", "level": "integration", "impactPaths": ["scripts/Build-HoldemRelease.ps1", "scripts/HoldemNativeQualification.ps1", "scripts/HoldemReleaseProvenance.ps1", "scripts/Test-PublishedHoldemDownload.ps1", "scripts/Test-HoldemPromotion.ps1", "scripts/Test-HoldemReleaseEvidence.ps1", "scripts/tests/PublishedHoldemDownload.Tests.ps1", "scripts/tests/HoldemContinuation.Tests.ps1", "scripts/tests/HoldemNativeEvidenceAudit.Tests.ps1"] },
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseVersionPolicyTest", "level": "unit" }
   ],

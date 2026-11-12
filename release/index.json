@@ -5,7 +5,7 @@
   "previousVersion": "0.17.2",
   "changeClass": "REFACTOR_ONLY",
   "changeRationale": "Face scorecard-ul feedbackului verificabil și leagă planul RAG de verificarea downloadului din README pe ramura principală, fără modificări de joc.",
-  "state": "DRAFT",
+  "state": "PREPARED",
   "published": false,
   "versions": [
     "0.18.0"

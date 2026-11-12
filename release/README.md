@@ -16,7 +16,7 @@ Dosarele de mai jos păstrează dovezile edițiilor. Când un fișier este inven
 
 | Versiune | Documentație | Identitatea pachetului |
 |---|---|---|
-| 0.18.0 | [Dosarul ediției](0.18.0/README.md) · `DRAFT` | [Manifestul ediției](0.18.0/release-validation.json) |
+| 0.18.0 | [Dosarul ediției](0.18.0/README.md) · `PREPARED` | [Manifestul ediției](0.18.0/release-validation.json) |
 | 0.17.2 | [Dosarul ediției](0.17.2/README.md) · `PREPARED` | [Manifestul ediției](0.17.2/release-validation.json) |
 | 0.17.1 | [Dosarul ediției](0.17.1/README.md) · `PREPARED` | [Manifestul ediției](0.17.1/release-validation.json) |
 | 0.17.0 | [Dosarul ediției](0.17.0/README.md) · `PREPARED` | [Manifestul ediției](0.17.0/release-validation.json) |
@@ -66,3 +66,4 @@ Pentru 0.13.0, tagul și dosarul sigilat păstrează sursa și dovezile calific�
 - indexul rapoartelor Extent relevante.
 
 [Procesul de build, semnare și publicare](../docs/release/ATF_Release.md) definește poarta comună pentru edițiile următoare.
+

@@ -6,8 +6,8 @@ Hold’em Lab este un joc No-Limit Texas Hold’em pentru Android. Poți juca of
 
 ## Jocul
 
-- **[Hold'em Lab 0.18.0 — dosarul ediției](release/0.18.0/README.md)**
-
+- **[Hold'em Lab 0.18.0 — documentația release-ului](https://github.com/crististefanita/atf_j6/releases/tag/v0.18.0)**
+- **[Descarcă APK-ul Hold'em Lab 0.18.0](https://github.com/crististefanita/atf_j6/releases/download/v0.18.0/HoldemLab-0.18.0.apk)**
 ## Prima mână după instalare
 
 La prima pornire, meniul este în engleză. Poți selecta româna din **Language**. Alege un mod de joc și confirmă cu **Deal cards** sau **Împarte cărțile**.
@@ -70,3 +70,4 @@ mvn -B -ntp "-Dmaven.repo.local=$env:HOLDEM_MAVEN_REPOSITORY" test
 ```
 
 Consola poate fi pornită din IDE după importul proiectului Maven. [Punctul de intrare](holdem-app/src/main/java/ro/atf/holdem/app/LocalAppMain.java)
+

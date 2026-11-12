@@ -1,0 +1,70 @@
+{
+  "status": "PASS",
+  "sourceCommit": "354c71bc52e34492ab3f2665d2645852d95cb111",
+  "optionalNative": [
+    {
+      "journey": "seat-metrics",
+      "status": "PASS",
+      "apkSha256": "f582b5cd41cb54325402457f802ee337b0d05ef99c546340fb2ef585a8baa593",
+      "assertions": 27,
+      "captures": 3,
+      "report": "android-seat-metrics-extent.html"
+    },
+    {
+      "journey": "settlement-award",
+      "status": "PASS",
+      "apkSha256": "3b0cdb7bbfcf66352cc2bccf80783dcb29a4b7dffacdc9053217e32d88ab9ed2",
+      "assertions": 10,
+      "captures": 3,
+      "report": "android-settlement-award-extent.html"
+    },
+    {
+      "journey": "settlement-multi-award",
+      "status": "PASS",
+      "apkSha256": "3b0cdb7bbfcf66352cc2bccf80783dcb29a4b7dffacdc9053217e32d88ab9ed2",
+      "assertions": 19,
+      "captures": 5,
+      "report": "android-settlement-multi-award-extent.html"
+    },
+    {
+      "journey": "settlement-static-award",
+      "status": "PASS",
+      "apkSha256": "3b0cdb7bbfcf66352cc2bccf80783dcb29a4b7dffacdc9053217e32d88ab9ed2",
+      "assertions": 10,
+      "captures": 1,
+      "report": "android-settlement-static-award-extent.html"
+    },
+    {
+      "journey": "settlement-compact-award",
+      "status": "PASS",
+      "apkSha256": "3b0cdb7bbfcf66352cc2bccf80783dcb29a4b7dffacdc9053217e32d88ab9ed2",
+      "assertions": 14,
+      "captures": 3,
+      "report": "android-settlement-compact-award-extent.html"
+    },
+    {
+      "journey": "betting-ledger",
+      "status": "PASS",
+      "apkSha256": "3b0cdb7bbfcf66352cc2bccf80783dcb29a4b7dffacdc9053217e32d88ab9ed2",
+      "assertions": 27,
+      "captures": 2,
+      "report": "android-betting-ledger-extent.html"
+    },
+    {
+      "journey": "betting-ledger-compact",
+      "status": "PASS",
+      "apkSha256": "3b0cdb7bbfcf66352cc2bccf80783dcb29a4b7dffacdc9053217e32d88ab9ed2",
+      "assertions": 28,
+      "captures": 2,
+      "report": "android-betting-ledger-compact-extent.html"
+    },
+    {
+      "journey": "betting-ledger-talkback",
+      "status": "PASS",
+      "apkSha256": "3b0cdb7bbfcf66352cc2bccf80783dcb29a4b7dffacdc9053217e32d88ab9ed2",
+      "assertions": 38,
+      "captures": 2,
+      "report": "android-betting-ledger-talkback-extent.html"
+    }
+  ]
+}

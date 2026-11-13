@@ -474,7 +474,7 @@ public final class TournamentSanity extends Instrumentation {
 
     private void inspectEarnedAchievementProgress() throws Exception {
         tap("Achievements");
-        see("Earned achievement progress reloads from the saved profile", "Unlocked 6/" + ACTIVE_ACHIEVEMENT_COUNT);
+        see("Earned achievement progress reloads from the saved profile", savedAchievementSummary());
         scrollAchievementTo("Easy");
         achievementRow("Win a poker hand", "Earned · 1/1");
         achievementRow("Reach your first showdown", "Earned · 1/1");
@@ -496,11 +496,28 @@ public final class TournamentSanity extends Instrumentation {
         tap("Achievements", awaitMatch(node -> node.isClickable()
                 && ("Achievements".equals(value(node.getText()))
                 || "achievements".equals(value(node.getContentDescription())))));
-        see("Reopening achievements preserves the unlocked count", "Unlocked 6/" + ACTIVE_ACHIEVEMENT_COUNT);
+        see("Reopening achievements preserves the unlocked count", savedAchievementSummary());
         scrollAchievementTo("Medium");
         achievementRow("Win a tournament", "Earned · 1/1");
         achievementRow("Finish in the top three in 2 different tournaments", "Progress · 1/2");
         tap("Back");
+    }
+
+    private String savedAchievementSummary() {
+        Context context = getTargetContext();
+        String profile = context.getSharedPreferences("holdem-profile", Context.MODE_PRIVATE)
+                .getString("player-id", null);
+        if (profile == null || profile.isBlank())
+            throw new AssertionError("The local player profile was not persisted before opening achievements");
+        var counts = GameplayAchievementFile.local(context).counts(profile);
+        int earned = 0;
+        for (var tier : GameplayAchievementCatalog.Tier.values()) {
+            for (var milestone : GameplayAchievementCatalog.forTier(tier)) {
+                if (milestone.progress(counts) == milestone.target()) earned++;
+            }
+        }
+        return HoldemActivity.localizedContext(context).getString(R.string.gameplay_achievement_summary,
+                earned, ACTIVE_ACHIEVEMENT_COUNT);
     }
 
     private AccessibilityNodeInfo scrollAchievementTo(String title) throws Exception {

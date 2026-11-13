@@ -1,11 +1,9 @@
 package ro.atf.holdem.android;
 
-import android.animation.ValueAnimator;
 import android.app.AlertDialog;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Build;
-import android.os.Bundle;
 import android.text.InputType;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -13,7 +11,6 @@ import android.text.style.ForegroundColorSpan;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -57,32 +54,24 @@ import java.util.function.Predicate;
 final class HoldemTableView {
     // BoardLayout gives this center the full measured width. Its width hint only has to fit that region.
     private static final int FULL_WIDTH_CENTER_HINT_DP = 1;
-    private static final String SEAT_TAG = "settlement-target:seat:";
-    private static final String LEDGER_ACTION_TAG = "betting-action:";
-    private static final String LEDGER_TOGGLE_TAG = "betting-history-toggle";
-    private static final String LEDGER_LIST_TAG = "betting-history-list";
-
-    private record ViewportPosition(int tableY, boolean historyExpanded, int historyY, String focusTag) {
-        private static final ViewportPosition TOP = new ViewportPosition(0, false, 0, null);
-    }
     record Labels(TextView advice, TextView winChance) { }
     interface Text { String get(int resource, Object... arguments); }
 
     private final ScreenViews views;
     private final Text text;
+    private final BettingLedgerView ledger;
+    private final SettlementAwardAnimator awardsAnimator;
     private ViewGroup contentRoot;
     private HoldemViewport compactViewport;
     private HoldemTableViewState settlementFrame;
     private LocalHoldemGame displayedGame;
     private int displayedHand;
-    private ValueAnimator settlementAnimator;
-
-    private record AwardMotion(View marker, float startX, float startY, float endX, float endY) { }
-    record SettlementAnimation(boolean started, Runnable cancel) { }
 
     HoldemTableView(ScreenViews views, Text text) {
         this.views = views;
         this.text = text;
+        ledger = new BettingLedgerView(views, text);
+        awardsAnimator = new SettlementAwardAnimator(views, text);
     }
 
     Labels show(HoldemTableViewState frame, List<String> names, LocalHoldemGame game, Runnable home,
@@ -224,7 +213,7 @@ final class HoldemTableView {
                         .setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             }
             View withCards = withTerminalCards(framedSeat, compact, seat, frame, alignSeatHands);
-            seatView.setTag(SEAT_TAG + seat);
+            seatView.setTag(SettlementAwardAnimator.SEAT_TAG + seat);
             seats.add(withCards);
         }
         View center = board(frame, names, game, compact, awardsAboveTable ? null : pot,
@@ -246,7 +235,7 @@ final class HoldemTableView {
             }
         }
 
-        addBettingLedger(scroll, content, frame, names, compact, position);
+        ledger.addTo(scroll, content, frame, names, compact, position);
 
         TextView advice = null;
         if (complete) {
@@ -287,27 +276,21 @@ final class HoldemTableView {
         return (int) Math.ceil(width) + view.getCompoundPaddingLeft() + view.getCompoundPaddingRight();
     }
 
-    private ViewportPosition viewportPosition(LocalHoldemGame game, HoldemTableViewState frame) {
-        if (game != displayedGame || displayedHand != game.handNumber() || frame.street() == Street.COMPLETE
-                || settlementFrame.street() == Street.COMPLETE || !contentRoot.isAttachedToWindow())
-            return ViewportPosition.TOP;
+    private TableViewportPosition viewportPosition(LocalHoldemGame game, HoldemTableViewState frame) {
+        if (!TableViewportPosition.sameOpenHand(displayedGame, displayedHand, settlementFrame, game, frame)
+                || !contentRoot.isAttachedToWindow())
+            return TableViewportPosition.TOP;
         var viewport = (ScrollView) contentRoot.getParent();
-        ScrollView history = contentRoot.findViewWithTag(LEDGER_LIST_TAG);
+        ScrollView history = contentRoot.findViewWithTag(BettingLedgerView.LEDGER_LIST_TAG);
         var accessibility = views.activity().getSystemService(AccessibilityManager.class);
         String focus = accessibility.isTouchExplorationEnabled() ? HoldemViewport.focusedTag(contentRoot) : null;
-        if (ActionType.CHECK.name().equals(focus) && frame.bettingActions().size() > settlementFrame.bettingActions().size()) {
-            var last = frame.bettingActions().get(frame.bettingActions().size() - 1);
-            if (last.seat() == frame.viewer() && last.kind() == BettingAction.Kind.CHECK) {
-                focus = SEAT_TAG + frame.viewer();
-            }
-        }
-        return new ViewportPosition(viewport.getScrollY(), history.isShown(), history.getScrollY(), focus);
+        return TableViewportPosition.capture(viewport.getScrollY(), history.isShown(), history.getScrollY(),
+                focus, settlementFrame, frame);
     }
 
     // Keep the user's existing focus through a same-hand redraw that replaces the focused View.
     private void restoreAccessibilityFocus(HoldemViewport viewport, ViewGroup content, String tag) {
-        if (tag == null || !(tag.startsWith(SEAT_TAG) || tag.startsWith(LEDGER_ACTION_TAG)
-                || tag.equals(LEDGER_TOGGLE_TAG))) return;
+        if (!TableViewportPosition.canRestoreFocus(tag)) return;
         View target = content.findViewWithTag(tag);
         if (target == null) return;
         HoldemViewport.afterLayout(viewport, () -> {
@@ -318,7 +301,7 @@ final class HoldemTableView {
         });
     }
 
-    private static void restoreScrollOnLayout(ScrollView scroll, int y) {
+    static void restoreScrollOnLayout(ScrollView scroll, int y) {
         if (y != 0) HoldemViewport.afterLayout(scroll, () -> scroll.scrollTo(0, y));
     }
 
@@ -372,7 +355,7 @@ final class HoldemTableView {
 
     private String seatActionDescription(HoldemTablePresentation.ActionRow row) {
         return text.get(R.string.seat_action_description, row.ordinal(), row.player(),
-                text.get(actionLabel(row.kind())), row.amount(), text.get(streetLabel(row.street())),
+                text.get(BettingLedgerView.actionLabel(row.kind())), row.amount(), text.get(BettingLedgerView.streetLabel(row.street())),
                 row.totalContribution());
     }
 
@@ -600,7 +583,7 @@ final class HoldemTableView {
                 HoldemTablePresentation.displayedPot(frame)),
                 compact ? 15 : 20, Color.WHITE, true);
         pot.setGravity(Gravity.CENTER);
-        pot.setTag("settlement-target:pot");
+        pot.setTag(SettlementAwardAnimator.POT_TAG);
         return pot;
     }
 
@@ -634,96 +617,6 @@ final class HoldemTableView {
         cards.addAll(frame.board());
         if (cards.size() < 5) return text.get(R.string.best_hand_waiting);
         return text.get(R.string.best_hand, text.get(categoryLabel(HandRank.categoryOf(cards))));
-    }
-
-    private void addBettingLedger(HoldemViewport viewport, LinearLayout parent, HoldemTableViewState frame,
-                                  List<String> names, boolean compact, ViewportPosition position) {
-        var section = new LinearLayout(views.activity());
-        section.setOrientation(LinearLayout.VERTICAL);
-        section.setPadding(views.dp(8), views.dp(2), views.dp(8), views.dp(2));
-        var title = views.text(text.get(R.string.betting_history_title), compact ? 10 : 11,
-                HoldemTablePresentation.SECONDARY_TABLE_TEXT, true);
-        title.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-        title.setTag(LEDGER_TOGGLE_TAG);
-        title.setClickable(true);
-        title.setFocusable(true);
-        title.setPadding(views.dp(4), views.dp(4), views.dp(4), views.dp(4));
-        title.setContentDescription(text.get(position.historyExpanded()
-                ? R.string.betting_history_hide : R.string.betting_history_show));
-        title.setSelected(position.historyExpanded());
-        section.addView(title, views.matchWrap());
-        var history = new ScrollView(views.activity());
-        var entries = new LinearLayout(views.activity());
-        entries.setOrientation(LinearLayout.VERTICAL);
-        var rows = HoldemTablePresentation.actionRows(frame, names);
-        var style = HoldemTablePresentation.ledgerStyle(compact);
-        for (var row : rows) {
-            String label = text.get(actionLabel(row.kind()));
-            int street = streetLabel(row.street());
-            String entry = text.get(R.string.betting_ledger_entry, row.ordinal(), row.player(), label, row.amount(),
-                    text.get(street), row.totalContribution());
-            var line = views.text(entry, style.textSp(), style.textColor(), true);
-            line.setTag(LEDGER_ACTION_TAG + row.ordinal());
-            line.setPadding(views.dp(5), views.dp(2), views.dp(5), views.dp(2));
-            line.setBackground(views.roundedBackground(0x1affffff, style.borderColor(), 4));
-            line.setContentDescription(entry);
-            line.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
-            line.setAccessibilityDelegate(new View.AccessibilityDelegate() {
-                @Override public boolean performAccessibilityAction(View host, int action, Bundle arguments) {
-                    if (action == AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.getId()) {
-                        revealLedgerRow(viewport, history, host);
-                        return true;
-                    }
-                    boolean handled = super.performAccessibilityAction(host, action, arguments);
-                    if (handled && action == AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS) {
-                        revealLedgerRow(viewport, history, host);
-                    }
-                    return handled;
-                }
-            });
-            entries.addView(line, views.matchWrap());
-        }
-        history.setTag(LEDGER_LIST_TAG);
-        history.setContentDescription(text.get(R.string.betting_history_list_description));
-        history.setFillViewport(false);
-        history.setVerticalScrollBarEnabled(true);
-        history.setNestedScrollingEnabled(true);
-        history.addView(entries, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
-        section.addView(history, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                views.dp(compact ? 92 : 116)));
-        history.setVisibility(position.historyExpanded() ? View.VISIBLE : View.GONE);
-        restoreScrollOnLayout(history, position.historyY());
-        title.setOnClickListener(ignored -> {
-            boolean expanded = history.getVisibility() != View.VISIBLE;
-            history.setVisibility(expanded ? View.VISIBLE : View.GONE);
-            title.setContentDescription(text.get(expanded
-                    ? R.string.betting_history_hide : R.string.betting_history_show));
-            title.setSelected(expanded);
-            if (expanded && entries.getChildCount() > 0) {
-                View newest = entries.getChildAt(entries.getChildCount() - 1);
-                HoldemViewport.afterLayout(history, () -> history.post(() -> {
-                    if (history.isShown()) revealLedgerRow(viewport, history, newest);
-                }));
-            }
-        });
-        if (frame.bettingActions().isEmpty()) section.setVisibility(View.INVISIBLE);
-        parent.addView(section, views.matchWrap());
-    }
-
-    private static void revealLedgerRow(HoldemViewport viewport, ScrollView history, View row) {
-        HoldemViewport.revealWithin(history, row);
-        HoldemViewport.revealWithin(viewport, row);
-    }
-
-    private int streetLabel(Street street) {
-        return switch (street) {
-            case PREFLOP -> R.string.street_preflop;
-            case FLOP -> R.string.street_flop;
-            case TURN -> R.string.street_turn;
-            case RIVER -> R.string.street_river;
-            case SHOWDOWN, COMPLETE -> R.string.settled;
-        };
     }
 
     private static int categoryLabel(HandRank.Category category) {
@@ -774,103 +667,8 @@ final class HoldemTableView {
     }
 
     /** Shows a temporary chip award moving from the pot to each actual recipient. */
-    SettlementAnimation animateSettlement(long remainingMillis, Runnable completed) {
-        if (contentRoot == null || settlementFrame == null || remainingMillis <= 0
-                || !ValueAnimator.areAnimatorsEnabled()) return new SettlementAnimation(false, () -> { });
-        View target = contentRoot.findViewWithTag("settlement-target:pot");
-        if (!hasVisibleCenter(target)) return new SettlementAnimation(false, () -> { });
-        var awards = HoldemTablePresentation.potAwards(settlementFrame);
-        if (awards.isEmpty()) return new SettlementAnimation(false, () -> { });
-        View decor = views.activity().getWindow().getDecorView();
-        if (!(decor instanceof ViewGroup overlay)) return new SettlementAnimation(false, () -> { });
-        int[] origin = new int[2];
-        target.getLocationOnScreen(origin);
-        int[] overlayOrigin = new int[2];
-        overlay.getLocationOnScreen(overlayOrigin);
-        float startX = origin[0] - overlayOrigin[0] + target.getWidth() / 2f;
-        float startY = origin[1] - overlayOrigin[1] + target.getHeight() / 2f;
-        var motions = new ArrayList<AwardMotion>(awards.size());
-        for (var award : awards) {
-            View destination = contentRoot.findViewWithTag("settlement-target:seat:" + award.physicalSeat());
-            if (!hasVisibleCenter(destination)) continue;
-            var marker = views.text(text.get(R.string.chip_award, award.chips()),
-                    15, Color.WHITE, true);
-            marker.setGravity(Gravity.CENTER);
-            marker.setTag("settlement-award:" + award.physicalSeat());
-            marker.setVisibility(View.INVISIBLE);
-            marker.setPadding(views.dp(8), views.dp(4), views.dp(8), views.dp(4));
-            marker.setBackground(views.roundedBackground(0xff99702b, 0xffefcc72, 18));
-            marker.setElevation(views.dp(8));
-            marker.setContentDescription(text.get(R.string.chip_award_description,
-                    award.chips()));
-            overlay.addView(marker, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT));
-            int[] destinationLocation = new int[2];
-            destination.getLocationOnScreen(destinationLocation);
-            motions.add(new AwardMotion(marker, startX, startY,
-                    destinationLocation[0] - overlayOrigin[0] + destination.getWidth() / 2f,
-                    destinationLocation[1] - overlayOrigin[1] + destination.getHeight() / 2f));
-        }
-        if (motions.isEmpty()) return new SettlementAnimation(false, () -> { });
-        var animator = ValueAnimator.ofFloat(0f, 1f);
-        animator.setDuration(Math.max(1, Math.min(650, remainingMillis)));
-        animator.setInterpolator(input -> input);
-        animator.addUpdateListener(value -> {
-            float progress = (float) value.getAnimatedValue();
-            for (var motion : motions) {
-                var marker = motion.marker();
-                marker.setX(motion.startX() + (motion.endX() - motion.startX()) * progress - marker.getWidth() / 2f);
-                marker.setY(motion.startY() + (motion.endY() - motion.startY()) * progress - marker.getHeight() / 2f);
-                marker.setScaleX(1f - .35f * progress);
-                marker.setScaleY(1f - .35f * progress);
-                marker.setAlpha(1f - .15f * progress);
-            }
-        });
-        Runnable clear = () -> motions.forEach(motion -> overlay.removeView(motion.marker()));
-        animator.addListener(new android.animation.AnimatorListenerAdapter() {
-            private boolean cancelled;
-            @Override public void onAnimationCancel(android.animation.Animator animation) { cancelled = true; }
-            @Override public void onAnimationEnd(android.animation.Animator animation) {
-                if (cancelled) return;
-                // Keep the terminal position through a draw before clearing the overlay.
-                overlay.postOnAnimation(() -> {
-                    clear.run();
-                    if (settlementAnimator != animator) return;
-                    settlementAnimator = null;
-                    completed.run();
-                });
-            }
-        });
-        settlementAnimator = animator;
-        var firstDraw = new ViewTreeObserver.OnPreDrawListener() {
-            @Override public boolean onPreDraw() {
-                overlay.getViewTreeObserver().removeOnPreDrawListener(this);
-                if (settlementAnimator != animator) return true;
-                for (var motion : motions) {
-                    var marker = motion.marker();
-                    marker.setX(motion.startX() - marker.getWidth() / 2f);
-                    marker.setY(motion.startY() - marker.getHeight() / 2f);
-                    marker.setVisibility(View.VISIBLE);
-                }
-                overlay.postOnAnimation(() -> { if (settlementAnimator == animator) animator.start(); });
-                return true;
-            }
-        };
-        overlay.getViewTreeObserver().addOnPreDrawListener(firstDraw);
-        return new SettlementAnimation(true, () -> {
-            if (settlementAnimator != animator) return;
-            settlementAnimator = null;
-            overlay.getViewTreeObserver().removeOnPreDrawListener(firstDraw);
-            animator.cancel();
-            clear.run();
-        });
-    }
-
-    private static boolean hasVisibleCenter(View view) {
-        if (view == null || !view.isShown()) return false;
-        var visible = new Rect();
-        return view.getLocalVisibleRect(visible) && HoldemTablePresentation.containsVisibleCenter(
-                view.getWidth(), view.getHeight(), visible.left, visible.top, visible.right, visible.bottom);
+    SettlementAwardAnimator.Animation animateSettlement(long remainingMillis, Runnable completed) {
+        return awardsAnimator.start(contentRoot, settlementFrame, remainingMillis, completed);
     }
 
     private String cardDescription(int description, CardFace face) {
@@ -994,24 +792,11 @@ final class HoldemTableView {
         };
     }
 
-    private static int actionLabel(BettingAction.Kind action) {
-        return switch (action) {
-            case SMALL_BLIND -> R.string.ledger_small_blind;
-            case BIG_BLIND -> R.string.ledger_big_blind;
-            case FOLD -> R.string.fold;
-            case CHECK -> R.string.check;
-            case CALL -> R.string.call;
-            case BET -> R.string.bet;
-            case RAISE -> R.string.raise;
-            case ALL_IN -> R.string.all_in;
-        };
-    }
-
     private static int seatActionLabel(BettingAction.Kind action) {
         return switch (action) {
             case SMALL_BLIND -> R.string.small_blind_short;
             case BIG_BLIND -> R.string.big_blind_short;
-            case FOLD, CHECK, CALL, BET, RAISE, ALL_IN -> actionLabel(action);
+            case FOLD, CHECK, CALL, BET, RAISE, ALL_IN -> BettingLedgerView.actionLabel(action);
         };
     }
 

@@ -2,58 +2,90 @@
 
 ## Pe scurt
 
-Hold’em Lab este un joc No-Limit Texas Hold’em pentru Android. Poți juca offline o mână de antrenament sau un turneu împotriva AI-ului. Motorul definește regulile mesei, iar arena permite compararea strategiilor pe aceleași distribuiri.
+Hold’em Lab este un joc offline de No-Limit Texas Hold’em pentru Android și un laborator pentru evaluarea strategiilor AI. Jocul și simulatorul folosesc aceleași reguli și aceeași interfață de decizie. Proiectul include testele și dovezile de calificare ale APK-ului.
 
 ## Jocul
 
 - **[Hold’em Lab 0.19.1 — documentația release-ului](https://github.com/crististefanita/atf_j6/releases/tag/v0.19.1)**
 - **[Descarcă APK-ul Hold’em Lab 0.19.1](https://github.com/crististefanita/atf_j6/releases/download/v0.19.1/HoldemLab-0.19.1.apk)**
 
-## Prima mână după instalare
-
-La prima pornire, meniul este în engleză. Poți selecta româna din **Language**. Alege un mod de joc și confirmă cu **Deal cards** sau **Împarte cărțile**.
+## Arhitectură
 
 ```mermaid
-%%{init: {"themeVariables":{"fontSize":"20px"},"flowchart":{"nodeSpacing":18,"rankSpacing":24,"padding":6,"diagramPadding":6}}}%%
 flowchart LR
-    Menu["Meniu"] -->|alegi| Hand["O mână"]
-    Menu -->|alegi| Tournament["Turneu"]
-    Hand -->|distribui| Table["Masă"]
-    Tournament -->|distribui| Table
+    Android["Aplicație Android"] -->|conduce| Session["Sesiune sau simulare"]
+    Arena["Arenă offline"] -->|conduce| Session
+    Session -->|trimite acțiunea| Engine["Motor Hold’em"]
+    Engine -->|oferă observația| Session
+    Session -->|cere decizia| AI["Politică AI"]
+    AI -->|propune acțiunea| Session
 ```
 
 <details>
-<summary><strong>Legendă — modurile de joc</strong></summary>
+<summary><strong>Legendă — de la observație la acțiune</strong></summary>
 
-- **Play a hand / Joacă o mână** oferă mese de 2, 4, 5 sau 6 locuri, cu blinduri fixe.
-- **Play a tournament / Joacă un turneu** oferă 4–6 locuri, nivel Normal sau Hard și blinduri progresive cu interval configurabil.
-- **Masa de joc** afișează cărțile proprii și opțiunile legale când îți vine rândul.
+- Motorul păstrează starea completă, calculează mutările legale și decontează poturile.
+- Politica vede cărțile actorului și informația publică. Sesiunea sau arena transmite propunerea, iar motorul îi verifică legalitatea.
+- Android reconstruiește sesiunea din checkpoint. Arena păstrează distribuirea, configurația și acțiunile pentru replay și comparații reproductibile.
 
 </details>
 
-Pentru o sesiune existentă, folosește **Continue saved game / Continuă jocul salvat**. Din meniu poți deschide Realizările și clasamentul turneelor. [Ghidul Android](holdem-android/README.md) · [Verificarea fluxurilor Android](docs/testing/TEST_STRATEGY.md#interfața-android-locală)
-
-## Module
-
-| Modul | Contract |
+| Zonă | Responsabilitate |
 |---|---|
-| `holdem-core` | Cărți, străzi, observația actorului, acțiuni legale și decontarea poturilor; fără Android sau rețea. |
-| `holdem-ai` | Politici de joc și estimare Monte Carlo reproductibilă, cu ponderi de context în YAML. |
-| `holdem-arena` | Turnee cu blinduri progresive, mese cash cu blinduri fixe, seed-uri și replay. |
-| `holdem-online` | Configurație inspectabilă în `dry-run`. Conectarea la o platformă externă este o etapă viitoare. |
-| `holdem-app` | Consolă pentru o decizie locală și inspecția configurației online. |
-| `holdem-android` | Joc local, salvare și reluare, Realizări și clasament de turnee. |
+| [holdem-core](holdem-core) | Reguli, stare, observația actorului, acțiuni legale și decontare. |
+| [holdem-ai](holdem-ai) | Politici de decizie, estimarea equity și praguri configurabile. |
+| [holdem-arena](holdem-arena) | Simulări de mese cash și turnee, evaluare pe distribuiri pereche și replay. |
+| [holdem-app](holdem-app) | Punct de intrare în consolă și suitele de integrare, guvernanță și release. |
+| [holdem-online](holdem-online) | Configurație și inspecție în modul `dry-run`. |
+| [holdem-android](holdem-android/README.md) | Aplicația offline, sesiunea locală, Realizările și clasamentul. |
 
-## Biblioteci comune
+Maven construiește cele cinci module JVM. Gradle construiește aplicația `:app` și modulul `:engine`, care compilează aceleași surse din `holdem-core` și `holdem-ai` cu țintă Java 17. Aplicația folosește biblioteca Card Table pentru elementele comune de interfață.
 
-J6 consumă Core, Reporting, Console, Mock și Test Kit din perechile JAR/POM din [lib](lib/README.md). POM-ul rădăcină fixează versiunile și instalarea; testele verifică proveniența și integrarea.
+| Director | Ce găsești aici |
+|---|---|
+| [config](config) | Reguli și profiluri în YAML, catalogul Realizărilor și inventarul suitelor. |
+| [lib](lib/README.md) | Core, Reporting, Console, Mock și Test Kit, fixate ca perechi JAR/POM. |
+| [scripts](scripts) | Rulare, simulare, audit, calificare și verificarea distribuției. |
+| [docs](docs) | Contractele produsului, arhitectura, strategia de testare și feedback-ul activ. |
+| [release](release) | Dosarele edițiilor, manifestele și rapoartele de calificare. |
 
-[PlatformLibraryAdoptionTest](holdem-app/src/test/java/ro/atf/j6/libraries/PlatformLibraryAdoptionTest.java) verifică hash-urile binare, proveniența JSON, transportul mock și raportul Extent. Verificările rulează cu bibliotecile din proiect.
+## Testare și livrare
+
+```mermaid
+flowchart LR
+    Git["Schimbări Git"] -->|analizează impactul| RAG["Context RAG"]
+    RAG -->|propune| Suites["Suite JVM și probe Android"]
+    APK["APK semnat"] -->|intrare pentru probe| Suites
+    Suites -->|produc| Evidence["Rapoarte Extent și dovezi"]
+    Evidence -->|susțin| Release["Manifest de calificare"]
+    APK -->|identitate verificată| Release
+    Release -->|permite promovarea| Main["Tag și descărcare din main"]
+```
+
+<details>
+<summary><strong>Legendă — de la schimbare la distribuție</strong></summary>
+
+- RAG leagă diff-ul de contractele și suitele afectate. Rezultatele provin din execuție.
+- Maven și Android JVM verifică regulile și componentele. Probele native verifică interacțiunea și afișarea pe un APK identificat.
+- Promovarea compară binarul și dovezile calificării. Verificarea distribuției confruntă tagul, README-ul remote și APK-ul descărcat.
+
+</details>
+
+### Verificare locală
+
+Într-un checkout de lucru, rulează suitele JVM cu JDK 21 sau mai nou și Maven 3.9 sau mai nou. Configurează `HOLDEM_MAVEN_REPOSITORY` pentru cache-ul Maven extern. Pentru build-ul Android este necesar și SDK Platform 36.
+
+```powershell
+mvn -B -ntp "-Dmaven.repo.local=$env:HOLDEM_MAVEN_REPOSITORY" test
+```
+
+Inventarul fixează nivelul suitelor JVM și al testelor Android. Calificarea distinge testele de componentă de instrumentarea nativă și leagă dovezile de APK-ul verificat. [Inventarul suitelor](config/release-test-suites.json)
 
 ## Cerințe și documentație
 
 - [Cerințe de produs, reguli de joc și evaluarea AI](docs/requirements/README.md)
 - [Arhitectura motorului, simulării și aplicației](docs/architecture/ARCHITECTURE.md)
+- [Ghidul aplicației Android](holdem-android/README.md)
 - [Proiectarea realizărilor într-un joc](docs/design/achievements/README.md)
 - [Strategie de testare](docs/testing/TEST_STRATEGY.md)
 - [Guvernanță locală](docs/governance/README.md)
@@ -61,14 +93,3 @@ J6 consumă Core, Reporting, Console, Mock și Test Kit din perechile JAR/POM di
 - [Procesul de release Android](docs/release/ATF_Release.md)
 - [RAG pentru impact și deploy](docs/release/ATF_Release.md#planul-rag-pentru-deploy-pe-ramura-principală)
 - [Feedback activ](docs/feedback/README.md)
-
-## Construire locală
-
-Pentru componente și guvernanță, folosește JDK 21 sau mai nou, Maven 3.9 sau mai nou, Git și PowerShell 7. Setează `HOLDEM_MAVEN_REPOSITORY` la repository-ul Maven extern și rulează comanda. Pentru build-ul aplicației ai nevoie și de Android SDK platform 36. [Calificarea Android](docs/release/ATF_Release.md#calificare-reproductibilă)
-
-```powershell
-mvn -B -ntp "-Dmaven.repo.local=$env:HOLDEM_MAVEN_REPOSITORY" test
-```
-
-Consola poate fi pornită din IDE după importul proiectului Maven. [Punctul de intrare](holdem-app/src/main/java/ro/atf/holdem/app/LocalAppMain.java)
-

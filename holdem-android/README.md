@@ -9,6 +9,12 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 | Joacă o mână | 2, 4, 5 sau 6 | 2.000 per loc | Fixe, 10/20. |
 | Joacă un turneu | 4–6 | 2.000 per loc | Progresive, la 1, 2, 3 sau 5 minute. Implicit, 1 minut. |
 
+## Prima mână după instalare
+
+La prima pornire, interfața este în engleză. Alege româna din **Language**, apoi selectează **Joacă o mână** sau **Joacă un turneu** și confirmă cu **Împarte cărțile**.
+
+Pentru o sesiune existentă, alege **Continuă jocul salvat**. Meniul oferă acces și la Realizări și la clasamentul turneelor.
+
 ## Ce vede și poate face jucătorul
 
 - În timpul mâinii, jucătorul vede cele două cărți proprii, board-ul public și starea locurilor. Locurile adverse afișează cărți numai la decontare.

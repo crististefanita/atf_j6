@@ -117,13 +117,11 @@ O comandă de continuare acceptată în timpul animației salvează destinația 
 
 ## Realizări
 
-Meniul **Realizări** folosește componentele comune cu Rentz pentru listă, progres, detalii și notificarea modală. Popup-ul folosește dialogul comun Card Table UI, după modelul J4. Rămâne vizibil până la închidere și nu ocupă spațiu în tabel.
+Meniul **Realizări** afișează 39 de obiective de turneu în trei niveluri. Ordinea vine din catalogul YAML, iar aceeași mână sau același turneu poate avansa mai multe obiective.
 
-Ordinea provine din catalog. O mână sau un turneu poate avansa mai multe obiective simultan.
-
-Căutarea recunoaște titlurile și regulile în română și engleză, inclusiv pragul afișat și expresiile fără diacritice. Filtrele după nivel și stare se aplică împreună și se păstrează la recrearea activității. Detaliul precizează că progresul se acordă în turnee.
-
-Catalogul activ are **39 de realizări** în trei niveluri: 14 Ușoare, 14 Medii și 11 Grele. Acestea sunt repere de rezultat din turneu, nu exerciții de antrenament. Ordinea din YAML sugerează progresul; în cadrul aceluiași nivel, obiectivele pot avansa în paralel.
+- **Listă și detalii.** Card Table UI furnizează componentele comune pentru afișarea catalogului și a progresului. Detaliul explică eligibilitatea pentru turnee.
+- **Căutare și filtre.** Căutarea recunoaște titlul, regula și pragul afișat în română și engleză, inclusiv expresiile fără diacritice. Filtrele de nivel și stare se combină și se păstrează la recrearea activității.
+- **Notificare.** Dialogul comun Card Table UI se afișează deasupra mesei, fără să ocupe spațiu în tabel, și rămâne deschis până la închidere.
 
 | Nivel | Parcursul de poker |
 |---|---|

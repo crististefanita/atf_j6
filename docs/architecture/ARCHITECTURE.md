@@ -12,7 +12,13 @@ holdem-ai     → holdem-core
 holdem-online → holdem-core
 ```
 
-Consola pornește o decizie locală și poate inspecta configurația online. Arena are propriile puncte de intrare pentru cash și turnee.
+Consola pornește o decizie locală și poate inspecta configurația online. Arena are propriile puncte de intrare pentru cash și turnee. [Consola](../../holdem-app/src/main/java/ro/atf/holdem/app/LocalAppMain.java) · [Mese cash](../../holdem-arena/src/main/java/ro/atf/holdem/arena/CashTableArena.java) · [Turnee](../../holdem-arena/src/main/java/ro/atf/holdem/arena/TournamentArena.java)
+
+## Granița dintre produs și verificare
+
+Gradle include `:app` și `:engine`. `:engine` compilează sursele motorului și AI-ului, iar `:app` consumă motorul și componentele Card Table fixate în depozitul Android din proiect. [Configurația motorului Gradle](../../holdem-android/engine/build.gradle) · [Dependențele aplicației](../../holdem-android/app/build.gradle)
+
+Perechile ATF din `lib` susțin verificarea Maven și publicarea dovezilor. Inventarul suitelor acoperă Maven și Android JVM, iar instrumentarea verifică scenarii pe un APK identificat. Procesul de release verifică rezultatele înainte de promovare. [Adopția bibliotecilor](../../lib/README.md) · [Strategia de testare](../testing/TEST_STRATEGY.md) · [Procesul de release](../release/ATF_Release.md)
 
 ## Limite de dependențe
 
@@ -45,8 +51,17 @@ flowchart LR
 </details>
 
 - Gradle compilează sursele comune ale motorului și politicii pentru Java 17.
-- Activity calculează în fundal propunerile adversarilor Hard și verifică din nou scena și tura înainte de aplicare.
+- `HoldemActivity` cere propunerile adversarilor Hard prin `HoldemTableTasks` și verifică din nou scena și tura înainte de aplicare.
 - La suspendare, Activity oprește ceasul și salvează checkpoint-ul. La restaurare, sesiunea verifică actorul și legalitatea mutărilor. [Integrarea Android](../../holdem-android/README.md)
+
+| Componentă Android | Responsabilitate |
+|---|---|
+| `HoldemActivity` | Conectează navigarea, lifecycle-ul, sesiunea și persistența. Aplică o propunere numai pentru scena și tura curente. |
+| `HoldemTableTasks` | Execută recomandări, mutări automate și estimări în fundal. Identifică lucrarea curentă și livrează rezultatul prin executorul UI. |
+| `HoldemAchievementNotice` | Prezintă progresul confirmat de persistență prin dialogul Card Table UI. |
+| `HoldemTableView` și `HoldemTablePresentation` | Compun masa și proiectează informația vizibilă. |
+| `BettingLedgerView` și `TableViewportPosition` | Afișează jurnalul și păstrează poziția și focusul la redesenarea aceleiași mâini. |
+| `SettlementAwardAnimator` | Afișează premiile temporare în overlay și gestionează finalizarea sau anularea animației. |
 
 ### Cum se salvează și se reia o mână
 

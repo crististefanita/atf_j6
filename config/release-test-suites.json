@@ -35,9 +35,11 @@
     { "module": "holdem-app", "testClass": "ro.atf.j6.release.ReleaseVersionPolicyTest", "level": "unit" }
   ],
   "android": [
+    {"module": "holdem-android", "testClass": "ro.atf.holdem.android.HoldemTableTasksComponentTest", "impactPaths": ["holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableTasks.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemWinChance.java"]},
+    {"module": "holdem-android", "testClass": "ro.atf.holdem.android.TableViewportPositionComponentTest", "impactPaths": ["holdem-android/app/src/main/java/ro/atf/holdem/android/TableViewportPosition.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/BettingLedgerView.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemViewport.java"]},
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.WagerConfirmationComponentTest", "impactPaths": ["holdem-android/app/src/main/java/ro/atf/holdem/android/WagerConfirmation.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java", "holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java"] },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.BettingActionObservationComponentTest", "impactPaths": ["holdem-android/app/src/testSupport/java/ro/atf/holdem/android/BettingActionObservation.java", "holdem-android/app/src/androidTest/java/ro/atf/holdem/android/TournamentSanity.java"] },
-    { "module": "holdem-android", "testClass": "ro.atf.holdem.android.GameplayAchievementsComponentTest", "impactPaths": ["holdem-android/ui-library/provenance.json", "config/j6-achievements.yaml", "holdem-android/app/build.gradle", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievements.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/AchievementPotEvidence.java", "holdem-core/src/main/java/ro/atf/holdem/core/PotAward.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementCatalog.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementFile.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementsActivity.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemProgressStore.java", "holdem-android/app/src/main/res/values/strings.xml", "holdem-android/app/src/main/res/values-ro/strings.xml"] },
+    { "module": "holdem-android", "testClass": "ro.atf.holdem.android.GameplayAchievementsComponentTest", "impactPaths": ["holdem-android/ui-library/provenance.json", "config/j6-achievements.yaml", "holdem-android/app/build.gradle", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievements.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/AchievementPotEvidence.java", "holdem-core/src/main/java/ro/atf/holdem/core/PotAward.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementCatalog.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementFile.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementsActivity.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemAchievementNotice.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemProgressStore.java", "holdem-android/app/src/main/res/values/strings.xml", "holdem-android/app/src/main/res/values-ro/strings.xml"] },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.GameplayAchievementBrowserComponentTest", "impactPaths": ["holdem-android/ui-library/provenance.json", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementBrowser.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/GameplayAchievementsActivity.java", "holdem-android/app/src/main/res/values/strings.xml", "holdem-android/app/src/main/res/values-ro/strings.xml"] },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.HoldemSessionRepositoryComponentTest", "impactPaths": ["holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemSessionCodec.java", "holdem-android/app/src/main/java/ro/atf/holdem/android/LocalHoldemGame.java"] },
     { "module": "holdem-android", "testClass": "ro.atf.holdem.android.HoldemTablePresentationComponentTest" },
@@ -53,6 +55,7 @@
       "apkVariant": "release",
       "proofKeys": ["hardSix"],
       "impactPaths": [
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableTasks.java",
         "holdem-ai/src/main/java/ro/atf/holdem/ai/TournamentPlayStyles.java",
         "holdem-android/app/src/main/java/ro/atf/holdem/android/LocalHoldemGame.java",
         "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java"
@@ -64,6 +67,7 @@
       "apkVariant": "release",
       "proofKeys": ["seatMetrics"],
       "impactPaths": [
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/TableViewportPosition.java",
         "holdem-android/app/src/main/java/ro/atf/holdem/android/CompactSeatRows.java",
         "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java",
         "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTablePresentation.java",
@@ -82,6 +86,7 @@
       "apkVariant": "sanity",
       "proofKeys": ["settlementAward", "settlementMultiAward", "settlementStaticAward", "settlementCompactAward"],
       "impactPaths": [
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/SettlementAwardAnimator.java",
         "holdem-core/src/main/java/ro/atf/holdem/core/HoldemHand.java",
         "holdem-core/src/main/java/ro/atf/holdem/core/PotSettlement.java",
         "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java",
@@ -101,6 +106,8 @@
       "proofGroup": "bettingLedger",
       "proofKeys": ["betting-ledger", "betting-ledger-compact", "betting-ledger-talkback"],
       "impactPaths": [
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/BettingLedgerView.java",
+        "holdem-android/app/src/main/java/ro/atf/holdem/android/TableViewportPosition.java",
         "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemActivity.java",
         "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTableView.java",
         "holdem-android/app/src/main/java/ro/atf/holdem/android/HoldemTablePresentation.java",

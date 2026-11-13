@@ -4,7 +4,7 @@ Investigație externă. Ownerul este titularul contului GitHub. Verificarea vizi
 
 ## Dovadă curentă
 
-- Verificarea autentificată citește linkul din README-ul remote și descarcă integral APK-ul și checksum-ul prin API-ul GitHub. Manifestul ediției selectate în index consemnează metoda și verificarea hash-ului. [Indexul ediției](../../release/index.json) · [Catalogul edițiilor](../../release/README.md)
+- Dovada descărcării autentificate consemnează metoda, commitul README-ului și hash-ul verificat. [Indexul ediției](../../release/index.json) · [Catalogul edițiilor](../../release/README.md)
 - Răspunsurile HTTP 404 observate în acces anonim sunt consemnate în tichet. [Tichetul GitHub #4973045](https://support.github.com/ticket/4973045)
 
 Procedura de diagnostic și trimiterea către GitHub apar în documentul owner. [Procesul de release](../release/ATF_Release.md#diagnostic-http-404-pentru-github-release)

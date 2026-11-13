@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "8bd64c8bef35b278d6d690f8a20c1f0ffde5af27",
+  "versionName": "0.19.2",
+  "validationScope": "FULL",
+  "selectedSwitches": [
+    "-IncludeHardSix",
+    "-IncludeSeatMetrics",
+    "-IncludeSettlementAward",
+    "-IncludeBettingLedger"
+  ],
+  "journeys": [
+    {
+      "mode": "tournament",
+      "apkVariant": "sanity",
+      "proofPath": [
+        "tournamentSanity"
+      ],
+      "optional": false,
+      "folder": "android-tournament-sanity",
+      "report": "android-tournament-extent.html"
+    },
+    {
+      "mode": "release-smoke",
+      "apkVariant": "release",
+      "proofPath": [
+        "releaseInstallSmoke"
+      ],
+      "optional": false,
+      "folder": "android-release-smoke",
+      "report": "android-release-smoke-extent.html"
+    },
+    {
+      "mode": "hard-six",
+      "apkVariant": "release",
+      "proofPath": [
+        "hardSix"
+      ],
+      "optional": true,
+      "folder": "android-hard-six",
+      "report": "android-hard-six-extent.html"
+    },
+    {
+      "mode": "seat-metrics",
+      "apkVariant": "release",
+      "proofPath": [
+        "seatMetrics"
+      ],
+      "optional": true,
+      "folder": "android-seat-metrics",
+      "report": "android-seat-metrics-extent.html"
+    },
+    {
+      "mode": "settlement-award",
+      "apkVariant": "sanity",
+      "proofPath": [
+        "settlementAward"
+      ],
+      "optional": true,
+      "folder": "android-settlement-award",
+      "report": "android-settlement-award-extent.html"
+    },
+    {
+      "mode": "settlement-multi-award",
+      "apkVariant": "sanity",
+      "proofPath": [
+        "settlementMultiAward"
+      ],
+      "optional": true,
+      "folder": "android-settlement-multi-award",
+      "report": "android-settlement-multi-award-extent.html"
+    },
+    {
+      "mode": "settlement-static-award",
+      "apkVariant": "sanity",
+      "proofPath": [
+        "settlementStaticAward"
+      ],
+      "optional": true,
+      "folder": "android-settlement-static-award",
+      "report": "android-settlement-static-award-extent.html"
+    },
+    {
+      "mode": "settlement-compact-award",
+      "apkVariant": "sanity",
+      "proofPath": [
+        "settlementCompactAward"
+      ],
+      "optional": true,
+      "folder": "android-settlement-compact-award",
+      "report": "android-settlement-compact-award-extent.html"
+    },
+    {
+      "mode": "betting-ledger",
+      "apkVariant": "sanity",
+      "proofPath": [
+        "bettingLedger",
+        "betting-ledger"
+      ],
+      "optional": true,
+      "folder": "android-betting-ledger",
+      "report": "android-betting-ledger-extent.html"
+    },
+    {
+      "mode": "betting-ledger-compact",
+      "apkVariant": "sanity",
+      "proofPath": [
+        "bettingLedger",
+        "betting-ledger-compact"
+      ],
+      "optional": true,
+      "folder": "android-betting-ledger-compact",
+      "report": "android-betting-ledger-compact-extent.html"
+    },
+    {
+      "mode": "betting-ledger-talkback",
+      "apkVariant": "sanity",
+      "proofPath": [
+        "bettingLedger",
+        "betting-ledger-talkback"
+      ],
+      "optional": true,
+      "folder": "android-betting-ledger-talkback",
+      "report": "android-betting-ledger-talkback-extent.html"
+    }
+  ]
+}

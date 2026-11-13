@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "sourceCommit": "8bd64c8bef35b278d6d690f8a20c1f0ffde5af27",
+  "apkSha256": "c4ae8d315325fa9c00d1a2c7487284a035e7143eab562f14ff92e76661e88422",
+  "reportsVerified": 25,
+  "nativePlanSha256": "0d76fb91ce8f79ae4e6727cff9e1e8f11a09a9d968354a4cc1fe9bdc71606e21",
+  "native": [
+    {
+      "journey": "tournamentSanity",
+      "apkSha256": "d8a2e539eda1d5e557132acd027caadd668ee900501bb89c6ce2ada48f8a034a",
+      "assertions": 138,
+      "captures": 20
+    },
+    {
+      "journey": "releaseInstallSmoke",
+      "apkSha256": "c4ae8d315325fa9c00d1a2c7487284a035e7143eab562f14ff92e76661e88422",
+      "assertions": 86,
+      "captures": 13
+    }
+  ],
+  "optionalNative": [
+    {
+      "journey": "hard-six",
+      "status": "PASS",
+      "apkVariant": "release",
+      "apkSha256": "c4ae8d315325fa9c00d1a2c7487284a035e7143eab562f14ff92e76661e88422",
+      "assertions": 10,
+      "captures": 3,
+      "report": "android-hard-six-extent.html"
+    },
+    {
+      "journey": "seat-metrics",
+      "status": "PASS",
+      "apkVariant": "release",
+      "apkSha256": "c4ae8d315325fa9c00d1a2c7487284a035e7143eab562f14ff92e76661e88422",
+      "assertions": 27,
+      "captures": 3,
+      "report": "android-seat-metrics-extent.html"
+    },
+    {
+      "journey": "settlement-award",
+      "status": "PASS",
+      "apkVariant": "sanity",
+      "apkSha256": "d8a2e539eda1d5e557132acd027caadd668ee900501bb89c6ce2ada48f8a034a",
+      "assertions": 15,
+      "captures": 3,
+      "report": "android-settlement-award-extent.html"
+    },
+    {
+      "journey": "settlement-multi-award",
+      "status": "PASS",
+      "apkVariant": "sanity",
+      "apkSha256": "d8a2e539eda1d5e557132acd027caadd668ee900501bb89c6ce2ada48f8a034a",
+      "assertions": 29,
+      "captures": 5,
+      "report": "android-settlement-multi-award-extent.html"
+    },
+    {
+      "journey": "settlement-static-award",
+      "status": "PASS",
+      "apkVariant": "sanity",
+      "apkSha256": "d8a2e539eda1d5e557132acd027caadd668ee900501bb89c6ce2ada48f8a034a",
+      "assertions": 15,
+      "captures": 1,
+      "report": "android-settlement-static-award-extent.html"
+    },
+    {
+      "journey": "settlement-compact-award",
+      "status": "PASS",
+      "apkVariant": "sanity",
+      "apkSha256": "d8a2e539eda1d5e557132acd027caadd668ee900501bb89c6ce2ada48f8a034a",
+      "assertions": 18,
+      "captures": 3,
+      "report": "android-settlement-compact-award-extent.html"
+    },
+    {
+      "journey": "betting-ledger",
+      "status": "PASS",
+      "apkVariant": "sanity",
+      "apkSha256": "d8a2e539eda1d5e557132acd027caadd668ee900501bb89c6ce2ada48f8a034a",
+      "assertions": 27,
+      "captures": 2,
+      "report": "android-betting-ledger-extent.html"
+    },
+    {
+      "journey": "betting-ledger-compact",
+      "status": "PASS",
+      "apkVariant": "sanity",
+      "apkSha256": "d8a2e539eda1d5e557132acd027caadd668ee900501bb89c6ce2ada48f8a034a",
+      "assertions": 28,
+      "captures": 2,
+      "report": "android-betting-ledger-compact-extent.html"
+    },
+    {
+      "journey": "betting-ledger-talkback",
+      "status": "PASS",
+      "apkVariant": "sanity",
+      "apkSha256": "d8a2e539eda1d5e557132acd027caadd668ee900501bb89c6ce2ada48f8a034a",
+      "assertions": 38,
+      "captures": 2,
+      "report": "android-betting-ledger-talkback-extent.html"
+    }
+  ]
+}

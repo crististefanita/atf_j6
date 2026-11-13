@@ -5,8 +5,8 @@
   "previousVersion": "0.19.1",
   "changeClass": "PATCH_FIX",
   "changeRationale": "Împiedică o decizie AI anulată să afecteze tura următoare și califică restaurarea focusului, jurnalul și premiile după reorganizarea mesei.",
-  "state": "DRAFT",
-  "published": false,
+  "state": "PREPARED",
+  "published": true,
   "versions": [
     "0.19.2"
   ]

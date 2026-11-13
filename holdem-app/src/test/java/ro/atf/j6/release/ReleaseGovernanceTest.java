@@ -495,7 +495,7 @@ class ReleaseGovernanceTest {
         if (section.isBlank()) return false;
         String githubReleases = "https://github.com/crististefanita/atf_j6/releases/";
         if (state.equals("DRAFT")) {
-            String dossier = "- **[Hold'em Lab " + version + " — dosarul ediției](release/" + version + "/README.md)**";
+            String dossier = "- **[Hold’em Lab " + version + " — dosarul ediției](release/" + version + "/README.md)**";
             List<String> content = section.lines().map(String::strip).filter(line -> !line.isEmpty()).toList();
             return content.equals(List.of("## Jocul", dossier))
                     && countOccurrences(section, githubReleases) == 0 && !section.contains(".apk");
@@ -504,8 +504,8 @@ class ReleaseGovernanceTest {
 
         String releaseUrl = githubReleases + "tag/v" + version;
         String apkUrl = githubReleases + "download/v" + version + "/HoldemLab-" + version + ".apk";
-        String releaseLine = "- **[Hold'em Lab " + version + " — documentația release-ului](" + releaseUrl + ")**";
-        String apkLine = "- **[Descarcă APK-ul Hold'em Lab " + version + "](" + apkUrl + ")**";
+        String releaseLine = "- **[Hold’em Lab " + version + " — documentația release-ului](" + releaseUrl + ")**";
+        String apkLine = "- **[Descarcă APK-ul Hold’em Lab " + version + "](" + apkUrl + ")**";
         List<String> content = section.lines().map(String::strip).filter(line -> !line.isEmpty()).toList();
         return content.equals(List.of("## Jocul", releaseLine, apkLine))
                 && countOccurrences(section, githubReleases) == 2;
@@ -553,7 +553,7 @@ class ReleaseGovernanceTest {
 
     private static boolean hasCurrentReleaseLabels(String readme, String version, String state) {
         int expected = state.equals("DRAFT") ? 1 : List.of("PREPARED", "PUBLISHED").contains(state) ? 2 : 0;
-        return expected > 0 && countOccurrences(markdownSection(readme, "## Jocul"), "Hold'em Lab " + version) == expected;
+        return expected > 0 && countOccurrences(markdownSection(readme, "## Jocul"), "Hold’em Lab " + version) == expected;
     }
 
     private static boolean hasReleaseDocumentationLinks(String readme) {
@@ -591,14 +591,14 @@ class ReleaseGovernanceTest {
                 + "/HoldemLab-" + version + ".apk";
         if (state.equals("DRAFT")) {
             return "## Jocul\n\n"
-                    + "- **[Hold'em Lab " + version + " — dosarul ediției](release/" + version + "/README.md)**\n\n"
+                    + "- **[Hold’em Lab " + version + " — dosarul ediției](release/" + version + "/README.md)**\n\n"
                     + "## Cerințe și documentație\n\n"
                     + "- [Catalogul release-urilor](release/README.md)\n"
                     + "- [Procesul de release Android](docs/release/ATF_Release.md)\n";
         }
         return "## Jocul\n\n"
-                + "- **[Hold'em Lab " + version + " — documentația release-ului](" + page + ")**\n"
-                + "- **[Descarcă APK-ul Hold'em Lab " + version + "](" + apk + ")**\n\n"
+                + "- **[Hold’em Lab " + version + " — documentația release-ului](" + page + ")**\n"
+                + "- **[Descarcă APK-ul Hold’em Lab " + version + "](" + apk + ")**\n\n"
                 + "## Cerințe și documentație\n\n"
                 + "- [Catalogul release-urilor](release/README.md)\n"
                 + "- [Procesul de release Android](docs/release/ATF_Release.md)\n";

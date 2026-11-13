@@ -391,7 +391,7 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private void tapDialogAction(String label) throws Exception {
-        var button = awaitMatch(node -> node.isClickable()
+        var button = awaitMatchInApplicationWindows(node -> node.isClickable()
                 && "android.widget.Button".contentEquals(node.getClassName())
                 && label.equalsIgnoreCase(value(node.getText())));
         tap(label, button);
@@ -2144,7 +2144,7 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private void seeContains(String name, String fragment) throws Exception {
-        var matches = collect(node -> value(node.getText()).contains(fragment)
+        var matches = collectInApplicationWindows(node -> value(node.getText()).contains(fragment)
                 || value(node.getContentDescription()).contains(fragment));
         String actual = matches.isEmpty() ? "not visible"
                 : value(matches.get(0).getContentDescription()).isBlank()
@@ -2282,6 +2282,29 @@ public final class TournamentSanity extends Instrumentation {
             SystemClock.sleep(80);
         } while (SystemClock.uptimeMillis() < deadline);
         return null;
+    }
+
+    private AccessibilityNodeInfo awaitMatchInApplicationWindows(Predicate<AccessibilityNodeInfo> match) {
+        long deadline = SystemClock.uptimeMillis() + 4000;
+        do {
+            var matches = collectInApplicationWindows(match);
+            if (!matches.isEmpty()) return matches.get(0);
+            SystemClock.sleep(80);
+        } while (SystemClock.uptimeMillis() < deadline);
+        return null;
+    }
+
+    private List<AccessibilityNodeInfo> collectInApplicationWindows(Predicate<AccessibilityNodeInfo> match) {
+        var matches = collect(match);
+        if (!matches.isEmpty()) return matches;
+        for (var window : ui.getWindows()) {
+            if (window.getType() != AccessibilityWindowInfo.TYPE_APPLICATION) continue;
+            var root = window.getRoot();
+            if (root == null) continue;
+            collect(root, match, matches);
+            if (!matches.isEmpty()) return matches;
+        }
+        return matches;
     }
 
     private AccessibilityNodeInfo find(String label) {

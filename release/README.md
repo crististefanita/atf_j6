@@ -50,7 +50,7 @@ Dosarele sigilate păstrează calificarea, manifestele și rapoartele așa cum a
 
 Indexul selectează ediția curentă, iar pagina GitHub arată edițiile disponibile pentru descărcare. [Release-uri GitHub](https://github.com/crististefanita/atf_j6/releases)
 
-Pentru 0.13.0, tagul și dosarul sigilat păstrează sursa și dovezile calificării. Linkul de descărcare din dosarul sigilat consemnează distribuția de la data publicării. [Tagul v0.13.0](https://github.com/crististefanita/atf_j6/tree/v0.13.0)
+Distribuția GitHub păstrează ultimele două ediții disponibile, fiecare cu tagul, APK-ul semnat și checksum-ul. Dosarele sigilate păstrează identitatea sursei și dovezile calificării. Linkurile din dosarele istorice consemnează distribuția de la data publicării.
 
 ## Stări de publicare
 

@@ -114,29 +114,9 @@
     "algorithm": "SHA-256",
     "files": [
       {
-        "path": "README.md",
-        "bytes": 1841,
-        "sha256": "3a6bbc31c74a7f1819580f5c4fdc464bad5499b454516a02a473133d4777d7c1"
-      },
-      {
-        "path": "release-notes.md",
-        "bytes": 924,
-        "sha256": "4f6f4fec1471d13a7f65b80858df7c64e88b303d6b7460d45666a6d40146e4d8"
-      },
-      {
-        "path": "qualification.json",
-        "bytes": 5635,
-        "sha256": "adf226248652fc7b095656e338867a6bc565a63cd38d8e58e17de06c5f516b69"
-      },
-      {
-        "path": "release-impact-context.json",
-        "bytes": 61232,
-        "sha256": "9039789c0fdd9e202f3fa5b433114b86c32b89c3103cd14a6bba1ec0b660612a"
-      },
-      {
-        "path": "release-evidence-audit.json",
-        "bytes": 738,
-        "sha256": "9e1737dcf0c50f7794179e10ca0c948e646f65fc54ea3504a99099215ebedb25"
+        "path": "authenticated-download-receipt.json",
+        "bytes": 2017,
+        "sha256": "4c60b9a95b0c2fd2748562836942b841844573a1017b3991035d7d2e36b33946"
       },
       {
         "path": "native-plan.json",
@@ -144,19 +124,29 @@
         "sha256": "6f7ea8811d7c6030d2bcdc4ae1bb6b0ede58810c0cd38a5d0c3570e5279c2dbb"
       },
       {
-        "path": "reports/README.md",
-        "bytes": 1690,
-        "sha256": "710ce10b6f30b3cf07d9daefc52af981573b7239bab5a301e3eeed01c751eb96"
+        "path": "qualification.json",
+        "bytes": 5635,
+        "sha256": "adf226248652fc7b095656e338867a6bc565a63cd38d8e58e17de06c5f516b69"
       },
       {
-        "path": "reports/promotion-extent.html",
-        "bytes": 2414150,
-        "sha256": "63c3a5972e105655d78e324d03e9077f08ee31a6d227288568b32c7dd2544a1a"
+        "path": "README.md",
+        "bytes": 1841,
+        "sha256": "3a6bbc31c74a7f1819580f5c4fdc464bad5499b454516a02a473133d4777d7c1"
       },
       {
-        "path": "reports/maven-component-suites-extent.html",
-        "bytes": 2740730,
-        "sha256": "f5bddd7aa4155a37c126917f479aeb85414702752de8a144bb0cf3ec528d0702"
+        "path": "release-evidence-audit.json",
+        "bytes": 738,
+        "sha256": "9e1737dcf0c50f7794179e10ca0c948e646f65fc54ea3504a99099215ebedb25"
+      },
+      {
+        "path": "release-impact-context.json",
+        "bytes": 61232,
+        "sha256": "9039789c0fdd9e202f3fa5b433114b86c32b89c3103cd14a6bba1ec0b660612a"
+      },
+      {
+        "path": "release-notes.md",
+        "bytes": 924,
+        "sha256": "4f6f4fec1471d13a7f65b80858df7c64e88b303d6b7460d45666a6d40146e4d8"
       },
       {
         "path": "reports/android-component-suites-extent.html",
@@ -164,14 +154,14 @@
         "sha256": "3b3130f742768449bc6f7713ae9bf602fe7a19b23eb2018d81fb6931fe82774f"
       },
       {
-        "path": "reports/android-tournament-extent.html",
-        "bytes": 6215128,
-        "sha256": "50aff87c3eb361cd4b80af2d090f3d4e116772c3bea892a8285d81e687f8f864"
-      },
-      {
         "path": "reports/android-release-smoke-extent.html",
         "bytes": 4969874,
         "sha256": "9f818579259b183bb692bd853e695a3eddab24ec0a4d401a273c92088801f0e4"
+      },
+      {
+        "path": "reports/android-tournament-extent.html",
+        "bytes": 6215128,
+        "sha256": "50aff87c3eb361cd4b80af2d090f3d4e116772c3bea892a8285d81e687f8f864"
       },
       {
         "path": "reports/J6DocumentationGovernance-1794570531660.html",
@@ -179,10 +169,77 @@
         "sha256": "886ffb005c08d93aec4c91a0af572f51598563dbf2010361048e39bf5e46a47c"
       },
       {
+        "path": "reports/J6MainReadmeGovernance-1794575554443.html",
+        "bytes": 2413652,
+        "sha256": "37e12c119badbe6b186ece404ccc55632e68945205bc8a2215a12b8b28924401"
+      },
+      {
+        "path": "reports/J6ReleaseGovernance-1794575551049.html",
+        "bytes": 2421446,
+        "sha256": "4aa584f73a24229dc9dfc4ab9e807c9b496cc6e92a0b9c22f24658405bf510a3"
+      },
+      {
         "path": "reports/J6SharedUiImpactGovernance-1794570606186.html",
         "bytes": 2411762,
         "sha256": "e9a2bb3fd0ab2fd229a61e2fba9581b551ea9fd42750852f082dd749dc917099"
+      },
+      {
+        "path": "reports/maven-component-suites-extent.html",
+        "bytes": 2740730,
+        "sha256": "f5bddd7aa4155a37c126917f479aeb85414702752de8a144bb0cf3ec528d0702"
+      },
+      {
+        "path": "reports/promotion-extent.html",
+        "bytes": 2414150,
+        "sha256": "63c3a5972e105655d78e324d03e9077f08ee31a6d227288568b32c7dd2544a1a"
+      },
+      {
+        "path": "reports/README.md",
+        "bytes": 1995,
+        "sha256": "2dd3e461cbc5bd6b189b3ada82fa3009ef630155640ee750906b031424ff5660"
       }
+    ]
+  },
+  "authenticatedBrowserDownload": {
+    "verified": true,
+    "source": "Direct APK link in the current main README clicked in authenticated Browser MCP; completed browser download verified by file hash.",
+    "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.19.1/HoldemLab-0.19.1.apk",
+    "httpStatus": 200,
+    "credentialMode": "authenticated Browser MCP session",
+    "bytes": 880802,
+    "sha256": "cfdf3138b1ae67d938af15ed3b013e9db593787c7c532200b5dbf1371aef4d4d",
+    "apk": "HoldemLab-0.19.1.apk",
+    "remoteRef": "main",
+    "remoteReadmeBlob": "dd952b9cacea904063bcd87852de9fdcc09274a6",
+    "readmeCommit": "7b654b4c707435c3d6ba4ba6cb8bb03b61f86958",
+    "tagCommit": "001eea1425e7ff00594e23aabcfb9ea230dbd879",
+    "completedUtc": "2026-11-13T13:11:00.3331492Z"
+  },
+  "authenticatedChecksumDownload": {
+    "verified": true,
+    "source": "Checksum asset downloaded through the authenticated Browser MCP session and matched the downloaded APK SHA-256.",
+    "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.19.1/HoldemLab-0.19.1.apk.sha256",
+    "httpStatus": 200,
+    "credentialMode": "authenticated Browser MCP session",
+    "bytes": 87,
+    "sha256": "879cbfd8e1a553c6c1efef834e0fadb2b3cbeed4424bad6964fbf2d51a7af3c7",
+    "apkSha256": "cfdf3138b1ae67d938af15ed3b013e9db593787c7c532200b5dbf1371aef4d4d",
+    "apkName": "HoldemLab-0.19.1.apk",
+    "completedUtc": "2026-11-13T13:11:00.3331492Z"
+  },
+  "postPublicationGovernance": {
+    "status": "PASS",
+    "tests": 12,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      "ReleaseGovernanceTest: 8",
+      "DocumentationGovernanceTest: 4"
+    ],
+    "reports": [
+      "reports/J6ReleaseGovernance-1794575551049.html",
+      "reports/J6MainReadmeGovernance-1794575554443.html"
     ]
   }
 }

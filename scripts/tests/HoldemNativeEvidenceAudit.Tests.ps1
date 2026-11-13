@@ -3,12 +3,15 @@ param(
     [Parameter(Mandatory)][string]$Scratch,
     [Parameter(Mandatory)]
     [ValidateSet('all-optionals','legacy','missing-profile','orphan-report','wrong-apk','changed-capture','duplicate-capture',
-        'planned','missing-family','wrong-required-journey','changed-plan','missing-plan')]
+        'planned','missing-family','wrong-required-journey','changed-plan','missing-plan','omitted-companion',
+        'duplicate-switch','wrong-plan-variant','reordered-plan','omitted-selection','missing-catalog')]
     [string]$Scenario
 )
 $ErrorActionPreference = 'Stop'
 $root = Join-Path $Scratch $Scenario
 $auditor = Join-Path $PSScriptRoot '../Test-HoldemReleaseEvidence.ps1'
+$project = Join-Path $root 'project'
+$catalog = Join-Path $PSScriptRoot '../../config/release-test-suites.json'
 $version = '1.2.3'
 $apkName = "HoldemLab-$version.apk"
 New-Item -ItemType Directory -Path "$root/reports" -Force | Out-Null
@@ -63,7 +66,9 @@ if ($Scenario -ne 'legacy') {
     }
     $qualification.bettingLedger = [ordered]@{}
     foreach ($mode in $ledger) {
-        $hash = if ($Scenario -eq 'wrong-apk' -and $mode -eq 'betting-ledger-talkback') { $releaseHash } else { $sanityHash }
+        if (($Scenario -eq 'omitted-companion' -and $mode -eq 'betting-ledger-talkback') -or
+            $Scenario -eq 'omitted-selection') { continue }
+        $hash = if ($Scenario -in @('wrong-apk','wrong-plan-variant') -and $mode -eq 'betting-ledger-talkback') { $releaseHash } else { $sanityHash }
         $qualification.bettingLedger[$mode] = New-NativeProof $mode "android-$mode" $hash
     }
 }
@@ -83,6 +88,12 @@ $expectedError = switch ($Scenario) {
     }
     'changed-plan' { 'Native plan SHA-256 mismatch.' }
     'missing-plan' { 'Missing native plan for qualification schema 2.' }
+    'omitted-companion' { 'Native plan omits catalog journey: betting-ledger-talkback' }
+    'duplicate-switch' { 'Native plan contains duplicate switches.' }
+    'wrong-plan-variant' { 'Native plan changes catalog journey: betting-ledger-talkback (apkVariant)' }
+    'reordered-plan' { 'Native plan journey out of order: expected betting-ledger-compact, observed betting-ledger-talkback' }
+    'omitted-selection' { 'Native plan selection differs from qualification.' }
+    'missing-catalog' { "Native plan catalog unavailable at $('1' * 40): config/release-test-suites.json" }
     'missing-profile' {
         $qualification.bettingLedger.Remove('betting-ledger-talkback')
         [void]$reportNames.Remove('android-betting-ledger-talkback-extent.html')
@@ -113,7 +124,24 @@ $manifest = [ordered]@{
     })
 }
 if ($Scenario -ne 'legacy') { $manifest.validationScope = 'FULL' }
-if ($Scenario -in @('planned','missing-family','changed-plan','missing-plan')) {
+if ($Scenario -in @('planned','missing-family','changed-plan','missing-plan','omitted-companion',
+        'duplicate-switch','wrong-plan-variant','reordered-plan','omitted-selection','missing-catalog')) {
+    New-Item -ItemType Directory -Path "$project/config" | Out-Null
+    $catalogFixture = Join-Path $project 'config/release-test-suites.json'
+    Copy-Item -LiteralPath $catalog -Destination $catalogFixture
+    git -C $project init -q
+    git -C $project add -- config/release-test-suites.json
+    git -C $project -c user.name='Fixture' -c user.email='fixture@example.invalid' -c commit.gpgsign=false commit -qm 'Pin release inventory'
+    if ($LASTEXITCODE -ne 0) { throw 'Could not commit fixture inventory.' }
+    $manifest.sourceCommit = (git -C $project rev-parse HEAD).Trim()
+    if ($LASTEXITCODE -ne 0) { throw 'Could not resolve fixture inventory commit.' }
+    if ($Scenario -eq 'missing-catalog') { $manifest.sourceCommit = '1' * 40 }
+    if ($Scenario -eq 'planned') {
+        Save-Json $catalogFixture @{native=@()}
+        git -C $project add -- config/release-test-suites.json
+        git -C $project -c user.name='Fixture' -c user.email='fixture@example.invalid' -c commit.gpgsign=false commit -qm 'Change current inventory'
+        if ($LASTEXITCODE -ne 0) { throw 'Could not change fixture inventory.' }
+    }
     function PlanEntry($mode, $variant, $proofPath, $optional, $folder = "android-$mode") {
         @{mode=$mode; apkVariant=$variant; proofPath=@($proofPath); optional=$optional
             folder=$folder; report="android-$mode-extent.html"}
@@ -125,16 +153,24 @@ if ($Scenario -in @('planned','missing-family','changed-plan','missing-plan')) {
             $variant = if ($key -in @('hardSix','seatMetrics')) { 'release' } else { 'sanity' }
             PlanEntry $profiles[$key] $variant $key $true
         }
-        foreach ($mode in $ledger) { PlanEntry $mode 'sanity' @('bettingLedger',$mode) $true }
+        foreach ($mode in $ledger) {
+            if (($Scenario -eq 'omitted-companion' -and $mode -eq 'betting-ledger-talkback') -or
+                $Scenario -eq 'omitted-selection') { continue }
+            $variant = if ($Scenario -eq 'wrong-plan-variant' -and $mode -eq 'betting-ledger-talkback') { 'release' } else { 'sanity' }
+            PlanEntry $mode $variant @('bettingLedger',$mode) $true
+        }
     )
+    if ($Scenario -eq 'reordered-plan') { $entries[-2], $entries[-1] = $entries[-1], $entries[-2] }
     $manifest.schemaVersion = 2
     $manifest.sanityApkSha256 = $sanityHash
     $planPath = "$root/native-plan.json"
     if ($Scenario -ne 'missing-plan') {
         $switches = @('-IncludeHardSix','-IncludeSeatMetrics','-IncludeSettlementAward','-IncludeBettingLedger')
+        $originalSelection = @($switches)
+        if ($Scenario -eq 'omitted-selection') { $switches = @($switches | Where-Object { $_ -cne '-IncludeBettingLedger' }) }
+        if ($Scenario -eq 'duplicate-switch') { $switches += '-IncludeBettingLedger' }
         $plan = if ($Scenario -eq 'planned') {
             . (Join-Path $PSScriptRoot '../HoldemNativeQualification.ps1')
-            $catalog = Join-Path $PSScriptRoot '../../config/release-test-suites.json'
             $geometry = New-HoldemNativePlan $catalog $manifest.sourceCommit $version 'TABLE_GEOMETRY_COMPONENT'
             if (($geometry.journeys.geometryProfile -join ',') -cne 'device,short,tall' -or
                 @($geometry.journeys | Where-Object apkVariant -CNE 'release').Count) { throw 'Wrong geometry plan' }
@@ -145,6 +181,7 @@ if ($Scenario -in @('planned','missing-family','changed-plan','missing-plan')) {
         }
         Save-Json $planPath $plan
         $manifest.nativePlan = @{path='native-plan.json'; sha256=(Get-FileHash -LiteralPath $planPath).Hash.ToLowerInvariant()}
+        if ($Scenario -in @('planned','omitted-selection')) { $manifest.nativePlan.selectedSwitches = $originalSelection }
         if ($Scenario -eq 'changed-plan') { Add-Content -LiteralPath $planPath -Value ' ' }
     }
 }
@@ -152,7 +189,7 @@ Save-Json "$root/qualification.json" $manifest
 
 if ($expectedError) {
     $errorMessage = $null
-    try { $result = & $auditor -RunRoot $root }
+    try { $result = & $auditor -RunRoot $root -ProjectRoot $project }
     catch { $errorMessage = $_.Exception.Message }
     if ($errorMessage -cne $expectedError) {
         if (!$errorMessage) { $errorMessage = ($result | ConvertFrom-Json).status }
@@ -162,7 +199,7 @@ if ($expectedError) {
     return
 }
 
-$result = & $auditor -RunRoot $root | ConvertFrom-Json
+$result = & $auditor -RunRoot $root -ProjectRoot $project | ConvertFrom-Json
 $expectedModes = @(if ($Scenario -ne 'legacy') { @($profiles.Values) + $ledger })
 $actualModes = @(foreach ($profile in $result.optionalNative) { $profile.journey })
 if ($result.status -cne 'PASS' -or $result.native.Count -ne 2 -or $actualModes.Count -ne $expectedModes.Count -or

@@ -174,7 +174,8 @@ Păstrați inventarul `config/release-test-suites.json` sincronizat cu suitele M
 Auditul citește manifestul calificării și verifică APK-ul, checksum-ul, integritatea rapoartelor și capturile originale în Extent. Dosarul extern păstrează și XML-urile, receipt-urile native și contextul RAG.
 
 - **Selecție.** Runnerul salvează `native-plan.json` înainte de execuție. Planul fixează commitul, versiunea, scopul, opțiunile și probele, cu varianta APK, cheia din calificare și raportul pentru fiecare. Runnerul și RAG folosesc familiile din catalogul de release.
-- **Integritate.** În schema 2, `qualification.json` fixează SHA-256 al planului și al variantei `sanity`. Auditorul cere dovada fiecărui profil planificat, inclusiv când lipsește întreaga familie. Pentru schema 1, selectează familiile din probele declarate și din inventarul rapoartelor.
+- **Reconstrucție.** Pentru schema 2, auditul, promovarea și verificarea descărcării citesc inventarul Git din commitul calificat. Reconstruiesc ordinea probelor obligatorii și a familiilor selectate, apoi compară profilul, varianta APK, cheia de dovadă și raportul fiecărei intrări. Opțiunile duplicate și probele omise, suplimentare sau modificate blochează verificarea chiar dacă SHA-256 al planului este valid.
+- **Integritate.** Calificarea fixează SHA-256 al planului și al variantei `sanity`, precum și opțiunile efectiv rulate. Pentru edițiile schema 2 care au salvat opțiunile doar în plan, validatorul folosește acea selecție și inventarul commitului ediției. Pentru schema 1, auditorul deduce familiile din probele declarate și din rapoarte.
 - **Identitate.** Runnerul și auditorul folosesc același validator pentru profil, API și SHA-256 în `device.json` și `native.json`. Auditorul confruntă aserțiunile cu manifestul și verifică prezența fiecărei capturi originale o singură dată în Extent.
 
 | Familie | Profiluri obligatorii dacă familia a fost selectată | Referința pentru SHA-256 |
@@ -184,7 +185,7 @@ Auditul citește manifestul calificării și verifică APK-ul, checksum-ul, inte
 | Decontare | `settlement-award`, `settlement-multi-award`, `settlement-static-award`, `settlement-compact-award` | APK-ul `sanity` atestat de turneu |
 | Jurnal de pariuri | `betting-ledger`, `betting-ledger-compact`, `betting-ledger-talkback` | APK-ul `sanity` atestat de turneu |
 
-Rezultatul JSON enumeră în `optionalNative` profilurile auditate, varianta APK-ului și raportul Extent. Rulările `TABLE_GEOMETRY_COMPONENT` consemnează măsurătorile pentru `device`, `short` și `tall`. Pentru schema 2, dosarul ediției include planul și toate rapoartele planificate în inventarul cu SHA-256 verificat la descărcare. [Scriptul de audit](../../scripts/Test-HoldemReleaseEvidence.ps1)
+Rezultatul JSON enumeră în `optionalNative` profilurile auditate, varianta APK-ului și raportul Extent. Rulările `TABLE_GEOMETRY_COMPONENT` consemnează măsurătorile pentru `device`, `short` și `tall`. Rulați auditul dintr-un checkout Git care conține commitul calificat sau indicați-l prin `-ProjectRoot`. [Scriptul de audit](../../scripts/Test-HoldemReleaseEvidence.ps1) · [Regresii offline](../../scripts/tests/HoldemNativeEvidenceAudit.Tests.ps1)
 
 ## Promovare și descărcare
 

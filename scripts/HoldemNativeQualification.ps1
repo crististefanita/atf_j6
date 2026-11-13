@@ -25,8 +25,8 @@ function Get-HoldemRequiredNativeEntries([string]$Scope) {
     }
 }
 
-function Get-HoldemOptionalNativeGroups([string]$CatalogPath) {
-    $catalog = Get-Content -LiteralPath $CatalogPath -Raw | ConvertFrom-Json -AsHashtable
+function Get-HoldemOptionalNativeGroups([string]$CatalogJson) {
+    $catalog = ConvertFrom-Json -InputObject $CatalogJson -AsHashtable
     foreach ($group in $catalog.native) {
         $modes = @($group.mode) + @($group.companionModes | Where-Object { $_ })
         if ($group.switch -cnotmatch '^-[A-Za-z][A-Za-z0-9]*$' -or
@@ -43,7 +43,16 @@ function Get-HoldemOptionalNativeGroups([string]$CatalogPath) {
 
 function New-HoldemNativePlan([string]$CatalogPath, [string]$SourceCommit, [string]$VersionName,
         [string]$Scope, [string[]]$SelectedSwitches = @()) {
-    $groups = @(Get-HoldemOptionalNativeGroups $CatalogPath)
+    New-HoldemNativePlanFromCatalog (Get-Content -LiteralPath $CatalogPath -Raw) $SourceCommit $VersionName $Scope $SelectedSwitches
+}
+
+function New-HoldemNativePlanFromCatalog([string]$CatalogJson, [string]$SourceCommit, [string]$VersionName,
+        [string]$Scope, [string[]]$SelectedSwitches) {
+    $groups = @(Get-HoldemOptionalNativeGroups $CatalogJson)
+    $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($selection in $SelectedSwitches) {
+        if (!$seen.Add($selection)) { throw 'Native plan contains duplicate switches.' }
+    }
     if (@($SelectedSwitches | Where-Object { $_ -cnotin $groups.switch }).Count -or
         ($Scope -ceq 'TABLE_GEOMETRY_COMPONENT' -and $SelectedSwitches.Count)) {
         throw 'Native plan contains switches outside its qualification scope.'
@@ -59,7 +68,7 @@ function Get-HoldemNativeDigest([string]$Path) {
     (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
-function Read-HoldemNativePlan([string]$Root, $Qualification) {
+function Read-HoldemNativePlan([string]$Root, $Qualification, [string]$ProjectRoot) {
     $path = Join-Path $Root 'native-plan.json'
     if ($Qualification.schemaVersion -eq 1 -and !$Qualification.nativePlan -and !(Test-Path -LiteralPath $path)) {
         return
@@ -73,17 +82,40 @@ function Read-HoldemNativePlan([string]$Root, $Qualification) {
         (Get-HoldemNativeDigest $path) -cne $reference.sha256) { throw 'Native plan SHA-256 mismatch.' }
     $plan = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable
     if ($plan.schemaVersion -ne 1 -or $plan.sourceCommit -cne $Qualification.sourceCommit -or
+        $plan.sourceCommit -cnotmatch '^[a-f0-9]{40}$' -or
         $plan.versionName -cne $Qualification.versionName -or $plan.validationScope -cne $Qualification.validationScope -or
-        $plan.journeys -isnot [array] -or $plan.selectedSwitches -isnot [array]) {
+        $plan.journeys -isnot [array] -or $plan.selectedSwitches -isnot [array] -or
+        @($plan.selectedSwitches | Where-Object { $_ -isnot [string] }).Count) {
         throw 'Native plan does not match the qualification identity.'
     }
-    $required = @(Get-HoldemRequiredNativeEntries $plan.validationScope)
+    # Existing schema 2 receipts recorded the selection only in the plan.
+    $selection = $plan.selectedSwitches
+    if ($reference.PSObject.Properties['selectedSwitches'] -or
+        ($reference -is [Collections.IDictionary] -and $reference.Contains('selectedSwitches'))) {
+        if ($reference.selectedSwitches -isnot [array] -or
+            $reference.selectedSwitches.Count -ne $plan.selectedSwitches.Count -or
+            @($reference.selectedSwitches | Where-Object { $_ -isnot [string] }).Count -or
+            ($reference.selectedSwitches -join ' ') -cne ($plan.selectedSwitches -join ' ')) {
+            throw 'Native plan selection differs from qualification.'
+        }
+        $selection = $reference.selectedSwitches
+    }
+    $catalogPath = 'config/release-test-suites.json'
+    $catalog = & git -C $ProjectRoot show "$($plan.sourceCommit)^{commit}:$catalogPath" 2>$null
+    if ($LASTEXITCODE -ne 0 -or !$catalog) {
+        throw "Native plan catalog unavailable at $($plan.sourceCommit): $catalogPath"
+    }
+    $expectedPlan = New-HoldemNativePlanFromCatalog ($catalog -join "`n") $plan.sourceCommit $plan.versionName `
+        $plan.validationScope $selection
+    if (($plan.selectedSwitches -join ' ') -cne ($expectedPlan.selectedSwitches -join ' ')) {
+        throw 'Native plan switches are outside catalog order.'
+    }
     $folders = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     $proofs = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($entry in $plan.journeys) {
         if ($entry.mode -cnotmatch '^[a-z][a-z0-9-]*$' -or $entry.apkVariant -cnotin @('release','sanity') -or
             $entry.optional -isnot [bool] -or $entry.proofPath -isnot [array] -or $entry.proofPath.Count -notin 1,2 -or
-            @($entry.proofPath | Where-Object { $_ -cnotmatch '^[A-Za-z][A-Za-z0-9-]*$' }).Count -or
+            @($entry.proofPath | Where-Object { $_ -isnot [string] -or $_ -cnotmatch '^[A-Za-z][A-Za-z0-9-]*$' }).Count -or
             ($entry.geometryProfile -and $entry.geometryProfile -cnotin @('device','short','tall'))) {
             throw 'Invalid native plan journey.'
         }
@@ -96,15 +128,26 @@ function Read-HoldemNativePlan([string]$Root, $Qualification) {
             throw 'Optional native journey is outside its qualification scope.'
         }
     }
-    $actualRequired = @($plan.journeys | Where-Object { !$_.optional })
-    if ($actualRequired.Count -ne $required.Count) { throw 'Native plan omits a required journey.' }
-    for ($index = 0; $index -lt $required.Count; $index++) {
-        $entry = $actualRequired[$index]
-        $expected = $required[$index]
-        if ($entry.folder -cne $expected.folder -or $entry.apkVariant -cne $expected.apkVariant -or
-            ($entry.proofPath -join '/') -cne ($expected.proofPath -join '/')) { throw 'Native plan changes a required journey.' }
+    foreach ($expected in $expectedPlan.journeys) {
+        if ($expected.folder -cnotin $plan.journeys.folder) {
+            throw "Native plan omits catalog journey: $($expected.folder.Substring('android-'.Length))"
+        }
     }
-    $plan
+    if ($plan.journeys.Count -ne $expectedPlan.journeys.Count) { throw 'Native plan adds a journey outside the selected catalog.' }
+    for ($index = 0; $index -lt $expectedPlan.journeys.Count; $index++) {
+        $entry = $plan.journeys[$index]
+        $expected = $expectedPlan.journeys[$index]
+        if ($entry.folder -cne $expected.folder) {
+            throw "Native plan journey out of order: expected $($expected.folder.Substring('android-'.Length)), observed $($entry.folder.Substring('android-'.Length))"
+        }
+        foreach ($field in 'mode','apkVariant','optional','geometryProfile','report') {
+            if ($entry[$field] -cne $expected[$field]) { throw "Native plan changes catalog journey: $($expected.mode) ($field)" }
+        }
+        if (($entry.proofPath -join '/') -cne ($expected.proofPath -join '/')) {
+            throw "Native plan changes catalog journey: $($expected.mode) (proofPath)"
+        }
+    }
+    $expectedPlan
 }
 
 function Get-HoldemNativeProof($Proofs, $Entry) {

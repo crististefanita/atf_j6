@@ -180,12 +180,23 @@ $record.path = 'qualification.json'
 $planName = 'native-plan.json'
 $tournamentReport = 'reports/android-tournament-extent.html'
 $catalog = Join-Path $PSScriptRoot '../../config/release-test-suites.json'
+New-Item -ItemType Directory -Path "$root/config" | Out-Null
+Copy-Item -LiteralPath $catalog -Destination "$root/config/release-test-suites.json"
+git -C $root init -q
+git -C $root add -- config/release-test-suites.json
+git -C $root -c user.name='Fixture' -c user.email='fixture@example.invalid' -c commit.gpgsign=false commit -qm 'Pin release inventory'
+if ($LASTEXITCODE -ne 0) { throw 'Could not commit fixture inventory.' }
+$build = (git -C $root rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0) { throw 'Could not resolve fixture inventory commit.' }
+$validation.publication.sourceCommit = $build
+$validation.publication.apkBuildCommit = $build
 Save-Json "$edition/$planName" (New-HoldemNativePlan $catalog $build '1.2.3' 'FULL')
 Copy-Item -LiteralPath "$edition/reports/android-release-smoke-extent.html" -Destination "$edition/$tournamentReport"
 $planIdentity = Get-Identity "$edition/$planName"
 $tournamentIdentity = Get-Identity "$edition/$tournamentReport"
 $q = [Text.Encoding]::UTF8.GetString($storedQualification) | ConvertFrom-Json -AsHashtable
 $q.schemaVersion = 2
+$q.sourceCommit = $build
 $q.validationScope = 'FULL'
 $q.nativePlan = @{path=$planName; sha256=$planIdentity.sha256}
 $q.reports += @{path='android-tournament-extent.html'; bytes=$tournamentIdentity.bytes; sha256=$tournamentIdentity.sha256}

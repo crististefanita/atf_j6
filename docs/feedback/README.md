@@ -17,9 +17,8 @@ Scorul este **prioritatea de mentenanță**, nu nota de calitate, procentul de a
 | 5 | P2 | 75 (31+20+17+7) | [J6-PROD-01 · Realizări](J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md) · produs și acceptanță | Restaurarea poziției filtrate, contrastul cu font mărit și claritatea progresului în sesiuni manuale. |
 | 6 | P2 | 72 (27+25+12+8) | [J6-REL-03 · API minim](J6-REL-03-ANDROID-MIN-SDK-API-COMPATIBILITY.md) · calificarea Android | Instalare pe API 26, pornire, navigare, recomandare AI și restaurarea unei sesiuni pe versiunea minimă. |
 | 7 | P2 | 68 (24+22+14+8) | [J6-UI-09 · Lizibilitate](J6-UI-09-SEAT-METRIC-HIERARCHY.md) · accesibilitate Android | Parcurgerea tuturor locurilor cu TalkBack, anunțurile RO/EN și informațiile corecte în timpul mâinii și la decontare. |
-| 8 | P2 | 65 (24+19+15+7) | [J6-REL-09 · Integritatea planului nativ](J6-REL-09-NATIVE-PLAN-CATALOG.md) · calificarea APK | Verifică faptul că lista opțiunilor selectate generează exact probele din planul candidatului. |
-| 9 | P2 | 63 (22+16+18+7) | [J6-REL-10 · Verificarea cache-ului de build](J6-REL-10-GRADLE-CACHE-PREFLIGHT.md) · calificarea APK | Identifică o dependență Android lipsă înainte de execuția completă Maven și indică pregătirea cache-ului. |
-| 10 | P2 | 60 (22+14+17+7) | [J6-UI-11 · Structura probelor Android](J6-UI-11-NATIVE-PROBE-OWNERSHIP.md) · verificare Android | Separă scenariile de driverul comun și verifică dialogurile prin contractul UI. |
+| 8 | P2 | 63 (22+16+18+7) | [J6-REL-10 · Verificarea cache-ului de build](J6-REL-10-GRADLE-CACHE-PREFLIGHT.md) · calificarea APK | Identifică o dependență Android lipsă înainte de execuția completă Maven și indică pregătirea cache-ului. |
+| 9 | P2 | 60 (22+14+17+7) | [J6-UI-11 · Structura probelor Android](J6-UI-11-NATIVE-PROBE-OWNERSHIP.md) · verificare Android | Separă scenariile de driverul comun și verifică dialogurile prin contractul UI. |
 | — | Extern, la cerere | 43 (25+12+2+4) | [J6-REL-01 · Vizibilitate publică](J6-REL-01-PUBLIC-RELEASE-VISIBILITY.md) · titularul contului | Reia separat proba anonimă; nu blochează distribuția autentificată verificată în RAG. |
 
 Scorurile sunt revizuite odată cu fiecare calificare. O restanță se scoate din tabel numai după ce criteriul ei a fost demonstrat și contractul stabil a fost mutat în documentația owner; dosarul ediției păstrează rezultatul istoric.

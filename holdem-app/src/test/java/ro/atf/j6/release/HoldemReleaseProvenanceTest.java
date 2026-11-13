@@ -31,7 +31,8 @@ class HoldemReleaseProvenanceTest {
     @ParameterizedTest(name = "{0}")
     @ValueSource(strings = {"all-optionals", "legacy", "missing-profile", "orphan-report", "wrong-apk",
             "changed-capture", "duplicate-capture", "planned", "missing-family", "wrong-required-journey",
-            "changed-plan", "missing-plan"})
+            "changed-plan", "missing-plan", "omitted-companion", "duplicate-switch", "wrong-plan-variant",
+            "reordered-plan", "omitted-selection", "missing-catalog"})
     void auditsOptionalNativeEvidenceOffline(String scenario) throws Exception {
         run("HoldemNativeEvidenceAudit.Tests.ps1", "-Scenario", scenario);
     }

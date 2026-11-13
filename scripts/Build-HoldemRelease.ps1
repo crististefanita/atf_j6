@@ -291,7 +291,7 @@ try {
     $result = [ordered]@{
         schemaVersion=2; status='PASS'; sourceCommit=$sourceCommit; versionName=$version; apkName=[IO.Path]::GetFileName($finalApk)
         validationScope=$scope; sanityApkSha256=$sanityHash
-        nativePlan=[ordered]@{path='native-plan.json'; sha256=$nativePlanDigest}
+        nativePlan=[ordered]@{path='native-plan.json'; sha256=$nativePlanDigest; selectedSwitches=@($nativePlan.selectedSwitches)}
         apkBytes=$apkBytes; sha256=$apkHash; certificateSha256=$certificate; debuggable=$false; targetSdk=36; minSdk=26
         qualification=[ordered]@{
             maven=[ordered]@{suites=$mavenSuites.Count;tests=$mavenTests;failures=0;errors=0;skipped=0}

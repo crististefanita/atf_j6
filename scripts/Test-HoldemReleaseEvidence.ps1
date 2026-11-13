@@ -1,5 +1,5 @@
 #requires -Version 7.0
-param([Parameter(Mandatory)][string]$RunRoot)
+param([Parameter(Mandatory)][string]$RunRoot, [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot))
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'HoldemNativeQualification.ps1')
 $root = (Resolve-Path -LiteralPath $RunRoot).Path
@@ -8,7 +8,7 @@ if ($q.status -cne 'PASS' -or $q.sourceCommit -cnotmatch '^[a-f0-9]{40}$' -or
     $q.versionName -cnotmatch '^\d+\.\d+\.\d+$' -or $q.apkName -cne "HoldemLab-$($q.versionName).apk") {
     throw 'Invalid release qualification identity.'
 }
-$plan = Read-HoldemNativePlan $root $q
+$plan = Read-HoldemNativePlan $root $q $ProjectRoot
 $apk = Join-Path $root $q.apkName
 if ((Get-Item -LiteralPath $apk).Length -ne $q.apkBytes -or (Get-HoldemNativeDigest $apk) -cne $q.sha256 -or
     (Get-Content -Raw -LiteralPath "$apk.sha256").Trim() -cne "$($q.sha256)  $($q.apkName)") {
@@ -50,7 +50,7 @@ function Get-LegacyNativeEntries([string]$Scope) {
     Get-HoldemRequiredNativeEntries $Scope
     if ($Scope -cne 'FULL') { return }
     $catalog = Join-Path $PSScriptRoot '../config/release-test-suites.json'
-    foreach ($group in (Get-HoldemOptionalNativeGroups $catalog)) {
+    foreach ($group in (Get-HoldemOptionalNativeGroups (Get-Content -LiteralPath $catalog -Raw))) {
         $present = @($group.entries | Where-Object {
             $q.qualification.Contains($_.proofPath[0]) -or $names.Contains($_.report)
         })

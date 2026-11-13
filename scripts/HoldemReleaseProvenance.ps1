@@ -136,7 +136,7 @@ function Get-HoldemQualificationProof([string]$Root, [string]$Version, $Validati
     if ($qualification.schemaVersion -eq 2 -and !$inventory.ContainsKey('native-plan.json')) {
         throw 'Missing inventoried native plan: native-plan.json'
     }
-    $plan = Read-HoldemNativePlan (Join-Path $Root $prefix) $qualification
+    $plan = Read-HoldemNativePlan (Join-Path $Root $prefix) $qualification $Root
     switch -CaseSensitive ($scope) {
         'FULL' {
             $smoke = $qualification.qualification.releaseInstallSmoke

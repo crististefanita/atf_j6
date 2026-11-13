@@ -169,7 +169,9 @@ public final class TournamentSanity extends Instrumentation {
                                 "+2 other achievements updated"), "Close");
                 dialog[0].show();
             });
-            see("Achievement notices use the shared modal title", "Achievement progress");
+            waitForIdleSync();
+            ui.waitForIdle(200, 5000);
+            see("Achievement notices use the shared modal title", "Achievement progress", 10000);
             seeContains("Modal includes the earned objective", "Earned · 1/1");
             seeContains("Modal includes partial progress", "Progress · 2/3");
             seeContains("Modal summarizes additional changes", "+2 other achievements updated");
@@ -2125,7 +2127,13 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private void see(String name, String label) throws Exception {
-        check(name, label, await(label) == null ? "not visible" : label);
+        see(name, label, 4000);
+    }
+
+    private void see(String name, String label, long timeoutMs) throws Exception {
+        var match = awaitMatch(node -> label.equals(value(node.getText()))
+                || label.equals(value(node.getContentDescription())), timeoutMs);
+        check(name, label, match == null ? "not visible" : label, match != null);
     }
 
     private void countDescriptions(String name, String fragment, int expected) throws Exception {

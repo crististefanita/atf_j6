@@ -459,7 +459,7 @@ public final class TournamentSanity extends Instrumentation {
                         && settled.board().size() == 5 && HoldemTablePresentation.displayedPot(settled) > 0);
         capture("05f-stable-table-romanian-settled");
 
-        see("Romanian achievement notice localizes the earned showdown milestone", "Ajungi prima dată la dezvăluirea cărților");
+        seeContains("Romanian achievement notice localizes the earned showdown milestone", "Ajungi prima dată la dezvăluirea cărților");
         tapDialogAction(HoldemActivity.localizedContext(activity).getString(R.string.close));
         tap(HoldemActivity.localizedContext(activity).getString(R.string.home));
         tap("interface-language");

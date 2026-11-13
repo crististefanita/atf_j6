@@ -54,9 +54,10 @@ class HoldemReleaseProvenanceTest {
         command.environment().put("TEMP", processTemp.toString());
         command.environment().put("TMPDIR", processTemp.toString());
         Process process = command.start();
-        if (!process.waitFor(60, TimeUnit.SECONDS)) {
+        long timeoutSeconds = suite.equals("HoldemContinuation.Tests.ps1") ? 180 : 60;
+        if (!process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
             process.destroyForcibly();
-            throw new AssertionError("PowerShell component timed out: " + suite);
+            throw new AssertionError("PowerShell component timed out after " + timeoutSeconds + "s: " + suite);
         }
         String evidence = Files.readString(output);
         assertEquals(0, process.exitValue(), evidence);

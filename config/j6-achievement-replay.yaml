@@ -38,8 +38,8 @@
     }
   ],
   "holdout": {
-    "firstSeed": 1119000,
-    "tournamentsPerSeatCount": 30,
+    "firstSeed": 1313000,
+    "tournamentsPerSeatCount": 60,
     "style": "bluff"
   },
   "screening": {

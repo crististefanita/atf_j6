@@ -115,6 +115,9 @@ final class LocalHoldemGame {
     private long tournamentElapsedBaseSeconds;
     private long tournamentClockAnchorNanos;
     private boolean tournamentClockRunning = true;
+    private boolean shortStackSeenAtMultiway;
+    private boolean lastStackSeenAtMultiway;
+    private boolean headsUpDeficitSeen;
 
     LocalHoldemGame(int seats, long seed) {
         this(seats, 0, seed);
@@ -232,6 +235,7 @@ final class LocalHoldemGame {
         }
         roundStartElapsedSeconds.add(elapsedSeconds);
         if (rounds.isEmpty()) human = seats == 2 ? 0 : hand.actor();
+        observeTournamentAchievementContext();
         handId = UUID.randomUUID();
         actions = new ArrayList<>();
         rounds.add(actions);
@@ -267,6 +271,46 @@ final class LocalHoldemGame {
 
     synchronized int settledRank() { return tournament == null ? 0 : tournament.settledRank(human); }
     synchronized List<ro.atf.holdem.core.PotAward> potAwards() { return hand.potAwards(); }
+
+    synchronized GameplayAchievements.HandContext achievementContext() {
+        int activePlayers = (int) openingStacks.stream().filter(stack -> stack > 0).count();
+        int knockedOut = 0;
+        var settledSeats = hand.viewFor(human).seats();
+        for (int seat = 0; seat < seats; seat++) {
+            if (openingStacks.get(seat) > 0 && settledSeats.get(seat).stack() == 0) knockedOut++;
+        }
+        return new GameplayAchievements.HandContext(seats, Math.max(1, activePlayers),
+                openingStacks.get(human) > 0, shortStackSeenAtMultiway, lastStackSeenAtMultiway,
+                headsUpDeficitSeen, tournamentTitleWasPlayedManually(), difficulty == Difficulty.HARD, knockedOut);
+    }
+
+    private void observeTournamentAchievementContext() {
+        if (tournament == null || openingStacks.get(human) <= 0) return;
+        int activePlayers = (int) openingStacks.stream().filter(stack -> stack > 0).count();
+        long chipsInPlay = openingStacks.stream().mapToLong(Integer::longValue).sum();
+        if (activePlayers >= 3) {
+            long humanStack = openingStacks.get(human);
+            shortStackSeenAtMultiway |= humanStack <= 10L * hand.level().bigBlind();
+            lastStackSeenAtMultiway |= java.util.stream.IntStream.range(0, seats)
+                    .filter(other -> other != human && openingStacks.get(other) > 0)
+                    .allMatch(other -> openingStacks.get(other) > humanStack);
+        } else if (activePlayers == 2) {
+            headsUpDeficitSeen |= 3L * openingStacks.get(human) <= chipsInPlay;
+        }
+    }
+
+    private boolean tournamentTitleWasPlayedManually() {
+        boolean madeDecision = false;
+        for (var round : rounds) {
+            for (var action : round) {
+                if (action.actor() == -1) return false;
+                if (action.actor() != human) continue;
+                madeDecision = true;
+                if (action.source() != ActionSource.MANUAL) return false;
+            }
+        }
+        return madeDecision;
+    }
 
     synchronized int handNumber() { return rounds.size(); }
 

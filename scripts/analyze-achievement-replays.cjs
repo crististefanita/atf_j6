@@ -24,6 +24,14 @@ const called = (facts, street) => facts.actions.some(action => (!street || actio
 const wonAtShowdown = facts => showdown(facts) && wins(facts);
 const headsUpOrLater = facts => facts.player.headsUp;
 const metrics = {
+    POT: rule(atHand, wins),
+    SHOWDOWN: rule(atHand, showdown),
+    BIG_BLIND_POT: rule(atHand, f => f.hand.bigBlindSeat === f.seat && wins(f)),
+    TOURNAMENT_FINISHED: rule(atHand, () => true, 'tournament'),
+    TITLE: rule(atHand, f => f.winner === f.seat, 'tournament'),
+    SIX_SEAT_TITLE: rule(f => f.seats === 6, f => f.winner === f.seat, 'tournament'),
+    STRAIGHT_OR_BETTER: rule(atHand, f => wins(f) && showdown(f) && Math.floor(f.score / 15 ** 5) >= 4),
+    FULL_HOUSE_OR_BETTER: rule(atHand, f => wins(f) && showdown(f) && Math.floor(f.score / 15 ** 5) >= 6),
     SMALL_BLIND_POT: rule(f => f.hand.smallBlind === f.seat, wins),
     BUTTON_POT: rule(f => f.hand.button === f.seat, wins),
     BIG_BLIND_CHECK_TO_FLOP: rule(f => f.hand.bigBlindSeat === f.seat,
@@ -34,6 +42,10 @@ const metrics = {
     FLOP_REACHED: rule(atHand, f => f.reached >= 1),
     RIVER_REACHED: rule(atHand, f => f.reached >= 3),
     PAIR_SHOWDOWN_POT: rule(atHand, f => wins(f) && exactCategory(f, 1)),
+    MULTIWAY_SHOWDOWN_POT: rule(f => startsMultiway(f) && showdown(f), wins),
+    SIDE_POT: rule(f => f.hand.layers.some((layer, index) => index > 0 && layer.eligible.includes(f.seat)),
+        f => f.hand.layers.some((layer, index) => index > 0 && layer.eligible.includes(f.seat) && layer.winners.includes(f.seat))),
+    SPLIT_POT: rule(atHand, f => showdown(f) && split(f)),
     MULTIWAY_POT: rule(startsMultiway, wins),
     POSTFLOP_POT: rule(atHand, f => wins(f) && f.reached >= 1),
     PREFLOP_CALL_TO_FLOP: rule(atHand, f => called(f, 'PREFLOP') && f.reached >= 1),
@@ -69,6 +81,7 @@ const metrics = {
     SHORT_STACK_TITLE: rule(f => f.player.shortStack, f => f.winner === f.seat, 'tournament'),
     TITLE_AFTER_HEADS_UP_DEFICIT: rule(f => f.player.headsUpDeficit, f => f.winner === f.seat, 'tournament'),
     FIVE_SEAT_TITLE: rule(f => f.seats === 5, f => f.winner === f.seat, 'tournament'),
+    FOUR_SEAT_TITLE: rule(f => f.seats === 4, f => f.winner === f.seat, 'tournament'),
     TITLE_AFTER_LAST_STACK: rule(f => f.player.wasLastStack, f => f.winner === f.seat, 'tournament'),
     TITLE_WITHOUT_HEADS_UP: rule(atHand, f => f.finalActive >= 3 && f.winner === f.seat, 'tournament'),
     HEADS_UP_RIVER_CALL_SHOWDOWN_POT: rule(headsUp, f => called(f, 'RIVER') && wonAtShowdown(f)),
@@ -76,16 +89,41 @@ const metrics = {
         && ['FLOP', 'TURN', 'RIVER'].every(street => called(f, street))),
 };
 const pending = {
+    HARD_SIX_HIGH_CARD_POT: {unit:'hand', reason:'Arena traces do not identify the Android player difficulty; the live Normal/Hard simulator audits this achievement.'},
+    PODIUM: {unit: 'tournament', reason: 'The independent replay audit exposes the champion but not authoritative tie-aware final places.'},
     HARD_SIX_SEAT_MANUAL_TITLE: {unit: 'tournament', reason: 'Manual decision provenance and Hard game setting'},
     ALL_TABLE_SIZES_TITLE: {unit: 'table-size', reason: 'One persistent player identity across starting table sizes'},
 };
+
+function activeCatalogRows(activeCatalog) {
+    assert.ok(exactFields(activeCatalog, 'schemaVersion,tiers,retired') && activeCatalog.schemaVersion === 1,
+        'Invalid active achievement catalog');
+    const ids = new Set();
+    return tiers.flatMap(tier => {
+        const entries = activeCatalog.tiers[tier];
+        assert.ok(Array.isArray(entries) && entries.length > 0, 'Active catalog is missing tier ' + tier);
+        return entries.map(row => {
+            assert.ok(row && typeof row.id === 'string' && typeof row.metric === 'string'
+                && Number.isSafeInteger(row.target) && row.target > 0 && typeof row.label === 'string'
+                && typeof row.ruleRo === 'string' && typeof row.ruleEn === 'string'
+                && !ids.has(row.id) && (Object.hasOwn(metrics, row.metric) || Object.hasOwn(pending, row.metric)),
+                'Invalid active achievement ' + row?.id);
+            ids.add(row.id);
+            const unit = (metrics[row.metric] ?? pending[row.metric]).unit;
+            return {tier, group:'active-catalog', ...row, unit,
+                evidence:Object.hasOwn(pending, row.metric) ? 'pending' : 'audited-replay',
+                ...(pending[row.metric] && {evidenceReason:pending[row.metric].reason})};
+        });
+    });
+}
 
 function exactFields(row, fields) {
     return row && typeof row === 'object' && Object.keys(row).sort().join() === fields.split(',').sort().join();
 }
 
 function catalogRows(catalog, activeCatalog) {
-    assert.ok(exactFields(catalog, 'schemaVersion,creditByUnit,groups') && catalog.schemaVersion === 1 && Array.isArray(catalog.groups),
+    assert.ok(exactFields(catalog, 'schemaVersion,creditByUnit,groups,decisions') && catalog.schemaVersion === 2
+        && Array.isArray(catalog.groups) && Array.isArray(catalog.decisions),
         'Invalid expansion catalog');
     const credit = catalog.creditByUnit;
     assert.deepEqual(credit, {
@@ -97,6 +135,15 @@ function catalogRows(catalog, activeCatalog) {
     const text = value => typeof value === 'string' && value.trim().length > 0;
     const ids = new Set(Object.values(activeCatalog.tiers).flat().concat(activeCatalog.retired ?? []).map(row => row.id));
     const goals = new Set(Object.values(activeCatalog.tiers).flat().map(row => row.metric + ':' + row.target));
+    const decisions = new Map();
+    for (const decision of catalog.decisions) {
+        assert.ok(exactFields(decision, 'id,state,reasonRo,reasonEn') && typeof decision.id === 'string'
+            && /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(decision.id) && decision.state === 'deferred'
+            && typeof decision.reasonRo === 'string' && decision.reasonRo.trim().length > 0
+            && typeof decision.reasonEn === 'string' && decision.reasonEn.trim().length > 0
+            && !decisions.has(decision.id), 'Invalid expansion decision ' + decision?.id);
+        decisions.set(decision.id, decision);
+    }
     const groups = new Set();
     const seenTiers = new Set();
     const rows = catalog.groups.flatMap(group => {
@@ -116,13 +163,17 @@ function catalogRows(catalog, activeCatalog) {
             assert.equal(row.ruleRo.includes('{target}'), numericRule, 'Invalid RO target text ' + row.id);
             assert.equal(row.ruleEn.includes('{target}'), numericRule, 'Invalid EN target text ' + row.id);
             if (metric === 'ALL_TABLE_SIZES_TITLE') assert.equal(row.target, 3);
+            const decision = decisions.get(row.id);
+            assert.ok(decision, 'Expansion item needs an explicit decision: ' + row.id);
             ids.add(row.id);
             goals.add(goal);
             const unit = (metrics[metric] ?? pending[metric]).unit;
-            return {tier:group.tier, group:group.id, ...row, unit, ...credit[unit]};
+            return {tier:group.tier, group:group.id, ...row, decision:decision.state,
+                decisionReasonRo:decision.reasonRo, decisionReasonEn:decision.reasonEn, unit, ...credit[unit]};
         });
     });
     assert.equal(seenTiers.size, tiers.length, 'Expansion must cover all difficulty tabs');
+    assert.equal(decisions.size, rows.length, 'Every decision must refer to exactly one expansion item');
     return rows;
 }
 
@@ -287,12 +338,14 @@ function analyze(plan, rows, traceRoot, holdoutRoot) {
     return {schemaVersion:1, reviewStage:holdoutRoot ? 'holdout' : 'calibration', catalog:rows, cohorts, review};
 }
 
-module.exports = {catalogRows, analyze, metrics};
+module.exports = {activeCatalogRows, catalogRows, analyze, metrics};
 
 if (require.main === module) {
-    const [traceRoot, output, holdoutRoot] = process.argv.slice(2);
-    assert.ok(traceRoot && output, 'Usage: node scripts/analyze-achievement-replays.cjs <trace directory> <new report.json> [holdout directory]');
-    const rows = catalogRows(read('j6-achievement-expansion.yaml'), read('j6-achievements.yaml'));
+    const argumentsWithoutFlags = process.argv.slice(2).filter(argument => argument !== '--active');
+    const [traceRoot, output, holdoutRoot] = argumentsWithoutFlags;
+    assert.ok(traceRoot && output, 'Usage: node scripts/analyze-achievement-replays.cjs <trace directory> <new report.json> [holdout directory] [--active]');
+    const rows = process.argv.includes('--active') ? activeCatalogRows(read('j6-achievements.yaml'))
+        : catalogRows(read('j6-achievement-expansion.yaml'), read('j6-achievements.yaml'));
     const report = analyze(read('j6-achievement-replay.yaml'), rows, traceRoot, holdoutRoot);
     fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n', {flag:'wx'});
     for (const cohort of report.cohorts) console.log(cohort.stage, cohort.id, cohort.tournaments, 'tournaments,', cohort.hands, 'hands');

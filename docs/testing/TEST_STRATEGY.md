@@ -142,16 +142,19 @@ Un caz redus din turnee verifică plata parțială a ambelor blinduri, locurile 
 
 ### Realizări de joc
 
+- Catalogul YAML activ definește 39 de realizări (14 Ușoare, 14 Medii, 11 Grele), cu ID-uri stabile, ordinea de prezentare, praguri și texte RO/EN.
 - Pentru o familie nouă, păstrați un caz pozitiv mic și un caz aproape identic care nu primește credit. Exemplele de decontare se reduc la stivele inițiale, poziții, acțiuni acceptate și rezultatul verificat independent.
 - La mărirea catalogului, verificați că pragul maxim pe metrică provine din YAML și că profilurile cu ID-uri deja salvate se deschid după o reducere a pragului. Pentru obiective manuale, simulați aceeași mână cu proveniență manuală și Auto-play.
 
 - Testele de componentă verifică ordinea, pragul fiecărui obiectiv, poturile secundare sau împărțite, blindul fizic, participanții la dezvăluire și progresul deduplicat. Motorul verifică momentul când se fixează locul într-un turneu, inclusiv locurile împărțite.
-- Calibrarea folosește masa locală din cod, fără randare, la 4, 5 și 6 locuri, pe Normal și Greu. Politica Auto-play joacă rolul profilului simulat.
-- Loturile de reglaj și confirmare folosesc seed-uri distincte și același buget. Un lot separat folosește bugetul complet al aplicației.
+- Calibrarea folosește masa locală din cod, fără randare, la 4, 5 și 6 locuri, separat pe Normal și Greu. Fiecare profil Auto-play joacă rolul unui cont, iar cheile de mână și de turneu păstrează progresul distinct.
+- Loturile de reglaj și confirmare folosesc seed-uri distincte și același buget Monte Carlo. Un lot separat folosește bugetul complet al aplicației. Corpusul pereche din arenă păstrează același seed, poziții rotite și control/candidat; rezultatele lui nu înlocuiesc măsurarea din motorul aplicației.
 - Raportul arată prima ocazie, deblocarea și ferestrele de 1, 3, 6 și 12 turnee. Turneele cenzurate rămân în numitor. Obiectivele de șase locuri folosesc mesele eligibile.
 - Testul notificării simulează eșecul fiecărei scrieri. La succes verifică jocul și progresul salvat înainte de callback, apoi reîncarcă jocul și verifică deduplicarea.
 - Proba de instalare deschide Realizările pe APK-ul semnat, parcurge lista în română și engleză, caută un obiectiv după pragul afișat și deschide regula lui. Scenariul de turneu verifică progresul paralel după redeschidere. Testele de componentă verifică identitatea rândurilor și combinațiile de căutare, nivel și stare. Traseul nativ recreează activitatea cu un detaliu deschis, apoi confirmă căutarea, nivelul și starea.
 - Măsurarea contrastului randat și proba cu font mărit sunt urmărite în [feedback](../feedback/J6-PROD-01-ACCOUNT-ACHIEVEMENTS.md).
+
+Pentru obiectivul Greu cu carte mare, cohorta eligibilă este exclusiv masa de șase locuri pe Greu. Analyzerul raportează separat Normal, celelalte dimensiuni și masa eligibilă; confirmarea dintr-un lot nu justifică creditarea altui mod. Oportunitățile, creditările și ferestrele de sesiune au numitori diferiți și se raportează separat.
 
 De la rădăcina proiectului, rulați cu JDK 21, Node și PowerShell. Setați `HOLDEM_DATA_ROOT` la directorul extern de date. Dosarul de ieșire trebuie să fie nou.
 

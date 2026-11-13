@@ -121,11 +121,15 @@ Meniul **Realizări** folosește componentele comune cu Rentz pentru listă, pro
 
 Căutarea recunoaște titlurile și regulile în română și engleză, inclusiv pragul afișat și expresiile fără diacritice. Filtrele după nivel și stare se aplică împreună și se păstrează la recrearea activității. Detaliul precizează că progresul se acordă în turnee.
 
-| Nivel | Primul obiectiv | Alte criterii |
-|---|---|---|
-| Ușor | Câștigă o mână de poker. | Ajungi la prima dezvăluire, câștigi un pot din blindul mare, trei mâini distincte și închei participarea într-un turneu. |
-| Mediu | Câștigă un turneu. | Pot împărțit, pot secundar disputat, prima victorie la dezvăluire cu minimum trei participanți, două victorii cu chintă sau mai bine și două podiumuri. |
-| Greu | Câștigă trei turnee distincte. | Două victorii cu full sau mai bine și două titluri la mese pornite cu șase jucători. |
+Catalogul activ are **39 de realizări** în trei niveluri: 14 Ușoare, 14 Medii și 11 Grele. Acestea sunt repere de rezultat din turneu, nu exerciții de antrenament. Ordinea din YAML sugerează progresul; în cadrul aceluiași nivel, obiectivele pot avansa în paralel.
+
+| Nivel | Parcursul de poker |
+|---|---|
+| Ușor · 14 | Primele poturi și dezvăluiri, mâini câștigate din poziții diferite, perechi și două perechi, poturi heads-up/multiway și primul rezultat de turneu. |
+| Mediu · 14 | Titluri și podiumuri la 4–6 locuri, dezvăluiri împărțite, poturi secundare contestate sau măturate, victorii preflop, eliminări și progres până la heads-up. |
+| Greu · 11 | Titluri repetate, combinații puternice, joc la stivă scurtă, reveniri, finaluri înainte de heads-up, titluri Hard la șase locuri și rezultate rare definite exact. |
+
+Un obiectiv Greu nou cere să câștigi singur un pot la dezvăluire cu **carte mare, fără pereche**, în patru mâini distincte din turnee Hard pornite cu șase locuri. Este o realizare de rezultat, nu un sfat de a plăti sau de a rămâne într-o mână cu o combinație slabă; poturile împărțite, rundele Normal, mesele cu alt număr de locuri și antrenamentul nu avansează obiectivul.
 
 - Turneele Normal și Greu acordă progres pe profil. Mâinile de exercițiu din **Antrenament** au propriul parcurs.
 - Câștigurile folosesc jetoanele acordate din pot și o singură cheie per mână. Motorul contabilizează separat jetoanele restituite.
@@ -134,6 +138,7 @@ Căutarea recunoaște titlurile și regulile în română și engleză, inclusiv
 - Progresul este local pe profil și se deduplică după ID-ul mâinii sau al turneului. Se poate reconcilia sesiunea salvată. Clasamentul agregat nu reconstruiește partidele vechi.
 
 - Catalogul YAML definește ID-urile, nivelul, ordinea, metrica, pragul și regulile RO/EN. Gradle generează lista Android și rezervă ID-urile retrase.
+- Pentru obiectivele specifice de turneu, evaluatorul folosește contextul inițial, modul, proveniența deciziilor, identitatea mâinii și decontarea validată. O oportunitate observată nu este progres: criteriul complet trebuie să fie adevărat, iar aceeași mână nu se numără de două ori.
 - Lista, detaliile și panoul de progres folosesc interfața comună. Panoul afișează actualizările după confirmarea salvării, iar repetarea rezultatului nu produce o nouă notificare.
 - Progresul acumulează dovezi până la cel mai mare prag declarat pentru metrică. Fiecare obiectiv afișează cel mult propriul prag.
 - ID-urile și dovezile salvate se păstrează la reducerea pragului sau retragerea unei realizări. Lista folosește aceeași cheie pentru rând și detaliu când se schimbă ordinea, traducerea sau pragul.

@@ -2,16 +2,32 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const fs = require('node:fs');
 const path = require('node:path');
-const {catalogRows, metrics} = require('./analyze-achievement-replays.cjs');
+const {activeCatalogRows, catalogRows, metrics} = require('./analyze-achievement-replays.cjs');
 
 const read = name => JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config', name), 'utf8'));
 const catalog = () => read('j6-achievement-expansion.yaml');
 const active = read('j6-achievements.yaml');
 const matches = (id, facts) => metrics[id].opportunity(facts) && metrics[id].qualifies(facts);
 
-test('expansion preserves active IDs and rejects malformed or duplicate configurable rules', () => {
+test('active YAML objectives are auditable and simulator-specific facts declare their evidence source', () => {
+    const rows = activeCatalogRows(active);
+    assert.equal(rows.length, 39);
+    assert.deepEqual(Object.fromEntries(['EASY', 'MEDIUM', 'HARD'].map(tier =>
+        [tier, rows.filter(row => row.tier === tier).length])), {EASY:14, MEDIUM:14, HARD:11});
+    assert.deepEqual(new Set(rows.filter(row => row.evidence === 'pending').map(row => row.metric)),
+        new Set(['HARD_SIX_HIGH_CARD_POT', 'PODIUM', 'HARD_SIX_SEAT_MANUAL_TITLE', 'ALL_TABLE_SIZES_TITLE']));
+    assert.match(rows.find(row => row.metric === 'HARD_SIX_HIGH_CARD_POT').evidenceReason,
+        /live Normal\/Hard simulator/);
+    assert.ok(rows.filter(row => row.evidence === 'audited-replay').every(row => Object.hasOwn(metrics, row.metric)));
+});
+
+test('deferred expansion backlog is disjoint from active achievements and has explicit reasons', () => {
     const rules = catalogRows(catalog(), active);
     assert.deepEqual(new Set(rules.map(row => row.tier)), new Set(['EASY', 'MEDIUM', 'HARD']));
+    assert.equal(rules.length, 4);
+    assert.ok(rules.every(row => row.decision === 'deferred' && row.decisionReasonRo && row.decisionReasonEn));
+    assert.deepEqual(new Set(rules.map(row => row.id)), new Set([
+        'river-reach-series', 'pot-and-refund', 'river-bet-showdown-pot', 'heads-up-river-call-series']));
     assert.throws(() => catalogRows({...catalog(), groups:[]}, active), /cover all difficulty tabs/);
 
     const wrongCredit = catalog();
@@ -27,9 +43,13 @@ test('expansion preserves active IDs and rejects malformed or duplicate configur
     assert.throws(() => catalogRows(unknown, active), /Invalid achievement/);
 
     const translation = catalog();
-    const counted = translation.groups.flatMap(group => group.entries).find(row => row.id === 'heads-up-showdown-series');
+    const counted = translation.groups.flatMap(group => group.entries).find(row => row.id === 'river-reach-series');
     counted.ruleRo = counted.ruleRo.replace('{target}', 'trei');
     assert.throws(() => catalogRows(translation, active), /Invalid RO target text/);
+
+    const unexplained = catalog();
+    unexplained.decisions.pop();
+    assert.throws(() => catalogRows(unexplained, active), /explicit decision/);
 });
 
 test('uncontested pot and returned chips never masquerade as a showdown win', () => {

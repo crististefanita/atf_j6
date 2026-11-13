@@ -185,6 +185,67 @@
         <item quantity="few">Câștigă %1$d mâini la dezvăluire cu cel puțin trei jucători rămași</item>
         <item quantity="other">Câștigă %1$d de mâini la dezvăluire cu cel puțin trei jucători rămași</item>
     </plurals>
+    <string name="gameplay_achievement_button_win">Câștigă un pot de pe buton</string>
+    <string name="gameplay_achievement_small_blind_win">Câștigă un pot din blindul mic</string>
+    <string name="gameplay_achievement_big_blind_free_flop">Vezi flopul după check din blindul mare</string>
+    <string name="gameplay_achievement_showdown_win">Câștigă o cotă din pot la dezvăluire</string>
+    <string name="gameplay_achievement_pair_showdown_win">Câștigă la dezvăluire cu o pereche</string>
+    <string name="gameplay_achievement_two_pair_showdown_win">Câștigă la dezvăluire cu două perechi</string>
+    <string name="gameplay_achievement_multiway_pot_win">Câștigă un pot dintr-o mână începută cu cel puțin trei jucători</string>
+    <string name="gameplay_achievement_postflop_pot_win">Câștigă un pot după flop</string>
+    <string name="gameplay_achievement_heads_up_pot_win">Câștigă un pot heads-up</string>
+    <string name="gameplay_achievement_side_pot_only">Câștigă un pot secundar, fără potul principal</string>
+    <string name="gameplay_achievement_sweep_side_pots">Câștigă singur toate straturile, inclusiv un pot secundar</string>
+    <string name="gameplay_achievement_preflop_pot_win">Câștigă un pot înainte de flop, fără dezvăluire</string>
+    <string name="gameplay_achievement_board_play_split">Împarte potul jucând doar boardul</string>
+    <string name="gameplay_achievement_heads_up_comeback_title">Câștigă turneul după un deficit de jetoane heads-up</string>
+    <string name="gameplay_achievement_title_after_last_stack">Câștigă după ce ai avut stiva cea mai mică la o masă cu mai mulți jucători</string>
+    <string name="gameplay_achievement_title_before_heads_up">Câștigă mâna finală înainte de heads-up</string>
+    <plurals name="gameplay_achievement_hard_six_high_card_pots">
+        <item quantity="one">Câștigă singur un pot cu carte mare la o masă de șase locuri pe Greu</item>
+        <item quantity="few">Câștigă singur %1$d poturi cu carte mare la mese de șase locuri pe Greu</item>
+        <item quantity="other">Câștigă singur %1$d de poturi cu carte mare la mese de șase locuri pe Greu</item>
+    </plurals>
+    <plurals name="gameplay_achievement_heads_up_showdown_wins">
+        <item quantity="one">Câștigă la dezvăluire în %1$d mână heads-up</item>
+        <item quantity="few">Câștigă la dezvăluire în %1$d mâini heads-up distincte</item>
+        <item quantity="other">Câștigă la dezvăluire în %1$d de mâini heads-up distincte</item>
+    </plurals>
+    <plurals name="gameplay_achievement_main_pot_knockouts">
+        <item quantity="one">Câștigă singur potul principal și elimină un jucător în %1$d mână</item>
+        <item quantity="few">Câștigă singur potul principal și elimină un jucător în %1$d mâini distincte</item>
+        <item quantity="other">Câștigă singur potul principal și elimină un jucător în %1$d de mâini distincte</item>
+    </plurals>
+    <plurals name="gameplay_achievement_reach_heads_up_twice">
+        <item quantity="one">Ajunge în heads-up în %1$d turneu</item>
+        <item quantity="few">Ajunge în heads-up în %1$d turnee distincte</item>
+        <item quantity="other">Ajunge în heads-up în %1$d de turnee distincte</item>
+    </plurals>
+    <plurals name="gameplay_achievement_four_seat_titles">
+        <item quantity="one">Câștigă %1$d turneu început cu patru locuri</item>
+        <item quantity="few">Câștigă %1$d turnee începute cu patru locuri</item>
+        <item quantity="other">Câștigă %1$d de turnee începute cu patru locuri</item>
+    </plurals>
+    <plurals name="gameplay_achievement_five_seat_titles">
+        <item quantity="one">Câștigă %1$d turneu început cu cinci locuri</item>
+        <item quantity="few">Câștigă %1$d turnee începute cu cinci locuri</item>
+        <item quantity="other">Câștigă %1$d de turnee începute cu cinci locuri</item>
+    </plurals>
+    <plurals name="gameplay_achievement_short_stack_titles">
+        <item quantity="one">Câștigă %1$d turneu după ce ai ajuns la o stivă scurtă</item>
+        <item quantity="few">Câștigă %1$d turnee după ce ai ajuns la o stivă scurtă</item>
+        <item quantity="other">Câștigă %1$d de turnee după ce ai ajuns la o stivă scurtă</item>
+    </plurals>
+    <plurals name="gameplay_achievement_manual_hard_six_seat_titles">
+        <item quantity="one">Câștigă %1$d turneu de șase locuri pe Greu, jucând manual fiecare decizie</item>
+        <item quantity="few">Câștigă %1$d turnee de șase locuri pe Greu, jucând manual fiecare decizie</item>
+        <item quantity="other">Câștigă %1$d de turnee de șase locuri pe Greu, jucând manual fiecare decizie</item>
+    </plurals>
+    <plurals name="gameplay_achievement_titles_at_all_table_sizes">
+        <item quantity="one">Câștigă manual la fiecare dintre cele %1$d dimensiuni ale mesei</item>
+        <item quantity="few">Câștigă manual la fiecare dintre cele %1$d dimensiuni ale mesei</item>
+        <item quantity="other">Câștigă manual la fiecare dintre cele %1$d dimensiuni ale mesei</item>
+    </plurals>
     <string name="gameplay_achievement_eligibility">Eligibilitate</string>
     <string name="gameplay_achievement_summary">Deblocate %1$d/%2$d</string>
     <string name="gameplay_achievement_filter_open">Caută și filtrează</string>

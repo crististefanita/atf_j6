@@ -51,6 +51,8 @@ flowchart LR
 
 Pentru reguli tactice, verifică acțiunea în contextul disponibil înainte de decizie. Un rezultat norocos nu dovedește că decizia a fost bună. Pentru un obiectiv bazat pe rezultatul partidei, folosește verdictul final al motorului.
 
+Păstrează această distincție vizibilă și în catalog: o realizare de rezultat descrie ce s-a întâmplat, iar una de competență poate cere și dovada deciziei. De exemplu, „a câștigat cu cea mai slabă combinație” poate fi un reper rar dacă motorul confirmă singur potul și contextul; textul nu trebuie să sugereze că jucătorul ar trebui să plătească mai des cu mâini slabe. Exclude egalitățile și modurile neeligibile când criteriul cere un câștigător unic sau o dificultate anume.
+
 <details>
 <summary>Model de catalog YAML pentru un proiect nou</summary>
 
@@ -88,6 +90,8 @@ Respinge ID-urile duplicate, metricile necunoscute, pragurile invalide și texte
 3. Scrie criteriul în ambele limbi și folosește pragul configurat în text. Păstrează ID-ul când schimbi ordinea sau traducerea.
 4. Verifică rezultatul apropiat care trebuie respins. Pentru o acțiune pe două runde, două pariuri pe același flop formează o singură rundă.
 5. Estimează dificultatea din progresul pe sesiuni și oportunități. Rulează confirmarea pe distribuții distincte de cele folosite la reglaj.
+
+Pentru progres acumulat, separă lotul care estimează frecvența de lotul holdout care validează pragurile. Simulează sesiuni la bugetul apropiat de produs, numără sesiunile neterminate în numitor și nu combina automat date de auto-play cu rezultate manuale. Dacă simulatorul nu modelează istoricul persistent al profilului, marchează obiectivul ca necalificat de acel lot în loc să deduci că este imposibil.
 
 Pentru Hold’em, familiile ordonează învățarea în interiorul nivelului. Completează criteriul cu proveniența manuală a mâinii sau a turneului, conform unității declarate. [Catalogul candidat](../../../config/j6-achievement-expansion.yaml) · [Strategia de replay](../../testing/TEST_STRATEGY.md#replay-pentru-catalogul-extins)
 

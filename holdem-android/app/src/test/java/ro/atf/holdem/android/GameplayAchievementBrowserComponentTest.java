@@ -57,6 +57,29 @@ public class GameplayAchievementBrowserComponentTest {
                 new Query("{target}", null, null)));
     }
 
+    @Test public void expandedPokerCatalogKeepsAllThreeTabsAndFindsTheHighCardChallengeInBothLanguages() {
+        var expectedCounts = List.of(14, 14, 11);
+        var catalog = java.util.Arrays.stream(Tier.values())
+                .flatMap(tier -> GameplayAchievementCatalog.forTier(tier).stream()
+                        .map(milestone -> new Entry(tier, milestone, 0,
+                                milestone.rule(true), milestone.rule(false))))
+                .toList();
+        assertEquals(39, catalog.size());
+        assertEquals(expectedCounts, java.util.Arrays.stream(Tier.values())
+                .map(tier -> (int) catalog.stream().filter(entry -> entry.tier() == tier).count()).toList());
+
+        var highCard = catalog.stream().filter(entry -> entry.milestone().id().equals("hard-six-high-card-pots"))
+                .findFirst().orElseThrow();
+        assertEquals(HARD, highCard.tier());
+        assertEquals(4, highCard.milestone().target());
+        assertEquals(List.of(highCard), GameplayAchievementBrowser.visible(catalog,
+                new Query("fără pereche", HARD, LOCKED)));
+        assertEquals(List.of(highCard), GameplayAchievementBrowser.visible(catalog,
+                new Query("high-card hand and no pair", HARD, LOCKED)));
+        assertEquals(List.of(), GameplayAchievementBrowser.visible(catalog,
+                new Query("high-card hand and no pair", EASY, LOCKED)));
+    }
+
     private static Entry entry(Tier tier, String id, int current, int target, String title, String alternate) {
         return new Entry(tier, new Milestone(id, GameplayAchievements.Metric.POT, target, 0, false,
                 "Jetoane restituite", "Uncalled chips"),

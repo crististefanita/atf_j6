@@ -179,6 +179,59 @@
         <item quantity="one">Win %1$d hand at showdown with at least three players still in the hand</item>
         <item quantity="other">Win %1$d hands at showdown with at least three players still in the hand</item>
     </plurals>
+    <!-- Catalog labels resolve through generated R references; Android Lint cannot trace their YAML source. -->
+    <string name="gameplay_achievement_button_win" tools:ignore="UnusedResources">Win a pot from the button</string>
+    <string name="gameplay_achievement_small_blind_win" tools:ignore="UnusedResources">Win a pot from the small blind</string>
+    <string name="gameplay_achievement_big_blind_free_flop" tools:ignore="UnusedResources">Check from the big blind and see the flop</string>
+    <string name="gameplay_achievement_showdown_win" tools:ignore="UnusedResources">Win a share at showdown</string>
+    <string name="gameplay_achievement_pair_showdown_win" tools:ignore="UnusedResources">Win at showdown with one pair</string>
+    <string name="gameplay_achievement_two_pair_showdown_win" tools:ignore="UnusedResources">Win at showdown with two pair</string>
+    <string name="gameplay_achievement_multiway_pot_win" tools:ignore="UnusedResources">Win a pot in a hand that began three-way or more</string>
+    <string name="gameplay_achievement_postflop_pot_win" tools:ignore="UnusedResources">Win a pot after the flop</string>
+    <string name="gameplay_achievement_heads_up_pot_win" tools:ignore="UnusedResources">Win a heads-up pot</string>
+    <string name="gameplay_achievement_side_pot_only" tools:ignore="UnusedResources">Win a side pot without the main pot</string>
+    <string name="gameplay_achievement_sweep_side_pots" tools:ignore="UnusedResources">Solely win every pot layer, including a side pot</string>
+    <string name="gameplay_achievement_preflop_pot_win" tools:ignore="UnusedResources">Win a pot before the flop without showdown</string>
+    <string name="gameplay_achievement_board_play_split" tools:ignore="UnusedResources">Split a pot by playing the board</string>
+    <string name="gameplay_achievement_heads_up_comeback_title" tools:ignore="UnusedResources">Win the tournament after a heads-up chip deficit</string>
+    <string name="gameplay_achievement_title_after_last_stack" tools:ignore="UnusedResources">Win after being last in chips at a multiway table</string>
+    <string name="gameplay_achievement_title_before_heads_up" tools:ignore="UnusedResources">Win the final hand before heads-up</string>
+    <plurals name="gameplay_achievement_hard_six_high_card_pots" tools:ignore="UnusedResources">
+        <item quantity="one">Win a high-card pot at a six-seat Hard table</item>
+        <item quantity="other">Win %1$d high-card pots at six-seat Hard tables</item>
+    </plurals>
+    <plurals name="gameplay_achievement_heads_up_showdown_wins" tools:ignore="UnusedResources">
+        <item quantity="one">Win at showdown in %1$d heads-up hand</item>
+        <item quantity="other">Win at showdown in %1$d distinct heads-up hands</item>
+    </plurals>
+    <plurals name="gameplay_achievement_main_pot_knockouts" tools:ignore="UnusedResources">
+        <item quantity="one">Solely win the main pot and eliminate a player in %1$d hand</item>
+        <item quantity="other">Solely win the main pot and eliminate a player in %1$d distinct hands</item>
+    </plurals>
+    <plurals name="gameplay_achievement_reach_heads_up_twice" tools:ignore="UnusedResources">
+        <item quantity="one">Reach heads-up in %1$d tournament</item>
+        <item quantity="other">Reach heads-up in %1$d distinct tournaments</item>
+    </plurals>
+    <plurals name="gameplay_achievement_four_seat_titles" tools:ignore="UnusedResources">
+        <item quantity="one">Win %1$d tournament that started with four seats</item>
+        <item quantity="other">Win %1$d tournaments that started with four seats</item>
+    </plurals>
+    <plurals name="gameplay_achievement_five_seat_titles" tools:ignore="UnusedResources">
+        <item quantity="one">Win %1$d tournament that started with five seats</item>
+        <item quantity="other">Win %1$d tournaments that started with five seats</item>
+    </plurals>
+    <plurals name="gameplay_achievement_short_stack_titles" tools:ignore="UnusedResources">
+        <item quantity="one">Win %1$d tournament after reaching a short stack</item>
+        <item quantity="other">Win %1$d tournaments after reaching a short stack</item>
+    </plurals>
+    <plurals name="gameplay_achievement_manual_hard_six_seat_titles" tools:ignore="UnusedResources">
+        <item quantity="one">Win %1$d six-seat Hard tournament with every decision played manually</item>
+        <item quantity="other">Win %1$d six-seat Hard tournaments with every decision played manually</item>
+    </plurals>
+    <plurals name="gameplay_achievement_titles_at_all_table_sizes" tools:ignore="UnusedResources">
+        <item quantity="one">Manually win at each of %1$d table sizes</item>
+        <item quantity="other">Manually win at each of %1$d table sizes</item>
+    </plurals>
     <string name="gameplay_achievement_eligibility">Eligibility</string>
     <string name="gameplay_achievement_summary">Unlocked %1$d/%2$d</string>
     <string name="gameplay_achievement_filter_open">Search and filters</string>

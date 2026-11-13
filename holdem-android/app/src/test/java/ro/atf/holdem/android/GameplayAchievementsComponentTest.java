@@ -298,13 +298,181 @@ public class GameplayAchievementsComponentTest {
     @Test public void allCatalogEntriesUnlockAtTheirOwnThresholdInPublishedOrder() {
         assertMilestones(GameplayAchievementCatalog.Tier.EASY, List.of(
                 "first-pot:POT:1", "first-showdown:SHOWDOWN:1", "big-blind-pot:BIG_BLIND_POT:1",
-                "three-pots:POT:3", "finish-tournament:TOURNAMENT_FINISHED:1"));
+                "three-pots:POT:3", "finish-tournament:TOURNAMENT_FINISHED:1",
+                "button-win:BUTTON_POT:1", "small-blind-win:SMALL_BLIND_POT:1",
+                "free-flop-from-big-blind:BIG_BLIND_CHECK_TO_FLOP:1", "showdown-win:SHOWDOWN_POT:1",
+                "pair-showdown-win:PAIR_SHOWDOWN_POT:1", "two-pair-showdown-win:TWO_PAIR_SHOWDOWN_POT:1",
+                "multiway-pot-win:MULTIWAY_POT:1", "postflop-pot-win:POSTFLOP_POT:1",
+                "heads-up-pot-win:HEADS_UP_POT:1"));
         assertMilestones(GameplayAchievementCatalog.Tier.MEDIUM, List.of(
                 "first-title:TITLE:1", "split-showdown:SPLIT_POT:1", "contested-side-pot:SIDE_POT:1",
                 "multiway-showdowns:MULTIWAY_SHOWDOWN_POT:1",
-                "straight-or-better:STRAIGHT_OR_BETTER:2", "tournament-podiums:PODIUM:2"));
+                "straight-or-better:STRAIGHT_OR_BETTER:2", "tournament-podiums:PODIUM:2",
+                "heads-up-showdown-wins:HEADS_UP_SHOWDOWN_POT:3", "side-pot-without-main-pot:SIDE_POT_ONLY:1",
+                "sweep-side-pots:SWEPT_SIDE_POTS:1", "preflop-pot-win:PREFLOP_FOLD_WIN:1",
+                "main-pot-knockouts:SOLE_MAIN_WIN_ELIMINATION:2", "reach-heads-up-twice:HEADS_UP_PHASE_REACHED:2",
+                "four-seat-titles:FOUR_SEAT_TITLE:2", "five-seat-titles:FIVE_SEAT_TITLE:2"));
         assertMilestones(GameplayAchievementCatalog.Tier.HARD, List.of(
-                "three-titles:TITLE:3", "full-house-or-better:FULL_HOUSE_OR_BETTER:2", "six-seat-titles:SIX_SEAT_TITLE:2"));
+                "three-titles:TITLE:3", "full-house-or-better:FULL_HOUSE_OR_BETTER:2", "six-seat-titles:SIX_SEAT_TITLE:2",
+                "board-play-split:BOARD_PLAYS_SPLIT:1", "short-stack-titles:SHORT_STACK_TITLE:2",
+                "heads-up-comeback-title:TITLE_AFTER_HEADS_UP_DEFICIT:1",
+                "title-after-last-stack:TITLE_AFTER_LAST_STACK:1", "title-before-heads-up:TITLE_WITHOUT_HEADS_UP:1",
+                "hard-six-high-card-pots:HARD_SIX_HIGH_CARD_POT:4",
+                "manual-hard-six-seat-titles:HARD_SIX_SEAT_MANUAL_TITLE:2",
+                "titles-at-all-table-sizes:ALL_TABLE_SIZES_TITLE:3"));
+    }
+
+    @Test public void highCardAchievementNeedsASoleShowdownPotOnSixSeatHardTournament() {
+        var achievements = memory();
+        var highCard = evaluation("As Kd Jh 8c 5d");
+        var eligibleContext = new GameplayAchievements.HandContext(6, 3, true, false, false, false,
+                false, true, 0);
+        var wonAlone = settled(0, seat(80, 0, highCard), seat(0, 0, null), 6);
+
+        for (int hand = 1; hand <= 4; hand++) {
+            achievements.recordSettled("p", "hard-six:" + hand, "hard-six", 0, wonAlone,
+                    AchievementPotEvidence.NONE, eligibleContext);
+            achievements.recordSettled("p", "hard-six:" + hand, "hard-six", 0, wonAlone,
+                    AchievementPotEvidence.NONE, eligibleContext);
+        }
+        assertEquals("Four distinct, sole high-card awards unlock the Hard goal", 4,
+                achievements.count("p", HARD_SIX_HIGH_CARD_POT));
+        var goal = GameplayAchievementCatalog.forTier(GameplayAchievementCatalog.Tier.HARD).stream()
+                .filter(item -> item.id().equals("hard-six-high-card-pots")).findFirst().orElseThrow();
+        assertEquals(4, goal.progress(achievements.counts("p")));
+
+        var normal = new GameplayAchievements.HandContext(6, 3, true, false, false, false,
+                false, false, 0);
+        achievements.recordSettled("p", "normal-six:1", "normal-six", 0, wonAlone,
+                AchievementPotEvidence.NONE, normal);
+        achievements.recordSettled("p", "hard-five:1", "hard-five", 0,
+                settled(0, seat(80, 0, highCard), seat(0, 0, null), 5),
+                AchievementPotEvidence.NONE,
+                new GameplayAchievements.HandContext(5, 3, true, false, false, false, false, true, 0));
+        var pair = evaluation("As Ad Ah 5c 5d");
+        achievements.recordSettled("p", "hard-six-pair:1", "hard-six", 0,
+                settled(0, seat(80, 0, pair), seat(0, 0, null), 6),
+                AchievementPotEvidence.NONE, eligibleContext);
+        var split = settled(0, seat(40, 0, highCard), seat(40, 0, highCard), 6);
+        achievements.recordSettled("p", "hard-six-split:1", "hard-six", 0, split,
+                AchievementPotEvidence.NONE, eligibleContext);
+        assertEquals("Normal, other table sizes, pairs and split pots do not qualify", 4,
+                achievements.count("p", HARD_SIX_HIGH_CARD_POT));
+    }
+
+    @Test public void preflopWinUsesTheSettledBoardNotTheTerminalStreetMarker() {
+        var achievements = memory();
+        var walk = settled(0, seat(80, 0, null), seat(0, 0, null), 4);
+        achievements.recordSettled("p", "walk:1", "walk", 0, walk);
+        assertEquals(1, achievements.count("p", PREFLOP_FOLD_WIN));
+
+        var flop = new HoldemTableViewState(0, -1, 0, 1, 2, Street.COMPLETE, 80, List.of(),
+                List.of(Card.fromLabel("2c"), Card.fromLabel("3d"), Card.fromLabel("4h")),
+                List.of(seat(80, 0, evaluation("As Ad 4h 3d 2c")), seat(0, 0, null)), List.of());
+        achievements.recordSettled("p", "flop:1", "flop", 0, flop);
+        assertEquals("A postflop win cannot earn the preflop objective", 1,
+                achievements.count("p", PREFLOP_FOLD_WIN));
+    }
+
+    @Test public void positionShowdownAndPostflopObjectivesUseTheSettledHandEvidence() {
+        var achievements = memory();
+        var context = new GameplayAchievements.HandContext(4, 3, true, false, false, false,
+                false, false, 0);
+        var board = List.of(Card.fromLabel("2c"), Card.fromLabel("3d"), Card.fromLabel("4h"));
+        var pair = evaluation("As Ad 4h 3d 2c");
+        var frame = new HoldemTableViewState(0, -1, 0, 1, 2, Street.COMPLETE, 80, List.of(), board,
+                List.of(seat(80, 0, pair), seat(0, 0, null), seat(0, 0, null), seat(0, 0, null)), List.of());
+
+        achievements.recordSettled("p", "position:1", "position", 0, frame,
+                AchievementPotEvidence.NONE, context);
+        assertEquals(1, achievements.count("p", BUTTON_POT));
+        assertEquals(1, achievements.count("p", MULTIWAY_POT));
+        assertEquals(1, achievements.count("p", POSTFLOP_POT));
+        assertEquals(1, achievements.count("p", SHOWDOWN_POT));
+        assertEquals(1, achievements.count("p", PAIR_SHOWDOWN_POT));
+        assertEquals(0, achievements.count("p", TWO_PAIR_SHOWDOWN_POT));
+        assertEquals(0, achievements.count("p", HEADS_UP_POT));
+        assertTrue(achievements.recordSettled("p", "position:1", "position", 0, frame,
+                AchievementPotEvidence.NONE, context).isEmpty());
+
+        var smallBlind = new HoldemTableViewState(0, -1, 1, 0, 2, Street.COMPLETE, 80, List.of(), board,
+                List.of(seat(80, 0, pair), seat(0, 0, null), seat(0, 0, null), seat(0, 0, null)), List.of());
+        achievements.recordSettled("p", "position:2", "position", 0, smallBlind,
+                AchievementPotEvidence.NONE, context);
+        assertEquals(1, achievements.count("p", SMALL_BLIND_POT));
+
+        var check = List.of(new ro.atf.holdem.core.BettingAction(1, Street.PREFLOP, 2,
+                ro.atf.holdem.core.BettingAction.Kind.CHECK, 0, 0));
+        var bigBlind = new HoldemTableViewState(2, -1, 0, 1, 2, Street.COMPLETE, 80, List.of(), board,
+                List.of(seat(0, 0, null), seat(0, 0, null), seat(80, 0, pair), seat(0, 0, null)), List.of(), check);
+        achievements.recordSettled("p", "position:3", "position", 0, bigBlind,
+                AchievementPotEvidence.NONE, context);
+        assertEquals(1, achievements.count("p", BIG_BLIND_CHECK_TO_FLOP));
+    }
+
+    @Test public void sidePotSplitAndKnockoutObjectivesRequireTheCorrectAwardLayer() {
+        var achievements = memory();
+        var board = List.of("As", "Ks", "Qs", "Js", "Ts").stream().map(Card::fromLabel).toList();
+        var boardEvaluation = HandRank.evaluateBestOf(board);
+        var splitFrame = new HoldemTableViewState(0, -1, 0, 1, 2, Street.COMPLETE, 90, List.of(), board,
+                List.of(seat(45, 0, boardEvaluation), seat(45, 0, boardEvaluation), seat(0, 0, null)), List.of());
+        var splitLayers = AchievementPotEvidence.from(List.of(new PotAward(90, List.of(0, 1), List.of(0, 1))), splitFrame);
+        achievements.recordSettled("p", "split:1", "split", 0, splitFrame, splitLayers,
+                new GameplayAchievements.HandContext(4, 3, true, false, false, false, false, false, 0));
+        assertEquals(1, achievements.count("p", BOARD_PLAYS_SPLIT));
+        assertEquals(1, achievements.count("p", SPLIT_POT));
+
+        var sideFrame = settled(0, seat(25, 0, evaluation("As Ad Ah 5c 5d")), seat(50, 0, evaluation("Ks Kd Kh Qc Qd")), 4);
+        var layers = AchievementPotEvidence.from(List.of(new PotAward(50, List.of(0, 1), List.of(1)),
+                new PotAward(25, List.of(0, 1), List.of(0))), sideFrame);
+        achievements.recordSettled("p", "side:1", "side", 0, sideFrame, layers,
+                new GameplayAchievements.HandContext(4, 3, true, false, false, false, false, false, 0));
+        assertEquals(1, achievements.count("p", SIDE_POT_ONLY));
+        assertEquals(1, achievements.count("p", SIDE_POT));
+        assertEquals(0, achievements.count("p", SOLE_MAIN_WIN_ELIMINATION));
+
+        var unopposedSide = AchievementPotEvidence.from(List.of(new PotAward(50, List.of(0, 1), List.of(0)),
+                new PotAward(25, List.of(0), List.of(0))), sideFrame);
+        assertFalse("A single-eligible layer is not a contested side-pot achievement", unopposedSide.sideOnlyWon());
+        assertFalse("Sweeping only uncontested layers does not count as a side-pot sweep", unopposedSide.sweptSidePots());
+
+        var swept = AchievementPotEvidence.from(List.of(new PotAward(50, List.of(0, 1), List.of(0)),
+                new PotAward(25, List.of(0, 1), List.of(0))), sideFrame);
+        achievements.recordSettled("p", "sweep:1", "sweep", 0, sideFrame, swept,
+                new GameplayAchievements.HandContext(4, 3, true, false, false, false, false, false, 1));
+        assertEquals(1, achievements.count("p", SWEPT_SIDE_POTS));
+        assertEquals(1, achievements.count("p", SOLE_MAIN_WIN_ELIMINATION));
+    }
+
+    @Test public void tournamentObjectivesProgressInParallelAndDeduplicateAcrossReloads() {
+        var storage = new MemoryStorage();
+        var achievements = new GameplayAchievements(storage);
+        for (int seats : List.of(4, 5, 6, 6)) {
+            var tableContext = new GameplayAchievements.HandContext(seats, 3, true, true, true, true,
+                    true, true, 1);
+            String id = "champion-" + seats + "-" + (achievements.count("p", TITLE) + 1);
+            var finalHand = settled(0, seat(80, 0, null), seat(0, 0, null), seats);
+            achievements.recordSettled("p", id + ":1", id, 1, finalHand, AchievementPotEvidence.NONE, tableContext);
+            achievements = new GameplayAchievements(storage);
+        }
+        assertEquals(3, achievements.count("p", TITLE));
+        assertEquals(1, achievements.count("p", FOUR_SEAT_TITLE));
+        assertEquals(1, achievements.count("p", FIVE_SEAT_TITLE));
+        assertEquals(2, achievements.count("p", SIX_SEAT_TITLE));
+        assertEquals(2, achievements.count("p", HARD_SIX_SEAT_MANUAL_TITLE));
+        assertEquals(3, achievements.count("p", ALL_TABLE_SIZES_TITLE));
+        assertEquals(2, achievements.count("p", SHORT_STACK_TITLE));
+        assertEquals(1, achievements.count("p", TITLE_AFTER_LAST_STACK));
+        assertEquals(1, achievements.count("p", TITLE_AFTER_HEADS_UP_DEFICIT));
+        assertEquals(1, achievements.count("p", TITLE_WITHOUT_HEADS_UP));
+        assertEquals(0, achievements.count("p", HEADS_UP_PHASE_REACHED));
+
+        var autoPlayed = new GameplayAchievements.HandContext(6, 3, true, false, false, false,
+                false, true, 0);
+        achievements.recordSettled("p", "auto:1", "auto", 1,
+                settled(0, seat(80, 0, null), seat(0, 0, null), 6), AchievementPotEvidence.NONE, autoPlayed);
+        assertEquals("Auto-play cannot qualify as a manual Hard title", 2,
+                achievements.count("p", HARD_SIX_SEAT_MANUAL_TITLE));
     }
 
     private static void assertMilestones(GameplayAchievementCatalog.Tier tier, List<String> expected) {

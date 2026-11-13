@@ -77,9 +77,10 @@ public final class PublishAchievementCalibrationExtent {
             boolean matchesCatalog = target == rules.get(id).required("target").asInt()
                     && metric.equals(rules.get(id).required("metric").asText());
             boolean retired = rules.get(id).has("reason");
-            boolean validVerdict = retired ? verdict.equals("RETRAS") : Set.of("CONFIRMAT", "RAR").contains(verdict);
+            String reason = decision.required("reason").asText();
+            boolean validVerdict = validVerdict(retired, verdict, reason);
             checks.add(new AtfAssertion(id + " · " + verdict, tier + " · " + metric + " · target " + target,
-                    decision.required("reason").asText(), matchesCatalog && validVerdict));
+                    reason, matchesCatalog && validVerdict));
             for (String stage : new String[]{"calibration", "holdout", "product-budget"}) {
                 var normal = cohorts.get(stage + "-NORMAL").get(id);
                 var hard = cohorts.get(stage + "-HARD").get(id);
@@ -104,7 +105,16 @@ public final class PublishAchievementCalibrationExtent {
         return result;
     }
 
-    private static boolean validMeasurement(JsonNode m) {
+    static boolean validVerdict(boolean retired, String verdict, String reason) {
+        if (reason == null || reason.isBlank()) return false;
+        return retired ? "RETRAS".equals(verdict)
+                : Set.of("CONFIRMAT", "RAR", "NECALIFICAT").contains(verdict);
+    }
+
+    static boolean validMeasurement(JsonNode m) {
+        String evidence = m.path("evidence").asText();
+        if ("pending".equals(evidence)) return !m.path("reason").asText().isBlank();
+        if (!"audited-normal-hard".equals(evidence)) return false;
         int events = m.required("creditEvents").asInt();
         int opportunities = m.required("opportunities").asInt();
         if (events < 0 || events > opportunities || !m.required("bySeats").isObject()) return false;
@@ -115,7 +125,9 @@ public final class PublishAchievementCalibrationExtent {
         return true;
     }
 
-    private static String compact(JsonNode m) {
+    static String compact(JsonNode m) {
+        if ("pending".equals(m.path("evidence").asText()))
+            return "not measured: " + m.path("reason").asText();
         return "events " + m.required("creditEvents").asInt() + "/" + m.required("opportunities").asInt()
                 + ", first " + hand(m.required("medianFirstOpportunityHand")) + ", unlock "
                 + hand(m.required("medianUnlockHand")) + ", 3t " + window(m, "3") + ", 6t " + window(m, "6");

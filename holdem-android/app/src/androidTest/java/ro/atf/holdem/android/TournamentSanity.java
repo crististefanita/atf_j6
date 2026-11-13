@@ -38,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
@@ -53,6 +54,8 @@ public final class TournamentSanity extends Instrumentation {
     private static final String RENAMED_PROFILE = "Alex Poker";
     private static final String ORIGINAL_LEADERBOARD_ROW = "#1 · You · Points 100 · Tournaments 1 · Best finish 1";
     private static final String RENAMED_LEADERBOARD_ROW = "#1 · " + RENAMED_PROFILE + " · Points 100 · Tournaments 1 · Best finish 1";
+    private static final int ACTIVE_ACHIEVEMENT_COUNT = Arrays.stream(GameplayAchievementCatalog.Tier.values())
+            .mapToInt(tier -> GameplayAchievementCatalog.forTier(tier).size()).sum();
     private final JSONArray actions = new JSONArray();
     private final JSONArray assertions = new JSONArray();
     private final JSONArray captures = new JSONArray();
@@ -232,7 +235,7 @@ public final class TournamentSanity extends Instrumentation {
         }
         if (achievements == null) throw new AssertionError("Achievement Activity did not open");
         see("Achievements opens from the main menu", "Achievements");
-        see("All active achievements start locked", "Unlocked 0/14");
+        see("All active achievements start locked", "Unlocked 0/" + ACTIVE_ACHIEVEMENT_COUNT);
         see("Achievement list has an English accessibility label", "Achievement list");
         scrollAchievementTo("Easy");
         achievementRow("Win a poker hand", "Progress · 0/1");
@@ -255,9 +258,10 @@ public final class TournamentSanity extends Instrumentation {
         achievementRow("Win 3 different tournaments", "Progress · 0/3");
         achievementRow("Win 2 hands at showdown with a full house or better", "Progress · 0/2");
         achievementRow("Win 2 tournaments that started with six players", "Progress · 0/2");
+        achievementRow("Win 4 high-card pots at six-seat Hard tables", "Progress · 0/4");
         capture("05-achievements-hard");
         searchAchievements("contested side pot");
-        see("Search narrows the catalog", "Showing 1 of 14");
+        see("Search narrows the catalog", "Showing 1 of " + ACTIVE_ACHIEVEMENT_COUNT);
         var row = scrollAchievementTo("Win a contested side pot");
         tap("Win a contested side pot", row.isClickable() ? row : row.getParent());
         see("The shared detail exposes the eligibility rule",
@@ -275,7 +279,8 @@ public final class TournamentSanity extends Instrumentation {
         String query = "in 3 distinct tournament hands";
         String rule = "Receive pot chips in 3 distinct tournament hands. Each hand contributes once across all pot layers.";
         searchAchievements(query, "Easy", "Locked");
-        see("Search finds a rendered YAML threshold with difficulty and status filters", "Showing 1 of 14");
+        see("Search finds a rendered YAML threshold with difficulty and status filters",
+                "Showing 1 of " + ACTIVE_ACHIEVEMENT_COUNT);
         var result = scrollAchievementTo("Win 3 different hands");
         tap("Win 3 different hands", result.isClickable() ? result : result.getParent());
         see("Achievement detail renders the same threshold as search", rule);
@@ -290,7 +295,7 @@ public final class TournamentSanity extends Instrumentation {
         }
         see("Achievement detail survives Activity recreation", rule);
         tapDialogAction("Close");
-        see("Filtered achievement list survives Activity recreation", "Showing 1 of 14");
+        see("Filtered achievement list survives Activity recreation", "Showing 1 of " + ACTIVE_ACHIEVEMENT_COUNT);
         tap("Search and filters");
         var field = awaitMatch(node -> node.isEditable() && query.equals(value(node.getText())));
         boolean restored = field != null && selectedAchievementFilter("Difficulty", "Easy")
@@ -362,6 +367,7 @@ public final class TournamentSanity extends Instrumentation {
         capture("05b-achievements-romanian-medium");
         scrollAchievementTo("Grele");
         achievementRow("Câștigă 3 turnee diferite", "Progres · 0/3");
+        achievementRow("Câștigă singur 4 poturi cu carte mare la mese de șase locuri pe Greu", "Progres · 0/4");
         capture("05c-achievements-romanian-hard");
         tap("Înapoi");
     }
@@ -468,7 +474,7 @@ public final class TournamentSanity extends Instrumentation {
 
     private void inspectEarnedAchievementProgress() throws Exception {
         tap("Achievements");
-        see("Earned achievement progress reloads from the saved profile", "Unlocked 6/14");
+        see("Earned achievement progress reloads from the saved profile", "Unlocked 6/" + ACTIVE_ACHIEVEMENT_COUNT);
         scrollAchievementTo("Easy");
         achievementRow("Win a poker hand", "Earned · 1/1");
         achievementRow("Reach your first showdown", "Earned · 1/1");
@@ -490,7 +496,7 @@ public final class TournamentSanity extends Instrumentation {
         tap("Achievements", awaitMatch(node -> node.isClickable()
                 && ("Achievements".equals(value(node.getText()))
                 || "achievements".equals(value(node.getContentDescription())))));
-        see("Reopening achievements preserves the unlocked count", "Unlocked 6/14");
+        see("Reopening achievements preserves the unlocked count", "Unlocked 6/" + ACTIVE_ACHIEVEMENT_COUNT);
         scrollAchievementTo("Medium");
         achievementRow("Win a tournament", "Earned · 1/1");
         achievementRow("Finish in the top three in 2 different tournaments", "Progress · 1/2");

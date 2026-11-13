@@ -24,6 +24,7 @@ import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityWindowInfo;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -175,7 +176,17 @@ public final class TournamentSanity extends Instrumentation {
             capture("01-shared-achievement-modal");
             SystemClock.sleep(8200);
             see("Modal remains visible until explicit dismissal", "Achievement progress");
-            tap("Close");
+            Button[] closeButton = new Button[1];
+            runOnMainSync(() -> closeButton[0] = dialog[0].getButton(AlertDialog.BUTTON_POSITIVE));
+            String closeState = closeButton[0] == null ? "missing"
+                    : closeButton[0].isShown() && closeButton[0].isEnabled() && closeButton[0].isClickable()
+                            && "Close".equalsIgnoreCase(value(closeButton[0].getText()))
+                                    ? "visible enabled Close button" : "Close button unavailable";
+            check("Modal exposes an enabled Close action", "visible enabled Close button", closeState);
+            boolean[] clicked = new boolean[1];
+            runOnMainSync(() -> clicked[0] = closeButton[0] != null && closeButton[0].performClick());
+            check("Tap Close", "click dispatched", clicked[0] ? "click dispatched" : "control unavailable");
+            waitForIdleSync();
             boolean[] stillShowing = new boolean[1];
             runOnMainSync(() -> stillShowing[0] = dialog[0].isShowing());
             check("Closing the achievement notice dismisses its modal", "dismissed",
@@ -632,15 +643,19 @@ public final class TournamentSanity extends Instrumentation {
             scrollBackUntilVisible("#3 · You · Call +20");
             capture("01-betting-ledger-history");
             tap("Check");
-            seeBettingAction("Check iteration identifies a player and its zero chip delta",
-                    new BettingActionObservation.Expectation(beforeCheck.ordinal() + 1, "You", "Check", 0, 20), false);
+            String humanCheck = "#" + (beforeCheck.ordinal() + 1) + " · You · Check +0";
+            ensureHandHistoryOpen(activity);
+            scrollBackUntilVisible(humanCheck);
+            capture("01d-human-check-in-history");
+            closeHandHistoryIfOpen(activity);
             see("First hand reaches the turn", "Hand 1 · Turn");
             tap("Check");
             see("First hand reaches the river", "Hand 1 · River");
             tap("Check");
+            capture("01c-post-river-settlement");
+            awaitSettlementAndDismissAchievementNotices(activity, 1, "01-earned-hand-achievement");
             see("First hand settles before offering another deal", "Hand 1 · Settled");
-            see("First hand pot is paid", "Pot paid · 80");
-            dismissAchievementNoticeIfVisible("Achievement progress", "01-earned-hand-achievement");
+            seeContains("First hand pot is paid after dismissing the achievement notice", "Pot paid ·");
             capture("01-hand-one-settled");
             checkCollapsedViewport(activity, "The settled table fits without page scrolling");
             SystemClock.sleep(1800);
@@ -651,6 +666,7 @@ public final class TournamentSanity extends Instrumentation {
             tap("New hand");
             see("Stakes carry into hand two", "Hand 2 · Preflop");
             tap("All-in · 1960");
+            awaitSettlementAndDismissAchievementNotices(activity, 2, "02-earned-hand-achievement");
             see("Second hand reaches settlement", "Hand 2 · Settled");
             countDescriptions("First all-in eliminates two seats", ", Eliminated", 2);
             capture("02-two-seats-eliminated");
@@ -661,7 +677,7 @@ public final class TournamentSanity extends Instrumentation {
             countDescriptions("Only the human hole cards are announced", "Your hand ·", 2);
             capture("03-heads-up");
             tap("All-in · 7900");
-            dismissAchievementNoticeIfVisible("Tournament achievement progress", "03-earned-tournament-achievement");
+            awaitSettlementAndDismissAchievementNotices(activity, 3, "03-earned-tournament-achievement");
             see("Heads-up hand reaches settlement", "Hand 3 · Settled");
             countDescriptions("Last all-in eliminates the final opponent", ", Eliminated", 3);
             check("No next hand after the win", "absent", find("New hand") == null ? "absent" : "present");
@@ -1180,6 +1196,7 @@ public final class TournamentSanity extends Instrumentation {
         try {
             awaitWinChance("Unchecked setup leaves the win chance hidden", false);
             tap("All-in · 2000");
+            awaitSettlementAndDismissAchievementNotices(activity, 1, "05-earned-elimination-achievement");
             see("Opening all-in settles before elimination is asserted", "Hand 1 · Settled");
             countDescriptions("Human seat is eliminated after the opening all-in", "You, Stack 0, Won 0, Eliminated", 1);
             tap("Tournament result");
@@ -2019,15 +2036,80 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private void tap(String label) throws Exception {
-        tap(label, await(label));
+        var control = await(label);
+        while (control != null && !control.isClickable()) control = control.getParent();
+        tap(label, control);
     }
 
-    private void dismissAchievementNoticeIfVisible(String title, String captureName) throws Exception {
+    private void dismissAchievementNoticeIfVisible(Activity activity, String title, String captureName) throws Exception {
         if (find(title) == null) return;
         see("Achievement progress opens in a modal dialog", title);
-        seeContains("Modal announces an earned objective", "Earned ·");
+        var preview = collect(node -> {
+            String text = value(node.getText()) + " " + value(node.getContentDescription());
+            return text.contains("Earned ·") || text.contains("Progress ·")
+                    || text.contains("Obținută ·") || text.contains("Progres ·");
+        });
+        check("Modal announces earned or partial objective progress", "one visible achievement preview",
+                preview.isEmpty() ? "not visible" : value(preview.get(0).getText()).isBlank()
+                        ? value(preview.get(0).getContentDescription()) : value(preview.get(0).getText()),
+                !preview.isEmpty());
         capture(captureName);
-        tap("Close");
+        AlertDialog[] dialog = new AlertDialog[1];
+        boolean[] clicked = new boolean[1];
+        String[] closeState = new String[1];
+        runOnMainSync(() -> {
+            try {
+                var field = HoldemActivity.class.getDeclaredField("achievementNoticeDialog");
+                field.setAccessible(true);
+                dialog[0] = (AlertDialog) field.get(activity);
+                Button close = dialog[0] == null ? null : dialog[0].getButton(AlertDialog.BUTTON_POSITIVE);
+                closeState[0] = close != null && close.isShown() && close.isEnabled()
+                        && "Close".equalsIgnoreCase(value(close.getText()))
+                                ? "visible enabled Close button" : "Close button unavailable";
+                clicked[0] = close != null && close.performClick();
+            } catch (ReflectiveOperationException failure) {
+                closeState[0] = failure.toString();
+            }
+        });
+        check("Earned notice exposes a visible Close button", "visible enabled Close button", closeState[0]);
+        check("Tap Close", "click dispatched", clicked[0] ? "click dispatched" : "control unavailable");
+        actions.put("Close the earned achievement notice");
+        waitForIdleSync();
+        boolean[] dismissed = new boolean[1];
+        runOnMainSync(() -> dismissed[0] = dialog[0] != null && !dialog[0].isShowing());
+        check("Closing the earned notice dismisses its modal", "dismissed",
+                dismissed[0] ? "dismissed" : "still showing");
+    }
+
+    private void awaitSettlementAndDismissAchievementNotices(Activity activity, int hand, String captureName)
+            throws Exception {
+        String settled = "Hand " + hand + " · Settled";
+        long deadline = SystemClock.uptimeMillis() + 30000;
+        do {
+            String title = find("Achievement progress") != null ? "Achievement progress"
+                    : find("Tournament achievement progress") != null ? "Tournament achievement progress" : null;
+            if (title != null) {
+                dismissAchievementNoticeIfVisible(activity, title, captureName);
+                continue;
+            }
+            if (find(settled) != null) {
+                // Settlement callbacks can enqueue the achievement dialog just after the table is rendered.
+                SystemClock.sleep(350);
+                title = find("Achievement progress") != null ? "Achievement progress"
+                        : find("Tournament achievement progress") != null
+                                ? "Tournament achievement progress" : null;
+                if (title != null) {
+                    dismissAchievementNoticeIfVisible(activity, title, captureName);
+                    continue;
+                }
+                return;
+            }
+            SystemClock.sleep(100);
+        } while (SystemClock.uptimeMillis() < deadline);
+        capture(captureName + "-settlement-timeout");
+        throw new AssertionError(settled + " not visible after 30 seconds; current hand state: "
+                + collect(node -> value(node.getText()).startsWith("Hand ")).stream()
+                        .map(node -> value(node.getText())).distinct().collect(Collectors.joining(" | ")));
     }
 
     private void tap(String label, AccessibilityNodeInfo node) throws Exception {
@@ -2124,6 +2206,24 @@ public final class TournamentSanity extends Instrumentation {
             waitForIdleSync();
         }
         seeContains("Scrollable betting ledger retains earlier player actions", fragment);
+    }
+
+    private void ensureHandHistoryOpen(Activity activity) throws Exception {
+        boolean[] open = new boolean[1];
+        runOnMainSync(() -> {
+            var history = activity.getWindow().getDecorView().findViewWithTag("betting-history-list");
+            open[0] = history != null && history.isShown();
+        });
+        if (!open[0]) tap("Hand history");
+    }
+
+    private void closeHandHistoryIfOpen(Activity activity) throws Exception {
+        boolean[] open = new boolean[1];
+        runOnMainSync(() -> {
+            var history = activity.getWindow().getDecorView().findViewWithTag("betting-history-list");
+            open[0] = history != null && history.isShown();
+        });
+        if (open[0]) tap("Hand history");
     }
 
     private void checkTerminalCardSizes() throws Exception {

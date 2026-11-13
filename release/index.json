@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.19.1",
-  "previousVersion": "0.19.0",
+  "currentVersion": "0.19.2",
+  "previousVersion": "0.19.1",
   "changeClass": "PATCH_FIX",
-  "changeRationale": "Aduce popup-ul Realizărilor la dialogul comun Card Table UI, îl păstrează până la închidere și elimină spațiul rezervat în masă.",
-  "state": "PREPARED",
-  "published": true,
+  "changeRationale": "Împiedică o decizie AI anulată să afecteze tura următoare și califică restaurarea focusului, jurnalul și premiile după reorganizarea mesei.",
+  "state": "DRAFT",
+  "published": false,
   "versions": [
-    "0.19.1"
+    "0.19.2"
   ]
 }

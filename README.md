@@ -6,8 +6,7 @@ Hold’em Lab este un joc offline de No-Limit Texas Hold’em pentru Android și
 
 ## Jocul
 
-- **[Hold’em Lab 0.19.1 — documentația release-ului](https://github.com/crististefanita/atf_j6/releases/tag/v0.19.1)**
-- **[Descarcă APK-ul Hold’em Lab 0.19.1](https://github.com/crististefanita/atf_j6/releases/download/v0.19.1/HoldemLab-0.19.1.apk)**
+- **[Hold’em Lab 0.19.2 — dosarul ediției](release/0.19.2/README.md)**
 
 ## Arhitectură
 

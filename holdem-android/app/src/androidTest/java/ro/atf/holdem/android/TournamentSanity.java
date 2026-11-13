@@ -649,7 +649,7 @@ public final class TournamentSanity extends Instrumentation {
             tap("Check");
             String humanCheck = "#" + (beforeCheck.ordinal() + 1) + " · You · Check +0";
             ensureHandHistoryOpen(activity);
-            scrollBackUntilVisible(humanCheck);
+            scrollForwardUntilVisible(humanCheck);
             var recordedCheck = collect(node -> value(node.getText()).contains(humanCheck)
                     || value(node.getContentDescription()).contains(humanCheck));
             check("Scrollable betting ledger retains earlier player actions", humanCheck,
@@ -2212,12 +2212,20 @@ public final class TournamentSanity extends Instrumentation {
     }
 
     private void scrollBackUntilVisible(String fragment) throws Exception {
+        scrollUntilVisible(fragment, AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
+    }
+
+    private void scrollForwardUntilVisible(String fragment) throws Exception {
+        scrollUntilVisible(fragment, AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
+    }
+
+    private void scrollUntilVisible(String fragment, int direction) throws Exception {
         for (int attempt = 0; attempt < 8; attempt++) {
             if (!collect(node -> value(node.getText()).contains(fragment)
                     || value(node.getContentDescription()).contains(fragment)).isEmpty()) return;
             var history = collect(node -> node.isScrollable()
                     && value(node.getContentDescription()).equals("Hand history list"));
-            if (history.isEmpty() || !history.get(0).performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)) break;
+            if (history.isEmpty() || !history.get(0).performAction(direction)) break;
             waitForIdleSync();
         }
         seeContains("Scrollable betting ledger retains earlier player actions", fragment);

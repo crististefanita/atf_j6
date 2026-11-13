@@ -46,9 +46,11 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 | Componentă | Ce oferă biblioteca | Ce decide Hold’em |
 |---|---|---|
 | Antetul | Bifă nativă, țintă de minimum 48 dp și mutare sub titlu când spațiul cere | Titlul fix al mâinii, etapa și șansa pe rândul separat, disponibilitatea delegării |
-| Realizările | Lista grupată, progresul vizual, detaliile, starea listei și notificările | Catalogul din YAML, eligibilitatea, creditul pe profil și filtrele pokerului |
+| Realizările | Lista grupată, progresul vizual, detaliile, starea listei și popup-ul modal comun | Catalogul din YAML, eligibilitatea, creditul pe profil și sumarul progresului |
 
 [Proveniența pachetelor Android](ui-library/provenance.json) · [Contractul Realizărilor](../docs/requirements/PRODUCT_REQUIREMENTS.md#realizări)
+
+Popup-ul de Realizări folosește dialogul comun Card Table UI, același tip de prezentare ca în J4. Afișează realizarea obținută, progresul parțial și numărul actualizărilor suplimentare; rămâne vizibil până la închidere și nu schimbă geometria mesei.
 
 ## Prezentarea mesei
 

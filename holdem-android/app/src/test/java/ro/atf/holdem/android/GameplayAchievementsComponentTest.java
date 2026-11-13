@@ -21,6 +21,38 @@ import static org.junit.Assert.*;
 import static ro.atf.holdem.android.GameplayAchievements.Metric.*;
 
 public class GameplayAchievementsComponentTest {
+    @Test public void achievementNoticePrioritizesOneEarnedAndOnePartialUpdate() {
+        var catalog = java.util.Arrays.stream(GameplayAchievementCatalog.Tier.values())
+                .flatMap(tier -> GameplayAchievementCatalog.forTier(tier).stream()).toList();
+        var earnedMilestone = catalog.stream().filter(item -> item.target() == 1).findFirst().orElseThrow();
+        var partialMilestones = catalog.stream().filter(item -> item.target() > 1).limit(2).toList();
+        var partialFirst = new GameplayAchievements.Change(partialMilestones.get(0), 1);
+        var earned = new GameplayAchievements.Change(earnedMilestone, earnedMilestone.target());
+        var partialSecond = new GameplayAchievements.Change(partialMilestones.get(1), 1);
+
+        var summary = GameplayAchievementNotice.summarize(List.of(partialFirst, earned, partialSecond));
+
+        assertEquals(List.of(earned, partialFirst), summary.previews());
+        assertEquals(1, summary.remaining());
+        try {
+            summary.previews().add(partialSecond);
+            fail("Notice previews must be immutable");
+        } catch (UnsupportedOperationException expected) { }
+    }
+
+    @Test public void achievementNoticeHandlesEmptyAndSingleUpdateWithoutInventingProgress() {
+        assertEquals(new GameplayAchievementNotice.Summary(List.of(), 0),
+                GameplayAchievementNotice.summarize(List.of()));
+        var milestone = GameplayAchievementCatalog.forTier(GameplayAchievementCatalog.Tier.EASY).stream()
+                .filter(item -> item.target() > 1).findFirst().orElseThrow();
+        var partial = new GameplayAchievements.Change(milestone, 1);
+
+        var summary = GameplayAchievementNotice.summarize(List.of(partial));
+
+        assertEquals(List.of(partial), summary.previews());
+        assertEquals(0, summary.remaining());
+    }
+
     @Test public void onePokerHandAdvancesSeveralIndependentObjectivesInEitherOrder() {
         var achievements = memory();
         var hand = settled(0, seat(80, 0, evaluation("As Kd Jh 8c 5d")),

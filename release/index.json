@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "repository": "crististefanita/atf_j6",
-  "currentVersion": "0.19.0",
-  "previousVersion": "0.18.0",
-  "changeClass": "COMPATIBLE_FEATURE",
-  "changeRationale": "Extinde și calibrează realizările de poker pe Normal și Greu, cu validare pe distribuiri noi și progres persistent.",
-  "state": "PREPARED",
-  "published": true,
+  "currentVersion": "0.19.1",
+  "previousVersion": "0.19.0",
+  "changeClass": "PATCH_FIX",
+  "changeRationale": "Aduce popup-ul Realizărilor la dialogul comun Card Table UI, îl păstrează până la închidere și elimină spațiul rezervat în masă.",
+  "state": "DRAFT",
+  "published": false,
   "versions": [
-    "0.19.0"
+    "0.19.1"
   ]
 }

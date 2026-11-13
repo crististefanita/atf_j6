@@ -1,6 +1,7 @@
 package ro.atf.holdem.android;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -22,6 +23,7 @@ import ro.cardtable.ui.menu.HomeMenu;
 import ro.cardtable.ui.profile.PlayerNameDialog;
 import ro.cardtable.ui.screens.ScreenViews;
 import ro.cardtable.ui.turn.TurnPacing;
+import ro.cardtable.ui.achievements.AchievementNoticeView;
 
 import ro.atf.holdem.core.ActionType;
 import ro.atf.holdem.core.Street;
@@ -50,6 +52,7 @@ public final class HoldemActivity extends Activity {
     private HoldemProgressStore progress;
     private LocalHoldemGame achievementProgressGame;
     private List<GameplayAchievements.Change> achievementProgress = List.of();
+    private AlertDialog achievementNoticeDialog;
     private LocalHoldemGame game;
     private LocalHoldemGame resumableGame;
     private boolean romanian;
@@ -134,6 +137,11 @@ public final class HoldemActivity extends Activity {
     @Override protected void onDestroy() {
         stopSettlement.run();
         mainHandler.removeCallbacksAndMessages(null);
+        if (achievementNoticeDialog != null) {
+            achievementNoticeDialog.setOnDismissListener(null);
+            achievementNoticeDialog.dismiss();
+            achievementNoticeDialog = null;
+        }
         aiExecutor.shutdownNow();
         winChanceExecutor.shutdownNow();
         super.onDestroy();
@@ -403,29 +411,41 @@ public final class HoldemActivity extends Activity {
         }
     }
 
-    private void showAchievementProgress(LocalHoldemGame current, android.widget.FrameLayout slot) {
-        if (achievementProgressGame != current) return;
+    private void showAchievementProgress(LocalHoldemGame current) {
+        if (!activityResumed || achievementProgressGame != current) return;
+        if (achievementNoticeDialog != null && achievementNoticeDialog.isShowing()) return;
         var changes = achievementProgress;
-        achievementProgress = List.of();
-        achievementProgressGame = null;
+        if (changes.isEmpty()) {
+            clearAchievementProgress(current);
+            return;
+        }
+        var summary = GameplayAchievementNotice.summarize(changes);
         var lines = new java.util.ArrayList<String>();
-        var unlocked = changes.stream().filter(GameplayAchievements.Change::unlocked).findFirst();
-        var partial = changes.stream().filter(change -> !change.unlocked()).findFirst();
-        for (var preview : List.of(unlocked, partial)) preview.ifPresent(change -> lines.add(
+        for (var change : summary.previews()) lines.add(
                 GameplayAchievementsActivity.title(this, change.milestone()) + " · " +
                 text(change.unlocked() ? R.string.gameplay_achievement_earned : R.string.gameplay_achievement_progress,
-                        change.count(), change.milestone().target())));
-        if (changes.size() > lines.size()) {
-            int remaining = changes.size() - lines.size();
+                        change.count(), change.milestone().target()));
+        if (summary.remaining() > 0) {
             lines.add(localizedContext(this, romanian).getResources().getQuantityString(
-                    R.plurals.gameplay_achievement_more, remaining, remaining));
+                    R.plurals.gameplay_achievement_more, summary.remaining(), summary.remaining()));
         }
         int title = current.outcome() == null ? R.string.gameplay_achievement_notice
                 : R.string.gameplay_achievement_match_notice;
-        Runnable dismiss = slot::removeAllViews;
-        ro.cardtable.ui.achievements.AchievementNoticeView.show(views, slot, text(title), lines,
-                text(R.string.close), text(R.string.close), dismiss);
-        slot.postDelayed(dismiss, 8000);
+        var dialog = AchievementNoticeView.dialog(views, text(title), lines, text(R.string.close));
+        achievementNoticeDialog = dialog;
+        dialog.setOnDismissListener(ignored -> {
+            if (achievementNoticeDialog == dialog) {
+                achievementNoticeDialog = null;
+                clearAchievementProgress(current);
+            }
+        });
+        dialog.show();
+    }
+
+    private void clearAchievementProgress(LocalHoldemGame current) {
+        if (achievementProgressGame != current) return;
+        achievementProgress = List.of();
+        achievementProgressGame = null;
     }
 
     private void reportCheckpointFailure(Exception failure) {
@@ -516,7 +536,7 @@ public final class HoldemActivity extends Activity {
                 showHand();
             });
         });
-        if (completed) showAchievementProgress(current, labels.achievementSlot());
+        if (completed) showAchievementProgress(current);
         if (labels.winChance() != null) updateWinChance(table, labels.winChance(), HoldemWinChance.from(frame), renderedScene);
         TextView advice = labels.advice();
         if (advice != null) aiExecutor.execute(() -> {
@@ -624,8 +644,6 @@ public final class HoldemActivity extends Activity {
         views.applyStandardWindowChrome();
         boolean won = current.outcome() == LocalHoldemGame.Outcome.WON;
         var page = views.page(null, text(won ? R.string.tournament_won : R.string.tournament_lost));
-        var achievementSlot = new android.widget.FrameLayout(this);
-        page.addView(achievementSlot, views.matchWrap());
         var table = current.view();
         var names = displayNames(current);
         var physicalNames = HoldemTablePresentation.physicalSeatNames(table, names);
@@ -639,7 +657,7 @@ public final class HoldemActivity extends Activity {
             setup(true);
         }, true);
         views.addQuietButton(page, text(R.string.home), this::home);
-        showAchievementProgress(current, achievementSlot);
+        showAchievementProgress(current);
     }
 
     private void showLeaderboard() {

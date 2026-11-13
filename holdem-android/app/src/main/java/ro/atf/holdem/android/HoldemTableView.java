@@ -65,7 +65,7 @@ final class HoldemTableView {
     private record ViewportPosition(int tableY, boolean historyExpanded, int historyY, String focusTag) {
         private static final ViewportPosition TOP = new ViewportPosition(0, false, 0, null);
     }
-    record Labels(TextView advice, TextView winChance, android.widget.FrameLayout achievementSlot) { }
+    record Labels(TextView advice, TextView winChance) { }
     interface Text { String get(int resource, Object... arguments); }
 
     private final ScreenViews views;
@@ -249,10 +249,7 @@ final class HoldemTableView {
         addBettingLedger(scroll, content, frame, names, compact, position);
 
         TextView advice = null;
-        android.widget.FrameLayout achievementSlot = null;
         if (complete) {
-            achievementSlot = new android.widget.FrameLayout(activity);
-            content.addView(achievementSlot, views.matchWrap());
             boolean finished = game.outcome() != null;
             views.addButton(content, text.get(finished ? R.string.tournament_result : R.string.new_hand),
                     finished ? "tournament-result" : "new-hand", true, newHand, true);
@@ -273,7 +270,7 @@ final class HoldemTableView {
             actions(content, manual ? frame.legalActions() : List.of(), compact, submit);
         }
         restoreAccessibilityFocus(scroll, content, position.focusTag());
-        return new Labels(advice, winChance, achievementSlot);
+        return new Labels(advice, winChance);
     }
 
     private String tableTitle(LocalHoldemGame game, Street street) {

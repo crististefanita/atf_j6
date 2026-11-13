@@ -117,7 +117,7 @@ O comandă de continuare acceptată în timpul animației salvează destinația 
 
 ## Realizări
 
-Meniul **Realizări** folosește componentele comune cu Rentz pentru listă, progres, detalii și notificări. Ordinea provine din catalog. O mână sau un turneu poate avansa mai multe obiective simultan.
+Meniul **Realizări** folosește componentele comune cu Rentz pentru listă, progres, detalii și notificarea modală. Popup-ul de progres folosește dialogul comun Card Table UI, ca în J4; rămâne vizibil până la închidere și nu ocupă spațiu în tabel. Ordinea provine din catalog. O mână sau un turneu poate avansa mai multe obiective simultan.
 
 Căutarea recunoaște titlurile și regulile în română și engleză, inclusiv pragul afișat și expresiile fără diacritice. Filtrele după nivel și stare se aplică împreună și se păstrează la recrearea activității. Detaliul precizează că progresul se acordă în turnee.
 
@@ -139,7 +139,7 @@ Un obiectiv Greu nou cere să câștigi singur un pot la dezvăluire cu **carte 
 
 - Catalogul YAML definește ID-urile, nivelul, ordinea, metrica, pragul și regulile RO/EN. Gradle generează lista Android și rezervă ID-urile retrase.
 - Pentru obiectivele specifice de turneu, evaluatorul folosește contextul inițial, modul, proveniența deciziilor, identitatea mâinii și decontarea validată. O oportunitate observată nu este progres: criteriul complet trebuie să fie adevărat, iar aceeași mână nu se numără de două ori.
-- Lista, detaliile și panoul de progres folosesc interfața comună. Panoul afișează actualizările după confirmarea salvării, iar repetarea rezultatului nu produce o nouă notificare.
+- Lista și detaliile folosesc ecranul comun; notificarea folosește dialogul comun Card Table UI. Se deschide numai după confirmarea salvării, afișează cel mult o realizare obținută și una în progres, apoi numărul celorlalte actualizări. Rămâne deschisă până când jucătorul o închide; repetarea rezultatului nu produce o nouă notificare.
 - Progresul acumulează dovezi până la cel mai mare prag declarat pentru metrică. Fiecare obiectiv afișează cel mult propriul prag.
 - ID-urile și dovezile salvate se păstrează la reducerea pragului sau retragerea unei realizări. Lista folosește aceeași cheie pentru rând și detaliu când se schimbă ordinea, traducerea sau pragul.
 

@@ -3,6 +3,7 @@ package ro.atf.holdem.android;
 
 import android.animation.ValueAnimator;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Instrumentation;
 import android.app.UiAutomation;
 import android.accessibilityservice.AccessibilityServiceInfo;
@@ -46,6 +47,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import ro.cardtable.ui.screens.GameTitleBar;
+import ro.cardtable.ui.screens.ScreenViews;
+import ro.cardtable.ui.achievements.AchievementNoticeView;
 
 /** A small device suite that drives the same accessible controls as the player. */
 public final class TournamentSanity extends Instrumentation {
@@ -82,6 +85,7 @@ public final class TournamentSanity extends Instrumentation {
             service.flags |= AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS | AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS;
             ui.setServiceInfo(service);
             if (journey.equals("tournament")) {
+                inspectAchievementNoticeComponent();
                 winAcrossThreeHands();
                 loseOnTheOpeningAllIn();
                 inspectConfirmedRaiseLedger();
@@ -148,6 +152,34 @@ public final class TournamentSanity extends Instrumentation {
                 passed &= result.passed();
             }
             if (!passed) throw new AssertionError("Table geometry drifted; see individual component assertions.");
+        } finally {
+            runOnMainSync(activity::finish);
+        }
+    }
+
+    private void inspectAchievementNoticeComponent() throws Exception {
+        var activity = launchHoldem();
+        try {
+            AlertDialog[] dialog = new AlertDialog[1];
+            runOnMainSync(() -> {
+                var views = new ScreenViews(activity, value -> value, HoldemActivity::protect);
+                dialog[0] = AchievementNoticeView.dialog(views, "Achievement progress",
+                        List.of("First pot · Earned · 1/1", "Three different hands · Progress · 2/3",
+                                "+2 other achievements updated"), "Close");
+                dialog[0].show();
+            });
+            see("Achievement notices use the shared modal title", "Achievement progress");
+            seeContains("Modal includes the earned objective", "Earned · 1/1");
+            seeContains("Modal includes partial progress", "Progress · 2/3");
+            seeContains("Modal summarizes additional changes", "+2 other achievements updated");
+            capture("01-shared-achievement-modal");
+            SystemClock.sleep(8200);
+            see("Modal remains visible until explicit dismissal", "Achievement progress");
+            tap("Close");
+            boolean[] stillShowing = new boolean[1];
+            runOnMainSync(() -> stillShowing[0] = dialog[0].isShowing());
+            check("Closing the achievement notice dismisses its modal", "dismissed",
+                    stillShowing[0] ? "still showing" : "dismissed");
         } finally {
             runOnMainSync(activity::finish);
         }
@@ -608,6 +640,7 @@ public final class TournamentSanity extends Instrumentation {
             tap("Check");
             see("First hand settles before offering another deal", "Hand 1 · Settled");
             see("First hand pot is paid", "Pot paid · 80");
+            dismissAchievementNoticeIfVisible("Achievement progress", "01-earned-hand-achievement");
             capture("01-hand-one-settled");
             checkCollapsedViewport(activity, "The settled table fits without page scrolling");
             SystemClock.sleep(1800);
@@ -628,6 +661,7 @@ public final class TournamentSanity extends Instrumentation {
             countDescriptions("Only the human hole cards are announced", "Your hand ·", 2);
             capture("03-heads-up");
             tap("All-in · 7900");
+            dismissAchievementNoticeIfVisible("Tournament achievement progress", "03-earned-tournament-achievement");
             see("Heads-up hand reaches settlement", "Hand 3 · Settled");
             countDescriptions("Last all-in eliminates the final opponent", ", Eliminated", 3);
             check("No next hand after the win", "absent", find("New hand") == null ? "absent" : "present");
@@ -1986,6 +2020,14 @@ public final class TournamentSanity extends Instrumentation {
 
     private void tap(String label) throws Exception {
         tap(label, await(label));
+    }
+
+    private void dismissAchievementNoticeIfVisible(String title, String captureName) throws Exception {
+        if (find(title) == null) return;
+        see("Achievement progress opens in a modal dialog", title);
+        seeContains("Modal announces an earned objective", "Earned ·");
+        capture(captureName);
+        tap("Close");
     }
 
     private void tap(String label, AccessibilityNodeInfo node) throws Exception {

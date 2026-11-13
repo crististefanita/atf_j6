@@ -1741,7 +1741,7 @@ public final class TournamentSanity extends Instrumentation {
             Bitmap arrivalImage = probe[0].takeArrivalImage();
             if (departureImage != null) emitCapture("01-award-departure", departureImage);
             if (arrivalImage != null) emitCapture("02-award-arrival", arrivalImage);
-            dismissAwardNotice();
+            awaitSettlementAndDismissAchievementNotices(3, null);
             see("The all-in settles the resumed hand", "Hand 3 · Settled");
             see("The paid pot excludes the unmatched return", "Pot paid · 160");
             check("The pot marker starts at the pot center", "within 2 px of the pot center", String.valueOf(departure),
@@ -1818,7 +1818,7 @@ public final class TournamentSanity extends Instrumentation {
             runOnMainSync(() -> probe[0] = new SettlementAwardObservation((ViewGroup) activity.getWindow().getDecorView(), winners));
             tap("All-in · " + fixture.allInChips);
             if (animated) checkMultipleFlights(probe[0], fixture, name);
-            dismissAwardNotice();
+            awaitSettlementAndDismissAchievementNotices(game.handNumber(), null);
             see(name + " settles after the all-in", "Hand " + game.handNumber() + " · Settled");
             see(name + " shows the total distributed pot", "Pot paid · 8000");
             if (!animated) {
@@ -1867,7 +1867,7 @@ public final class TournamentSanity extends Instrumentation {
             Bitmap arrivalImage = probe[0].takeArrivalImage();
             if (departureImage != null) emitCapture("01-compact-departure", departureImage);
             if (arrivalImage != null) emitCapture("02-compact-arrival", arrivalImage);
-            dismissAwardNotice();
+            awaitSettlementAndDismissAchievementNotices(3, null);
             see("Compact side pot settles after the all-in", "Hand 3 · Settled");
             awaitRenderedFrame("03-compact-summary");
             var summaryImage = new Bitmap[1];
@@ -2060,13 +2060,6 @@ public final class TournamentSanity extends Instrumentation {
         tap(label, control);
     }
 
-    private void dismissAwardNotice() throws Exception {
-        waitForIdleSync();
-        if (find("Achievement progress") != null || find("Tournament achievement progress") != null) {
-            tapDialogAction("Close");
-        }
-    }
-
     private void dismissAchievementNoticeIfVisible(String title, String captureName) throws Exception {
         if (find(title) == null) return;
         see("Achievement progress opens in a modal dialog", title);
@@ -2079,7 +2072,7 @@ public final class TournamentSanity extends Instrumentation {
                 preview.isEmpty() ? "not visible" : value(preview.get(0).getText()).isBlank()
                         ? value(preview.get(0).getContentDescription()) : value(preview.get(0).getText()),
                 !preview.isEmpty());
-        capture(captureName);
+        if (captureName != null) capture(captureName);
         var close = awaitMatch(node -> "android.widget.Button".contentEquals(value(node.getClassName()))
                 && "Close".equalsIgnoreCase(value(node.getText())) && node.isEnabled() && node.isClickable(), 4000);
         check("Earned notice exposes a visible Close button", "visible enabled Close button",
@@ -2095,28 +2088,27 @@ public final class TournamentSanity extends Instrumentation {
             throws Exception {
         String settled = "Hand " + hand + " · Settled";
         long deadline = SystemClock.uptimeMillis() + 30000;
+        long settledSince = -1;
         do {
             String title = find("Achievement progress") != null ? "Achievement progress"
                     : find("Tournament achievement progress") != null ? "Tournament achievement progress" : null;
             if (title != null) {
+                settledSince = -1;
                 dismissAchievementNoticeIfVisible(title, captureName);
                 continue;
             }
             if (find(settled) != null) {
-                // Settlement callbacks can enqueue the achievement dialog just after the table is rendered.
-                SystemClock.sleep(350);
-                title = find("Achievement progress") != null ? "Achievement progress"
-                        : find("Tournament achievement progress") != null
-                                ? "Tournament achievement progress" : null;
-                if (title != null) {
-                    dismissAchievementNoticeIfVisible(title, captureName);
-                    continue;
-                }
-                return;
+                // The settled layout precedes the award flight and its progress dialog.
+                // Require a quiet window spanning the flight; dismiss any dialog that interrupts it.
+                long now = SystemClock.uptimeMillis();
+                if (settledSince < 0) settledSince = now;
+                if (now - settledSince >= 1600) return;
+            } else {
+                settledSince = -1;
             }
             SystemClock.sleep(100);
         } while (SystemClock.uptimeMillis() < deadline);
-        capture(captureName + "-settlement-timeout");
+        capture(captureName == null ? "05z-settlement-timeout" : captureName + "-settlement-timeout");
         throw new AssertionError(settled + " not visible after 30 seconds; current hand state: "
                 + collect(node -> value(node.getText()).startsWith("Hand ")).stream()
                         .map(node -> value(node.getText())).distinct().collect(Collectors.joining(" | ")));

@@ -1,0 +1,45 @@
+{
+  "provenance": {
+    "buildCommit": "8bd64c8bef35b278d6d690f8a20c1f0ffde5af27",
+    "qualificationPath": "release/0.19.2/qualification.json",
+    "qualificationSha256": "e7007651de177753420e93ac72a9e1bf4066563ad5749c3bdc9c7e08d18d60aa",
+    "qualificationScope": "FULL",
+    "nativePlanSha256": "0d76fb91ce8f79ae4e6727cff9e1e8f11a09a9d968354a4cc1fe9bdc71606e21",
+    "inventoriedFilesVerified": 21,
+    "continuationSha256": null,
+    "readmeCommit": "cfd93bef6abcb7a71e5107dc4f612f395f133500",
+    "tagCommit": "8bd64c8bef35b278d6d690f8a20c1f0ffde5af27",
+    "editionManifestSha256": "84a2f7adc2b33ac298014e1e12ab15239a8bcc6883fe9310c2af8729cca290ad"
+  },
+  "authenticatedAssetDownload": {
+    "schemaVersion": 2,
+    "verified": true,
+    "version": "0.19.2",
+    "tag": "v0.19.2",
+    "repository": "crististefanita/atf_j6",
+    "readme": "README.md#jocul",
+    "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.19.2/HoldemLab-0.19.2.apk",
+    "finalHost": "release-assets.githubusercontent.com",
+    "httpStatus": 200,
+    "credentialMode": "authenticated GitHub REST API",
+    "assetId": 744424664,
+    "remoteRef": "main",
+    "remoteReadmeBlob": "64c900927feb470a66570b93db6868440f86b49f",
+    "bytes": 883022,
+    "sha256": "c4ae8d315325fa9c00d1a2c7487284a035e7143eab562f14ff92e76661e88422",
+    "apk": "HoldemLab-0.19.2.apk",
+    "completedUtc": "2026-11-13T17:00:20.8404446Z"
+  },
+  "authenticatedChecksumDownload": {
+    "verified": true,
+    "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.19.2/HoldemLab-0.19.2.apk.sha256",
+    "finalHost": "release-assets.githubusercontent.com",
+    "httpStatus": 200,
+    "credentialMode": "authenticated GitHub REST API",
+    "assetId": 744424740,
+    "bytes": 87,
+    "sha256": "b85bfc2633be67ea3dfc7f5023e9d1bb4bc3f19e1f95fb84cbbf47e27688a9f8",
+    "apkSha256": "c4ae8d315325fa9c00d1a2c7487284a035e7143eab562f14ff92e76661e88422",
+    "apkName": "HoldemLab-0.19.2.apk"
+  }
+}

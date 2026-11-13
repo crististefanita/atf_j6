@@ -9,4 +9,8 @@
 
 ## Calificare
 
-Rapoartele de test și identitatea APK-ului semnat se atașează după închiderea porților RAG.
+- Maven: 222 teste; Android JVM: 114 teste; zero eșecuri, erori sau teste omise.
+- APK-ul semnat a trecut smoke-ul nativ de turneu (109 aserțiuni) și smoke-ul de instalare (82 aserțiuni).
+- Calibrarea live a parcurs 204 turnee și 15.162 mâini; validarea pe replay a folosit 1.440 de trasee pereche. Rapoartele notează separat raritatea și incertitudinea eșantioanelor mici.
+
+Identitatea APK-ului, commitul calificat, probele și capturile sunt în [manifest](release-validation.json) și [indexul rapoartelor](reports/README.md).

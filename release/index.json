@@ -4,9 +4,9 @@
   "currentVersion": "0.19.0",
   "previousVersion": "0.18.0",
   "changeClass": "COMPATIBLE_FEATURE",
-  "changeRationale": "Extinde catalogul Realizărilor cu obiective de poker pentru poziție, showdown, straturi de pot și rezultate de turneu, calibrate pe jocuri Normal/Greu cu seed-uri de holdout.",
-  "state": "DRAFT",
-  "published": false,
+  "changeRationale": "Extinde și calibrează realizările de poker pe Normal și Greu, cu validare pe distribuiri noi și progres persistent.",
+  "state": "PREPARED",
+  "published": true,
   "versions": [
     "0.19.0"
   ]

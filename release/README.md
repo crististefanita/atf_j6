@@ -16,7 +16,7 @@ Dosarele de mai jos păstrează dovezile edițiilor. Când un fișier este inven
 
 | Versiune | Documentație | Identitatea pachetului |
 |---|---|---|
-| 0.19.0 | [Dosarul ediției](0.19.0/README.md) · `DRAFT` | [Manifestul ediției](0.19.0/release-validation.json) |
+| 0.19.0 | [Dosarul ediției](0.19.0/README.md) · `PREPARED` | [Manifestul ediției](0.19.0/release-validation.json) |
 | 0.18.0 | [Dosarul ediției](0.18.0/README.md) · `PREPARED` | [Manifestul ediției](0.18.0/release-validation.json) |
 | 0.17.2 | [Dosarul ediției](0.17.2/README.md) · `PREPARED` | [Manifestul ediției](0.17.2/release-validation.json) |
 | 0.17.1 | [Dosarul ediției](0.17.1/README.md) · `PREPARED` | [Manifestul ediției](0.17.1/release-validation.json) |
@@ -54,10 +54,10 @@ Pentru 0.13.0, tagul și dosarul sigilat păstrează sursa și dovezile calific�
 
 | Stare | Înțeles |
 |---|---|
-| `PREPARED` | Dosarul conține calificarea APK-ului semnat și dovada descărcării autentificate. Aceasta este ținta politicii curente de distribuție. |
-| `PUBLISHED` | APK-ul și checksum-ul pot fi descărcate fără autentificare, iar digestul corespunde manifestului. |
+| `PREPARED` | Release-ul GitHub conține APK-ul semnat și checksum-ul; identitatea lor și descărcarea autentificată sunt verificate. Aceasta este politica curentă a proiectului. |
+| `PUBLISHED` | Stare istorică pentru edițiile care au cerut separat calificarea accesului anonim. Nu se testează implicit și nu se declară pentru edițiile curente. |
 
-În `DRAFT`, README-ul principal indică doar dosarul ediției. După calificare, păstrează două legături ordonate: pagina Release, apoi APK-ul. Limitările de acces și detaliile de verificare aparțin dosarului versiunii.
+În `DRAFT`, README-ul principal indică doar dosarul ediției. După calificare, păstrează două legături ordonate: pagina Release, apoi APK-ul. Pentru edițiile curente, verifică download-ul numai cu autentificare; o probă anonimă necesită o cerere explicită separată. Limitările de acces și detaliile de verificare aparțin dosarului versiunii.
 
 ## Conținutul fiecărei ediții
 

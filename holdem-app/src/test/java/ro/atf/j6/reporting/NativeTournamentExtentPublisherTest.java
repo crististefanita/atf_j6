@@ -97,19 +97,29 @@ class NativeTournamentExtentPublisherTest {
         receipt.put("journey", "tournament");
         receipt.putArray("captures");
 
-        assertAuditedFailure(publish(temp, receipt), "Missing: [Opening hand, First hand pot is paid");
+        assertAuditedFailure(publish(temp, receipt),
+                "Missing: [Opening hand, First hand settles before offering another deal");
+    }
+
+    @Test
+    void tournamentAcceptsTheCurrentSettlementAndAchievementEvidence(@TempDir Path temp) throws Exception {
+        var result = publish(temp, tournamentReceipt());
+
+        assertEquals(0, result.exitCode(), result.output());
+        assertTrue(result.html().contains("Scrollable betting ledger retains earlier player actions"));
+        assertTrue(result.html().contains("First hand pot is paid after dismissing the achievement notice"));
+        assertTrue(result.html().contains("01-earned-hand-achievement.png"));
     }
 
     @Test
     void openingAndDismissingRaiseCannotReplaceTheAccessibleCall(@TempDir Path temp) throws Exception {
-        var receipt = smokeReceipt().put("journey", "tournament");
-        receipt.putArray("captures");
-        var assertions = receipt.putArray("assertions");
-        for (String name : List.of("Opening hand", "First hand pot is paid", "Raise opens the amount editor",
-                "Dismiss the amount editor", "Opt-in shows the human win chance", "Unchecked setup leaves the win chance hidden",
-                "Third hand starts heads-up", "Winner sees congratulations", "Losing player sees the elimination result",
-                "Achievement progress: Win 3 different hands", "Achievement progress: Win 3 different tournaments")) {
-            assertions.add(assertion(name, true));
+        var receipt = tournamentReceipt();
+        var assertions = receipt.withArray("assertions");
+        for (int index = 0; index < assertions.size(); index++) {
+            if ("Call remains accessible after closing Raise".equals(assertions.get(index).path("name").asText())) {
+                assertions.remove(index);
+                break;
+            }
         }
 
         assertAuditedFailure(publish(temp, receipt), "Missing: [Call remains accessible after closing Raise");
@@ -195,6 +205,34 @@ class NativeTournamentExtentPublisherTest {
                 "6 settled hands align below their seat frames, including the viewer",
                 "Tournament setup offers Normal and Hard and defaults to Normal",
                 "5 settled hands align below their seat frames, including the viewer")) {
+            assertions.add(assertion(name, true));
+        }
+        return receipt;
+    }
+
+    private static ObjectNode tournamentReceipt() {
+        var receipt = smokeReceipt().put("journey", "tournament");
+        var captures = receipt.putArray("captures");
+        for (String capture : List.of("01-shared-achievement-modal.png", "01b-opening-preflop.png",
+                "01-call-ledger-visible.png", "01-betting-ledger-history.png", "01d-human-check-in-history.png",
+                "01c-post-river-settlement.png", "01-earned-hand-achievement.png", "01-hand-one-settled.png",
+                "01a-settlement-retained.png", "02-earned-hand-achievement.png", "02-two-seats-eliminated.png",
+                "03-heads-up.png", "03-earned-tournament-achievement.png", "04-tournament-won.png",
+                "04a-achievements-earned.png", "04b-achievements-parallel.png", "04c-achievements-hard-progress.png",
+                "05-earned-elimination-achievement.png", "05-tournament-lost.png", "05a-confirmed-raise-ledger.png")) {
+            captures.add(capture);
+        }
+        var assertions = receipt.putArray("assertions");
+        for (String name : List.of("Opening hand", "First hand settles before offering another deal",
+                "First hand pot is paid after dismissing the achievement notice",
+                "Latest seat action names the most recent player, move and running hand total",
+                "Scrollable betting ledger retains earlier player actions", "Raise opens the amount editor",
+                "Call remains accessible after closing Raise", "Opt-in shows the human win chance",
+                "Unchecked setup leaves the win chance hidden", "Enter a custom Raise amount",
+                "Raise has exactly one matching ledger row", "Second hand reaches settlement",
+                "Third hand starts heads-up", "Heads-up hand reaches settlement", "Winner sees congratulations",
+                "Losing player sees the elimination result", "Achievement progress: Reach your first showdown",
+                "Achievement progress: Win 3 different hands", "Achievement progress: Win 3 different tournaments")) {
             assertions.add(assertion(name, true));
         }
         return receipt;

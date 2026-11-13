@@ -26,14 +26,16 @@ import java.util.List;
 
 /** Publishes observed native Android E2E results using the pinned Reporting JAR. */
 class PublishTournamentExtent {
-    private static final List<String> TOURNAMENT_ASSERTIONS = List.of("Opening hand", "First hand pot is paid",
-            "Raise opens the amount editor", "Call remains accessible after closing Raise",
-            "Opt-in shows the human win chance", "Unchecked setup leaves the win chance hidden",
-            "Check iteration identifies a player and its zero chip delta",
-            "Enter a custom Raise amount", "Raise has exactly one matching ledger row",
-            "Third hand starts heads-up", "Winner sees congratulations",
-            "Losing player sees the elimination result",
-            "Achievement progress: Reach your first showdown",
+    private static final List<String> TOURNAMENT_ASSERTIONS = List.of("Opening hand",
+            "First hand settles before offering another deal",
+            "First hand pot is paid after dismissing the achievement notice",
+            "Latest seat action names the most recent player, move and running hand total",
+            "Scrollable betting ledger retains earlier player actions", "Raise opens the amount editor",
+            "Call remains accessible after closing Raise", "Opt-in shows the human win chance",
+            "Unchecked setup leaves the win chance hidden", "Enter a custom Raise amount",
+            "Raise has exactly one matching ledger row", "Second hand reaches settlement",
+            "Third hand starts heads-up", "Heads-up hand reaches settlement", "Winner sees congratulations",
+            "Losing player sees the elimination result", "Achievement progress: Reach your first showdown",
             "Achievement progress: Win 3 different hands", "Achievement progress: Win 3 different tournaments");
     private static final List<String> RELEASE_SMOKE_ASSERTIONS = List.of("Release APK opens the branded home menu",
             "Release APK opens hand setup", "Hand setup returns to the home menu", "Release APK opens tournament setup",
@@ -55,10 +57,13 @@ class PublishTournamentExtent {
             "Achievement progress: Câștigă 3 mâini diferite", "Achievement progress: Împarte un pot la dezvăluire",
             "Achievement progress: Câștigă un pot secundar disputat", "Achievement progress: Câștigă 3 turnee diferite");
     private static final List<String> TOURNAMENT_CAPTURES = List.of(
-            "01b-opening-preflop.png", "01-call-ledger-visible.png", "01-betting-ledger-history.png", "01-hand-one-settled.png",
-            "01a-settlement-retained.png", "02-two-seats-eliminated.png", "03-heads-up.png",
-            "04-tournament-won.png", "04a-achievements-earned.png", "04b-achievements-parallel.png",
-            "04c-achievements-hard-progress.png", "05-tournament-lost.png", "05a-confirmed-raise-ledger.png");
+            "01-shared-achievement-modal.png", "01b-opening-preflop.png", "01-call-ledger-visible.png",
+            "01-betting-ledger-history.png", "01d-human-check-in-history.png", "01c-post-river-settlement.png",
+            "01-earned-hand-achievement.png", "01-hand-one-settled.png", "01a-settlement-retained.png",
+            "02-earned-hand-achievement.png", "02-two-seats-eliminated.png", "03-heads-up.png",
+            "03-earned-tournament-achievement.png", "04-tournament-won.png", "04a-achievements-earned.png",
+            "04b-achievements-parallel.png", "04c-achievements-hard-progress.png",
+            "05-earned-elimination-achievement.png", "05-tournament-lost.png", "05a-confirmed-raise-ledger.png");
     private static final List<String> RELEASE_SMOKE_CAPTURES = List.of(
             "01-release-hand-setup.png", "02-release-tournament-setup.png", "03-achievements-easy.png",
             "04-achievements-medium.png", "05-achievements-hard.png", "05a-achievement-side-pot-detail.png",

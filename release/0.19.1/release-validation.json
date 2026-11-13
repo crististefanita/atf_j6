@@ -169,6 +169,11 @@
         "sha256": "886ffb005c08d93aec4c91a0af572f51598563dbf2010361048e39bf5e46a47c"
       },
       {
+        "path": "reports/J6DocumentationGovernance-1794575661716.html",
+        "bytes": 2422891,
+        "sha256": "860bf2e0dbb28af9de3c4ef6e8d2eb0b6a3f010a9898699ada721dda1b57ba43"
+      },
+      {
         "path": "reports/J6MainReadmeGovernance-1794575554443.html",
         "bytes": 2413652,
         "sha256": "37e12c119badbe6b186ece404ccc55632e68945205bc8a2215a12b8b28924401"
@@ -195,8 +200,8 @@
       },
       {
         "path": "reports/README.md",
-        "bytes": 1995,
-        "sha256": "2dd3e461cbc5bd6b189b3ada82fa3009ef630155640ee750906b031424ff5660"
+        "bytes": 2147,
+        "sha256": "c6c94999a87ec4f99c22dbdc89303e4f181a78976766c7e045bf200673a763a4"
       }
     ]
   },
@@ -239,7 +244,8 @@
     ],
     "reports": [
       "reports/J6ReleaseGovernance-1794575551049.html",
-      "reports/J6MainReadmeGovernance-1794575554443.html"
+      "reports/J6MainReadmeGovernance-1794575554443.html",
+      "reports/J6DocumentationGovernance-1794575661716.html"
     ]
   }
 }

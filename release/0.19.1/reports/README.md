@@ -13,6 +13,7 @@ Calificarea este **PASS** pentru APK-ul semnat cu SHA-256 `cfdf3138b1ae67d938af1
 | [Componente Android JVM](android-component-suites-extent.html) | Realizări, progres și integrarea UI comun | 10 suite · 116 teste · 0 fail/error/skip |
 | [Guvernanța release-ului după publicare](J6ReleaseGovernance-1794575551049.html) | Dossier, proveniență, integritatea dovezilor | 8 teste · PASS |
 | [Guvernanța linkurilor din README](J6MainReadmeGovernance-1794575554443.html) | Două linkuri curente, ordonate, fără date de checksum | PASS |
+| [Guvernanța documentației după publicare](J6DocumentationGovernance-1794575661716.html) | Contractele documentației curente | 4 teste · PASS |
 | [Guvernanța documentației](J6DocumentationGovernance-1794570531660.html) | Structura și standardele documentației | 4 teste · PASS |
 | [Impactul UI comun](J6SharedUiImpactGovernance-1794570606186.html) | Trasabilitatea dependenței Card Table UI | PASS |
 | [Turneu nativ](android-tournament-extent.html) | Flux de joc, Realizări și dialogul comun | 138 aserțiuni · 20 capturi · PASS |
@@ -24,4 +25,5 @@ Calificarea este **PASS** pentru APK-ul semnat cu SHA-256 `cfdf3138b1ae67d938af1
 - APK: `HoldemLab-0.19.1.apk` · 880.802 bytes.
 - Certificat de semnare SHA-256: `30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce`.
 - [Manifestul ediției](../release-validation.json), [planul nativ](../native-plan.json) și contextul RAG leagă rapoartele de candidatul calificat.
+
 

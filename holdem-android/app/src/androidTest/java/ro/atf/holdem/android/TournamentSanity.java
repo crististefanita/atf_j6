@@ -646,6 +646,11 @@ public final class TournamentSanity extends Instrumentation {
             String humanCheck = "#" + (beforeCheck.ordinal() + 1) + " · You · Check +0";
             ensureHandHistoryOpen(activity);
             scrollBackUntilVisible(humanCheck);
+            var recordedCheck = collect(node -> value(node.getText()).contains(humanCheck)
+                    || value(node.getContentDescription()).contains(humanCheck));
+            check("Scrollable betting ledger retains earlier player actions", humanCheck,
+                    recordedCheck.isEmpty() ? "not visible" : value(recordedCheck.get(0).getText()),
+                    !recordedCheck.isEmpty());
             capture("01d-human-check-in-history");
             closeHandHistoryIfOpen(activity);
             see("First hand reaches the turn", "Hand 1 · Turn");

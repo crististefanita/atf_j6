@@ -177,8 +177,8 @@
       },
       {
         "path": "reports/README.md",
-        "bytes": 2056,
-        "sha256": "ea24a1fbbdcaa67cb26b2fdde65bf1202ee5fc1b057d2a02be3a2467675e85b2"
+        "bytes": 2241,
+        "sha256": "eace7f548a26d9ef85c802fb499d671f738d766c48a2d749279bbaf0471eb4db"
       },
       {
         "path": "reports/promotion-extent.html",
@@ -209,7 +209,21 @@
         "path": "reports/achievement-calibration-extent.html",
         "bytes": 2456346,
         "sha256": "6e5f05db83b3d2b167bf6d002da8fcad5708db047c59a0514f514c5f92eaa1d5"
+      },
+      {
+        "path": "reports/documentation-governance-extent.html",
+        "bytes": 2422891,
+        "sha256": "2f6b29e4527d197277d93a1e4b903b82bb0f9b8ba5af1cceba1641be96ba5319"
       }
     ]
+  },
+  "postPublicationGovernance": {
+    "status": "PASS",
+    "suite": "ro.atf.j6.release.DocumentationGovernanceTest",
+    "tests": 4,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "report": "reports/documentation-governance-extent.html"
   }
 }

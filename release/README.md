@@ -57,7 +57,11 @@ Pentru 0.13.0, tagul și dosarul sigilat păstrează sursa și dovezile calific�
 | `PREPARED` | Release-ul GitHub conține APK-ul semnat și checksum-ul; identitatea lor și descărcarea autentificată sunt verificate. Aceasta este politica curentă a proiectului. |
 | `PUBLISHED` | Stare istorică pentru edițiile care au cerut separat calificarea accesului anonim. Nu se testează implicit și nu se declară pentru edițiile curente. |
 
-În `DRAFT`, README-ul principal indică doar dosarul ediției. După calificare, păstrează două legături ordonate: pagina Release, apoi APK-ul. Pentru edițiile curente, verifică download-ul numai cu autentificare; o probă anonimă necesită o cerere explicită separată. Limitările de acces și detaliile de verificare aparțin dosarului versiunii.
+După calificare, README-ul principal păstrează pagina Release urmată de linkul direct la APK.
+
+- Edițiile curente se verifică numai cu autentificare.
+- Verificarea anonimă se face doar la o cerere explicită separată.
+- Dosarul ediției descrie accesul și păstrează dovezile.
 
 ## Conținutul fiecărei ediții
 

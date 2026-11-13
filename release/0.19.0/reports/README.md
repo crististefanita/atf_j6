@@ -1,6 +1,6 @@
 # Rapoarte de calificare 0.19.0
 
-## Verdict
+## Pe scurt
 
 Calificarea este **PASS** pentru APK-ul semnat cu SHA-256 `16f4c889645b8e026be78989c4e3b3db83b2fc41aadede6bc9e8e024b915645f`. Rapoartele Extent păstrează expected/actual, proveniența testului și, pentru probele native, capturile originale inline.
 
@@ -11,6 +11,7 @@ Calificarea este **PASS** pentru APK-ul semnat cu SHA-256 `16f4c889645b8e026be78
 | [Poarta de promovare](promotion-extent.html) | Identitatea binarului, checksum și proveniența | 1 scenariu Extent trecut; 8 verificări Maven ale porții, fără eșecuri |
 | [Componente Maven](maven-component-suites-extent.html) | Motor, reguli, YAML, progres, persistență și guvernanță | 32 suite · 222 teste · 0 fail/error/skip |
 | [Componente Android JVM](android-component-suites-extent.html) | Catalog, eligibilitate, praguri, progres simultan, deduplicare și reluare | 10 suite · 114 teste · 0 fail/error/skip |
+| [Guvernanță documentației](documentation-governance-extent.html) | Secțiuni introductive, proprietatea ghidurilor, legături și feedback activ | 4 teste · PASS · 0 eșecuri |
 | [Turneu nativ](android-tournament-extent.html) | Turneu la API 28, profil și progresul realizărilor | 109 aserțiuni · 13 capturi inline · trecut |
 | [Smoke APK instalat](android-release-smoke-extent.html) | APK-ul calificat, niveluri și limbi | 82 aserțiuni · 13 capturi inline · trecut |
 | [Calibrare offline](achievement-calibration-extent.html) | Loturi pereche, holdout, Normal/Greu și verdict pe fiecare obiectiv | 204 turnee · 15.162 mâini · 1.440 replay-uri pereche |

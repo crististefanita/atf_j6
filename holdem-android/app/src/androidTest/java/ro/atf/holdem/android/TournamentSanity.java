@@ -780,7 +780,7 @@ public final class TournamentSanity extends Instrumentation {
         sessions.save(game, false);
         var activity = launchHoldem();
         try {
-            resumeLedgerFixture(activity);
+            resumeSavedFixture(activity, "01a-ledger-resume-unavailable");
             String label = revealTaggedControl(activity, "CHECK");
             if (usesTalkBack()) focusCheckControl(activity);
             tap(label);
@@ -827,14 +827,14 @@ public final class TournamentSanity extends Instrumentation {
         throw new AssertionError("Previous fixture did not finish saving");
     }
 
-    private void resumeLedgerFixture(Activity activity) throws Exception {
+    private void resumeSavedFixture(Activity activity, String failureCapture) throws Exception {
         String label = "Continue saved game";
         long deadline = SystemClock.uptimeMillis() + 15000;
         boolean waitedForSystem = false;
         do {
             if (!waitedForSystem && waitForSystemUiDialog()) {
                 waitedForSystem = true;
-                actions.put("Wait for Android System UI before resuming the ledger fixture");
+                actions.put("Wait for Android System UI before resuming the fixture");
             }
             runOnMainSync(() -> {
                 var controls = new ArrayList<View>();
@@ -852,7 +852,7 @@ public final class TournamentSanity extends Instrumentation {
             }
             SystemClock.sleep(100);
         } while (SystemClock.uptimeMillis() < deadline);
-        if (BETTING_LEDGER_MODES.contains(arguments.getString("mode"))) capture("01a-ledger-resume-unavailable");
+        capture(failureCapture);
         var root = accessibilityRoot();
         check("Tap " + label, "click dispatched", root == null ? "no active root"
                 : "control unavailable in " + value(root.getPackageName()));
@@ -864,7 +864,7 @@ public final class TournamentSanity extends Instrumentation {
         sessions.save(game, false);
         var activity = launchHoldem();
         try {
-            resumeLedgerFixture(activity);
+            resumeSavedFixture(activity, "01a-ledger-resume-unavailable");
             tap(revealTaggedControl(activity, "RAISE"));
             var field = awaitMatch(node -> node.isEditable()
                     && (value(node.getContentDescription()).startsWith("Add now ·")
@@ -1844,7 +1844,7 @@ public final class TournamentSanity extends Instrumentation {
             check("The compact award journey uses a short window with enlarged text", "at most 320 x 340 dp, font 2.0",
                     config.screenWidthDp + " x " + config.screenHeightDp + " dp, font " + config.fontScale,
                     config.screenWidthDp <= 320 && config.screenHeightDp <= 340 && config.fontScale == 2f);
-            tap(revealTaggedControl(activity, "continue-game"));
+            resumeSavedFixture(activity, "00-compact-resume-unavailable");
             checkAnimationPolicy(true);
             runOnMainSync(() -> probe[0] = new SettlementAwardObservation(
                     (ViewGroup) activity.getWindow().getDecorView(), List.of(2)));

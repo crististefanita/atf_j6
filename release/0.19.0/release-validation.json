@@ -112,22 +112,30 @@
   },
   "authenticatedBrowserDownload": {
     "verified": true,
-    "source": "Direct asset download from the published GitHub release in the authenticated Browser MCP session",
+    "source": "Main README direct APK link clicked in the authenticated Browser MCP session",
     "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.19.0/HoldemLab-0.19.0.apk",
     "httpStatus": 200,
+    "credentialMode": "authenticated Browser MCP session",
     "bytes": 880426,
     "sha256": "16f4c889645b8e026be78989c4e3b3db83b2fc41aadede6bc9e8e024b915645f",
-    "apk": "HoldemLab-0.19.0.apk"
+    "apk": "HoldemLab-0.19.0.apk",
+    "remoteRef": "main",
+    "remoteReadmeBlob": "e48affefad26ad63ce6ced1c20f55a5aab1f5690",
+    "readmeCommit": "2bbfba732c22887766439826561bbc55b2ec38f7",
+    "tagCommit": "255897f150c2235a78bdfb7fd74ae9f99abc33df",
+    "completedUtc": "2026-11-13T05:18:31.3946117Z"
   },
   "authenticatedChecksumDownload": {
     "verified": true,
-    "source": "Checksum asset downloaded from the published GitHub release in the authenticated Browser MCP session",
+    "source": "GitHub checksum asset downloaded in the authenticated Browser MCP session",
     "assetUrl": "https://github.com/crististefanita/atf_j6/releases/download/v0.19.0/HoldemLab-0.19.0.apk.sha256",
     "httpStatus": 200,
+    "credentialMode": "authenticated Browser MCP session",
     "bytes": 87,
     "sha256": "b5f9d197ca941c6fa7eb37c8d22f6346e828d5628195200932c3c38ee6d5a94b",
     "apkSha256": "16f4c889645b8e026be78989c4e3b3db83b2fc41aadede6bc9e8e024b915645f",
-    "apkName": "HoldemLab-0.19.0.apk"
+    "apkName": "HoldemLab-0.19.0.apk",
+    "completedUtc": "2026-11-13T05:18:31.3946117Z"
   },
   "integrity": {
     "algorithm": "SHA-256",
@@ -164,8 +172,8 @@
       },
       {
         "path": "authenticated-download-receipt.json",
-        "bytes": 1250,
-        "sha256": "4f44a030a266160c5485fe8d4d9c9bb45343ad1b699633df9ab0fc6a0c8560b2"
+        "bytes": 1881,
+        "sha256": "b1983506c6ce3a948f5ea0e0e2c311a8a492d7b49da2c1146d9c44a58c343c5f"
       },
       {
         "path": "reports/README.md",

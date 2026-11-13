@@ -1,5 +1,24 @@
-# Rapoartele Extent 0.19.1
+# Rapoarte de calificare 0.19.1
 
 ## Pe scurt
 
-Raportul RAG va înregistra aici suitele JVM, componentele Android, turneul nativ și smoke-ul APK-ului semnat. Fiecare raport trebuie să indice sursa și să fie inventariat în manifestul de calificare înainte de promovare.
+Calificarea este **PASS** pentru APK-ul semnat cu SHA-256 `cfdf3138b1ae67d938af15ed3b013e9db593787c7c532200b5dbf1371aef4d4d`. Rapoartele păstrează expected/actual, proveniența testului și capturile native originale inline.
+
+## Suite și probe
+
+| Raport | Acoperire | Rezultat |
+|---|---|---|
+| [Poarta de promovare](promotion-extent.html) | Identitatea APK-ului și proveniența sursei | PASS |
+| [Componente Maven](maven-component-suites-extent.html) | Motor, reguli, YAML, AI și guvernanță | 32 suite · 223 teste · 0 fail/error/skip |
+| [Componente Android JVM](android-component-suites-extent.html) | Realizări, progres și integrarea UI comun | 10 suite · 116 teste · 0 fail/error/skip |
+| [Guvernanța documentației](J6DocumentationGovernance-1794570531660.html) | Structura și standardele documentației | 4 teste · PASS |
+| [Impactul UI comun](J6SharedUiImpactGovernance-1794570606186.html) | Trasabilitatea dependenței Card Table UI | PASS |
+| [Turneu nativ](android-tournament-extent.html) | Flux de joc, Realizări și dialogul comun | 138 aserțiuni · 20 capturi · PASS |
+| [Smoke APK semnat](android-release-smoke-extent.html) | Instalare release, niveluri și ecran compact | 84 aserțiuni · 13 capturi · PASS |
+
+## Proveniență
+
+- Commit sursă și build calificat: `001eea1425e7ff00594e23aabcfb9ea230dbd879`.
+- APK: `HoldemLab-0.19.1.apk` · 880.802 bytes.
+- Certificat de semnare SHA-256: `30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce`.
+- [Manifestul ediției](../release-validation.json), [planul nativ](../native-plan.json) și contextul RAG leagă rapoartele de candidatul calificat.

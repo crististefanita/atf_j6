@@ -9,4 +9,6 @@
 
 ## Calificare
 
-Calificarea RAG, rapoartele Extent, identitatea APK-ului și dovada descărcării autentificate vor fi adăugate după rulare.
+Maven a rulat 32 de suite și 223 de teste, iar Android JVM 10 suite și 116 teste; toate au trecut fără eșecuri, erori sau omisiuni. Turneul nativ API 28 a trecut cu 138 de aserțiuni și 20 de capturi, iar smoke-ul APK-ului release semnat a trecut cu 84 de aserțiuni și 13 capturi.
+
+Identitatea APK-ului, commitul calificat, probele și capturile sunt în [manifest](release-validation.json) și [indexul rapoartelor](reports/README.md).

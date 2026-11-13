@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "001eea1425e7ff00594e23aabcfb9ea230dbd879",
+  "versionName": "0.19.1",
+  "validationScope": "FULL",
+  "selectedSwitches": [],
+  "journeys": [
+    {
+      "mode": "tournament",
+      "apkVariant": "sanity",
+      "proofPath": [
+        "tournamentSanity"
+      ],
+      "optional": false,
+      "folder": "android-tournament-sanity",
+      "report": "android-tournament-extent.html"
+    },
+    {
+      "mode": "release-smoke",
+      "apkVariant": "release",
+      "proofPath": [
+        "releaseInstallSmoke"
+      ],
+      "optional": false,
+      "folder": "android-release-smoke",
+      "report": "android-release-smoke-extent.html"
+    }
+  ]
+}

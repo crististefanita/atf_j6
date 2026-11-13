@@ -5,8 +5,8 @@
   "previousVersion": "0.19.0",
   "changeClass": "PATCH_FIX",
   "changeRationale": "Aduce popup-ul Realizărilor la dialogul comun Card Table UI, îl păstrează până la închidere și elimină spațiul rezervat în masă.",
-  "state": "DRAFT",
-  "published": false,
+  "state": "PREPARED",
+  "published": true,
   "versions": [
     "0.19.1"
   ]

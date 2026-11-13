@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 2,
+  "status": "PASS",
+  "sourceCommit": "001eea1425e7ff00594e23aabcfb9ea230dbd879",
+  "versionName": "0.19.1",
+  "apkName": "HoldemLab-0.19.1.apk",
+  "validationScope": "FULL",
+  "sanityApkSha256": "991973361bfd3f4725b1b5b2c23f5d7d92a30b7b0de8eb6ff3985c7ae43afcf1",
+  "nativePlan": {
+    "path": "native-plan.json",
+    "sha256": "6f7ea8811d7c6030d2bcdc4ae1bb6b0ede58810c0cd38a5d0c3570e5279c2dbb"
+  },
+  "apkBytes": 880802,
+  "sha256": "cfdf3138b1ae67d938af15ed3b013e9db593787c7c532200b5dbf1371aef4d4d",
+  "certificateSha256": "30213bddf2a1be800d19c588d5ebdfe22ab6b83d9128faee83bf58e260eab1ce",
+  "debuggable": false,
+  "targetSdk": 36,
+  "minSdk": 26,
+  "qualification": {
+    "maven": {
+      "suites": 32,
+      "tests": 223.0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mavenComponentExtent": {
+      "path": "maven-component-suites-extent.html",
+      "suites": 32,
+      "tests": 223.0
+    },
+    "androidJvm": {
+      "suites": 10,
+      "tests": 116.0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "androidComponentExtent": {
+      "path": "android-component-suites-extent.html",
+      "suites": 10,
+      "tests": 116.0
+    },
+    "releaseImpactContext": {
+      "path": "release-impact-context.json",
+      "contextState": "CONTEXT_READY",
+      "advisoryOnly": true,
+      "sha256": "9039789c0fdd9e202f3fa5b433114b86c32b89c3103cd14a6bba1ec0b660612a"
+    },
+    "versionPolicy": {
+      "previousVersion": "0.19.0",
+      "changeClass": "PATCH_FIX",
+      "candidateVersion": "0.19.1",
+      "rationale": "Aduce popup-ul Realizărilor la dialogul comun Card Table UI, îl păstrează până la închidere și elimină spațiul rezervat în masă."
+    },
+    "lint": {
+      "status": "PASS",
+      "warnings": []
+    },
+    "tournamentSanity": {
+      "status": "PASS",
+      "api": 28,
+      "window": "392 × 626 dp",
+      "fontScale": 1,
+      "apkSha256": "991973361bfd3f4725b1b5b2c23f5d7d92a30b7b0de8eb6ff3985c7ae43afcf1",
+      "assertions": 138,
+      "screenshots": 20,
+      "report": "android-tournament-extent.html"
+    },
+    "releaseInstallSmoke": {
+      "status": "PASS",
+      "api": 28,
+      "window": "392 × 626 dp",
+      "fontScale": 1,
+      "apkSha256": "cfdf3138b1ae67d938af15ed3b013e9db593787c7c532200b5dbf1371aef4d4d",
+      "assertions": 84,
+      "screenshots": 13,
+      "report": "android-release-smoke-extent.html"
+    }
+  },
+  "reports": [
+    {
+      "path": "android-component-suites-extent.html",
+      "bytes": 2526341,
+      "sha256": "3b3130f742768449bc6f7713ae9bf602fe7a19b23eb2018d81fb6931fe82774f"
+    },
+    {
+      "path": "android-release-smoke-extent.html",
+      "bytes": 4969874,
+      "sha256": "9f818579259b183bb692bd853e695a3eddab24ec0a4d401a273c92088801f0e4"
+    },
+    {
+      "path": "android-tournament-extent.html",
+      "bytes": 6215128,
+      "sha256": "50aff87c3eb361cd4b80af2d090f3d4e116772c3bea892a8285d81e687f8f864"
+    },
+    {
+      "path": "j6-library-component-1794570524701.html",
+      "bytes": 2412219,
+      "sha256": "e2aeab9750b8439c9372804cc84298eb670a909cd6ecd9ce7786a5d4790922e0"
+    },
+    {
+      "path": "J6AndroidRuntimeApiGovernance-1794570609450.html",
+      "bytes": 2412315,
+      "sha256": "195e8a264004cc151e49cac6b4bf7e1d96b170d64a0e7fc9a534641bb1784360"
+    },
+    {
+      "path": "J6CheckoutEvidenceGovernance-1794570603113.html",
+      "bytes": 2412999,
+      "sha256": "16ce6377269443d8519e2524dcfd8b1014957b86cc1935895410bb85a0a44345"
+    },
+    {
+      "path": "J6DocumentationGovernance-1794570531660.html",
+      "bytes": 2423294,
+      "sha256": "886ffb005c08d93aec4c91a0af572f51598563dbf2010361048e39bf5e46a47c"
+    },
+    {
+      "path": "J6EditionEvidenceMutationGovernance-1794570600085.html",
+      "bytes": 2411764,
+      "sha256": "85ebac78c6b5612cf7d0cbfc7a5e192ff8b9572ffc5dfcb89b9bb349da768f1f"
+    },
+    {
+      "path": "J6ExtentSuiteGovernance-1794570610942.html",
+      "bytes": 2412075,
+      "sha256": "2a4a73ab6a4f7490aee3254b076217b4ea18e5004c156e1b3ffcd76b3fe23151"
+    },
+    {
+      "path": "J6MainReadmeGovernance-1794570607799.html",
+      "bytes": 2413636,
+      "sha256": "e70234f53a993d097e7a3afb27193a8b3c98f7047ce9265ea052edded81c7aae"
+    },
+    {
+      "path": "J6RagDeploymentContract-1794570597729.html",
+      "bytes": 2412989,
+      "sha256": "8ca95a8bec697ac8c7906ff8ccb049ad540e5f3cc23a50618937867233a70639"
+    },
+    {
+      "path": "J6ReleaseDownloadRouteGovernance-1794570601546.html",
+      "bytes": 2413376,
+      "sha256": "de1ab9d833ac1b4573d41727cb5238303b7ad46953a111b830c4fb8d0c89ff12"
+    },
+    {
+      "path": "J6ReleaseGovernance-1794570604717.html",
+      "bytes": 2416506,
+      "sha256": "d2020f9645354e68b8a62dd5f3e8e01a65ffb6278b87e5a7676c024bce3c333b"
+    },
+    {
+      "path": "J6SharedUiImpactGovernance-1794570606186.html",
+      "bytes": 2411762,
+      "sha256": "e9a2bb3fd0ab2fd229a61e2fba9581b551ea9fd42750852f082dd749dc917099"
+    },
+    {
+      "path": "J6TestInventoryGovernance-1794570773430.html",
+      "bytes": 2416654,
+      "sha256": "c627b461f7621a542a9fde2576cd5b284cf0a6594f31ab4ccc5fbd8abf504d04"
+    },
+    {
+      "path": "maven-component-suites-extent.html",
+      "bytes": 2740730,
+      "sha256": "f5bddd7aa4155a37c126917f479aeb85414702752de8a144bb0cf3ec528d0702"
+    }
+  ],
+  "runRoot": "C:\\work\\holdem_back\\release-runs\\j6-0.19.1-20261113-135000",
+  "completedUtc": "2026-11-13T12:12:07.6338774Z"
+}

@@ -200,9 +200,10 @@ public final class GameplayAchievementsActivity extends Activity {
     }
 
     static String title(Context context, GameplayAchievementCatalog.Milestone milestone) {
+        Context labels = HoldemActivity.localizedContext(context);
         return milestone.plural()
-                ? context.getResources().getQuantityString(milestone.label(), milestone.target(), milestone.target())
-                : context.getString(milestone.label());
+                ? labels.getResources().getQuantityString(milestone.label(), milestone.target(), milestone.target())
+                : labels.getString(milestone.label());
     }
 
     private String tierLabel(Tier tier) {

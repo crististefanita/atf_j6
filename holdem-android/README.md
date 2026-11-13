@@ -50,7 +50,7 @@ Aplicația Android oferă mese locale offline pentru No-Limit Texas Hold’em. F
 
 [Proveniența pachetelor Android](ui-library/provenance.json) · [Contractul Realizărilor](../docs/requirements/PRODUCT_REQUIREMENTS.md#realizări)
 
-Popup-ul de Realizări folosește dialogul comun Card Table UI, același tip de prezentare ca în J4. Afișează realizarea obținută, progresul parțial și numărul actualizărilor suplimentare; rămâne vizibil până la închidere și nu schimbă geometria mesei.
+Popup-ul de Realizări folosește dialogul comun Card Table UI, același tip de prezentare ca în J4. Afișează realizarea obținută, progresul parțial și numărul actualizărilor suplimentare în limba selectată; rămâne vizibil până la închidere și nu schimbă geometria mesei.
 
 ## Prezentarea mesei
 

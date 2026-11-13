@@ -459,7 +459,6 @@ public final class HoldemActivity extends Activity {
                 showHand();
             });
         });
-        if (completed && activityResumed) achievementNotice.show(current);
         BooleanSupplier visibleScene = () -> activityResumed && sceneRevision == renderedScene
                 && !isFinishing() && !isDestroyed();
         BooleanSupplier visibleTurn = () -> visibleScene.getAsBoolean()
@@ -487,6 +486,7 @@ public final class HoldemActivity extends Activity {
                 settlementPending = false;
                 stopSettlement = () -> { };
                 if (deferredContinuation != null) showResumed(deferredContinuation);
+                else achievementNotice.show(current);
             };
             var animation = table.animateSettlement(ro.cardtable.ui.animation.TrickCollectionMotion.DISPLAY_MILLIS, finish);
             stopSettlement = () -> {

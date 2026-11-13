@@ -459,7 +459,14 @@ public final class TournamentSanity extends Instrumentation {
                         && settled.board().size() == 5 && HoldemTablePresentation.displayedPot(settled) > 0);
         capture("05f-stable-table-romanian-settled");
 
-        seeContains("Romanian achievement notice localizes the earned showdown milestone", "Ajungi prima dată la dezvăluirea cărților");
+        see("Romanian achievement notice shows its localized title", "Progres la realizări", 10000);
+        var notice = awaitMatchInApplicationWindows(node -> value(node.getText()).contains("Obținută ·"));
+        check("Romanian achievement notice shows a localized earned milestone", "localized earned progress",
+                notice == null ? "not visible" : value(notice.getText()), notice != null);
+        int showdowns = GameplayAchievementFile.local(getTargetContext()).counts(profileId())
+                .getOrDefault(GameplayAchievements.Metric.SHOWDOWN, 0);
+        check("The first showdown is recorded even when the notice summarizes other milestones", "1",
+                Integer.toString(showdowns));
         tapDialogAction(HoldemActivity.localizedContext(activity).getString(R.string.close));
         tap(HoldemActivity.localizedContext(activity).getString(R.string.home));
         tap("interface-language");
@@ -1725,8 +1732,6 @@ public final class TournamentSanity extends Instrumentation {
             see("The seeded fixture resumes at the heads-up decision", "Hand 3 · Preflop");
             runOnMainSync(() -> probe[0] = new SettlementAwardObservation((ViewGroup) activity.getWindow().getDecorView(), List.of(3)));
             tap("All-in · 7900");
-            see("The all-in settles the resumed hand", "Hand 3 · Settled");
-            see("The paid pot excludes the unmatched return", "Pot paid · 160");
             boolean arrived = probe[0].awaitArrival();
             // Preserve frames already observed even if a subsequent assertion fails.
             runOnMainSync(probe[0]::stop);
@@ -1736,6 +1741,9 @@ public final class TournamentSanity extends Instrumentation {
             Bitmap arrivalImage = probe[0].takeArrivalImage();
             if (departureImage != null) emitCapture("01-award-departure", departureImage);
             if (arrivalImage != null) emitCapture("02-award-arrival", arrivalImage);
+            dismissAwardNotice();
+            see("The all-in settles the resumed hand", "Hand 3 · Settled");
+            see("The paid pot excludes the unmatched return", "Pot paid · 160");
             check("The pot marker starts at the pot center", "within 2 px of the pot center", String.valueOf(departure),
                     departure != null && departure.atPot());
             check("The pot marker reaches the winning seat frame", "within 2 px of seat 3 center", String.valueOf(probe[0].latest()),
@@ -1809,10 +1817,11 @@ public final class TournamentSanity extends Instrumentation {
             if (fixture == SettlementAwardFixture.SPLIT || !animated) checkAnimationPolicy(animated);
             runOnMainSync(() -> probe[0] = new SettlementAwardObservation((ViewGroup) activity.getWindow().getDecorView(), winners));
             tap("All-in · " + fixture.allInChips);
+            if (animated) checkMultipleFlights(probe[0], fixture, name);
+            dismissAwardNotice();
             see(name + " settles after the all-in", "Hand " + game.handNumber() + " · Settled");
             see(name + " shows the total distributed pot", "Pot paid · 8000");
-            if (animated) checkMultipleFlights(probe[0], fixture, name);
-            else {
+            if (!animated) {
                 capture("01-static-awards");
                 runOnMainSync(probe[0]::stop);
                 check("Disabled animation creates no award markers", "no markers", probe[0].sawMarker() ? "marker created" : "no markers");
@@ -1849,7 +1858,6 @@ public final class TournamentSanity extends Instrumentation {
             runOnMainSync(() -> probe[0] = new SettlementAwardObservation(
                     (ViewGroup) activity.getWindow().getDecorView(), List.of(2)));
             tap(revealTaggedControl(activity, "ALL_IN"));
-            see("Compact side pot settles after the all-in", "Hand 3 · Settled");
 
             boolean arrived = probe[0].awaitArrival();
             runOnMainSync(probe[0]::stop);
@@ -1859,6 +1867,8 @@ public final class TournamentSanity extends Instrumentation {
             Bitmap arrivalImage = probe[0].takeArrivalImage();
             if (departureImage != null) emitCapture("01-compact-departure", departureImage);
             if (arrivalImage != null) emitCapture("02-compact-arrival", arrivalImage);
+            dismissAwardNotice();
+            see("Compact side pot settles after the all-in", "Hand 3 · Settled");
             awaitRenderedFrame("03-compact-summary");
             var summaryImage = new Bitmap[1];
             runOnMainSync(() -> summaryImage[0] = probe[0].drawWindow());
@@ -2048,6 +2058,13 @@ public final class TournamentSanity extends Instrumentation {
         var control = await(label);
         while (control != null && !control.isClickable()) control = control.getParent();
         tap(label, control);
+    }
+
+    private void dismissAwardNotice() throws Exception {
+        waitForIdleSync();
+        if (find("Achievement progress") != null || find("Tournament achievement progress") != null) {
+            tapDialogAction("Close");
+        }
     }
 
     private void dismissAchievementNoticeIfVisible(String title, String captureName) throws Exception {

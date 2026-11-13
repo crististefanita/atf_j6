@@ -13,6 +13,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'HoldemNativeQualification.ps1')
+. (Join-Path $PSScriptRoot 'HoldemGradleCache.ps1')
 if ($TableGeometryOnly -and ($IncludeHardSix -or $IncludeSeatMetrics -or $IncludeSettlementAward -or $IncludeBettingLedger)) {
     throw 'TableGeometryOnly cannot be combined with end-to-end journeys.'
 }
@@ -20,6 +21,8 @@ $sourceRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $dataRoot = [IO.Path]::GetFullPath($DataRoot)
 $RunRoot = [IO.Path]::GetFullPath($RunRoot)
 $MavenRepository = [IO.Path]::GetFullPath($MavenRepository)
+$gradleHome = if ($env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME } else { Join-Path $env:USERPROFILE '.gradle' }
+$gradleHome = [IO.Path]::GetFullPath($gradleHome, $PWD.ProviderPath)
 $runParent = [IO.Path]::GetFullPath((Join-Path $dataRoot 'release-runs'))
 if (!$RunRoot.StartsWith($runParent + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
     throw 'Release build output must stay under the registered external release-runs directory.'
@@ -123,6 +126,9 @@ try {
     $env:TMP = $temp
     $env:TEMP = $temp
     $env:JAVA_TOOL_OPTIONS = "-Djava.io.tmpdir=$temp"
+    $appRoot = Join-Path $stage 'holdem-android'
+    Set-Content -LiteralPath (Join-Path $appRoot 'local.properties') -Value ('sdk.dir=' + $Sdk.Replace('\','/').Replace(':','\:')) -Encoding ascii
+    $gradle = Invoke-HoldemGradleCachePreflight $appRoot $gradleHome (Join-Path $RunRoot 'gradle-preflight.log')
     $securePassword = (Get-Content -Raw -LiteralPath $identity.credential).Trim() | ConvertTo-SecureString
     $env:HOLDEM_STORE_FILE = $identity.store
     $env:HOLDEM_STORE_PASSWORD = [Net.NetworkCredential]::new('holdem',$securePassword).Password
@@ -184,11 +190,9 @@ try {
         throw 'Maven regression failed; the component Extent and JUnit XML diagnostics are retained in the external run.'
     }
 
-    $appRoot = Join-Path $stage 'holdem-android'
-    Set-Content -LiteralPath (Join-Path $appRoot 'local.properties') -Value ('sdk.dir=' + $Sdk.Replace('\','/').Replace(':','\:')) -Encoding ascii
     Push-Location $appRoot
     try {
-        & .\gradlew.bat --offline --no-daemon --max-workers=2 :app:testSanityUnitTest :app:lintRelease `
+        & $gradle --gradle-user-home $gradleHome --offline --no-daemon --max-workers=2 :app:testSanityUnitTest :app:lintRelease `
             :app:assembleSanity :app:assembleSanityAndroidTest :app:assembleRelease `
             *> (Join-Path $RunRoot 'gradle.log')
         $gradleExitCode = $LASTEXITCODE

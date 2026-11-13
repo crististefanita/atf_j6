@@ -126,6 +126,7 @@ $sourceCommit = (git rev-parse HEAD).Trim()
 | Etapă | Ce verifică runnerul |
 |---|---|
 | Sursă | Fixează commitul și confruntă hash-urile copiei externe. |
+| Cache Gradle | Verifică distribuția declarată în wrapper și configurează proiectul Android offline înainte de Maven. |
 | Componente | Rulează `mvn clean test`, Android JVM și lint. Publică rapoarte Extent separate pentru Maven și Android JVM. |
 | APK | Construiește `sanity` și `release` cu identitatea J6. Verifică semnătura, certificatul, alinierea, pachetul, versiunea, SDK-ul și flag-ul debug. |
 | Emulator rezervat | Rulează turneul reproductibil în `sanity`, care acceptă seed-ul fixture-ului, și smoke-ul de instalare și navigare pe APK-ul `release` exact, cu `debuggable=false`. |
@@ -136,6 +137,12 @@ $sourceCommit = (git rev-parse HEAD).Trim()
 - Snapshotul de build păstrează manifestele edițiilor anterioare pentru RAG, dar nu recopiază rapoartele Extent HTML deja arhivate; ele nu sunt intrări ale buildului curent.
 
 [Catalogul edițiilor](../../release/README.md)
+
+### Cache Gradle înainte de Maven
+
+- **Pregătire.** Setați `GRADLE_USER_HOME` la cache-ul calificării. Valoarea implicită este `.gradle` din profilul utilizatorului. Pregătiți acolo distribuția declarată în wrapper și pluginul Android din `build.gradle`.
+- **Verificare.** Runnerul lansează distribuția instalată cu `help --offline` în copia verificată. Dacă distribuția sau configurarea eșuează, runnerul se oprește înainte de Maven și scrie diagnosticul în `gradle-preflight.log`.
+- **Build.** Gradle folosește același executabil și cache pentru testare, lint și asamblare. Aceste sarcini verifică și dependențele de care au nevoie la execuție. [Regresii offline](../../scripts/tests/HoldemGradleCache.Tests.ps1)
 
 - Pentru o ediție limitată la geometria mesei, `-TableGeometryOnly` rulează Maven, Android JVM, lint și componenta nativă pe APK-ul semnat. Componenta măsoară trei profiluri de ecran folosind cadre controlate. [Componenta Android](../../holdem-android/README.md#geometria-mesei-în-timpul-mâinii)
 - Manifestul declară profilul `TABLE_GEOMETRY_COMPONENT`, cu verdict și SHA-256 pentru fiecare profil. Această opțiune exclude traseele E2E.

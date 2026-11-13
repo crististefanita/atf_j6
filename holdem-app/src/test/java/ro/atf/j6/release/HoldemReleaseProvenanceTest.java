@@ -28,6 +28,10 @@ class HoldemReleaseProvenanceTest {
         run("HoldemContinuation.Tests.ps1");
     }
 
+    @Test void gradleCachePreflightStopsBeforeMavenAndAndroid() throws Exception {
+        run("HoldemGradleCache.Tests.ps1");
+    }
+
     @ParameterizedTest(name = "{0}")
     @ValueSource(strings = {"all-optionals", "legacy", "missing-profile", "orphan-report", "wrong-apk",
             "changed-capture", "duplicate-capture", "planned", "missing-family", "wrong-required-journey",
@@ -55,7 +59,10 @@ class HoldemReleaseProvenanceTest {
         command.environment().put("TEMP", processTemp.toString());
         command.environment().put("TMPDIR", processTemp.toString());
         Process process = command.start();
-        long timeoutSeconds = suite.equals("HoldemContinuation.Tests.ps1") ? 180 : 60;
+        long timeoutSeconds = switch (suite) {
+            case "HoldemContinuation.Tests.ps1", "HoldemGradleCache.Tests.ps1" -> 180;
+            default -> 60;
+        };
         if (!process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
             process.destroyForcibly();
             throw new AssertionError("PowerShell component timed out after " + timeoutSeconds + "s: " + suite);

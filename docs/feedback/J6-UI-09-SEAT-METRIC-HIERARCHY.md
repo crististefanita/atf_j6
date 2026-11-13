@@ -2,10 +2,12 @@
 
 P2. Ownerul este acceptanța de accesibilitate Android.
 
-Proba `seat-metrics` a verificat focalizarea actorului și descrierea accesibilă la `320 dp` <!-- rag:observed android.seat-metrics.viewport-width --> și font 2,0. Afișajul de dezvoltator TalkBack a redat anunțul actorului. [Strategia Android](../testing/TEST_STRATEGY.md#interfața-android-locală)
+## Acoperire
 
-Componenta verifică alegerea destinației de focus după Check și păstrarea poziției jurnalului la redesenare. [Testele stării ferestrei](../../holdem-android/app/src/test/java/ro/atf/holdem/android/TableViewportPositionComponentTest.java)
+- `seat-metrics` verifică focalizarea actorului și descrierea accesibilă la `320 dp` <!-- rag:observed android.seat-metrics.viewport-width --> și font 2,0. Afișajul de dezvoltator TalkBack a redat anunțul actorului. [Strategia Android](../testing/TEST_STRATEGY.md#interfața-android-locală)
+- Componenta verifică destinația de focus și păstrarea derulării. `betting-ledger-talkback` verifică transferul de la Check la locul propriu și focalizarea rândurilor Check și Raise după deschiderea jurnalului. [Testele stării ferestrei](../../holdem-android/app/src/test/java/ro/atf/holdem/android/TableViewportPositionComponentTest.java) · [Probe compacte](../testing/TEST_STRATEGY.md#dovezi-native-pe-fereastră-compactă)
 
 ## Criteriu de închidere
 
-Cu TalkBack activ, parcurge toate locurile prin gesturi și ascultă anunțurile în română și engleză. Fiecare loc trebuie să aibă un singur punct de focus. Verifică numele, stiva și contribuția în timpul mâinii, apoi premiul și restituirea la decontare. [Cerințele produsului](../requirements/PRODUCT_REQUIREMENTS.md#ierarhia-informației-de-la-loc)
+- Parcurge toate locurile prin gesturi TalkBack în română și engleză. Verifică un singur punct de focus pentru fiecare loc, numele, stiva și contribuția în timpul mâinii, apoi premiul și restituirea la decontare.
+- La font 200%, verifică separat locul propriu și rândul de jurnal, cu focus pe fiecare. Confirmă că numele locului rămâne integral vizibil când este focalizat și măsoară ce rămâne în fereastră când lista jurnalului este deschisă. [Cerințele produsului](../requirements/PRODUCT_REQUIREMENTS.md#ierarhia-informației-de-la-loc)

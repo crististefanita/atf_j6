@@ -16,6 +16,9 @@ Verifică regula în componenta care o deține. Folosește probe Android pentru 
 
 Alege un oracol independent pentru rezultatul verificat. Include o intrare limită sau respinsă, păstrează seed-ul, ceasul ori fișierele sub control și trimite în Extent rezultatul așteptat și rezultatul observat. [Inventarul suitelor](../../config/release-test-suites.json)
 
+- În componente, verifică rezultatul public al regulii și tratează cadrul întârziat, starea veche sau termenul de așteptare cu date controlate.
+- În instrumentare, pornește dintr-o stare reproductibilă și acționează prin controlul vizibil sau accesibil. Verifică schimbarea de focus, cadrul afișat și rezultatul acțiunii. [Probe Android](#interfața-android-locală)
+
 ### Rulare JVM și Extent
 
 Rulează într-un checkout izolat și folosește un director extern nou pentru rapoarte. Variabila `HOLDEM_DATA_ROOT` indică rădăcina externă de date.
@@ -53,6 +56,18 @@ Temporizarea comună a turei automate este `550 ms` <!-- rag:contract android.tu
 ### Sincronizarea jurnalului după Check
 
 Componenta verifică păstrarea derulării în aceeași mână și mutarea focusului de la buton la locul propriu după Check. Proba nativă confruntă noul rând, actorul și totalul, inclusiv cu TalkBack. [Starea ferestrei mesei](../../holdem-android/app/src/test/java/ro/atf/holdem/android/TableViewportPositionComponentTest.java)
+
+### Dovezi native pe fereastră compactă
+
+| Probă | Rezultat observabil | APK |
+|---|---|---|
+| `seat-metrics` | Nume, sume, chenare și focusul actorului cu TalkBack activ. | `release` |
+| `betting-ledger-talkback` | Focusul pleacă de la Check și ajunge la locul propriu. Rândul unic de jurnal este complet vizibil, cu suma și totalul. | `sanity` |
+| `settlement-compact-award` | Rezumatul include și beneficiarul din afara ferestrei. Markerul pornește din pot și ajunge la locul vizibil. | `sanity` |
+
+Verifică fereastra măsurată, scala fontului și SHA-256 din receipt. Raportul Extent păstrează aserțiunile și PNG-urile native, iar calificarea leagă fiecare probă de varianta declarată. [Profiluri și audit](../release/ATF_Release.md#auditul-artefactelor-după-rulare)
+
+La decontare, urmărește mai întâi cadrele premiului și apoi dialogul de progres. În smoke-ul localizat, verifică textul dialogului și progresul salvat. Sumarul poate afișa un alt obiectiv obținut în aceeași mână. [Realizări de joc](#realizări-de-joc)
 
 ### Confirmarea unui Raise din editor
 

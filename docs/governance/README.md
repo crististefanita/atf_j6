@@ -16,13 +16,15 @@ J6 verifică documentația și organizarea testelor din propriul checkout, prin 
 
 Documentația activă include ghidurile, README-urile de intrare, catalogul și dosarul unei ediții `DRAFT`. Dosarele sigilate sunt verificate prin manifestul ediției și poarta de integritate. [Politica dosarelor de ediție](../release/ATF_Release.md#audit-editorial-și-dosare-de-ediție)
 
-La revizie, confruntă diagrama cu granița reală dintre module și mută criteriile stabilizate în ghidul responsabil. Păstrează rezultate de rulare și capturi în dosarul dovezilor. [Contractele produsului](../requirements/README.md) · [Feedback activ](../feedback/README.md)
+- La un audit extern, confruntă fiecare constatare istorică cu intrarea din manifestul ediției înainte de a o încadra ca dovadă arhivată.
+- La revizie, confruntă diagrama cu granița dintre module. Mută criteriile stabilizate în ghidul responsabil și păstrează capturile și rezultatele în dosarul dovezilor. [Contractele produsului](../requirements/README.md) · [Feedback activ](../feedback/README.md)
 
 ## Inventarul testelor
 
 `TestInventoryGovernanceTest` descoperă testele executabile Maven și Android JVM din sursă. Compară clasele cu inventarul de release și cere câte un singur atribut ATF canonic pe fiecare suită Maven. Atributul trebuie să corespundă nivelului publicat în Extent.
 
-Pentru unitare și integrare, declară nivelul în câmpul `level`. Nivelul implicit este `component`, inclusiv pentru JUnit 4 Android. Instrumentarea nativă are selecții și rapoarte proprii. [Niveluri și aserțiuni](../testing/TEST_STRATEGY.md#niveluri)
+- Declară `level` pentru unitare și integrare. Nivelul implicit este `component`, inclusiv pentru JUnit 4 Android. [Niveluri și aserțiuni](../testing/TEST_STRATEGY.md#niveluri)
+- Verifică un rezultat observabil și date controlate pentru fiecare probă. Pentru instrumentare, confruntă profilul și varianta APK din plan cu receipt-ul și raportul. [Auditul calificării](../release/ATF_Release.md#auditul-artefactelor-după-rulare)
 
 ## Verificare offline
 

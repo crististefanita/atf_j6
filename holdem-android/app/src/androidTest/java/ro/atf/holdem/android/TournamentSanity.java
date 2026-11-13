@@ -662,7 +662,7 @@ public final class TournamentSanity extends Instrumentation {
             see("First hand reaches the river", "Hand 1 · River");
             tap("Check");
             capture("01c-post-river-settlement");
-            awaitSettlementAndDismissAchievementNotices(activity, 1, "01-earned-hand-achievement");
+            awaitSettlementAndDismissAchievementNotices(1, "01-earned-hand-achievement");
             see("First hand settles before offering another deal", "Hand 1 · Settled");
             seeContains("First hand pot is paid after dismissing the achievement notice", "Pot paid ·");
             capture("01-hand-one-settled");
@@ -675,7 +675,7 @@ public final class TournamentSanity extends Instrumentation {
             tap("New hand");
             see("Stakes carry into hand two", "Hand 2 · Preflop");
             tap("All-in · 1960");
-            awaitSettlementAndDismissAchievementNotices(activity, 2, "02-earned-hand-achievement");
+            awaitSettlementAndDismissAchievementNotices(2, "02-earned-hand-achievement");
             see("Second hand reaches settlement", "Hand 2 · Settled");
             countDescriptions("First all-in eliminates two seats", ", Eliminated", 2);
             capture("02-two-seats-eliminated");
@@ -686,7 +686,7 @@ public final class TournamentSanity extends Instrumentation {
             countDescriptions("Only the human hole cards are announced", "Your hand ·", 2);
             capture("03-heads-up");
             tap("All-in · 7900");
-            awaitSettlementAndDismissAchievementNotices(activity, 3, "03-earned-tournament-achievement");
+            awaitSettlementAndDismissAchievementNotices(3, "03-earned-tournament-achievement");
             see("Heads-up hand reaches settlement", "Hand 3 · Settled");
             countDescriptions("Last all-in eliminates the final opponent", ", Eliminated", 3);
             check("No next hand after the win", "absent", find("New hand") == null ? "absent" : "present");
@@ -1205,7 +1205,7 @@ public final class TournamentSanity extends Instrumentation {
         try {
             awaitWinChance("Unchecked setup leaves the win chance hidden", false);
             tap("All-in · 2000");
-            awaitSettlementAndDismissAchievementNotices(activity, 1, "05-earned-elimination-achievement");
+            awaitSettlementAndDismissAchievementNotices(1, "05-earned-elimination-achievement");
             see("Opening all-in settles before elimination is asserted", "Hand 1 · Settled");
             countDescriptions("Human seat is eliminated after the opening all-in", "You, Stack 0, Won 0, Eliminated", 1);
             tap("Tournament result");
@@ -2050,7 +2050,7 @@ public final class TournamentSanity extends Instrumentation {
         tap(label, control);
     }
 
-    private void dismissAchievementNoticeIfVisible(Activity activity, String title, String captureName) throws Exception {
+    private void dismissAchievementNoticeIfVisible(String title, String captureName) throws Exception {
         if (find(title) == null) return;
         see("Achievement progress opens in a modal dialog", title);
         var preview = collect(node -> {
@@ -2063,34 +2063,18 @@ public final class TournamentSanity extends Instrumentation {
                         ? value(preview.get(0).getContentDescription()) : value(preview.get(0).getText()),
                 !preview.isEmpty());
         capture(captureName);
-        AlertDialog[] dialog = new AlertDialog[1];
-        boolean[] clicked = new boolean[1];
-        String[] closeState = new String[1];
-        runOnMainSync(() -> {
-            try {
-                var field = HoldemActivity.class.getDeclaredField("achievementNoticeDialog");
-                field.setAccessible(true);
-                dialog[0] = (AlertDialog) field.get(activity);
-                Button close = dialog[0] == null ? null : dialog[0].getButton(AlertDialog.BUTTON_POSITIVE);
-                closeState[0] = close != null && close.isShown() && close.isEnabled()
-                        && "Close".equalsIgnoreCase(value(close.getText()))
-                                ? "visible enabled Close button" : "Close button unavailable";
-                clicked[0] = close != null && close.performClick();
-            } catch (ReflectiveOperationException failure) {
-                closeState[0] = failure.toString();
-            }
-        });
-        check("Earned notice exposes a visible Close button", "visible enabled Close button", closeState[0]);
-        check("Tap Close", "click dispatched", clicked[0] ? "click dispatched" : "control unavailable");
-        actions.put("Close the earned achievement notice");
-        waitForIdleSync();
-        boolean[] dismissed = new boolean[1];
-        runOnMainSync(() -> dismissed[0] = dialog[0] != null && !dialog[0].isShowing());
+        var close = awaitMatch(node -> "android.widget.Button".contentEquals(value(node.getClassName()))
+                && "Close".equalsIgnoreCase(value(node.getText())) && node.isEnabled() && node.isClickable(), 4000);
+        check("Earned notice exposes a visible Close button", "visible enabled Close button",
+                close == null ? "Close button unavailable" : "visible enabled Close button");
+        tap("Close", close);
+        long deadline = SystemClock.uptimeMillis() + 4000;
+        while (find(title) != null && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(80);
         check("Closing the earned notice dismisses its modal", "dismissed",
-                dismissed[0] ? "dismissed" : "still showing");
+                find(title) == null ? "dismissed" : "still showing");
     }
 
-    private void awaitSettlementAndDismissAchievementNotices(Activity activity, int hand, String captureName)
+    private void awaitSettlementAndDismissAchievementNotices(int hand, String captureName)
             throws Exception {
         String settled = "Hand " + hand + " · Settled";
         long deadline = SystemClock.uptimeMillis() + 30000;
@@ -2098,7 +2082,7 @@ public final class TournamentSanity extends Instrumentation {
             String title = find("Achievement progress") != null ? "Achievement progress"
                     : find("Tournament achievement progress") != null ? "Tournament achievement progress" : null;
             if (title != null) {
-                dismissAchievementNoticeIfVisible(activity, title, captureName);
+                dismissAchievementNoticeIfVisible(title, captureName);
                 continue;
             }
             if (find(settled) != null) {
@@ -2108,7 +2092,7 @@ public final class TournamentSanity extends Instrumentation {
                         : find("Tournament achievement progress") != null
                                 ? "Tournament achievement progress" : null;
                 if (title != null) {
-                    dismissAchievementNoticeIfVisible(activity, title, captureName);
+                    dismissAchievementNoticeIfVisible(title, captureName);
                     continue;
                 }
                 return;
